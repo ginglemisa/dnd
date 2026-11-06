@@ -2,12 +2,14 @@
   "use strict";
   // 其他職業的職業選項只存在這份本機副本；畫面、autosave、JSON、分享與 PDF
   // 仍只含目前職業。class-features-ui.js 負責擷取與還原，此模組只負責保存與驗證。
+  // 各職業的專精是短暫記憶：只在這個頁面的記憶體裡，重新整理或載入角色就消失，不寫入 LocalStorage。
   const VERSION = 1;
   const MEMORY_KEY = "dnd.classOptionMemories.v1";
   const CLASS_IDS = new Set(["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"]);
   const KEY_PATTERN = /^[a-z0-9-]{1,80}$/;
   const LIMITS = Object.freeze({ values: 128, lists: 8, listItems: 32, text: 200 });
   let memories = null, hooks = {}, writeWarningShown = false;
+  const expertiseByClass = new Map();
   const clone = value => JSON.parse(JSON.stringify(value));
   const inShareMode = () => globalScope.SHARE_MODE === true;
   const empty = () => ({ version: VERSION, classes: {} });
@@ -79,7 +81,21 @@
     return write(next);
   }
 
+  function rememberExpertise(className, skills) {
+    if (inShareMode() || !CLASS_IDS.has(className)) return;
+    expertiseByClass.set(className, [...new Set(skills)]);
+  }
+
+  function getExpertise(className) {
+    return inShareMode() ? [] : [...(expertiseByClass.get(className) || [])];
+  }
+
+  function clearExpertise() {
+    expertiseByClass.clear();
+  }
+
   function clearMemories() {
+    clearExpertise();
     memories = empty();
     writeWarningShown = false;
     if (inShareMode()) return;
@@ -89,6 +105,6 @@
   globalScope.ClassOptionMemory = Object.freeze({
     version: VERSION, storageKey: MEMORY_KEY,
     configure(options = {}) { hooks = { ...hooks, ...options }; },
-    get, remember, clearMemories
+    get, remember, clearMemories, rememberExpertise, getExpertise, clearExpertise
   });
 })(window);

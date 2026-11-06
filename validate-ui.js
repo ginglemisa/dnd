@@ -2982,6 +2982,297 @@ async function verifyAdventureJournal(browser, url) {
 }
 
 // Other classes' choices live only in dnd.classOptionMemories.v1; the sheet, autosave, JSON and share keep the current class.
+async function verifyAutoCalculatedChecks(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
+  const MARK = "__autoCalculatedChecks";
+  const MEMORY = "dnd.classOptionMemories.v1";
+  const TOGGLE = "auto-calculate-key-stats-toggle";
+  const value = id => page.evaluate(id => {
+    const control = document.getElementById(id);
+    return control.type === "checkbox" ? control.checked : control.value;
+  }, id);
+  const values = ids => Promise.all(ids.map(value));
+  const set = (id, next, type = "change") => page.evaluate(({ id, next, type }) => {
+    const control = document.getElementById(id);
+    control.value = next;
+    control.dispatchEvent(new Event(type, { bubbles: true }));
+  }, { id, next, type });
+  const tick = id => page.evaluate(id => document.getElementById(id).click(), id);
+  // Native keyboard selection is a trusted player change, which is what class memory listens to.
+  const chooseAsPlayer = async (id, next) => {
+    await page.evaluate(() => showTab("basic"));
+    const key = await page.evaluate(({ id, next }) => {
+      const select = document.getElementById(id);
+      const index = Array.from(select.options).findIndex(option => option.value === next);
+      if (index < 0) throw new Error(`Missing option ${id}: ${next}`);
+      select.selectedIndex = index === 0 ? 1 : index - 1;
+      return index === 0 ? "ArrowUp" : "ArrowDown";
+    }, { id, next });
+    await page.locator(`#${id}`).focus();
+    await page.keyboard.press(key);
+    assert.equal(await page.locator(`#${id}`).inputValue(), next);
+  };
+  const ready = () => page.waitForFunction(() => window.TabletopMode && window.ClassOptionMemory && derivedChecksReady);
+  const reminders = () => page.evaluate(() => buildPdfPrecheckMessages().map(entry => entry.message));
+  try {
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"); } catch {} });
+    await page.goto(url);
+    await ready();
+    await page.locator("#legal-close-btn").click();
+    await page.evaluate(() => window.onboardingTour?.finish?.());
+
+    // A new blank character starts automatic, read-only and without calculate buttons or hints.
+    assert.deepEqual(await page.evaluate(toggle => ({
+      auto: document.getElementById(toggle).checked,
+      readOnly: [document.getElementById("skill-隱匿").readOnly, document.getElementById("save-dex").readOnly],
+      aria: document.getElementById("skill-隱匿").getAttribute("aria-readonly"),
+      tabIndex: document.getElementById("save-dex").tabIndex,
+      buttons: Array.from(document.querySelectorAll("#tab-skills .skill-calc-button"), button => button.hidden),
+      hints: document.querySelectorAll("#tab-skills .skill-action-hint").length,
+      label: document.getElementById(toggle).closest("label").textContent.trim()
+    }), TOGGLE), { auto: true, readOnly: [true, true], aria: "true", tabIndex: -1, buttons: [true, true], hints: 0, label: "自動計算數值" });
+
+    // Blank abilities stay blank instead of showing +0.
+    assert.deepEqual(await values(["skill-運動", "save-str", "passive-perception"]), ["", "", ""], "blank abilities leave blank values");
+    await set("str", "14", "input");
+    assert.deepEqual(await values(["skill-運動", "save-str", "skill-隱匿", "save-dex"]), ["+2", "+2", "", ""], "only the filled ability is calculated");
+    assert.ok((await reminders()).includes("技能加值有空白"), "the blank value reminder stays");
+
+    // Every keystroke of an ability updates the numbers.
+    await page.evaluate(() => showTab("basic"));
+    await page.locator("#dex").focus();
+    await page.keyboard.press("1");
+    assert.deepEqual(await values(["skill-隱匿", "save-dex"]), ["-5", "-5"], "first keystroke updates");
+    await page.keyboard.press("6");
+    assert.deepEqual(await values(["skill-隱匿", "save-dex"]), ["+3", "+3"], "second keystroke updates");
+    for (const [id, score] of [["con", "14"], ["int", "12"], ["wis", "13"], ["cha", "8"]]) await set(id, score, "input");
+    assert.equal(await value("passive-perception"), "11", "passive perception follows the skill");
+
+    // Class picks its saves; level moves the proficiency bonus.
+    await set("class", "rogue");
+    await set("level", "4");
+    assert.deepEqual(await values(["prof-dex", "prof-int", "save-dex", "save-int", "save-str"]), [true, true, "+5", "+3", "+2"], "class sets saves");
+    await set("level", "5");
+    assert.deepEqual(await values(["save-dex", "save-int"]), ["+6", "+4"], "level updates saves immediately");
+    await set("level", "4");
+
+    // Skill ranks and save ticks apply as soon as they change.
+    await tick("prof-隱匿");
+    assert.equal(await value("skill-隱匿"), "+5", "proficiency applies immediately");
+    await tick("exp-隱匿");
+    assert.deepEqual(await values(["prof-隱匿", "exp-隱匿", "skill-隱匿"]), [false, true, "+7"], "expertise applies immediately");
+    await tick("prof-察覺");
+    assert.deepEqual(await values(["skill-察覺", "passive-perception"]), ["+3", "13"], "perception rank updates the passive value");
+    await tick("prof-wis");
+    assert.deepEqual(await values(["prof-wis", "save-wis"]), [true, "+3"], "manual save ticks count");
+    await page.evaluate(() => fillSaves());
+    assert.deepEqual(await values(["prof-wis", "prof-dex", "save-wis"]), [true, true, "+3"], "calculating no longer clears save ticks");
+
+    // Changing class swaps only the class saves; picking no class changes nothing.
+    await set("class", "fighter");
+    assert.deepEqual(await values(["prof-str", "prof-con", "prof-dex", "prof-int", "prof-wis"]), [true, true, false, false, true], "class swap keeps the manual tick");
+    assert.deepEqual(await values(["save-str", "save-dex", "save-wis"]), ["+4", "+3", "+3"]);
+    await set("class", "");
+    assert.deepEqual(await values(["prof-str", "prof-con", "prof-wis"]), [true, true, true], "no class leaves save ticks alone");
+    await set("class", "cleric");
+    assert.deepEqual(await values(["prof-str", "prof-con", "prof-wis", "prof-cha"]), [false, false, true, true], "the previous class is still removed after a blank pick");
+
+    // Class options with a check bonus apply immediately, and saved data holds the new numbers.
+    assert.equal(await value("skill-宗教"), "+1");
+    await page.evaluate(() => document.getElementById("cleric-trickster").click());
+    assert.equal(await value("skill-宗教"), "+2", "grants.checkBonus applies immediately");
+    assert.equal((await page.evaluate(() => collectStateObject()))["skill-宗教"], "+2", "collected state holds the new number");
+    await page.waitForFunction(() => JSON.parse(dndStorage.getItem(AUTO_SAVE_KEY) || "{}")["skill-宗教"] === "+2");
+    const savedState = await page.evaluate(() => JSON.parse(dndStorage.getItem(AUTO_SAVE_KEY)));
+    assert.equal(savedState[MARK], true, "autosave carries the marker");
+    assert.equal((await page.evaluate(() => collectShareState()))[MARK], true, "share data carries the marker");
+
+    // Tabletop mode shows new numbers on the next frame.
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("skills"); });
+    await set("dex", "20", "input");
+    await page.waitForFunction(() => Array.from(document.querySelectorAll("#tabletop-skill-values .tabletop-skill-value"))
+      .some(item => item.textContent.includes("體操") && item.querySelector(".tabletop-skill-value__value").textContent === "+5"));
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
+
+    // Parsing accepts full-width digits and signs without reading text as zero.
+    assert.deepEqual(await page.evaluate(() => [
+      parseSignedValue("＋３"), parseSignedValue("－３"), parseSignedValue("−３"), parseSignedValue("１２"), parseSignedValue("abc"),
+      parseExactSignedValue("＋３"), parseExactSignedValue("abc"), parseExactSignedValue(""), normalizeSignedValueText("＋１２"), normalizeSignedValueText("－　３"), normalizeSignedValueText("abc")
+    ]), [3, -3, -3, 12, 0, 3, null, null, "+12", "-3", "abc"]);
+
+    // Every load path judges old data the same way, and only after everything is restored.
+    const base = { class: "rogue", level: "4", race: "human", background: "soldier", str: "10", dex: "16", con: "14", int: "12", wis: "13", cha: "8",
+      [TOGGLE]: true, "prof-dex": true, "prof-int": true, "prof-隱匿": true, "prof-察覺": true };
+    const stats = () => page.evaluate(toggle => ({
+      auto: document.getElementById(toggle).checked,
+      readOnly: document.getElementById("skill-隱匿").readOnly,
+      buttons: Array.from(document.querySelectorAll("#tab-skills .skill-calc-button"), button => button.hidden),
+      keyStats: ["hp-display", "ac-display", "initiative-input", "speed-display"].map(id => document.getElementById(id).value)
+    }), TOGGLE);
+    const cases = [
+      ["blank", base, { auto: true, values: { "skill-隱匿": "+5", "save-dex": "+5", "skill-運動": "0", "passive-perception": "13" } }],
+      ["never calculated", { ...base, "prof-dex": false, "prof-int": false }, { auto: true, values: { "prof-dex": true, "prof-int": true, "save-dex": "+5" } }],
+      ["matches the new calculation", { ...base, "skill-隱匿": "+5", "save-dex": "+5", "skill-運動": "0" }, { auto: true, values: { "skill-隱匿": "+5", "save-dex": "+5", "skill-歷史": "+1" } }],
+      ["matches the old calculation", { ...base, cha: "", "skill-欺瞞": "0", "save-cha": "0", "prof-wis": true, "save-wis": "+1" }, { auto: true, values: { "skill-欺瞞": "", "save-cha": "", "save-wis": "+3" } }],
+      ["differs", { ...base, "skill-隱匿": "+9", "save-dex": "+5", "skill-歷史": "+1" }, { auto: false, values: { "skill-隱匿": "+9", "save-dex": "+5", "skill-歷史": "+1", "skill-運動": "", "save-int": "" } }],
+      ["text is not zero", { ...base, "skill-運動": "abc" }, { auto: false, values: { "skill-運動": "abc" } }],
+      ["full-width matches", { ...base, "skill-隱匿": "＋５", "save-str": "０", "skill-察覺": "＋３" }, { auto: true, values: { "skill-隱匿": "+5", "save-str": "0", "passive-perception": "13" } }],
+      ["marked data recalculates", { ...base, [MARK]: true, "skill-隱匿": "+9" }, { auto: true, values: { "skill-隱匿": "+5" } }],
+      ["manual stays manual", { ...base, [TOGGLE]: false, "skill-隱匿": "+9", "skill-運動": "＋７" }, { auto: false, values: { "skill-隱匿": "+9", "skill-運動": "+7" } }]
+    ];
+    const loaders = {
+      autosave: async state => {
+        await page.evaluate(state => { cancelPendingAutosaveForClear(); dndStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(state)); }, state);
+        await page.goto(url);
+        await ready();
+      },
+      json: async state => {
+        await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
+        await Promise.all([page.waitForEvent("load"), page.locator("#import-json-file").setInputFiles({ name: "old.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(state)) })]);
+        await page.waitForFunction(() => window.derivedChecksReady !== false && typeof autosaveRestoreBlocked !== "undefined" && !autosaveRestoreBlocked && !sessionStorage.getItem("dnd.pendingJsonImport.v1") && document.readyState === "complete");
+        await page.goto(url);
+        await ready();
+      },
+      share: async state => {
+        const hash = await page.evaluate(state => encodeStateToHash(state), { ...state, __shareStateVersion: 1 });
+        await page.goto("about:blank");
+        await page.goto(url + hash);
+        await ready();
+      }
+    };
+    for (const [path, load] of Object.entries(loaders)) {
+      await page.goto(url);
+      await ready();
+      for (const [name, state, expected] of cases) {
+        await load(state);
+        const stat = await stats();
+        const label = `${path}: ${name}`;
+        assert.equal(stat.auto, expected.auto, `${label} switch`);
+        assert.equal(stat.readOnly, expected.auto, `${label} read-only`);
+        assert.deepEqual(stat.buttons, [expected.auto, expected.auto], `${label} fill buttons`);
+        assert.equal(stat.keyStats.every(Boolean), true, `${label} key stats are not left blank`);
+        for (const [id, text] of Object.entries(expected.values)) assert.equal(await value(id), text, `${label} ${id}`);
+        assert.equal((await page.evaluate(() => collectStateObject()))[MARK], true, `${label} marks the next save`);
+        if (path === "share") await page.goto(url);
+      }
+    }
+
+    // Turned-off data stays exactly as it was across another save and load.
+    await loaders.autosave({ ...base, "skill-隱匿": "+9" });
+    assert.equal(await page.evaluate(() => saveAllFields()), true);
+    await page.goto(url);
+    await ready();
+    assert.deepEqual([await value(TOGGLE), await value("skill-隱匿"), await value("skill-歷史")], [false, "+9", ""], "manual data survives saving and reloading");
+
+    // Manual numbers are never overwritten, and full-width input becomes half-width.
+    await set("dex", "20", "input");
+    assert.equal(await value("skill-隱匿"), "+9", "manual numbers ignore source changes");
+    await page.evaluate(() => showTab("skills"));
+    await page.locator("#skill-歷史").fill("＋１２");
+    await page.locator("#skill-歷史").press("Tab");
+    assert.equal(await value("skill-歷史"), "+12", "manual input normalizes to half-width");
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("skills"); });
+    await page.waitForFunction(() => Array.from(document.querySelectorAll("#tabletop-skill-values .tabletop-skill-value"))
+      .some(item => item.textContent.includes("歷史") && item.querySelector(".tabletop-skill-value__value").textContent === "+12"));
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
+
+    // Turning automatic back on asks only when a number would change; cancelling stays manual.
+    await page.evaluate(toggle => document.getElementById(toggle).click(), TOGGLE);
+    await page.getByRole("button", { name: "繼續手動" }).click();
+    assert.deepEqual([await value(TOGGLE), await value("skill-隱匿"), await page.locator("#calculate-skills-button").isVisible()], [false, "+9", true], "cancel keeps manual mode");
+    await page.evaluate(() => document.getElementById("calculate-saves-button").click());
+    assert.equal(await value("save-dex"), "+7", "the manual fill button calculates saves");
+    assert.equal(await value("skill-隱匿"), "+9", "filling saves leaves skills alone");
+    await page.evaluate(toggle => document.getElementById(toggle).click(), TOGGLE);
+    await page.getByRole("button", { name: "開啟並更新" }).click();
+    await page.waitForFunction(toggle => document.getElementById(toggle).checked, TOGGLE);
+    await page.waitForFunction(() => document.getElementById("skill-隱匿").readOnly && document.getElementById("skill-隱匿").value === "+7");
+    assert.equal(await page.locator("#calculate-skills-button").isVisible(), false);
+    await page.evaluate(toggle => document.getElementById(toggle).click(), TOGGLE);
+    assert.deepEqual([await value(TOGGLE), await value("skill-隱匿")], [false, "+7"], "turning off keeps the numbers");
+    await page.evaluate(toggle => document.getElementById(toggle).click(), TOGGLE);
+    assert.equal(await page.locator(".app-dialog__actions").isVisible().catch(() => false), false, "identical numbers do not ask");
+    assert.equal(await value(TOGGLE), true);
+
+    // The minimum skill count reminder only runs once background, class and level are chosen.
+    const COUNT = "技能熟練未滿 4 項。";
+    await loaders.autosave({ str: "10", dex: "10", con: "10", int: "10", wis: "10", cha: "10", [TOGGLE]: true, class: "fighter", level: "1" });
+    assert.equal((await reminders()).includes(COUNT), false, "no background: no count reminder");
+    await set("background", "soldier");
+    assert.equal((await reminders()).includes(COUNT), true, "chosen background with no skills reminds");
+    assert.equal(await page.evaluate(() => buildPdfPrecheckMessages().find(entry => entry.message === "技能熟練未滿 4 項。").selector), "#skill-bonus-section");
+    await set("level", "");
+    assert.equal((await reminders()).includes(COUNT), false, "no level: no count reminder");
+    await set("level", "1");
+    for (const skill of ["運動", "察覺", "威嚇"]) await tick(`prof-${skill}`);
+    assert.equal((await reminders()).includes(COUNT), true, "three skills remind");
+    await tick("prof-求生");
+    assert.equal((await reminders()).includes(COUNT), false, "four skills pass");
+    await tick("prof-求生");
+    await set("class", "rogue");
+    await tick("exp-隱匿");
+    assert.equal((await reminders()).includes(COUNT), false, "expertise counts as a skill");
+
+    // Lost expertise falls back to proficiency; returning to the class restores it.
+    await loaders.autosave({ ...base, [MARK]: true, class: "wizard", "prof-隱匿": false, "prof-察覺": false, "prof-dex": false, "prof-int": false });
+    await chooseAsPlayer("class", "rogue");
+    await tick("exp-隱匿");
+    assert.equal(await value("skill-隱匿"), "+7");
+    await chooseAsPlayer("class", "fighter");
+    assert.deepEqual(await values(["exp-隱匿", "prof-隱匿", "skill-隱匿"]), [false, true, "+5"], "lost expertise keeps proficiency");
+    await chooseAsPlayer("class", "bard");
+    await tick("exp-歷史");
+    await chooseAsPlayer("class", "fighter");
+    assert.deepEqual(await values(["exp-歷史", "prof-歷史"]), [false, true]);
+    await chooseAsPlayer("class", "rogue");
+    assert.deepEqual(await values(["exp-隱匿", "prof-隱匿", "exp-歷史", "prof-歷史", "skill-隱匿"]), [true, false, false, true, "+7"], "each class restores its own expertise");
+    await chooseAsPlayer("class", "fighter");
+    await chooseAsPlayer("class", "bard");
+    assert.deepEqual(await values(["exp-歷史", "prof-歷史"]), [true, false], "the other class keeps its own expertise");
+    assert.equal(await page.evaluate(key => (localStorage.getItem(key) || "").includes("expertise"), MEMORY), false, "expertise stays out of LocalStorage");
+
+    // Short-term memory disappears on reload and when another character loads.
+    await chooseAsPlayer("class", "rogue");
+    await tick("exp-巧手");
+    await chooseAsPlayer("class", "fighter");
+    assert.equal(await page.evaluate(() => saveAllFields()), true);
+    await page.goto(url);
+    await ready();
+    await chooseAsPlayer("class", "rogue");
+    assert.deepEqual(await values(["exp-巧手", "prof-巧手"]), [false, true], "reloading forgets expertise");
+    await tick("exp-巧手");
+    await chooseAsPlayer("class", "fighter");
+    await page.evaluate(() => applyStateObject({ class: "fighter", level: "1", "prof-巧手": false, "exp-巧手": false }));
+    await chooseAsPlayer("class", "rogue");
+    assert.deepEqual(await values(["exp-巧手", "prof-巧手"]), [false, false], "loading another character forgets expertise");
+    await tick("exp-巧手");
+    await chooseAsPlayer("class", "fighter");
+    await page.evaluate(() => ClassOptionMemory.clearMemories());
+    await chooseAsPlayer("class", "rogue");
+    assert.equal(await value("exp-巧手"), false, "clearing memories forgets expertise");
+
+    // Old persisted expertise lists are ignored.
+    await page.evaluate(key => { cancelPendingAutosaveForClear(); localStorage.setItem(key, JSON.stringify({ version: 1, classes: { rogue: { level: 4, values: {}, lists: { expertise: ["運動"] } } } })); }, MEMORY);
+    await page.goto(url);
+    await ready();
+    await chooseAsPlayer("class", "fighter");
+    await chooseAsPlayer("class", "rogue");
+    assert.equal(await value("exp-運動"), false, "persisted expertise is ignored");
+
+    // A feat's expertise also falls back when the feat goes away.
+    await page.evaluate(() => applyStateObject({ class: "fighter", level: "4", "manual-feat-management": true, __managedFeatRows: [{ value: "尋物好手" }], "prof-察覺": false, "exp-察覺": true }));
+    assert.deepEqual(await values(["exp-察覺", "prof-察覺"]), [true, false], "loading keeps feat expertise");
+    await page.evaluate(() => {
+      const select = Array.from(document.querySelectorAll("#feats-area select")).find(control => control.value === "尋物好手");
+      select.value = "";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert.deepEqual(await values(["exp-察覺", "prof-察覺"]), [false, true], "removing the feat falls back to proficiency");
+
+    console.log("Auto-calculated checks: triggers, blank abilities, save ticks, marker, legacy autosave/JSON/share, manual switch, full-width input, minimum skill reminder and expertise fallback and memory passed.");
+  } finally { await page.close(); }
+}
+
 async function verifyClassOptionMemory(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
   const MEMORY = "dnd.classOptionMemories.v1";
@@ -3901,7 +4192,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }

@@ -1846,7 +1846,6 @@ function collectClassOptionSnapshot(className, level) {
   if (className === "sorcerer" && metamagicInputs.some(input => !input.disabled)) lists.metamagic = getCheckedMetamagicNames();
   document.querySelectorAll("#extra-language-container select:not(:disabled)").forEach(select => put(select.id, select.value));
   getClassOptionToolSelects().forEach(select => put(select.id, select.value));
-  lists.expertise = Array.from(document.querySelectorAll(".circle-checkbox:checked"), checkbox => checkbox.dataset.skillRank).filter(Boolean);
   return { level, values, lists };
 }
 
@@ -1891,6 +1890,7 @@ function beginClassOptionTransition(event) {
   if (from.className === to.className && from.level === to.level) return;
   if (from.className) {
     window.ClassOptionMemory.remember(from.className, collectClassOptionSnapshot(from.className, from.level));
+    window.ClassOptionMemory.rememberExpertise(from.className, Array.from(document.querySelectorAll(".circle-checkbox:checked"), checkbox => checkbox.dataset.skillRank).filter(Boolean));
     if (from.className !== to.className) clearLeftClassOptionResidue(from.className);
   }
   classOptionTransition = { from, to };
@@ -1982,18 +1982,19 @@ function restoreClassOptionMemory(className, record) {
     const value = values[select.id];
     if (has(select.id) && value && Array.from(select.options).some(option => option.value === value && !option.disabled)) select.value = value;
   });
-  // 專精只補回、不取消：無法區分專精來源，玩家目前已勾的專精一律保留。
   updateExpertiseVisibility();
-  let expertiseChanged = false;
-  (lists.expertise || []).forEach(skill => {
+}
+
+// 切回職業時補回它的專精（短暫記憶）。只補回、不取消：無法區分專精來源，玩家目前已勾的專精一律保留。
+function restoreClassExpertise(skills) {
+  updateExpertiseVisibility();
+  skills.forEach(skill => {
     const expertise = Array.from(document.querySelectorAll(".circle-checkbox")).find(checkbox => checkbox.dataset.skillRank === skill);
     if (!expertise || expertise.disabled || expertise.checked) return;
     expertise.checked = true;
     const proficiency = document.getElementById(`prof-${skill}`);
     if (proficiency) proficiency.checked = false;
-    expertiseChanged = true;
   });
-  if (expertiseChanged) fillSkills();
 }
 
 // 在職業／等級 handler 的最後呼叫：所有依職業重建的控制項都已就緒。
@@ -2004,12 +2005,20 @@ function finishClassOptionTransition() {
   if (!transition || !canUseClassOptionMemory()) return;
   const { className } = transition.to;
   const record = className ? window.ClassOptionMemory.get(className) : null;
-  if (!record) return;
+  const expertise = className ? window.ClassOptionMemory.getExpertise(className) : [];
+  if (!record) {
+    if (!expertise.length) return;
+    restoreClassExpertise(expertise);
+    refreshDerivedChecks();
+    scheduleStructuralSaveAllFields();
+    return;
+  }
   const previousAutosaveSuspended = autosaveSuspended;
   autosaveSuspended = true;
   try {
     withCharacterUpdateBatch(() => {
       restoreClassOptionMemory(className, record);
+      restoreClassExpertise(expertise);
       syncMissionCantripChoices();
       syncClassPickChoices();
       window.updateWeaponMasteryBadges?.();
@@ -2028,6 +2037,7 @@ function finishClassOptionTransition() {
   } finally {
     autosaveSuspended = previousAutosaveSuspended;
   }
+  refreshDerivedChecks();
   updateClassFeatureChoiceReminder();
   scheduleStructuralSaveAllFields();
 }

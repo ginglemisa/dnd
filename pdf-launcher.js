@@ -164,6 +164,15 @@ function buildPdfPrecheckMessages() {
     focusSelector: '#tab-skills .save-pair input[type="checkbox"]:not(:checked)'
   });
 
+  // 最低限度的數量確認：每個角色都至少有 4 項技能熟練。背景、職業、等級都選好才檢查。
+  const hasSkillSources = ["background", "class", "level"].every(id => (document.getElementById(id)?.value || "").trim());
+  const rankedSkills = new Set(Array.from(document.querySelectorAll('#tab-skills .skill-grid input[data-skill-rank]:checked'), input => input.dataset.skillRank));
+  if (hasSkillSources && rankedSkills.size < 4) reminders.push({
+    message: "技能熟練未滿 4 項。",
+    tab: "skills",
+    selector: "#skill-bonus-section"
+  });
+
   const firstEmptySkillInput = Array.from(document.querySelectorAll('#tab-skills .skill-grid input[id^="skill-"]'))
     .find((input) => (input.value || "").trim() === "");
   if (firstEmptySkillInput) reminders.push({

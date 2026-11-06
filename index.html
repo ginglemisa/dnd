@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261106-skills-layout">
+  <link rel="stylesheet" href="styles.css?v=20261106-skills-auto">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261105-quick-build-guidance" defer></script>
@@ -97,7 +97,7 @@
   <script src="spell-list.js?v=20261104-spell-srd-classes" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
-  <script src="character-rules.js?v=20261105-feat-categories" defer></script>
+  <script src="character-rules.js?v=20261106-skills-auto" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261105-list-separator" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
@@ -109,10 +109,10 @@
   <script src="tabletop-spells.js?v=20261104-weapon-damage-type" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261104-inventory" defer></script>
-  <script src="quick-build.js?v=20261105-quick-build-guidance" defer></script>
+  <script src="quick-build.js?v=20261106-skills-auto" defer></script>
   <script src="spellbook.js?v=20261104-familiar-references" defer></script>
   <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
-  <script src="class-option-memory.js?v=20261024-class-split" defer></script>
+  <script src="class-option-memory.js?v=20261106-skills-auto" defer></script>
   <script src="deity-info.js" defer></script>
 
 </head>
@@ -152,8 +152,8 @@
       <div class="utility-menu__divider" role="separator"></div>
       <fieldset class="utility-menu__settings" aria-label="操作設定">
         <div class="utility-menu__settings-row">
-          <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度與被動察覺；關閉後可自行輸入。">
-            <span>自動計算HP/AC/先攻</span>
+          <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度、被動察覺、技能與豁免；關閉後可自行輸入。">
+            <span>自動計算數值</span>
             <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
@@ -913,8 +913,7 @@
 
 <div id="tab-skills" class="tab-content" role="tabpanel" aria-label="技能頁" hidden>
   <div class="section" id="save-section">
-    <div class="skill-section-heading"><h3>屬性豁免</h3><button type="button" class="skill-calc-button" onclick="fillSaves()">計算屬性豁免</button></div>
-    <p class="skill-action-hint">改了屬性、職業或等級，請重新計算。</p>
+    <div class="skill-section-heading"><h3>屬性豁免</h3><button type="button" id="calculate-saves-button" class="skill-calc-button" onclick="fillSaves()" hidden>填入計算值</button></div>
   <div class="save-grid">
     <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="save-stack"><span class="save-abbr">STR</span><span class="save-full">力量</span></span></label><input type="text" inputmode="numeric" id="save-str"></div>
     <div class="save-pair"><label class="save-name" for="prof-dex"><input type="checkbox" id="prof-dex"><span class="save-stack"><span class="save-abbr">DEX</span><span class="save-full">敏捷</span></span></label><input type="text" inputmode="numeric" id="save-dex"></div>
@@ -930,9 +929,8 @@
   <div class="skill-section-heading">
     <h3>技能</h3>
     <p class="skill-legend" aria-label="技能熟練圖例"><span>○ 未熟練</span><span>● 熟練</span><span data-expertise-legend>◆ 專精</span></p>
-    <button type="button" id="calculate-skills-button" class="skill-calc-button" onclick="fillSkills()">計算技能加值</button>
+    <button type="button" id="calculate-skills-button" class="skill-calc-button" onclick="fillSkills()" hidden>填入計算值</button>
   </div>
-  <p class="skill-action-hint">改了屬性、等級或熟練，請重新計算。</p>
   <div class="skill-grid">
     <div class="skill-stack skill-stack--outer">
       <div class="skill-stack">
@@ -1395,7 +1393,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261105-feat-categories"></script>
   <script src="spell-sources.js?v=20261105-feat-categories"></script>
-  <script src="class-features-ui.js?v=20261104-feat-sets"></script>
+  <script src="class-features-ui.js?v=20261106-skills-auto"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -1502,15 +1500,50 @@ function syncAutomaticKeyStatsMode({ refresh = true } = {}) {
     input.readOnly = automatic;
     input.setAttribute("aria-readonly", String(automatic));
   });
+  document.querySelectorAll(DERIVED_CHECK_INPUT_SELECTOR).forEach((input) => {
+    input.readOnly = automatic;
+    input.setAttribute("aria-readonly", String(automatic));
+    if (automatic) input.tabIndex = -1;
+    else input.removeAttribute("tabindex");
+  });
+  document.querySelectorAll("#tab-skills .skill-calc-button").forEach((button) => { button.hidden = automatic; });
   document.getElementById("tab-basic")?.classList.toggle("manual-key-stats", !automatic);
+  document.getElementById("tab-skills")?.classList.toggle("manual-key-stats", !automatic);
   if (automatic && refresh) refreshAutomaticKeyStats();
+}
+
+// 由關轉開：只有會改到不同的數字才確認；取消就維持關閉。
+async function handleAutomaticKeyStatsToggle(event) {
+  const toggle = event.currentTarget;
+  if (toggle.checked) {
+    const changes = countDerivedCheckChanges();
+    if (changes) {
+      toggle.checked = false;
+      const confirmed = await window.AppDialog.requestDecision({
+        title: "開啟自動計算",
+        message: `有 ${changes} 項技能或豁免的數字和計算結果不同，開啟後會改成計算結果。`,
+        confirmLabel: "開啟並更新", cancelLabel: "繼續手動", trigger: toggle
+      });
+      if (!confirmed) return;
+      toggle.checked = true;
+      scheduleSaveAllFields();
+    }
+    writeDerivedChecks();
+  }
+  syncAutomaticKeyStatsMode();
+  if (toggle.checked) window.TabletopMode?.refresh?.();
 }
 
 function setupAutomaticKeyStats() {
   const toggle = document.getElementById("auto-calculate-key-stats-toggle");
   if (!toggle) return;
+  derivedChecksReady = true;
+  finishDerivedChecksLoad(pendingDerivedChecksLoad);
+  pendingDerivedChecksLoad = null;
   syncAutomaticKeyStatsMode();
-  toggle.addEventListener("change", () => syncAutomaticKeyStatsMode());
+  toggle.addEventListener("change", handleAutomaticKeyStatsToggle);
+  document.addEventListener("input", handleDerivedCheckSourceEvent);
+  document.addEventListener("change", handleDerivedCheckSourceEvent);
   bindEventById("ac-display", "input", () => {
     if (!isAutomaticKeyStatsEnabled()) updateEquipmentLoadoutSummary();
   });
@@ -1584,7 +1617,7 @@ function bindCoreCharacterEvents() {
   bindEventById("cha", "input", updateACDisplay);
   ["str", "dex", "con", "int", "wis", "cha"].forEach(id => bindEventById(id, "change", syncDerivedFeatRows));
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", event => {beginClassOptionTransition(event);syncLevelOptions();syncSubclassOptions();updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncClassToolRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();finishClassOptionTransition();});
+  bindEventById("class", "change", event => {beginClassOptionTransition(event);syncLevelOptions();syncSubclassOptions();updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncClassToolRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();syncClassSaveProficiencies();finishClassOptionTransition();});
   bindEventById("level", "change", event => {beginClassOptionTransition(event);syncHitDiceCountToLevel();syncProficiencyUseChecks();updateAutomaticInitiative();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExtraLanguageFields();finishClassOptionTransition();});
   // 子職決定職業詳情、動作、資源、衍生法術與數值；與職業／等級同一套重算。
   bindEventById("subclass", "change", applySubclassChange);
@@ -2102,7 +2135,8 @@ function classHasExpertisePick(classValue) {
   return (window.getClassFeatureRules?.(classValue) || []).some(feature => (feature.picks || []).some(pick => pick.kind === "expertise"));
 }
 
-function updateExpertiseVisibility() {
+// 專精失效（換職業、移除專長）時退回熟練，不會變成未熟練。載入途中不改勾選，還原完成後才判斷一次。
+function updateExpertiseVisibility({ refresh = true } = {}) {
   const classValue = document.getElementById("class")?.value || "";
   const classGrantsExpertise = classHasExpertisePick(classValue);
   const hasSearchExpertFeat = hasSelectedFeat("尋物好手");
@@ -2111,8 +2145,10 @@ function updateExpertiseVisibility() {
   document.querySelectorAll(".circle-checkbox").forEach(checkbox => {
     const canUseExpertise = classGrantsExpertise
       || (hasSearchExpertFeat && SEARCH_EXPERT_SKILLS.has(checkbox.dataset.skillRank));
-    if (!canUseExpertise && checkbox.checked) {
+    if (!canUseExpertise && checkbox.checked && !characterStateLoadDepth) {
       checkbox.checked = false;
+      const proficiency = document.getElementById(`prof-${checkbox.dataset.skillRank}`);
+      if (proficiency) proficiency.checked = true;
       clearedUnavailableExpertise = true;
     }
     checkbox.disabled = !canUseExpertise;
@@ -2121,7 +2157,7 @@ function updateExpertiseVisibility() {
     if (rankTarget) rankTarget.hidden = !canUseExpertise;
   });
 
-  if (clearedUnavailableExpertise && typeof fillSkills === "function") fillSkills();
+  if (clearedUnavailableExpertise && refresh) refreshDerivedChecks();
 }
 
 
@@ -2202,6 +2238,15 @@ let spellDisplayPending = false;
 let pickedSpellsPending = false;
 let handAttacksPending = false;
 let handAttacksForcePending = false;
+// 技能與豁免的自動計算：角色資料還原中或初始化完成前都不重算，批次內延後到 flush。
+const DERIVED_CHECK_INPUT_SELECTOR = '#tab-skills .save-pair input[type="text"], #tab-skills .skill-cell input[type="text"]';
+const DERIVED_CHECKS_STATE_KEY = "__autoCalculatedChecks";
+let characterStateLoadDepth = 0;
+let derivedChecksReady = false;
+let derivedChecksPending = false;
+let derivedChecksStateKnown = false;
+let pendingDerivedChecksLoad = null;
+let saveProficiencyClass = "";
 function flushCharacterUpdates() {
   const previousDepth = characterUpdateDepth;
   try {
@@ -2221,6 +2266,10 @@ function flushCharacterUpdates() {
       const force = handAttacksForcePending;
       handAttacksPending = handAttacksForcePending = false;
       renderHandAttacks({ force });
+    }
+    if (derivedChecksPending) {
+      derivedChecksPending = false;
+      refreshDerivedChecks();
     }
   } finally {
     characterUpdateDepth = previousDepth;
@@ -3109,21 +3158,60 @@ function updateSpellCastingStatsVisibility() {
   window.TabletopMode?.syncSpellPanelAvailability?.();
 }
 
+const SAVE_ABILITY_IDS = Object.freeze(["str", "dex", "con", "int", "wis", "cha"]);
+
+function isAbilityScoreBlank(ability) {
+  return !String(document.getElementById(ability)?.value ?? "").trim();
+}
+
+function writeDerivedCheckValue(input, value) {
+  if (input && input.value !== value) input.value = value;
+}
+
+// 守護靈氣的豁免加值只在跑團模式顯示（失能時移除），角色卡保留一般數值。
+function getSaveTotal(ability, proficient) {
+  return getModifier(ability) + (proficient ? getProficiencyBonus() : 0);
+}
+
+function getNextSaveText(ability) {
+  if (isAbilityScoreBlank(ability)) return "";
+  return formatSignedValue(getSaveTotal(ability, document.getElementById("prof-" + ability)?.checked === true));
+}
+
+function writeSaveValues() {
+  SAVE_ABILITY_IDS.forEach(ability => writeDerivedCheckValue(document.getElementById("save-" + ability), getNextSaveText(ability)));
+}
+
 function fillSaves() {
-  const pb = getProficiencyBonus();
-  const abilities = ["str", "dex", "con", "int", "wis", "cha"];
+  writeSaveValues();
+}
+
+// 目前職業的豁免熟練：快速創角與從未計算過的舊存檔用，只勾這個職業的項目。
+function applyClassSaveProficiencies() {
   const selectedClass = document.getElementById("class")?.value || "";
-  const profSaves = new Set(getClassSaveProficiencies(selectedClass));
-
-  // 守護靈氣的豁免加值只在跑團模式顯示（失能時移除），角色卡保留一般數值。
-  abilities.forEach(ab => {
-    const profCheckbox = document.getElementById("prof-" + ab);
-    if (profCheckbox) profCheckbox.checked = profSaves.has(ab);
-
-    const mod = getModifier(ab);
-    const total = mod + (profSaves.has(ab) ? pb : 0);
-    document.getElementById("save-" + ab).value = formatSignedValue(total);
+  if (!selectedClass) return;
+  const proficient = new Set(getClassSaveProficiencies(selectedClass));
+  SAVE_ABILITY_IDS.forEach(ability => {
+    const checkbox = document.getElementById("prof-" + ability);
+    if (checkbox) checkbox.checked = proficient.has(ability);
   });
+  saveProficiencyClass = selectedClass;
+}
+
+// 換職業：移除舊職業給的豁免熟練、勾上新職業的，玩家另外勾的保留；選回空白職業時不動。
+function syncClassSaveProficiencies() {
+  if (!derivedChecksReady || characterStateLoadDepth) return;
+  const selectedClass = document.getElementById("class")?.value || "";
+  if (!selectedClass || selectedClass === saveProficiencyClass) return;
+  getClassSaveProficiencies(saveProficiencyClass).forEach(ability => {
+    const checkbox = document.getElementById("prof-" + ability);
+    if (checkbox) checkbox.checked = false;
+  });
+  getClassSaveProficiencies(selectedClass).forEach(ability => {
+    const checkbox = document.getElementById("prof-" + ability);
+    if (checkbox) checkbox.checked = true;
+  });
+  saveProficiencyClass = selectedClass;
 }
 
 function enforceSkillRankExclusivity(changedInput) {
@@ -3186,8 +3274,9 @@ function updateAutomaticInitiative() {
   initiative.value = formatSignedValue(dexMod + (hasAlertFeat ? getProficiencyBonus() : jackOfAllTradesBonus));
 }
 
-function fillSkills() {
+function getSkillTotals() {
   const skillMap = CharacterSkillAbilities;
+  const totals = new Map();
 
   const selectedClass = document.getElementById("class")?.value || "";
   const level = parseInt(document.getElementById("level")?.value || "1", 10);
@@ -3213,15 +3302,119 @@ function fillSkills() {
     const jackOfAllTradesBonus = getJackOfAllTradesBonus(
       selectedClass, level, profInput.checked || expInput.checked
     );
-    const total = mod + skillProficiencyBonus + featureBonus + jackOfAllTradesBonus;
-    input.value = formatSignedValue(total);
+    totals.set(skill, mod + skillProficiencyBonus + featureBonus + jackOfAllTradesBonus);
   }
+  return totals;
+}
 
+function getNextSkillTexts() {
+  return Array.from(getSkillTotals(), ([skill, total]) => [
+    skill,
+    isAbilityScoreBlank(CharacterSkillAbilities[skill]) ? "" : formatSignedValue(total)
+  ]);
+}
+
+function writeSkillValues() {
+  getNextSkillTexts().forEach(([skill, text]) => writeDerivedCheckValue(document.getElementById("skill-" + skill), text));
+}
+
+function fillSkills() {
+  writeSkillValues();
   updatePassivePerceptionDisplay();
   updateAutomaticInitiative();
 }
+
+function writeDerivedChecks() {
+  writeSaveValues();
+  writeSkillValues();
+  updatePassivePerceptionDisplay();
+}
+
+// 自動計算的單一入口：只寫值、不派送事件，值沒變就不寫。
+function refreshDerivedChecks() {
+  if (!derivedChecksReady || characterStateLoadDepth || !isAutomaticKeyStatsEnabled()) return;
+  if (characterUpdateDepth) {
+    derivedChecksPending = true;
+    return;
+  }
+  writeDerivedChecks();
+}
+
+// 玩家或程式改動任何角色欄位都重算一次；數值框本身只在手動輸入完成時轉成半形。
+function handleDerivedCheckSourceEvent(event) {
+  const field = event.target;
+  if (!field?.matches?.("input[id], select[id]") || field.type === "file") return;
+  if (field.matches(DERIVED_CHECK_INPUT_SELECTOR)) {
+    if (event.type === "change") normalizeDerivedCheckInput(field);
+    return;
+  }
+  // 開關本身由 handleAutomaticKeyStatsToggle 處理：先確認才能覆寫手動數字。
+  if (field.id === "auto-calculate-key-stats-toggle" || field.dataset.stateTransient === "true"
+    || field.closest('form[role="search"], .money-section, .money-modal')) return;
+  refreshDerivedChecks();
+}
+
+function normalizeDerivedCheckInput(input) {
+  const normalized = normalizeSignedValueText(input.value);
+  if (input.value !== normalized) input.value = normalized;
+}
+
+// 由關轉開時會改到幾個數字：空白補上不算改動，非數字內容算不同。
+function countDerivedCheckChanges() {
+  const nextTexts = [
+    ...SAVE_ABILITY_IDS.map(ability => ["save-" + ability, getNextSaveText(ability)]),
+    ...getNextSkillTexts().map(([skill, text]) => ["skill-" + skill, text])
+  ];
+  return nextTexts.filter(([id, text]) => {
+    const current = String(document.getElementById(id)?.value ?? "").trim();
+    return current && parseExactSignedValue(current) !== (text ? parseExactSignedValue(text) : null);
+  }).length;
+}
+
+function matchesDerivedCheck(input, acceptedTotals) {
+  const current = String(input?.value ?? "").trim();
+  return !current || acceptedTotals.includes(parseExactSignedValue(current));
+}
+
+// 舊資料的數字是否都算得出來：空白、新算法或舊算法（空白屬性視為 10、豁免熟練由職業決定）都算正確。
+function isLegacyDerivedChecksCurrent() {
+  const classSaves = new Set(getClassSaveProficiencies(document.getElementById("class")?.value || ""));
+  const savesMatch = SAVE_ABILITY_IDS.every(ability => matchesDerivedCheck(document.getElementById("save-" + ability), [
+    getSaveTotal(ability, document.getElementById("prof-" + ability)?.checked === true),
+    getSaveTotal(ability, classSaves.has(ability))
+  ]));
+  if (!savesMatch) return false;
+  return Array.from(getSkillTotals()).every(([skill, total]) => matchesDerivedCheck(document.getElementById("skill-" + skill), [total]));
+}
+
+function hasNeverCalculatedSaves() {
+  return SAVE_ABILITY_IDS.every(ability => !String(document.getElementById("save-" + ability)?.value ?? "").trim()
+    && document.getElementById("prof-" + ability)?.checked !== true);
+}
+
+// 所有載入路徑在資料完全還原後判斷一次：
+// 開關關閉不動；有標記就重算；舊資料的數字都正確就保持自動，只要有一項不同就保留所有數字並關閉開關。
+function finishDerivedChecksLoad(data) {
+  updateExpertiseVisibility({ refresh: false });
+  document.querySelectorAll(DERIVED_CHECK_INPUT_SELECTOR).forEach(normalizeDerivedCheckInput);
+  saveProficiencyClass = document.getElementById("class")?.value || "";
+  if (isAutomaticKeyStatsEnabled()) {
+    if (data?.[DERIVED_CHECKS_STATE_KEY] === true) {
+      writeDerivedChecks();
+    } else if (isLegacyDerivedChecksCurrent()) {
+      if (hasNeverCalculatedSaves()) applyClassSaveProficiencies();
+      writeDerivedChecks();
+    } else {
+      // 舊分享連結可能沒帶 HP、AC 等欄位：關閉前先算好，避免留空。
+      refreshAutomaticKeyStats();
+      document.getElementById("auto-calculate-key-stats-toggle").checked = false;
+    }
+  }
+  derivedChecksStateKnown = true;
+  syncAutomaticKeyStatsMode({ refresh: false });
+}
 </script>
-<script src="pdf-launcher.js?v=20261105-pdf-edit-size"></script>
+<script src="pdf-launcher.js?v=20261106-skills-auto"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -5236,6 +5429,8 @@ function collectStateObject(options = {}) {
     data[el.id] = el.type === "checkbox" ? el.checked : el.value;
   });
   data[CHARACTER_SIZE_STATE_KEY] = characterSize;
+  // 標記存在代表這份資料已經過自動計算判斷；判斷前（例如匯入途中先存檔）不寫，留給下次載入判斷。
+  if (derivedChecksStateKnown) data[DERIVED_CHECKS_STATE_KEY] = true;
   const customBackground = window.CustomBackground?.getState();
   if (customBackground) data.__customBackground = customBackground;
   // 自動與自行管理兩套專長都存：自行管理那套不論模式都寫入；自行管理時另存自動那套來源列的魔法學徒子選項。
@@ -5261,6 +5456,7 @@ function collectStateObject(options = {}) {
 
 const SHARE_STATE_VERSION = 1;
 const SHARE_ALWAYS_INCLUDED_IDS = new Set([
+  DERIVED_CHECKS_STATE_KEY,
   "__pactTomeInvocationSelected",
   "auto-calculate-key-stats-toggle",
   "manual-feat-management",
@@ -5474,7 +5670,19 @@ function restoreInventoryState(data) {
 function applyStateObject(data) {
   if (!data || typeof data !== "object") return;
   validateCharacterState(data);
-  return withCharacterUpdateBatch(() => applyStateObjectNow(data));
+  let result;
+  characterStateLoadDepth += 1;
+  try {
+    result = withCharacterUpdateBatch(() => applyStateObjectNow(data));
+  } finally {
+    characterStateLoadDepth -= 1;
+  }
+  if (derivedChecksReady) finishDerivedChecksLoad(data);
+  else {
+    pendingDerivedChecksLoad = data;
+    if (data[DERIVED_CHECKS_STATE_KEY] === true) derivedChecksStateKnown = true;
+  }
+  return result;
 }
 
 function applyStateObjectNow(data) {
@@ -5487,6 +5695,7 @@ function applyStateObjectNow(data) {
   autosaveSuspended = true;
   const resumeHpTracking = window.twAnalytics?.suspendHpTracking?.();
   let subclassReplaced = false;
+  window.ClassOptionMemory?.clearExpertise?.();
 
   try {
     window.SpellManagement?.beforeApplyState(data);

@@ -605,7 +605,6 @@ label {
 }
 
 .small-text,
-.skill-action-hint,
 .site-footer,
 .site-hero p,
 .quo-text {
@@ -4025,6 +4024,20 @@ button.field-info-hint__dismiss:focus-visible {
   margin: 0;
 }
 
+.skill-calc-button[hidden] {
+  display: none;
+}
+
+/* 自動計算時數值唯讀，看起來是結果而不是輸入欄；關閉開關（.manual-key-stats）才回到輸入框外觀。 */
+#tab-skills:not(.manual-key-stats) .save-pair input[readonly],
+#tab-skills:not(.manual-key-stats) .skill-cell input[readonly] {
+  border-color: var(--border);
+  background: transparent;
+  box-shadow: none;
+  caret-color: transparent;
+  cursor: default;
+}
+
 .skill-calc-button {
   width: auto;
   min-width: 0;
@@ -4052,13 +4065,6 @@ button.field-info-hint__dismiss:focus-visible {
 
 #skill-bonus-section:has(.circle-checkbox:not(:disabled)) .skill-legend [data-expertise-legend] {
   display: inline;
-}
-
-.skill-action-hint {
-  margin: 0;
-  font-size: var(--fs-xs);
-  line-height: 1.45;
-  text-align: left;
 }
 
 .save-grid,

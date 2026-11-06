@@ -1749,7 +1749,7 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
     }
     await page.evaluate(scenario => {
       prepareOnboardingImport();
-      if (scenario === "warning") document.getElementById("calculate-skills-button").remove();
+      if (scenario === "warning") window.fillSkills = null;
       if (scenario === "failure") window.fillSaves = () => { throw new Error("test import failure"); };
       if (scenario === "pdf") window.downloadQuickBuildCompactPdf = async () => { window.pdfRequested = true; };
       if (scenario === "share") window.copyShareUrl = async () => { window.shareRequested = true; };
@@ -1780,6 +1780,16 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       assert.equal(storage.options, null, "quick build clears class option memory");
       assert.equal(Object.hasOwn(storage.spells, "wizard"), false, "quick build clears other-class spell memory");
       assert.deepEqual([storage.backup, storage.notice], ['{"kept":true}', "true"], "legacy backup and notice preference are kept");
+      // Quick build ticks exactly the class saves and fills every calculated save and skill.
+      assert.deepEqual(await page.evaluate(() => {
+        const expected = new Set(getClassSaveProficiencies(document.getElementById("class").value));
+        return {
+          ticks: ["str", "dex", "con", "int", "wis", "cha"].every(id => document.getElementById(`prof-${id}`).checked === expected.has(id)),
+          saves: ["str", "dex", "con", "int", "wis", "cha"].every(id => document.getElementById(`save-${id}`).value === formatSignedValue(getModifier(id) + (expected.has(id) ? getProficiencyBonus() : 0))),
+          skills: Array.from(document.querySelectorAll('#tab-skills .skill-grid input[id^="skill-"]')).every(input => input.value),
+          auto: document.getElementById("auto-calculate-key-stats-toggle").checked
+        };
+      }), { ticks: true, saves: true, skills: true, auto: true }, "quick build leaves correct automatic saves and skills");
       // Temporary quick-build purchases are paid from the starting gold only during the import.
       assert.deepEqual(await page.evaluate(() => ({
         money: ["pp", "gp", "sp", "cp"].map(id => document.getElementById(`money-balance-${id}`).value),
