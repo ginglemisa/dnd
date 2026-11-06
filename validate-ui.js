@@ -298,6 +298,8 @@ async function verifyAppearanceAndLayout(browser, page, url) {
             expertise: !document.querySelector('#exp-運動').closest('label').hidden,
             saveColumns: getComputedStyle(document.querySelector(".save-grid")).gridTemplateColumns.split(" ").length,
             saveOrder: [...document.querySelectorAll(".save-pair input[type=text]")].map(el => el.id.replace("save-", "")),
+            saveNames: [...document.querySelectorAll(".save-name")].map(el => el.textContent),
+            saveTargets: [...document.querySelectorAll(".save-name")].every(el => rect(el).height >= 44 && el.scrollWidth <= el.clientWidth && rect(el.querySelector("input")).width === rect(el).width && rect(el.querySelector("input")).height === rect(el).height),
             saveRows: new Set([...document.querySelectorAll(".save-pair")].map(el => Math.round(rect(el).top))).size,
             groupColumns: [...document.querySelectorAll(".skill-group-heading")].map(el => Math.round(rect(el).left)),
             skillOrder: [...document.querySelectorAll(".skill-grid .skill-tip")].map(el => el.dataset.skill).join(""),
@@ -321,6 +323,8 @@ async function verifyAppearanceAndLayout(browser, page, url) {
         assert.equal(new Set(layout.groupColumns).size, wide ? 4 : 2, "ability groups stay in their columns");
         assert.deepEqual([layout.saveColumns, layout.saveRows], wide ? [6, 1] : [3, 2]);
         assert.deepEqual(layout.saveOrder, ["str", "dex", "con", "int", "wis", "cha"]);
+        assert.deepEqual(layout.saveNames, ["力量", "敏捷", "體質", "智力", "感知", "魅力"], "saves show Chinese names only");
+        assert.equal(layout.saveTargets, true, "the whole save name area is the toggle and nothing overflows");
         assert.equal(layout.skillOrder, "運動體操巧手隱匿奧秘歷史調查自然宗教馴獸洞悉醫藥察覺求生欺瞞威嚇表演遊說", "source order feeds the tabletop list");
         assert.deepEqual(layout.sectionOrder, ["屬性豁免", "技能", "語言", "工具", "技能/工具筆記區"]);
         assert.equal(layout.notes, true, "notes stay open");
@@ -368,6 +372,21 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     assert.deepEqual(await rankState(), [true, false, "●"]);
     await rankControl.click();
     assert.deepEqual(await rankState(), [false, false, "○"]);
+    // 豁免用同一組符號，點名稱區在 ○ 與 ● 之間切換；勾選框仍是唯一狀態，鍵盤和缺項提示都要聚焦得到。
+    const saveState = () => page.evaluate(() => {
+      const box = document.getElementById("prof-wis");
+      return [box.checked, getComputedStyle(box.parentElement.querySelector(".skill-rank-mark"), "::before").content.replaceAll('"', "")];
+    });
+    assert.deepEqual(await saveState(), [false, "○"]);
+    await page.locator('.save-name[for="prof-wis"]').click();
+    assert.deepEqual(await saveState(), [true, "●"]);
+    await page.locator('.save-name[for="prof-wis"]').click();
+    assert.deepEqual(await saveState(), [false, "○"]);
+    await page.locator("#prof-wis").focus();
+    await page.keyboard.press("Space");
+    assert.deepEqual(await saveState(), [true, "●"], "keyboard reaches the real save checkbox");
+    await page.keyboard.press("Space");
+    assert.notEqual(await page.locator("#prof-wis").evaluate(el => getComputedStyle(el).opacity), "0", "reminder jumps skip controls with zero opacity");
     // 分組標題的調整值隨屬性更新，屬性空白時不顯示。
     await page.evaluate(() => showTab("basic"));
     await page.locator("#dex").fill("16");
@@ -3609,7 +3628,7 @@ async function verifyInventoryPersistence(browser, url) {
     await page.evaluate(() => dndStorage.setItem("dndchar_autosave_v1", JSON.stringify({ class: "fighter", level: "1", mainHand: "短劍", offHand: "短劍", armor: "皮甲", "gear-notes": "購買物品：繩索" })));
     await page.goto(url);
     assert.deepEqual(await snapshot(page).then(({ inventory, slots, notes }) => ({ inventory, slots, notes })),
-      { inventory: "短劍 ×2、皮甲", slots: ["短劍", "短劍", "皮甲"], notes: "購買物品：繩索" }, "legacy autosave seeds the equipped items");
+      { inventory: "短劍、短劍、皮甲", slots: ["短劍", "短劍", "皮甲"], notes: "購買物品：繩索" }, "legacy autosave seeds the equipped items");
     await page.evaluate(() => applyStateObject({ class: "fighter", level: "1", offHandAsMain: true, main2Shield: true, mainHand: "長劍", offHand: "短劍", "shield-proficiency": true }));
     assert.equal(await page.evaluate(() => Inventory.formatText()), "長劍、短劍、盾牌", "legacy alternate-main shield seeds when equipped");
 
@@ -3617,7 +3636,7 @@ async function verifyInventoryPersistence(browser, url) {
     await page.evaluate(() => applyStateObject({ class: "fighter", level: "1", mainHand: "短劍", offHand: "短劍", armor: "皮甲", __inventory: { version: 1, items: [{ uid: "own", itemId: "短劍", quantity: 1 }] } }));
     assert.deepEqual(await page.evaluate(() => [Inventory.entries().map(entry => [entry.itemId, entry.quantity, entry.source || ""]),
       ["mainHand", "offHand", "armor"].map(id => document.getElementById(id).selectedOptions[0].textContent)]),
-    [[["短劍", 2, ""], ["皮甲", 1, "equipped"]], ["短劍", "短劍", "皮甲"]], "missing equipped items are added on load");
+    [[["短劍", 1, ""], ["短劍", 1, ""], ["皮甲", 1, "equipped"]], ["短劍", "短劍", "皮甲"]], "missing equipped items are added on load");
 
     // Text mode is saved with the character: autosave, JSON and share keep it, and nothing is added to the inventory.
     const textState = { class: "fighter", level: "1", mainHand: "巨劍", "gear-notes": "物品欄：巨劍", __inventory: { version: 1, textOnly: true, items: [] } };
