@@ -4354,6 +4354,7 @@ function updateEquipmentLoadoutSummary() {
   const acValue = document.getElementById("equipment-current-ac-value");
   if (acValue) acValue.textContent = document.getElementById("ac-display")?.value?.trim() || "—";
   updateWeaponMasteryBadges();
+  window.ShareReadonly?.onEquipmentChanged();
 }
 
 
