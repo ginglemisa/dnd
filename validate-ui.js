@@ -4652,13 +4652,18 @@ async function verifyShareReadonlyMode(browser, url) {
       await page.waitForTimeout(100);
       await page.locator("#utility-menu-toggle").click();
       await page.locator("#tabletop-mode-toggle").waitFor();
-      for (const selector of ["#help-quick-build-btn", "#set-default-abilities", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn", "#open-qr-btn"]) {
+      for (const selector of ["#help-quick-build-btn", "#set-default-abilities", "#restart-onboarding-btn", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn", "#open-qr-btn"]) {
         assert.equal(await page.locator(selector).isVisible(), false, `${selector} is hidden at ${width}`);
       }
-      for (const selector of ["#tabletop-mode-toggle", "#adventure-journal-btn", "#export-json-btn", "#export-pdf-btn", "#open-sheet-download-btn"]) {
+      for (const selector of ["#tabletop-mode-toggle", "#adventure-journal-btn", "#export-json-btn", "#export-pdf-btn", "#open-sheet-download-btn", "#first-table-tour-btn"]) {
         assert.equal(await page.locator(selector).isVisible(), true, `${selector} stays at ${width}`);
       }
-      assert.deepEqual([await page.locator("#restart-onboarding-btn").isDisabled(), await page.locator("#first-table-tour-btn").isDisabled()], [true, true]);
+      assert.equal(await page.locator("#first-table-tour-btn").isDisabled(), false, "the tabletop tour stays available");
+      assert.equal(await page.evaluate(() => {
+        const help = document.querySelector(".utility-menu__help").getBoundingClientRect();
+        const buttons = ["first-table-tour-btn", "reference-deities-btn", "clear-storage-btn"].map(id => document.getElementById(id).getBoundingClientRect());
+        return Math.abs(buttons[0].left - help.left) < 1 && Math.abs(buttons[2].right - help.right) < 1 && buttons.every(button => Math.abs(button.top - buttons[0].top) < 1);
+      }), true, `help row leaves no holes at ${width}`);
       assert.equal(await page.evaluate(() => {
         const button = document.getElementById("export-json-btn").getBoundingClientRect();
         const row = document.querySelector(".utility-menu__row--icon").getBoundingClientRect();
@@ -4685,6 +4690,16 @@ async function verifyShareReadonlyMode(browser, url) {
     assert.equal(await tip.getByText("分享模式：這是別人分享給你的角色").isVisible(), true);
     await page.evaluate(() => TabletopMode.setMode("tabletop"));
     assert.equal(await tipToggle.getAttribute("aria-expanded"), "false", "collapse carries into tabletop mode");
+    // 跑團模式的選單按鈕固定在右上角：用真的點擊確認箭頭沒有被蓋住。
+    for (const [width, height] of [[1100, 900], [390, 844], [320, 700]]) {
+      await page.setViewportSize({ width, height });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await tipToggle.click({ timeout: 3000 });
+      assert.equal(await tipToggle.getAttribute("aria-expanded"), "true", `tabletop tip expands by click at ${width}`);
+      await tipToggle.click({ timeout: 3000 });
+      assert.equal(await tipToggle.getAttribute("aria-expanded"), "false", `tabletop tip collapses by click at ${width}`);
+    }
+    await page.setViewportSize({ width: 1100, height: 900 });
     await page.evaluate(() => TabletopMode.setMode("sheet"));
     await page.reload();
     await page.waitForFunction(() => document.getElementById("auto-calculate-key-stats-toggle")?.dataset.shareLocked === "true");
