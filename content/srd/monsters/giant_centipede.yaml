@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_centipede
+name: 巨蜈蚣
+nameEn: Giant Centipede
+source: srd
+size: small
+type: beast
+alignment: unaligned
+cr: "1/4"
+xp: 50
+ac: 14
+initiative: 2
+hp: { average: 9, dice: 2d6+2 }
+speed: { walk: 30, climb: 30 }
+abilities: { str: 5, dex: 14, con: 12, int: 1, wis: 7, cha: 3 }
+senses: { blindsight: 30 }
+passivePerception: 8
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, dice: 1d4+2 } ]
+site:
+  summary: 攀爬、使目標中毒
+  actions:
+    attack-0: { name: 咬擊, text: 目標陷入中毒，直到巨蜈蚣的下個回合開始。 }
+srd:
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 4（1d4 + 2）穿刺傷害，且目標陷入中毒狀態，直到巨蜈蚣的下個回合開始。
+en:
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 4 (1d4 + 2) Piercing damage, and the target has the Poisoned condition until the start of the centipede's next turn.

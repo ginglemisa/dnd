@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: seahorse
+name: 海馬
+nameEn: Seahorse
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 0
+ac: 12
+initiative: 1
+hp: { average: 1, dice: 1d4-1 }
+speed: { walk: 5, swim: 20 }
+abilities: { str: 1, dex: 12, con: 8, int: 1, wis: 10, cha: 2 }
+skills: { 察覺: 2, 隱匿: 5 }
+passivePerception: 12
+actions:
+  - id: dash
+site:
+  summary: 水中偵查
+  traits:
+    - name: 水下呼吸
+      text: 只能在水下呼吸。
+  actions:
+    dash: { name: 泡泡衝刺, text: 在水下時，移動至多其游泳速度，且不會引發藉機攻擊。 }
+srd:
+  traits:
+    - name: 水下呼吸
+      text: 海馬只能在水下呼吸。
+  actions:
+    - name: 泡泡衝刺
+      text: 在水下時，海馬移動至多其游泳速度，且不會引發藉機攻擊。
+en:
+  traits:
+    - name: Water Breathing
+      text: The seahorse can breathe only underwater.
+  actions:
+    - name: Bubble Dash
+      text: While underwater, the seahorse moves up to its Swim Speed without provoking Opportunity Attacks.

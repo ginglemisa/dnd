@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: triceratops
+name: 三角龍
+nameEn: Triceratops
+source: srd
+size: huge
+type: beast
+subtype: dinosaur
+alignment: unaligned
+cr: "5"
+xp: 1800
+ac: 14
+initiative: -1
+hp: { average: 114, dice: 12d12+36 }
+speed: { walk: 50 }
+abilities: { str: 22, dex: 9, con: 17, int: 2, wis: 11, cha: 5 }
+passivePerception: 10
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 9, reach: 5 }
+    damage: [ { type: piercing, dice: 2d12+6 } ]
+    conditional: [ { when: charge-extra, type: piercing, dice: 2d8 } ]
+site:
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次獠角攻擊。 }
+    attack-0: { name: 獠角, text: "先直線朝目標移動20呎以上再命中巨型或更小的目標：目標額外受到{conditional}並倒地。" }
+srd:
+  actions:
+    - name: 多重攻擊
+      text: 三角龍進行兩次獠角攻擊。
+    - name: 獠角
+      text: _近戰攻擊檢定：_ +9，觸及5呎。_命中：_ 19（2d12 + 6）穿刺傷害。若目標是巨型或更小的生物，且三角龍在命中前剛直線朝它移動了20呎以上，目標額外受到9（2d8）穿刺傷害，並陷入倒地狀態。
+en:
+  actions:
+    - name: Multiattack
+      text: The triceratops makes two Gore attacks.
+    - name: Gore
+      text: _Melee Attack Roll:_ +9, reach 5 ft. _Hit:_ 19 (2d12 + 6) Piercing damage. If the target is Huge or smaller and the triceratops moved 20+ feet straight toward it immediately before the hit, the target takes an extra 9 (2d8) Piercing damage and has the Prone condition.

@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_wolf_spider
+name: 巨狼蛛
+nameEn: Giant Wolf Spider
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/4"
+xp: 50
+ac: 13
+initiative: 3
+hp: { average: 11, dice: 2d8+2 }
+speed: { walk: 40, climb: 40 }
+abilities: { str: 12, dex: 16, con: 13, int: 3, wis: 12, cha: 4 }
+skills: { 察覺: 3, 隱匿: 7 }
+senses: { blindsight: 10, darkvision: 60 }
+passivePerception: 13
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: piercing, dice: 1d4+3 }, { type: poison, dice: 2d4 } ]
+site:
+  summary: 攀牆、毒咬
+  traits:
+    - name: 蛛行
+      text: 可攀爬困難表面（包括沿著天花板移動），無需進行屬性檢定。
+  actions:
+    attack-0: { name: 咬擊 }
+srd:
+  traits:
+    - name: 蛛行
+      text: 蜘蛛能攀爬困難的表面，包括沿著天花板移動，無需進行屬性檢定。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 5（1d4 + 3）穿刺傷害外加5（2d4）毒素傷害。
+en:
+  traits:
+    - name: Spider Climb
+      text: The spider can climb difficult surfaces, including along ceilings, without needing to make an ability check.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 5 (1d4 + 3) Piercing damage plus 5 (2d4) Poison damage.

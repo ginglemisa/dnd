@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_shark
+name: 巨鯊
+nameEn: Giant Shark
+source: srd
+size: huge
+type: beast
+alignment: unaligned
+cr: "5"
+xp: 1800
+ac: 13
+initiative: 3
+hp: { average: 92, dice: 8d12+40 }
+speed: { walk: 5, swim: 60 }
+abilities: { str: 23, dex: 11, con: 21, int: 1, wis: 10, cha: 5 }
+skills: { 察覺: 3 }
+senses: { blindsight: 60 }
+passivePerception: 13
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 9, reach: 5 }
+    damage: [ { type: piercing, dice: 3d10+6 } ]
+site:
+  traits:
+    - name: 水下呼吸
+      text: 只能在水下呼吸。
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次咬擊。 }
+    attack-0: { name: 咬擊, text: 目標未滿生命值時，此攻擊檢定具有優勢。 }
+srd:
+  traits:
+    - name: 水下呼吸
+      text: 鯊魚只能在水下呼吸。
+  actions:
+    - name: 多重攻擊
+      text: 鯊魚進行兩次咬擊。
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +9（若目標的生命值未滿則具有優勢），觸及5呎。_命中：_ 22（3d10 + 6）穿刺傷害。
+en:
+  traits:
+    - name: Water Breathing
+      text: The shark can breathe only underwater.
+  actions:
+    - name: Multiattack
+      text: The shark makes two Bite attacks.
+    - name: Bite
+      text: _Melee Attack Roll:_ +9 (with Advantage if the target doesn't have all its Hit Points), reach 5 ft. _Hit:_ 22 (3d10 + 6) Piercing damage.

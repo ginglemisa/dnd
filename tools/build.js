@@ -1,5 +1,5 @@
-// npm run build：讀取 content/ 的法術、職業、專長、背景與種族內容檔，做格式與跨檔檢查、持久化 ID 基準檔比對，
-// 再由公開內容包產生網站讀取的 spell-content.generated.js、spell-srd.generated.js、class-content.generated.js、feat-content.generated.js、
+// npm run build：讀取 content/ 的怪物、法術、職業、專長、背景與種族內容檔，做格式與跨檔檢查、持久化 ID 基準檔比對，
+// 再由公開內容包產生網站讀取的 monster-content.generated.js、spell-content.generated.js、spell-srd.generated.js、class-content.generated.js、feat-content.generated.js、
 // background-content.generated.js 與 race-content.generated.js（不提交進 repo）。
 // 本機有私人內容包（content/private）時另寫進 class-content.private.generated.js（同樣不提交），否則該檔為空檔。
 // npm run build -- --stamp-version：上線建置用，一併把 index.html 的快取版本改成各產生檔的雜湊；私人資料檔一律為空檔。
@@ -10,7 +10,10 @@
 const fs = require("fs");
 const path = require("path");
 const { ContentError } = require("./content/errors");
-const { useSpellContent } = require("./content/site-sources");
+const { useSpellContent, useMonsterContent } = require("./content/site-sources");
+const { loadMonsters } = require("./monster-content/load");
+const { checkMonsterIdBaseline } = require("./monster-content/id-baseline");
+const { writeMonsterData } = require("./monster-content/site-data");
 const { loadSpells } = require("./spell-content/load");
 const { checkSpellIdBaseline } = require("./spell-content/id-baseline");
 const { renderSpellSources, writeSpellData } = require("./spell-content/site-data");
@@ -29,6 +32,9 @@ const { writeRaceData } = require("./race-content/site-data");
 
 function build({ quiet = false, updateIdBaseline = false, stampVersion = false, publicOnly = stampVersion } = {}) {
   const log = quiet ? () => {} : console.log;
+  // 怪物先載入：職業頁的 [[野獸名]] 提示框與「查看其他動物」清單讀取建置中的怪物內容（不讀舊的產生檔）。
+  const monsters = loadMonsters();
+  useMonsterContent(monsters);
   // 法術先載入：種族檢查與產生資料時讀取的法術目錄，用建置中的法術內容（不讀舊的產生檔）。
   const spells = loadSpells();
   useSpellContent(renderSpellSources(spells).source);
@@ -37,6 +43,7 @@ function build({ quiet = false, updateIdBaseline = false, stampVersion = false, 
   const backgrounds = loadBackgrounds(classes, feats);
   const races = loadRaces();
   const idProblems = [
+    ...checkMonsterIdBaseline(monsters, { update: updateIdBaseline }),
     ...checkSpellIdBaseline(spells, { update: updateIdBaseline }),
     ...checkIdBaseline(classes, { update: updateIdBaseline }),
     ...checkFeatIdBaseline(feats, { classes, races, backgrounds }, { update: updateIdBaseline }),
@@ -51,6 +58,7 @@ function build({ quiet = false, updateIdBaseline = false, stampVersion = false, 
   const privateClasses = packs.includes("private") && !publicOnly ? classes : null;
   const publicClasses = loadContent({ packs: ["srd"] }).classes;
   const changed = [
+    ...writeMonsterData(monsters, { stampIndex: stampVersion }),
     ...writeSpellData(spells, { stampIndex: stampVersion }),
     ...writeSiteData(publicClasses, { privateClasses, stampIndex: stampVersion }),
     ...writeFeatData(feats, { stampIndex: stampVersion }),
@@ -58,7 +66,7 @@ function build({ quiet = false, updateIdBaseline = false, stampVersion = false, 
     ...writeRaceData(races, { stampIndex: stampVersion })
   ];
   const playableCount = [...spells.values()].filter(spell => spell.site).length;
-  log(`內容檢查通過：${playableCount} 個可用法術（另 ${spells.size - playableCount} 個只供查閱）、${classes.size} 個職業、${[...classes.values()].reduce((sum, classDef) => sum + classDef.subclasses.length, 0)} 個子職、${feats.size} 個專長、${backgrounds.size} 個背景、${races.size} 個種族（內容包：${packs.join("、")}${multiclassRules ? "，含兼職規則" : ""}）。`);
+  log(`內容檢查通過：${playableCount} 個可用法術（另 ${spells.size - playableCount} 個只供查閱）、${classes.size} 個職業、${[...classes.values()].reduce((sum, classDef) => sum + classDef.subclasses.length, 0)} 個子職、${feats.size} 個專長、${backgrounds.size} 個背景、${races.size} 個種族、${monsters.size} 個怪物（內容包：${packs.join("、")}${multiclassRules ? "，含兼職規則" : ""}）。`);
   log(changed.length ? `已更新：${[...new Set(changed)].join("、")}。` : "網站資料沒有變動。");
   return changed;
 }

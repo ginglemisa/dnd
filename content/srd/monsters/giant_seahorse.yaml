@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_seahorse
+name: 巨海馬
+nameEn: Giant Seahorse
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1/2"
+xp: 100
+ac: 14
+initiative: 1
+hp: { average: 16, dice: 3d10 }
+speed: { walk: 5, swim: 40 }
+abilities: { str: 15, dex: 12, con: 11, int: 2, wis: 12, cha: 5 }
+passivePerception: 11
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: bludgeoning, dice: 2d6+2 } ]
+    conditional: [ { when: charge-instead, type: bludgeoning, dice: 2d8+2 } ]
+  - id: dash
+    mode: bonus
+site:
+  summary: 水中坐騎、衝撞
+  traits:
+    - name: 水下呼吸
+      text: 只能在水下呼吸。
+  actions:
+    attack-0: { name: 衝撞, text: "先直線朝目標移動20呎以上再命中：改為受到{conditional}。" }
+    dash: { name: 泡泡衝刺, text: 在水下時，移動至多其游泳速度的一半，且不會引發藉機攻擊。 }
+srd:
+  traits:
+    - name: 水下呼吸
+      text: 海馬只能在水下呼吸。
+  actions:
+    - name: 衝撞
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 9（2d6 + 2）鈍擊傷害，若海馬在命中前剛直線朝目標移動了20呎以上，改為11（2d8 + 2）鈍擊傷害。
+  bonusActions:
+    - name: 泡泡衝刺
+      text: 在水下時，海馬移動至多其游泳速度的一半，且不會引發藉機攻擊。
+en:
+  traits:
+    - name: Water Breathing
+      text: The seahorse can breathe only underwater.
+  actions:
+    - name: Ram
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 9 (2d6 + 2) Bludgeoning damage, or 11 (2d8 + 2) Bludgeoning damage if the seahorse moved 20+ feet straight toward the target immediately before the hit.
+  bonusActions:
+    - name: Bubble Dash
+      text: While underwater, the seahorse moves up to half its Swim Speed without provoking Opportunity Attacks.

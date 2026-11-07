@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: sphinx_of_wonder
+name: 神奇斯芬克斯
+nameEn: Sphinx of Wonder
+source: srd
+size: tiny
+type: celestial
+alignment: lawful-good
+cr: "1"
+xp: 200
+ac: 13
+initiative: 3
+hp: { average: 24, dice: 7d4+7 }
+speed: { walk: 20, fly: 40 }
+abilities: { str: 6, dex: 17, con: 13, int: 15, wis: 12, cha: 11 }
+skills: { 奧秘: 4, 宗教: 4, 隱匿: 5 }
+senses: { darkvision: 60 }
+passivePerception: 11
+damageResistances: [ necrotic, psychic, radiant ]
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: slashing, dice: 1d4+3 }, { type: radiant, dice: 2d6 } ]
+  - id: burst-of-ingenuity
+    mode: reaction
+    recovery: daily
+    uses: 2
+site:
+  traits:
+    - name: 魔法抗性
+      text: 對抗法術與其他魔法效應的豁免具有優勢。
+  actions:
+    attack-0: { name: 撕裂 }
+    burst-of-ingenuity: { name: 巧思迸發, text: 觸發：斯芬克斯或其30呎內的另一名生物進行屬性檢定或豁免。該擲骰結果+2。 }
+  languages: 天界語、通用語
+srd:
+  traits:
+    - name: 魔法抗性
+      text: 斯芬克斯對抗法術與其他魔法效應的豁免具有優勢。
+  actions:
+    - name: 撕裂
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 5（1d4 + 3）揮砍傷害外加7（2d6）光耀傷害。
+  reactions:
+    - name: 巧思迸發（每天2次）
+      text: _觸發：_ 斯芬克斯或其30呎內的另一個生物進行一次屬性檢定或豁免。_回應：_ 斯芬克斯為該擲骰加2。
+  languages: 天界語、通用語
+en:
+  traits:
+    - name: Magic Resistance
+      text: The sphinx has Advantage on saving throws against spells and other magical effects.
+  actions:
+    - name: Rend
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 5 (1d4 + 3) Slashing damage plus 7 (2d6) Radiant damage.
+  reactions:
+    - name: Burst of Ingenuity (2/Day)
+      text: _Trigger:_ The sphinx or another creature within 30 feet makes an ability check or a saving throw. _Response:_ The sphinx adds 2 to the roll.
+  languages: Celestial, Common

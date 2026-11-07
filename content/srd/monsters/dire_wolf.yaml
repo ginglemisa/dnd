@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: dire_wolf
+name: 恐狼
+nameEn: Dire Wolf
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 14
+initiative: 2
+hp: { average: 22, dice: 3d10+6 }
+speed: { walk: 50 }
+abilities: { str: 17, dex: 15, con: 15, int: 3, wis: 12, cha: 7 }
+skills: { 察覺: 5, 隱匿: 4 }
+senses: { darkvision: 60 }
+passivePerception: 15
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: piercing, dice: 1d10+3 } ]
+site:
+  summary: 群體戰鬥、撞倒
+  traits:
+    - name: 群攻
+      text: 若目標5呎內至少有一名恐狼的盟友，且該盟友未陷入失能，恐狼對該目標的攻擊檢定具有優勢。
+  actions:
+    attack-0: { name: 咬擊, text: 命中大型或更小的目標：目標倒地。 }
+srd:
+  traits:
+    - name: 群攻
+      text: 若恐狼至少有一名盟友位於某生物5呎內，且該盟友未陷入失能狀態，恐狼對該生物的攻擊檢定具有優勢。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 8（1d10 + 3）穿刺傷害。若目標是大型或更小的生物，目標陷入倒地狀態。
+en:
+  traits:
+    - name: Pack Tactics
+      text: The wolf has Advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 8 (1d10 + 3) Piercing damage. If the target is a Large or smaller creature, it has the Prone condition.

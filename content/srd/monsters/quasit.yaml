@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: quasit
+name: 誇賽魔
+nameEn: Quasit
+source: srd
+size: tiny
+type: fiend
+subtype: demon
+alignment: chaotic-evil
+cr: "1"
+xp: 200
+ac: 13
+initiative: 3
+hp: { average: 25, dice: 10d4 }
+speed: { walk: 40 }
+abilities: { str: 5, dex: 17, con: 10, int: 7, wis: 10, cha: 10 }
+skills: { 隱匿: 5 }
+senses: { darkvision: 120 }
+passivePerception: 10
+damageResistances: [ cold, fire, lightning ]
+damageImmunities: [ poison ]
+conditionImmunities: [ poisoned ]
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: slashing, dice: 1d4+3 } ]
+  - id: invisibility
+  - id: scare
+    recovery: daily
+    save: { ability: wis, dc: 10 }
+  - id: shape-shift
+site:
+  traits:
+    - name: 魔法抗性
+      text: 對抗法術與其他魔法效應的豁免具有優勢。
+  actions:
+    attack-0: { name: 撕裂, text: 目標陷入中毒，直到誇賽魔的下個回合開始。 }
+    invisibility: { name: 隱形, text: 對自身施展隱形術，不需要法術成分，以魅力為施法屬性。 }
+    scare: { name: 驚嚇, text: "20呎內一名生物進行{save}；失敗：目標陷入恐慌，在自己每個回合結束時重複豁免，成功即結束；1分鐘後自動成功。" }
+    shape-shift: { name: 變形, text: 變成蝙蝠（速度10呎、飛行40呎）、蜈蚣（40呎、攀爬40呎）或蟾蜍（40呎、游泳40呎）的樣子，或恢復真實形態。除速度外，各形態的遊戲數值相同；穿戴或攜帶的裝備不會隨之變化。 }
+  languages: 深淵語、通用語
+srd:
+  traits:
+    - name: 魔法抗性
+      text: 誇賽魔對抗法術與其他魔法效應的豁免具有優勢。
+  actions:
+    - name: 撕裂
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 5（1d4 + 3）揮砍傷害，且目標陷入中毒狀態，直到誇賽魔的下個回合開始。
+    - name: 隱形
+      text: 誇賽魔對自身施展_隱形術_，不需要法術成分，並以魅力作為施法屬性。
+    - name: 驚嚇（每天1次）
+      text: _感知豁免：_ DC 10，目標為20呎內的一個生物。_失敗：_ 目標陷入恐慌狀態。在它的每個回合結束時，目標重複這次豁免，成功時結束自身的該效果。1分鐘後，它自動成功。
+    - name: 變形
+      text: 誇賽魔變形成蝙蝠（速度10呎，飛行40呎）、蜈蚣（40呎，攀爬40呎）或蟾蜍（40呎，游泳40呎）的樣子，或恢復為其真實形態。除了速度之外，它在各形態的遊戲數值都相同。它穿戴或攜帶的任何裝備都不會隨之變化。
+  languages: 深淵語、通用語
+en:
+  traits:
+    - name: Magic Resistance
+      text: The quasit has Advantage on saving throws against spells and other magical effects.
+  actions:
+    - name: Rend
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 5 (1d4 + 3) Slashing damage, and the target has the Poisoned condition until the start of the quasit's next turn.
+    - name: Invisibility
+      text: The quasit casts _Invisibility_ on itself, requiring no spell components and using Charisma as the spellcasting ability.
+    - name: Scare (1/Day)
+      text: _Wisdom Saving Throw:_ DC 10, one creature within 20 feet. _Failure:_ The target has the Frightened condition. At the end of each of its turns, the target repeats the save, ending the effect on itself on a success. After 1 minute, it succeeds automatically.
+    - name: Shape-Shift
+      text: The quasit shape-shifts to resemble a bat (Speed 10 ft., Fly 40 ft.), a centipede (40 ft., Climb 40 ft.), or a toad (40 ft., Swim 40 ft.), or it returns to its true form. Its game statistics are the same in each form, except for its Speed. Any equipment it is wearing or carrying isn't transformed.
+  languages: Abyssal, Common

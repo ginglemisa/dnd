@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: mastiff
+name: 獒犬
+nameEn: Mastiff
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/8"
+xp: 25
+ac: 12
+initiative: 2
+hp: { average: 5, dice: 1d8+1 }
+speed: { walk: 40 }
+abilities: { str: 13, dex: 14, con: 12, int: 3, wis: 12, cha: 7 }
+saves: { wis: 3 }
+skills: { 察覺: 5 }
+senses: { darkvision: 60 }
+passivePerception: 15
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 3, reach: 5 }
+    damage: [ { type: piercing, dice: 1d6+1 } ]
+site:
+  summary: 看守、撞倒
+  actions:
+    attack-0: { name: 咬擊, text: 命中中型或更小的目標：目標倒地。 }
+srd:
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +3，觸及5呎。_命中：_ 4（1d6 + 1）穿刺傷害。若目標是中型或更小的生物，目標陷入倒地狀態。
+en:
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +3, reach 5 ft. _Hit:_ 4 (1d6 + 1) Piercing damage. If the target is a Medium or smaller creature, it has the Prone condition.

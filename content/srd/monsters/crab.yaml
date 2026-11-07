@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: crab
+name: 螃蟹
+nameEn: Crab
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 11
+initiative: 0
+hp: { average: 3, dice: 1d4+1 }
+speed: { walk: 20, swim: 20 }
+abilities: { str: 6, dex: 11, con: 12, int: 1, wis: 8, cha: 2 }
+skills: { 隱匿: 2 }
+senses: { blindsight: 30 }
+passivePerception: 9
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 2, reach: 5 }
+    damage: [ { type: bludgeoning, fixed: 1 } ]
+site:
+  summary: 水陸兩棲、盲視
+  traits:
+    - name: 兩棲
+      text: 可在空氣和水中呼吸。
+  actions:
+    attack-0: { name: 螯擊 }
+srd:
+  traits:
+    - name: 兩棲
+      text: 螃蟹能呼吸空氣和水。
+  actions:
+    - name: 螯擊
+      text: _近戰攻擊檢定：_ +2，觸及5呎。_命中：_ 1點鈍擊傷害。
+en:
+  traits:
+    - name: Amphibious
+      text: The crab can breathe air and water.
+  actions:
+    - name: Claw
+      text: _Melee Attack Roll:_ +2, reach 5 ft. _Hit:_ 1 Bludgeoning damage.

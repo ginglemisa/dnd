@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: killer_whale
+name: 虎鯨
+nameEn: Killer Whale
+source: srd
+size: huge
+type: beast
+alignment: unaligned
+cr: "3"
+xp: 700
+ac: 12
+initiative: 2
+hp: { average: 90, dice: 12d12+12 }
+speed: { walk: 5, swim: 60 }
+abilities: { str: 19, dex: 14, con: 13, int: 3, wis: 12, cha: 7 }
+skills: { 察覺: 3, 隱匿: 4 }
+senses: { blindsight: 120 }
+passivePerception: 13
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 6, reach: 5 }
+    damage: [ { type: piercing, dice: 5d6+4 } ]
+site:
+  traits:
+    - name: 憋氣
+      text: 可憋氣30分鐘。
+  actions:
+    attack-0: { name: 咬擊 }
+srd:
+  traits:
+    - name: 憋氣
+      text: 虎鯨能憋氣30分鐘。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +6，觸及5呎。_命中：_ 21（5d6 + 4）穿刺傷害。
+en:
+  traits:
+    - name: Hold Breath
+      text: The whale can hold its breath for 30 minutes.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +6, reach 5 ft. _Hit:_ 21 (5d6 + 4) Piercing damage.

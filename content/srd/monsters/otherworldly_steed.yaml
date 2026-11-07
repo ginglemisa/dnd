@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+# 異界坐騎不在 SRD 的怪物章節，是尋獲坐騎（find-steed）法術內附的數據塊：srd、en 取自該法術的 SRD 譯文與原文。
+# AC、HP 與攻擊隨法術環階變化（variable: true），沒有跑團數值。
+id: otherworldly_steed
+name: 異界坐騎
+nameEn: Otherworldly Steed
+source: srd
+size: large
+type: [ celestial, fey, fiend ]
+alignment: neutral
+cr: none
+xp: 0
+variable: true
+speed: { walk: 60, fly: 60 }
+abilities: { str: 18, dex: 12, con: 14, int: 6, wis: 12, cha: 8 }
+passivePerception: 11
+actions:
+  - id: otherworldly-slam
+  - id: fell-glare
+    mode: bonus
+    recovery: long-rest
+  - id: fey-step
+    mode: bonus
+    recovery: long-rest
+  - id: healing-touch
+    mode: bonus
+    recovery: long-rest
+site:
+  ac: 10 + 法術環階
+  hp: 5 +（10 × 法術環階）
+  cr: 無
+  speedNote: 需以4環以上法術位施放
+  traits:
+    - name: 生命連結
+      text: 你因1環以上法術恢復生命值時，若你在坐騎5呎內，坐騎也恢復等量生命值。
+  actions:
+    otherworldly-slam: { name: 異界撞擊, text: 近戰攻擊檢定（加值等於你的法術攻擊加值），觸及5呎；命中：1d8＋法術環階點光耀（天界生物）、心靈（精類）或黯蝕（邪魔）傷害。 }
+    fell-glare: { name: 兇惡凝視, text: 僅限邪魔。60呎內坐騎看得見的一名生物進行感知豁免（DC等於你的法術豁免DC）；失敗：目標陷入恐慌，直到你的下個回合結束。 }
+    fey-step: { name: 精類步, text: 僅限精類。坐騎與騎乘者傳送到坐騎60呎內、你選擇的一個未被佔據的空間。 }
+    healing-touch: { name: 治癒之觸, text: 僅限天界生物。坐騎5呎內的一名生物恢復2d8＋法術環階點生命值。 }
+  languages: 心靈感應1英里（僅限與你）
+srd:
+  ac: 10 + 每法術環階1
+  hp: 5 + 每法術環階10（坐騎的生命骰 [d10] 數量等於法術環階）
+  cr: 無（XP 0；PB 等於你的熟練加值）
+  speedNote: 需4環以上法術
+  traits:
+    - name: 生命連結
+      text: 當你因1環以上的法術回復生命值時，若你在坐騎5呎內，坐騎回復相同數量的生命值。
+  actions:
+    - name: 異界撞擊
+      text: _近戰攻擊檢定：_ 加值等於你的法術攻擊調整值，觸及5呎。_命中：_ 1d8加上法術環階的光耀（天界生物）、心靈（精類）或黯蝕（邪魔）傷害。
+  bonusActions:
+    - name: 兇惡凝視（僅限邪魔；長休後恢復）
+      text: _感知豁免：_ DC等於你的法術豁免DC，目標為坐騎看得見、60呎內的一個生物。_失敗：_ 目標陷入恐慌狀態，直到你下個回合結束。
+    - name: 精類步（僅限精類；長休後恢復）
+      text: 坐騎連同其騎乘者傳送到距離自己最遠60呎、由你選擇的一個未被佔據的空間。
+    - name: 治癒之觸（僅限天界生物；長休後恢復）
+      text: 坐騎5呎內的一個生物回復等同於2d8加上法術環階的生命值。
+  languages: 心靈感應1英里（僅對你有效）
+en:
+  ac: 10 + 1 per spell level
+  hp: 5 + 10 per spell level (the steed has a number of Hit Dice [d10s] equal to the spell's level)
+  cr: None (XP 0; PB equals your Proficiency Bonus)
+  speedNote: requires level 4+ spell
+  traits:
+    - name: Life Bond
+      text: When you regain Hit Points from a level 1+ spell, the steed regains the same number of Hit Points if you're within 5 feet of it.
+  actions:
+    - name: Otherworldly Slam
+      text: "_Melee Attack Roll:_ Bonus equals your spell attack modifier, reach 5 ft. _Hit:_ 1d8 plus the spell's level of Radiant (Celestial), Psychic (Fey), or Necrotic (Fiend) damage."
+  bonusActions:
+    - name: Fell Glare (Fiend Only; Recharges after a Long Rest)
+      text: "_Wisdom Saving Throw:_ DC equals your spell save DC, one creature within 60 feet the steed can see. _Failure:_ The target has the Frightened condition until the end of your next turn."
+    - name: Fey Step (Fey Only; Recharges after a Long Rest)
+      text: The steed teleports, along with its rider, to an unoccupied space of your choice up to 60 feet away from itself.
+    - name: Healing Touch (Celestial Only; Recharges after a Long Rest)
+      text: One creature within 5 feet of the steed regains a number of Hit Points equal to 2d8 plus the spell's level.
+  languages: Telepathy 1 mile (works only with you)

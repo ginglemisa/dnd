@@ -1,944 +1,89 @@
 // monster.js
-// 共用怪物/野獸資料（BEAST_STATS、BEAST_TABLETOP_DATA、BeastCatalog）與野獸資料卡的 HTML（renderBeastPopupHtml）；
-// 提示框浮層與技能／規則說明在 rule-tips.js。
+// 共用怪物/野獸資料（BeastCatalog）與野獸資料卡的 HTML（renderBeastPopupHtml）；資料來自 content/srd/monsters 的怪物內容檔，
+// 由 npm run build 產生 monster-content.generated.js（monsterRules、monsterText、monsterLabels）。提示框浮層與技能／規則說明在 rule-tips.js。
 
-const BEAST_STATS = {
-  otherworldly_steed: {
-    name: "異界坐騎 (Otherworldly Steed) CR:無",
-    size_type: "大型天界生物、精類或邪魔（你選）",
-    ac: "10 + 法術環階",
-    hp: "5 +（10 × 法術環階）",
-    speed: "60呎, 飛行60呎（四環限定）",
-    ability: "力18(+4), 敏12(+1), 體14(+2), 智6(-2), 感12(+1), 魅8(-1)",
-    senses: "被動察覺11",
-    skills: "—",
-    traits: "生命連結：你因1環以上法術恢復HP時，若在坐騎5呎內，它也恢復等量HP；語言：心靈感應1哩（限與你）；PB=你的PB",
-    attacks: "異界撞擊：近戰攻擊檢定（加值=你的法術攻擊加值）, 觸及5呎；命中：1d8+法術環階點光耀（天界）/心靈（精類）/黯蝕（邪魔）傷害。\n附贈\n兇惡凝視（邪魔限定；長休後恢復）：60呎內坐騎可見1生物進行感知豁免（DC=你的法術DC）；失敗：恐慌至你下回合結束。\n精類步伐（精類限定；長休後恢復）：坐騎與騎者傳送至坐騎60呎內你選的未佔空間。\n治癒之觸（天界限定；長休後恢復）：坐騎5呎內1生物恢復2d8+法術環階點生命值。"
-  },
-  rat: {
-    name: "老鼠 (Rat) CR:0",
-    size_type: "微型野獸",
-    ac: 10,
-    hp: "1 (1d4-1)",
-    speed: "20呎, 攀爬20呎",
-    ability: "力2(-4), 敏11(0), 體9(-1), 智2(-4), 感10(0), 魅4(-3)",
-    senses: "黑暗視覺30呎, 被動察覺12",
-    skills: "察覺 +2",
-    traits: "迅捷：離開敵人不會引發藉機攻擊",
-    attacks: "咬擊：命中+2, 範圍5呎, 刺傷1"
-  },
-  riding_horse: {
-    name: "騎乘馬 (Riding Horse) CR:¼",
-    size_type: "大型野獸",
-    ac: 11,
-    hp: "13 (2d10+2)",
-    speed: "60 呎",
-    ability: "力16(+3), 敏13(+1), 體12(+1) 智2(-4), 感11(+0), 魅7(-2)",
-    senses: "被動察覺10",
-    skills: "—",
-    traits: "—",
-    attacks: "蹄擊：命中+5, 範圍5呎, 鈍傷7(1d8+3)"
-  },
-  spider: {
-    name: "蜘蛛 (Spider) CR:0",
-    size_type: "微型野獸",
-    ac: 12,
-    hp: "1 (1d4-1)",
-    speed: "20呎, 攀爬20呎",
-    ability: "力2(-4), 敏14(+2), 體8(-1), 智1(-5), 感10(+0), 魅2(-4)",
-    senses: "黑暗視覺30呎, 被動察覺10",
-    skills: "隱匿+4",
-    traits: "蛛爬：可攀險地(如天花板)且毋須檢定, 網主：不受蛛網限制，感知同網生物",
-    attacks: "咬擊：命中+4, 範圍5呎, 刺傷1 + 毒傷2(1d4)"
-  },
-  wolf: {
-    name: "狼 (Wolf) CR:¼",
-    size_type: "中型野獸",
-    ac: 12,
-    hp: "11 (2d8+2)",
-    speed: "40呎",
-    ability: "力14(+2), 敏15(+2), 體12(+1), 智3(-4), 感12(+1), 魅6(-2)",
-    senses: "黑暗視覺60呎, 被動察覺15",
-    skills: "察覺+5, 隱匿+4",
-    traits: "群攻：若攻擊目標5呎內有狼方盟友(未失能),D20擲二取一",
-    attacks: "咬擊：命中+4, 範圍5呎, 刺傷5(1d6+2), 使中小型目標獲得倒地狀態"
-  },
-  imp: {
-    name: "小魔鬼 (Imp) CR:1",
-    size_type: "微型邪魔（魔鬼）",
-    ac: 13,
-    hp: "21 (6d4+6)",
-    speed: "20呎, 飛行40呎",
-    ability: "力6(-2), 敏17(+3), 體13(+1), 智11(+0), 感12(+1), 魅14(+2)",
-    senses: "黑暗視覺120呎（不受魔法黑暗阻礙）, 被動察覺11",
-    skills: "欺瞞+4, 洞悉+3, 隱匿+5",
-    traits: "魔法抗性：對抗法術與其他魔法效應的豁免檢定具有優勢；抗性：寒冷；免疫：火焰、毒素、中毒",
-    attacks: "螫刺：近戰攻擊檢定+5, 觸及5呎；命中：刺傷6(1d6+3)外加毒傷7(2d6)。隱形：對自身施展隱形術（無需法術成分，施法屬性為魅力）。變形：可變為老鼠（速度20呎）、渡鴉（20呎，飛行60呎）或蜘蛛（20呎，攀爬20呎），或恢復真實形態。除速度外數值不變；穿戴或攜帶裝備不隨之改變。"
-  },
-  pseudodragon: {
-    name: "偽龍 (Pseudodragon) CR:1/4",
-    size_type: "微型龍類",
-    ac: 14,
-    hp: "10 (3d4+3)",
-    speed: "15呎, 飛行60呎",
-    ability: "力6(-2), 敏15(+2), 體13(+1), 智10(+0), 感12(+1), 魅10(+0)",
-    senses: "盲視10呎, 黑暗視覺60呎, 被動察覺15",
-    skills: "察覺+5, 隱匿+4",
-    traits: "魔法抗性：對抗法術與其他魔法效應的豁免檢定具有優勢",
-    attacks: "多重攻擊：進行兩次啃咬。啃咬：近戰攻擊檢定+4, 觸及5呎；命中：刺傷4(1d4+2)。螫刺：體質豁免DC12，5呎內可見生物；失敗：毒傷5(2d4)且中毒1小時。目標中毒期間同時陷入昏迷；若目標受傷，或5呎內生物用動作喚醒，則可提前結束。"
-  },
-  quasit: {
-    name: "誇賽魔 (Quasit) CR:1",
-    size_type: "微型邪魔（惡魔）",
-    ac: 13,
-    hp: "25 (10d4)",
-    speed: "40呎",
-    ability: "力5(-3), 敏17(+3), 體10(+0), 智7(-2), 感10(+0), 魅10(+0)",
-    senses: "黑暗視覺120呎, 被動察覺10",
-    skills: "隱匿+5",
-    traits: "魔法抗性：對抗法術與其他魔法效應的豁免檢定具有優勢；抗性：寒冷、火焰、閃電；免疫：毒素、中毒",
-    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害5(1d4+3)，目標中毒至誇賽魔下回合開始。隱形：對自身施展隱形術（無需法術成分，施法屬性為魅力）。驚駭（每天1次）：感知豁免DC10，20呎內一名生物；失敗則陷入恐懼，每回合結束可重複豁免，成功則結束，1分鐘後自動成功。變形：可變為蝙蝠（10呎，飛行40呎）、蜈蚣（40呎，攀爬40呎）或蟾蜍（40呎，游泳40呎），或恢復真實形態；除速度外數值不變，裝備不變。"
-  },
-  skeleton: {
-    name: "骷髏 (Skeleton) CR:1/4",
-    size_type: "中型不死生物",
-    ac: 14,
-    hp: "13 (2d8+4)",
-    speed: "30呎",
-    ability: "力10(+0), 敏16(+3), 體15(+2), 智6(-2), 感8(-1), 魅5(-3)",
-    senses: "黑暗視覺60呎, 被動察覺9",
-    skills: "—",
-    traits: "易傷：鈍擊；免疫：毒素、力竭、中毒；裝備：短弓、短劍",
-    attacks: "短劍：近戰攻擊檢定+5, 觸及5呎；命中：刺傷6(1d6+3)。短弓：遠程攻擊檢定+5, 射程80/320呎；命中：刺傷6(1d6+3)。"
-  },
-  sphinx_of_wonder: {
-    name: "神奇斯芬克斯 (Sphinx of Wonder) CR:1",
-    size_type: "微型天界生物",
-    ac: 13,
-    hp: "24 (7d4+7)",
-    speed: "20呎, 飛行40呎",
-    ability: "力6(-2), 敏17(+3), 體13(+1), 智15(+2), 感12(+1), 魅11(+0)",
-    senses: "黑暗視覺60呎, 被動察覺11",
-    skills: "奧秘+4, 宗教+4, 隱匿+5",
-    traits: "魔法抗性：對抗法術與其他魔法效應的豁免檢定具有優勢；抗性：黯蝕、心靈、光耀",
-    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害5(1d4+3)外加光耀傷害7(2d6)。反應─巧思迸發（每天2次）：當自身或30呎內其他生物進行屬性檢定或豁免時，擲骰結果+2。"
-  },
-  sprite: {
-    name: "小妖精 (Sprite) CR:1/4",
-    size_type: "微型妖精",
-    ac: 15,
-    hp: "10 (4d4)",
-    speed: "10呎, 飛行40呎",
-    ability: "力3(-4), 敏18(+4), 體10(+0), 智14(+2), 感13(+1), 魅11(+0)",
-    senses: "被動察覺13",
-    skills: "察覺+3, 隱匿+8",
-    traits: "—",
-    attacks: "針劍：近戰攻擊檢定+6, 觸及5呎；命中：刺傷6(1d4+4)。附魔短弓：遠程攻擊檢定+6, 射程40/160呎；命中：刺傷1，目標魅惑至小妖精下回合開始。洞悉心靈：魅力豁免DC10，5呎內可見生物（天界/邪魔/不死生物自動失敗）；失敗則小妖精得知其情緒與陣營。隱形：對自身施展隱形術（無需法術成分，施法屬性為魅力）。"
-  },
-  venomous_snake: {
-    name: "毒蛇 (Venomous Snake) CR:1/8",
-    size_type: "微型野獸",
-    ac: 12,
-    hp: "5 (2d4)",
-    speed: "30呎, 游泳30呎",
-    ability: "力2(-4), 敏15(+2), 體11(+0), 智1(-5), 感10(+0), 魅3(-4)",
-    senses: "盲視10呎, 被動察覺10",
-    skills: "—",
-    traits: "—",
-    attacks: "啃咬：近戰攻擊檢定+4, 觸及5呎；命中：刺傷4(1d4+2)外加毒傷3(1d6)。"
-  },
-  bat: {
-    name: "蝙蝠 (Bat) CR:0",
-    size_type: "微型野獸",
-    ac: 12,
-    hp: "1 (1d4-1)",
-    speed: "5呎, 飛行30呎",
-    ability: "力2(-4), 敏15(+2), 體8(-1), 智2(-4), 感12(+1), 魅4(-3)",
-    senses: "盲視60呎, 被動察覺11",
-    skills: "—",
-    traits: "—",
-    attacks: "咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷1。"
-  },
-  cat: {
-    name: "貓 (Cat) CR:0",
-    size_type: "微型野獸",
-    ac: 12,
-    hp: "2 (1d4)",
-    speed: "40呎, 攀爬40呎",
-    ability: "力3(-4), 敏15(+2), 體10(+0), 智3(-4), 感12(+1), 魅7(-2)",
-    senses: "黑暗視覺60呎, 被動察覺13",
-    skills: "察覺+3, 隱匿+4",
-    traits: "跳躍者：其跳躍距離以敏捷而非力量計算",
-    attacks: "抓擊：近戰攻擊檢定+4, 觸及5呎；命中：揮砍傷害1。"
-  },
-  frog: {
-    name: "青蛙 (Frog) CR:0",
-    size_type: "微型野獸",
-    ac: 11,
-    hp: "1 (1d4-1)",
-    speed: "20呎, 游泳20呎",
-    ability: "力1(-5), 敏13(+1), 體8(-1), 智1(-5), 感8(-1), 魅3(-4)",
-    senses: "黑暗視覺30呎, 被動察覺11",
-    skills: "察覺+1, 隱匿+3",
-    traits: "兩棲：可在空氣和水中呼吸；立定跳躍：助跑與否皆可跳遠10呎、跳高5呎",
-    attacks: "咬擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷1。"
-  },
-  hawk: {
-    name: "獵鷹 (Hawk) CR:0",
-    size_type: "微型野獸",
-    ac: 13,
-    hp: "1 (1d4-1)",
-    speed: "10呎, 飛行60呎",
-    ability: "力5(-3), 敏16(+3), 體8(-1), 智2(-4), 感14(+2), 魅6(-2)",
-    senses: "被動察覺16",
-    skills: "察覺+6",
-    traits: "—",
-    attacks: "爪擊：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害1。"
-  },
-  lizard: {
-    name: "蜥蜴 (Lizard) CR:0",
-    size_type: "微型野獸",
-    ac: 10,
-    hp: "2 (1d4)",
-    speed: "20呎, 攀爬20呎",
-    ability: "力2(-4), 敏11(+0), 體10(+0), 智1(-5), 感8(-1), 魅3(-4)",
-    senses: "黑暗視覺30呎, 被動察覺9",
-    skills: "—",
-    traits: "蛛行：可攀爬困難表面（含天花板）且無需檢定",
-    attacks: "咬擊：近戰攻擊檢定+2, 觸及5呎；命中：刺傷1。"
-  },
-  octopus: {
-    name: "章魚 (Octopus) CR:0",
-    size_type: "小型野獸",
-    ac: 12,
-    hp: "3 (1d6)",
-    speed: "5呎, 游泳30呎",
-    ability: "力4(-3), 敏15(+2), 體11(+0), 智3(-4), 感10(+0), 魅4(-3)",
-    senses: "黑暗視覺30呎, 被動察覺12",
-    skills: "察覺+2, 隱匿+6",
-    traits: "壓縮：可穿越最窄1吋空間且不額外耗移動；水下呼吸：僅能在水下呼吸",
-    attacks: "觸手：近戰攻擊檢定+4, 觸及5呎；命中：鈍擊傷害1。反應─墨雲（每天1次）：水下5呎內生物回合結束時可觸發，釋放5呎立方重度遮蔽墨雲並立刻移動至多游泳速度。"
-  },
-  owl: {
-    name: "貓頭鷹 (Owl) CR:0",
-    size_type: "微型野獸",
-    ac: 11,
-    hp: "1 (1d4-1)",
-    speed: "5呎, 飛行60呎",
-    ability: "力3(-4), 敏13(+1), 體8(-1), 智2(-4), 感12(+1), 魅7(-2)",
-    senses: "黑暗視覺120呎, 被動察覺15",
-    skills: "察覺+5, 隱匿+5",
-    traits: "飛掠：飛行離開敵人威脅範圍不引發藉機攻擊",
-    attacks: "爪擊：近戰攻擊檢定+3, 觸及5呎；命中：揮砍傷害1。"
-  },
-  raven: {
-    name: "渡鴉 (Raven) CR:0",
-    size_type: "微型野獸",
-    ac: 12,
-    hp: "2 (1d4)",
-    speed: "10呎, 飛行50呎",
-    ability: "力2(-4), 敏14(+2), 體10(+0), 智5(-3), 感13(+1), 魅6(-2)",
-    senses: "被動察覺13",
-    skills: "察覺+3",
-    traits: "擬聲：可模仿聽過的簡單聲音（低語、啁啾等）；聽者可用DC10感知（洞悉）辨識為模仿",
-    attacks: "喙擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷1。"
-  },
-  weasel: {
-    name: "鼬 (Weasel) CR:0",
-    size_type: "微型野獸",
-    ac: 13,
-    hp: "1 (1d4-1)",
-    speed: "30呎, 攀爬30呎",
-    ability: "力3(-4), 敏16(+3), 體8(-1), 智2(-4), 感12(+1), 魅3(-4)",
-    senses: "黑暗視覺60呎, 被動察覺13",
-    skills: "特技+5, 察覺+3, 隱匿+5",
-    traits: "—",
-    attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷1。"
-  },
-  ape: {
-    name: "猿猴 (Ape) CR:1/2",
-    size_type: "中型野獸",
-    ac: 12,
-    hp: "19 (3d8+6)",
-    speed: "30呎, 攀爬30呎",
-    ability: "力16(+3), 敏14(+2), 體14(+2), 智6(-2), 感12(+1), 魅7(-2)",
-    senses: "被動察覺13",
-    skills: "運動+5, 察覺+3",
-    traits: "—",
-    attacks: "多重攻擊：進行兩次拳擊。拳擊：近戰攻擊檢定+5, 觸及5呎；命中：鈍擊傷害5(1d4+3)。石塊（充能6）：遠程攻擊檢定+5, 射程25/50呎；命中：鈍擊傷害10(2d6+3)。"
-  },
-  baboon: {
-    name: "狒狒 (Baboon) CR:0",
-    size_type: "小型野獸",
-    ac: 12,
-    hp: "3 (1d6)",
-    speed: "30呎, 攀爬30呎",
-    ability: "力8(-1), 敏14(+2), 體11(+0), 智4(-3), 感12(+1), 魅6(-2)",
-    senses: "被動察覺11",
-    skills: "—",
-    traits: "群攻：若攻擊目標5呎內有狒狒的盟友（未失能），該攻擊擲骰具優勢",
-    attacks: "咬擊：近戰攻擊檢定+1, 觸及5呎；命中：刺傷1(1d4-1)。"
-  },
-  badger: {
-    name: "獾 (Badger) CR:0",
-    size_type: "微型野獸",
-    ac: 11,
-    hp: "5 (1d4+3)",
-    speed: "20呎, 挖掘5呎",
-    ability: "力10(+0), 敏11(+0), 體16(+3), 智2(-4), 感12(+1), 魅5(-3)",
-    senses: "黑暗視覺30呎, 被動察覺13",
-    skills: "察覺+3",
-    traits: "抗性：毒素",
-    attacks: "咬擊：近戰攻擊檢定+2, 觸及5呎；命中：刺傷1。"
-  },
-  black_bear: {
-    name: "黑熊 (Black Bear) CR:1/2",
-    size_type: "中型野獸",
-    ac: 11,
-    hp: "19 (3d8+6)",
-    speed: "30呎, 攀爬30呎, 游泳30呎",
-    ability: "力15(+2), 敏12(+1), 體14(+2), 智2(-4), 感12(+1), 魅7(-2)",
-    senses: "黑暗視覺60呎, 被動察覺15",
-    skills: "察覺+5",
-    traits: "—",
-    attacks: "多重攻擊：進行兩次撕裂。撕裂：近戰攻擊檢定+4, 觸及5呎；命中：揮砍傷害5(1d6+2)。"
-  },
-  boar: {
-    name: "野豬 (Boar) CR:1/4",
-    size_type: "中型野獸",
-    ac: 11,
-    hp: "13 (2d8+4)",
-    speed: "40呎",
-    ability: "力13(+1), 敏11(+0), 體14(+2), 智2(-4), 感9(-1), 魅5(-3)",
-    senses: "被動察覺9",
-    skills: "—",
-    traits: "浴血之怒：處於受創（Bloodied）時，攻擊檢定具優勢",
-    attacks: "撞擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷4(1d6+1)。若野豬先直線移動20呎以上再命中中型或更小目標，目標額外承受刺傷3(1d6)並倒地。"
-  },
-  camel: {
-    name: "駱駝 (Camel) CR:1/8",
-    size_type: "大型野獸",
-    ac: 10,
-    hp: "17 (2d10+6)",
-    speed: "50呎",
-    ability: "力15(+2), 敏8(-1), 體17(+3), 智2(-4), 感11(+0), 魅5(-3)",
-    senses: "黑暗視覺60呎, 被動察覺10",
-    skills: "—",
-    traits: "—",
-    attacks: "咬擊：近戰攻擊檢定+4, 觸及5呎；命中：鈍擊傷害4(1d4+2)。"
-  },
-  constrictor_snake: {
-    name: "蟒蛇 (Constrictor Snake) CR:1/4",
-    size_type: "大型野獸",
-    ac: 13,
-    hp: "13 (2d10+2)",
-    speed: "30呎, 游泳30呎",
-    ability: "力15(+2), 敏14(+2), 體12(+1), 智1(-5), 感10(+0), 魅3(-4)",
-    senses: "盲視10呎, 被動察覺12",
-    skills: "察覺+2, 隱匿+4",
-    traits: "—",
-    attacks: "咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷6(1d8+2)。絞纏：力量豁免DC12，5呎內一名中型或更小可見生物；失敗：鈍擊傷害7(3d4)，並陷入擒抱（掙脫DC12）。"
-  },
-  crab: {
-    name: "螃蟹 (Crab) CR:0",
-    size_type: "微型野獸",
-    ac: 11,
-    hp: "3 (1d4+1)",
-    speed: "20呎, 游泳20呎",
-    ability: "力6(-2), 敏11(+0), 體12(+1), 智1(-5), 感8(-1), 魅2(-4)",
-    senses: "盲視30呎, 被動察覺9",
-    skills: "隱匿+2",
-    traits: "兩棲：可在空氣和水中呼吸",
-    attacks: "螯擊：近戰攻擊檢定+2, 觸及5呎；命中：鈍擊傷害1。"
-  },
-  crocodile: {
-    name: "鱷魚 (Crocodile) CR:1/2",
-    size_type: "大型野獸",
-    ac: 12,
-    hp: "13 (2d10+2)",
-    speed: "20呎, 游泳30呎",
-    ability: "力15(+2), 敏10(+0), 體13(+1), 智2(-4), 感10(+0), 魅5(-3)",
-    senses: "被動察覺10",
-    skills: "隱匿+2",
-    traits: "憋氣：可閉氣1小時",
-    attacks: "咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷6(1d8+2)。若目標為中型或更小，會陷入擒抱（掙脫DC12）；擒抱期間同時受束縛。"
-  },
-  deer: {
-    name: "鹿 (Deer) CR:0",
-    size_type: "中型野獸",
-    ac: 13,
-    hp: "4 (1d8)",
-    speed: "50呎",
-    ability: "力11(+0), 敏16(+3), 體11(+0), 智2(-4), 感14(+2), 魅5(-3)",
-    senses: "黑暗視覺60呎, 被動察覺14",
-    skills: "察覺+4",
-    traits: "靈巧：離開敵人威脅範圍時不引發藉機攻擊",
-    attacks: "頂撞：近戰攻擊檢定+2, 觸及5呎；命中：鈍擊傷害2(1d4)。"
-  },
-  draft_horse: {
-    name: "挽馬 (Draft Horse) CR:1/4",
-    size_type: "大型野獸",
-    ac: 10,
-    hp: "15 (2d10+4)",
-    speed: "40呎",
-    ability: "力18(+4), 敏10(+0), 體15(+2), 智2(-4), 感11(+0), 魅7(-2)",
-    senses: "被動察覺10",
-    skills: "—",
-    traits: "—",
-    attacks: "蹄擊：近戰攻擊檢定+6, 觸及5呎；命中：鈍擊傷害6(1d4+4)。"
-  },
-  elk: {
-    name: "麋鹿 (Elk) CR:1/4",
-    size_type: "大型野獸",
-    ac: 10,
-    hp: "11 (2d10)",
-    speed: "50呎",
-    ability: "力16(+3), 敏10(+0), 體11(+0), 智2(-4), 感10(+0), 魅6(-2)",
-    senses: "黑暗視覺60呎, 被動察覺12",
-    skills: "察覺+2",
-    traits: "—",
-    attacks: "衝撞：近戰攻擊檢定+5, 觸及5呎；命中：鈍擊傷害6(1d6+3)。若麋鹿先直線移動20呎以上再命中大型或更小目標，目標額外承受鈍擊傷害3(1d6)並倒地。"
-  },
-  giant_badger: {
-    name: "巨獾 (Giant Badger) CR:1/4",
-    size_type: "中型野獸",
-    ac: 13,
-    hp: "15 (2d8+6)",
-    speed: "30呎, 挖掘10呎",
-    ability: "力13(+1), 敏10(+0), 體17(+3), 智2(-4), 感12(+1), 魅5(-3)",
-    senses: "黑暗視覺60呎, 被動察覺13",
-    skills: "察覺+3",
-    traits: "抗性：毒素",
-    attacks: "咬擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷6(2d4+1)。"
-  },
-  giant_centipede: {
-    name: "巨蜈蚣 (Giant Centipede) CR:1/4",
-    size_type: "小型野獸",
-    ac: 14,
-    hp: "9 (2d6+2)",
-    speed: "30呎, 攀爬30呎",
-    ability: "力5(-3), 敏14(+2), 體12(+1), 智1(-5), 感7(-2), 魅3(-4)",
-    senses: "盲視30呎, 被動察覺8",
-    skills: "—",
-    traits: "—",
-    attacks: "咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷4(1d4+2)，目標中毒直到巨蜈蚣的下回合開始。"
-  },
-  giant_crab: {
-    name: "巨蟹 (Giant Crab) CR:1/8",
-    size_type: "中型野獸",
-    ac: 15,
-    hp: "13 (3d8)",
-    speed: "30呎, 游泳30呎",
-    ability: "力13(+1), 敏13(+1), 體11(+0), 智1(-5), 感9(-1), 魅3(-4)",
-    senses: "盲視30呎, 被動察覺9",
-    skills: "隱匿+3",
-    traits: "兩棲：可在空氣和水中呼吸",
-    attacks: "螯擊：近戰攻擊檢定+3, 觸及5呎；命中：鈍擊傷害4(1d6+1)。若目標為中型或更小，會被其中一隻螯擒抱（掙脫DC11）。"
-  },
-  giant_frog: {
-    name: "巨蛙 (Giant Frog) CR:1/4",
-    size_type: "中型野獸",
-    ac: 11,
-    hp: "18 (4d8)",
-    speed: "30呎, 游泳30呎",
-    ability: "力12(+1), 敏13(+1), 體11(+0), 智2(-4), 感10(+0), 魅3(-4)",
-    senses: "黑暗視覺30呎, 被動察覺12",
-    skills: "察覺+2, 隱匿+4",
-    traits: "兩棲：可在空氣和水中呼吸；立定跳躍：助跑與否皆可跳遠20呎、跳高10呎",
-    attacks: "咬擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷5(1d6+2)。若目標為中型或更小，會陷入擒抱（掙脫DC11）。吞下：吞下其擒抱中的小型或更小目標；目標陷入目盲與束縛，且對外部效果具有全掩護。巨蛙下回合結束時目標承受酸傷5(2d4)，若未因此死亡則被吐出並倒地。"
-  },
-  giant_goat: {
-    name: "巨山羊 (Giant Goat) CR:1/2",
-    size_type: "大型野獸",
-    ac: 11,
-    hp: "19 (3d10+3)",
-    speed: "40呎, 攀爬30呎",
-    ability: "力17(+3), 敏13(+1), 體12(+1), 智3(-4), 感12(+1), 魅6(-2)",
-    senses: "黑暗視覺60呎, 被動察覺13",
-    skills: "察覺+3",
-    traits: "—",
-    attacks: "衝撞：近戰攻擊檢定+5, 觸及5呎；命中：鈍擊傷害6(1d6+3)。若山羊先直線移動20呎以上再命中大型或更小目標，目標額外承受鈍擊傷害5(2d4)並倒地。"
-  },
-  giant_lizard: {
-    name: "巨蜥蜴 (Giant Lizard) CR:1/4",
-    size_type: "大型野獸",
-    ac: 12,
-    hp: "19 (3d10+3)",
-    speed: "40呎, 攀爬40呎",
-    ability: "力15(+2), 敏12(+1), 體13(+1), 智2(-4), 感10(+0), 魅5(-3)",
-    senses: "黑暗視覺60呎, 被動察覺10",
-    skills: "—",
-    traits: "蛛行：可攀爬困難表面（含天花板）且無需檢定",
-    attacks: "咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷6(1d8+2)。"
-  },
-  giant_rat: {
-    name: "巨鼠 (Giant Rat) CR:1/8",
-    size_type: "小型野獸",
-    ac: 13,
-    hp: "7 (2d6)",
-    speed: "30呎, 攀爬30呎",
-    ability: "力7(-2), 敏16(+3), 體11(+0), 智2(-4), 感10(+0), 魅4(-3)",
-    senses: "黑暗視覺60呎, 被動察覺12",
-    skills: "察覺+2",
-    traits: "群攻：若攻擊目標5呎內有巨鼠的盟友（未失能），該攻擊擲骰具優勢",
-    attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷5(1d4+3)。"
-  },
-  giant_weasel: {
-    name: "巨鼬 (Giant Weasel) CR:1/8",
-    size_type: "中型野獸",
-    ac: 13,
-    hp: "9 (2d8)",
-    speed: "40呎, 攀爬30呎",
-    ability: "力11(+0), 敏17(+3), 體10(+0), 智4(-3), 感12(+1), 魅5(-3)",
-    senses: "黑暗視覺60呎, 被動察覺13",
-    skills: "特技+5, 察覺+3, 隱匿+5",
-    traits: "—",
-    attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷5(1d4+3)。"
-  },
-  giant_wolf_spider: {
-    name: "巨狼蛛 (Giant Wolf Spider) CR:1/4",
-    size_type: "中型野獸",
-    ac: 13,
-    hp: "11 (2d8+2)",
-    speed: "40呎, 攀爬40呎",
-    ability: "力12(+1), 敏16(+3), 體13(+1), 智3(-4), 感12(+1), 魅4(-3)",
-    senses: "盲視10呎, 黑暗視覺60呎, 被動察覺13",
-    skills: "察覺+3, 隱匿+7",
-    traits: "蛛行：可攀爬困難表面（含天花板）且無需檢定",
-    attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷5(1d4+3)外加毒傷5(2d4)。"
-  },
-  goat: {
-    name: "山羊 (Goat) CR:0",
-    size_type: "中型野獸",
-    ac: 10,
-    hp: "4 (1d8)",
-    speed: "40呎, 攀爬30呎",
-    ability: "力11(+0), 敏10(+0), 體11(+0), 智2(-4), 感10(+0), 魅5(-3)",
-    senses: "黑暗視覺60呎, 被動察覺12",
-    skills: "察覺+2",
-    traits: "—",
-    attacks: "衝撞：近戰攻擊檢定+2, 觸及5呎；命中：鈍擊傷害1，若山羊先直線移動20呎以上再命中目標則改為鈍擊傷害2(1d4)。"
-  },
-  hyena: {
-    name: "鬣狗 (Hyena) CR:0",
-    size_type: "中型野獸",
-    ac: 11,
-    hp: "5 (1d8+1)",
-    speed: "50呎",
-    ability: "力11(+0), 敏13(+1), 體12(+1), 智2(-4), 感12(+1), 魅5(-3)",
-    senses: "黑暗視覺60呎, 被動察覺13",
-    skills: "察覺+3",
-    traits: "群攻：若攻擊目標5呎內有鬣狗的盟友（未失能），該攻擊擲骰具優勢",
-    attacks: "咬擊：近戰攻擊檢定+2, 觸及5呎；命中：刺傷3(1d6)。"
-  },
-  jackal: {
-    name: "胡狼 (Jackal) CR:0",
-    size_type: "小型野獸",
-    ac: 12,
-    hp: "3 (1d6)",
-    speed: "40呎",
-    ability: "力8(-1), 敏15(+2), 體11(+0), 智3(-4), 感12(+1), 魅6(-2)",
-    senses: "黑暗視覺90呎, 被動察覺15",
-    skills: "察覺+5, 隱匿+4",
-    traits: "—",
-    attacks: "咬擊：近戰攻擊檢定+1, 觸及5呎；命中：刺傷1(1d4-1)。"
-  },
-  mastiff: {
-    name: "獒犬 (Mastiff) CR:1/8",
-    size_type: "中型野獸",
-    ac: 12,
-    hp: "5 (1d8+1)",
-    speed: "40呎",
-    ability: "力13(+1), 敏14(+2), 體12(+1), 智3(-4), 感12(+1), 魅7(-2)",
-    senses: "黑暗視覺60呎, 被動察覺15",
-    skills: "察覺+5",
-    traits: "—",
-    attacks: "咬擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷4(1d6+1)。若目標為中型或更小，會倒地。"
-  },
-  mule: {
-    name: "騾子 (Mule) CR:1/8",
-    size_type: "中型野獸",
-    ac: 10,
-    hp: "11 (2d8+2)",
-    speed: "40呎",
-    ability: "力14(+2), 敏10(+0), 體13(+1), 智2(-4), 感10(+0), 魅5(-3)",
-    senses: "被動察覺10",
-    skills: "—",
-    traits: "負重獸：計算負重能力時視為大一個體型",
-    attacks: "蹄擊：近戰攻擊檢定+4, 觸及5呎；命中：鈍擊傷害4(1d4+2)。"
-  },
-  panther: {
-    name: "黑豹 (Panther) CR:1/4",
-    size_type: "中型野獸",
-    ac: 13,
-    hp: "13 (3d8)",
-    speed: "50呎, 攀爬40呎",
-    ability: "力14(+2), 敏16(+3), 體10(+0), 智3(-4), 感14(+2), 魅7(-2)",
-    senses: "黑暗視覺60呎, 被動察覺14",
-    skills: "察覺+4, 隱匿+7",
-    traits: "—",
-    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害6(1d6+3)。附贈─靈巧脫逃：執行撤離或躲藏。"
-  },
-  piranha: {
-    name: "食人魚 (Piranha) CR:0",
-    size_type: "微型野獸",
-    ac: 13,
-    hp: "1 (1d4-1)",
-    speed: "5呎, 游泳40呎",
-    ability: "力2(-4), 敏16(+3), 體9(-1), 智1(-5), 感7(-2), 魅2(-4)",
-    senses: "黑暗視覺60呎, 被動察覺8",
-    skills: "—",
-    traits: "水下呼吸：僅能在水下呼吸",
-    attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷1。若目標未滿生命值，該攻擊擲骰具優勢。"
-  },
-  pony: {
-    name: "小馬 (Pony) CR:1/8",
-    size_type: "中型野獸",
-    ac: 10,
-    hp: "11 (2d8+2)",
-    speed: "40呎",
-    ability: "力15(+2), 敏10(+0), 體13(+1), 智2(-4), 感11(+0), 魅7(-2)",
-    senses: "被動察覺10",
-    skills: "—",
-    traits: "—",
-    attacks: "蹄擊：近戰攻擊檢定+4, 觸及5呎；命中：鈍擊傷害4(1d4+2)。"
-  },
-  reef_shark: {
-    name: "礁鯊 (Reef Shark) CR:1/2",
-    size_type: "中型野獸",
-    ac: 12,
-    hp: "22 (4d8+4)",
-    speed: "5呎, 游泳30呎",
-    ability: "力14(+2), 敏15(+2), 體13(+1), 智1(-5), 感10(+0), 魅4(-3)",
-    senses: "盲視30呎, 被動察覺12",
-    skills: "察覺+2",
-    traits: "群攻：若攻擊目標5呎內有鯊魚的盟友（未失能），該攻擊擲骰具優勢；水下呼吸：僅能在水下呼吸",
-    attacks: "咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷7(2d4+2)。"
-  },
-  scorpion: {
-    name: "蠍子 (Scorpion) CR:0",
-    size_type: "微型野獸",
-    ac: 11,
-    hp: "1 (1d4-1)",
-    speed: "10呎",
-    ability: "力2(-4), 敏11(+0), 體8(-1), 智1(-5), 感8(-1), 魅2(-4)",
-    senses: "盲視10呎, 被動察覺9",
-    skills: "—",
-    traits: "—",
-    attacks: "螫刺：近戰攻擊檢定+2, 觸及5呎；命中：刺傷1外加毒傷3(1d6)。"
-  },
-  seahorse: {
-    name: "海馬 (Seahorse) CR:0",
-    size_type: "微型野獸",
-    ac: 12,
-    hp: "1 (1d4-1)",
-    speed: "5呎, 游泳20呎",
-    ability: "力1(-5), 敏12(+1), 體8(-1), 智1(-5), 感10(+0), 魅2(-4)",
-    senses: "被動察覺12",
-    skills: "察覺+2, 隱匿+5",
-    traits: "水下呼吸：僅能在水下呼吸",
-    attacks: "泡泡衝刺：在水下可移動至多其游泳速度，且不引發藉機攻擊。"
-  },
-  swarm_of_insects: {
-    name: "昆蟲群 (Swarm of Insects) CR:1/2",
-    size_type: "中型微型野獸群",
-    ac: 11,
-    hp: "19 (3d8+6)",
-    speed: "20呎, 攀爬或飛行20呎（由GM決定）",
-    ability: "力3(-4), 敏13(+1), 體14(+2), 智1(-5), 感7(-2), 魅1(-5)",
-    senses: "盲視30呎, 被動察覺8",
-    skills: "—",
-    traits: "蛛行：若具有攀爬速度，可攀爬困難表面（含天花板）且無需檢定；群集：可與其他生物共享空間並穿過足夠微型昆蟲通行的縫隙，無法回復生命值或獲得臨時生命值；抗性：鈍擊、穿刺、揮砍；免疫：魅惑、恐懼、擒抱、麻痺、石化、倒地、束縛、震懾",
-    attacks: "啃咬：近戰攻擊檢定+3, 觸及5呎；命中：毒傷6(2d4+1)，若處於受創則改為毒傷3(1d4+1)。"
-  },
-  warhorse: {
-    name: "戰馬 (Warhorse) CR:1/2",
-    size_type: "大型野獸",
-    ac: 11,
-    hp: "19 (3d10+3)",
-    speed: "60呎",
-    ability: "力18(+4), 敏12(+1), 體13(+1), 智2(-4), 感12(+1), 魅7(-2)",
-    senses: "被動察覺11",
-    skills: "—",
-    traits: "—",
-    attacks: "蹄擊：近戰攻擊檢定+6, 觸及5呎；命中：鈍擊傷害9(2d4+4)。若戰馬先直線移動20呎以上再命中大型或更小目標，目標額外承受鈍擊傷害5(2d4)並倒地。"
-  },
-  blood_hawk: {
-    name: "血鷹 (Blood Hawk) CR:1/8",
-    size_type: "小型野獸",
-    ac: 12,
-    hp: "7 (2d6)",
-    speed: "10呎, 飛行60呎",
-    ability: "力6(-2), 敏14(+2), 體10(+0), 智3(-4), 感14(+2), 魅5(-3)",
-    senses: "被動察覺16",
-    skills: "察覺+6",
-    traits: "陣營：無陣營；語言：無；群攻：若攻擊目標5呎內有血鷹的盟友，且該盟友未陷入失能，血鷹對該目標的攻擊檢定具有優勢。",
-    attacks: "喙擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷4(1d4+2)，若目標處於受創則改為刺傷6(1d8+2)。"
-  },
-  eagle: {
-    name: "鷹 (Eagle) CR:0",
-    size_type: "小型野獸",
-    ac: 12,
-    hp: "4 (1d6+1)",
-    speed: "10呎, 飛行60呎",
-    ability: "力6(-2), 敏15(+2), 體12(+1), 智2(-4), 感14(+2), 魅7(-2)",
-    senses: "被動察覺16",
-    skills: "察覺+6",
-    traits: "陣營：無陣營；語言：無",
-    attacks: "爪擊：近戰攻擊檢定+4, 觸及5呎；命中：揮砍傷害4(1d4+2)。"
-  },
-  giant_bat: {
-    name: "巨蝙蝠 (Giant Bat) CR:1/4",
-    size_type: "大型野獸",
-    ac: 13,
-    hp: "22 (4d10)",
-    speed: "10呎, 飛行60呎",
-    ability: "力15(+2), 敏16(+3), 體11(+0), 智2(-4), 感12(+1), 魅6(-2)",
-    senses: "盲視120呎, 被動察覺11",
-    skills: "—",
-    traits: "陣營：無陣營；語言：無",
-    attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷6(1d6+3)。"
-  },
-  giant_wasp: {
-    name: "巨蜂 (Giant Wasp) CR:1/2",
-    size_type: "中型野獸",
-    ac: 13,
-    hp: "22 (5d8)",
-    speed: "10呎, 飛行50呎",
-    ability: "力10(+0), 敏14(+2), 體10(+0), 智1(-5), 感10(+0), 魅3(-4)",
-    senses: "被動察覺10",
-    skills: "—",
-    traits: "陣營：無陣營；語言：無；飛掠：巨蜂飛行離開敵人的觸及範圍時，不會引發藉機攻擊。",
-    attacks: "螫刺：近戰攻擊檢定+4, 觸及5呎；命中：刺傷5(1d6+2)外加毒傷5(2d4)。"
-  },
-  pteranodon: {
-    name: "翼手龍 (Pteranodon) CR:1/4",
-    size_type: "中型野獸（恐龍）",
-    ac: 13,
-    hp: "13 (3d8)",
-    speed: "10呎, 飛行60呎",
-    ability: "力12(+1), 敏15(+2), 體10(+0), 智2(-4), 感9(-1), 魅5(-3)",
-    senses: "被動察覺11",
-    skills: "察覺+1",
-    traits: "陣營：無陣營；語言：無；飛掠：翼手龍飛行離開敵人的觸及範圍時，不會引發藉機攻擊。",
-    attacks: "咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷6(1d8+2)。"
-  },
-  swarm_of_bats: {
-    name: "蝙蝠群 (Swarm of Bats) CR:1/4",
-    size_type: "大型微型野獸群",
-    ac: 12,
-    hp: "11 (2d10)",
-    speed: "5呎, 飛行30呎",
-    ability: "力5(-3), 敏15(+2), 體10(+0), 智2(-4), 感12(+1), 魅4(-3)",
-    senses: "盲視60呎, 被動察覺11",
-    skills: "—",
-    traits: "陣營：無陣營；語言：無；抗性：鈍擊、穿刺、揮砍；免疫：魅惑、恐懼、擒抱、麻痺、石化、倒地、束縛、震懾；群集：可與其他生物共享空間，且可穿過任何足以讓一隻微型蝙蝠通過的開口；無法恢復生命值或獲得臨時生命值。",
-    attacks: "啃咬：近戰攻擊檢定+4, 觸及5呎；命中：刺傷5(2d4)，若蝙蝠群處於受創則改為刺傷2(1d4)。"
-  },
-  swarm_of_ravens: {
-    name: "渡鴉群 (Swarm of Ravens) CR:1/4",
-    size_type: "中型微型野獸群",
-    ac: 12,
-    hp: "11 (2d8+2)",
-    speed: "10呎, 飛行50呎",
-    ability: "力6(-2), 敏14(+2), 體12(+1), 智5(-3), 感12(+1), 魅6(-2)",
-    senses: "被動察覺15",
-    skills: "察覺+5",
-    traits: "陣營：無陣營；語言：無；抗性：鈍擊、穿刺、揮砍；免疫：魅惑、恐懼、擒抱、麻痺、石化、倒地、束縛、震懾；群集：可與其他生物共享空間，且可穿過任何足以讓一隻微型渡鴉通過的開口；無法恢復生命值或獲得臨時生命值。",
-    attacks: "喙擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷5(1d6+2)，若渡鴉群處於受創則改為刺傷2(1d4)。嘈雜鳴叫（充能6）：渡鴉群空間內的一名生物進行DC10感知豁免；失敗：目標陷入耳聾，直到渡鴉群下回合開始。耳聾期間，目標的屬性檢定與攻擊檢定具有劣勢。"
-  },
-  vulture: {
-    name: "禿鷹 (Vulture) CR:0",
-    size_type: "中型野獸",
-    ac: 10,
-    hp: "5 (1d8+1)",
-    speed: "10呎, 飛行50呎",
-    ability: "力7(-2), 敏10(+0), 體13(+1), 智2(-4), 感12(+1), 魅4(-3)",
-    senses: "被動察覺13",
-    skills: "察覺+3",
-    traits: "陣營：無陣營；語言：無；群攻：若攻擊目標5呎內有禿鷹的盟友，且該盟友未陷入失能，禿鷹對該目標的攻擊檢定具有優勢。",
-    attacks: "喙擊：近戰攻擊檢定+2, 觸及5呎；命中：刺傷2(1d4)。"
-  },
-  brown_bear: {
-    name: "棕熊 (Brown Bear) CR:1",
-    size_type: "大型野獸",
-    ac: 11,
-    hp: "22 (3d10+6)",
-    speed: "40呎, 攀爬30呎",
-    ability: "力17(+3), 敏12(+1), 體15(+2), 智2(-4), 感13(+1), 魅7(-2)",
-    senses: "黑暗視覺60呎, 被動察覺13",
-    skills: "察覺+3",
-    traits: "陣營：無陣營；語言：無",
-    attacks: "多重攻擊：棕熊進行一次咬擊與一次爪擊。咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷7(1d8+3)。爪擊：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害5(1d4+3)。若目標為大型或更小生物，目標倒地。"
-  },
-  dire_wolf: {
-    name: "恐狼 (Dire Wolf) CR:1",
-    size_type: "大型野獸",
-    ac: 14,
-    hp: "22 (3d10+6)",
-    speed: "50呎",
-    ability: "力17(+3), 敏15(+2), 體15(+2), 智3(-4), 感12(+1), 魅7(-2)",
-    senses: "黑暗視覺60呎, 被動察覺15",
-    skills: "察覺+5, 隱匿+4",
-    traits: "陣營：無陣營；語言：無；群攻：若攻擊目標5呎內有恐狼的盟友，且該盟友未陷入失能，恐狼對該目標的攻擊檢定具有優勢。",
-    attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷8(1d10+3)。若目標為大型或更小生物，目標倒地。"
-  },
-  giant_hyena: {
-    name: "巨鬣狗 (Giant Hyena) CR:1",
-    size_type: "大型野獸",
-    ac: 12,
-    hp: "45 (6d10+12)",
-    speed: "50呎",
-    ability: "力16(+3), 敏14(+2), 體14(+2), 智2(-4), 感12(+1), 魅7(-2)",
-    senses: "黑暗視覺60呎, 被動察覺13",
-    skills: "察覺+3",
-    traits: "陣營：無陣營；語言：無",
-    attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷10(2d6+3)。附贈─暴走（每天1次）：巨鬣狗對一名原本已處於受創的生物造成傷害後，可立即移動至多其一半速度，並進行一次咬擊。"
-  },
-  giant_octopus: {
-    name: "巨章魚 (Giant Octopus) CR:1",
-    size_type: "大型野獸",
-    ac: 11,
-    hp: "45 (7d10+7)",
-    speed: "10呎, 游泳60呎",
-    ability: "力17(+3), 敏13(+1), 體13(+1), 智5(-3), 感10(+0), 魅4(-3)",
-    senses: "黑暗視覺60呎, 被動察覺14",
-    skills: "察覺+4, 隱匿+5",
-    traits: "陣營：無陣營；語言：無；水下呼吸：巨章魚只能在水下呼吸，但在水外可憋氣1小時。",
-    attacks: "觸手：近戰攻擊檢定+5, 觸及10呎；命中：鈍擊傷害10(2d6+3)。若目標為中型或更小生物，目標被八條觸手擒抱（掙脫DC13），且擒抱期間同時受束縛。反應─墨雲（每天1次）：巨章魚在水下受到傷害時觸發；巨章魚釋放墨汁，填滿以自身為中心的10呎立方區域，並移動至多其游泳速度。該區域重度遮蔽1分鐘，或直到強水流或類似效果將墨汁沖散。"
-  },
-  giant_spider: {
-    name: "巨蜘蛛 (Giant Spider) CR:1",
-    size_type: "大型野獸",
-    ac: 14,
-    hp: "26 (4d10+4)",
-    speed: "30呎, 攀爬30呎",
-    ability: "力14(+2), 敏16(+3), 體12(+1), 智2(-4), 感11(+0), 魅4(-3)",
-    senses: "黑暗視覺60呎, 被動察覺14",
-    skills: "察覺+4, 隱匿+7",
-    traits: "陣營：無陣營；語言：無；蛛行：可攀爬困難表面，包括沿著天花板移動，而無需進行屬性檢定；網行者：忽略蛛網造成的移動限制，並知道與同一張蛛網接觸的其他生物所在位置。",
-    attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷7(1d8+3)外加毒傷7(2d6)。蛛網（充能5–6）：60呎內一名可見生物進行DC13敏捷豁免；失敗：目標陷入束縛，直到蛛網被摧毀。蛛網AC10、HP5、易受火焰傷害，並免疫毒素與心靈傷害。"
-  },
-  giant_toad: {
-    name: "巨蟾蜍 (Giant Toad) CR:1",
-    size_type: "大型野獸",
-    ac: 11,
-    hp: "39 (6d10+6)",
-    speed: "30呎, 游泳30呎",
-    ability: "力15(+2), 敏13(+1), 體13(+1), 智2(-4), 感10(+0), 魅3(-4)",
-    senses: "黑暗視覺60呎, 被動察覺10",
-    skills: "—",
-    traits: "陣營：無陣營；語言：無；兩棲：可在空氣和水中呼吸；立定跳躍：無論有無助跑，跳遠距離最多20呎，跳高距離最多10呎。",
-    attacks: "咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷5(1d6+2)外加毒傷5(2d4)。若目標為中型或更小生物，目標陷入擒抱（掙脫DC12）。吞下：吞下一名被其擒抱的中型或更小目標。被吞下期間，目標不再被擒抱，但陷入目盲與束縛，且對外界的攻擊與其他效果具有全掩護；此外，目標在巨蟾蜍每回合結束時受到酸傷10(3d6)。巨蟾蜍一次只能吞下一個目標，且吞著目標時不能使用咬擊。若巨蟾蜍死亡，被吞下的生物不再受束縛，並可花費5呎移動力從屍體中逃出，離開時倒地。"
-  },
-  lion: {
-    name: "獅子 (Lion) CR:1",
-    size_type: "大型野獸",
-    ac: 12,
-    hp: "22 (4d10)",
-    speed: "50呎",
-    ability: "力17(+3), 敏15(+2), 體11(+0), 智3(-4), 感12(+1), 魅8(-1)",
-    senses: "黑暗視覺60呎, 被動察覺13",
-    skills: "察覺+3, 隱匿+4",
-    traits: "陣營：無陣營；語言：無；群攻：若攻擊目標5呎內有獅子的盟友，且該盟友未陷入失能，獅子對該目標的攻擊檢定具有優勢；奔跑跳躍：若先助跑10呎，獅子的跳遠距離最多25呎。",
-    attacks: "多重攻擊：獅子進行兩次撕裂，並可將其中一次攻擊替換成一次咆哮。撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害7(1d8+3)。咆哮：15呎內一名生物進行DC11感知豁免；失敗：目標陷入恐懼，直到獅子下回合開始。"
-  },
-  swarm_of_piranhas: {
-    name: "食人魚群 (Swarm of Piranhas) CR:1",
-    size_type: "中型微型野獸群",
-    ac: 13,
-    hp: "28 (8d8-8)",
-    speed: "5呎, 游泳40呎",
-    ability: "力13(+1), 敏16(+3), 體9(-1), 智1(-5), 感7(-2), 魅2(-4)",
-    senses: "黑暗視覺60呎, 被動察覺8",
-    skills: "—",
-    traits: "陣營：無陣營；語言：無；抗性：鈍擊、穿刺、揮砍；免疫：魅惑、恐懼、擒抱、麻痺、石化、倒地、束縛、震懾；群集：可與其他生物共享空間，且可穿過任何足以讓一隻微型食人魚通過的開口；無法恢復生命值或獲得臨時生命值；水下呼吸：只能在水下呼吸。",
-    attacks: "啃咬：近戰攻擊檢定+5；若目標目前生命值未滿，攻擊檢定具有優勢；觸及5呎。命中：刺傷8(2d4+3)，若食人魚群處於受創則改為刺傷5(1d4+3)。"
-  },
-  tiger: {
-    name: "老虎 (Tiger) CR:1",
-    size_type: "大型野獸",
-    ac: 13,
-    hp: "30 (4d10+8)",
-    speed: "40呎",
-    ability: "力17(+3), 敏16(+3), 體14(+2), 智3(-4), 感12(+1), 魅8(-1)",
-    senses: "黑暗視覺60呎, 被動察覺13",
-    skills: "察覺+3, 隱匿+7",
-    traits: "陣營：無陣營；語言：無",
-    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害10(2d6+3)。若目標為大型或更小生物，目標倒地。附贈─靈巧脫逃：老虎執行撤離或躲藏動作。"
-  }
-};
+// 網站版資料卡的顯示文字（name、size_type、ac、hp、speed、ability、savingThrows、senses、skills、traits、attacks），建置由數值產生。
+const BEAST_STATS = Object.freeze(Object.fromEntries(Object.entries(monsterText).map(([key, text]) => [key, Object.freeze({ ...text.statBlock })])));
 
-// Structured tabletop values transcribed from the stat blocks above; conditional effects remain in attacks/traits.
-const BEAST_TABLETOP_DATA = Object.freeze({
-  "rat": {"abilities":{"str":2,"dex":11,"con":9,"int":2,"wis":10,"cha":4},"skills":{"察覺":2},"speeds":{"步行":20,"攀爬":20},"actions":[{"name":"咬擊","hit":2,"damage":[{"type":"刺傷","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "riding_horse": {"abilities":{"str":16,"dex":13,"con":12,"int":2,"wis":11,"cha":7},"skills":{},"speeds":{"步行":60},"actions":[{"name":"蹄擊","hit":5,"damage":[{"type":"鈍傷","expression":"1d8+3","fixed":7}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "spider": {"abilities":{"str":2,"dex":14,"con":8,"int":1,"wis":10,"cha":2},"skills":{"隱匿":4},"speeds":{"步行":20,"攀爬":20},"actions":[{"name":"咬擊","hit":4,"damage":[{"type":"刺傷","expression":"","fixed":1},{"type":"毒傷","expression":"1d4","fixed":2}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "wolf": {"abilities":{"str":14,"dex":15,"con":12,"int":3,"wis":12,"cha":6},"skills":{"察覺":5,"隱匿":4},"speeds":{"步行":40},"actions":[{"name":"咬擊","hit":4,"damage":[{"type":"刺傷","expression":"1d6+2","fixed":5}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "ape": {"abilities":{"str":16,"dex":14,"con":14,"int":6,"wis":12,"cha":7},"skills":{"運動":5,"察覺":3},"speeds":{"步行":30,"攀爬":30},"actions":[{"name":"拳擊","hit":5,"damage":[{"type":"鈍擊傷害","expression":"1d4+3","fixed":5}],"id":"attack-0","mode":"action"},{"name":"石塊（充能6）","hit":5,"damage":[{"type":"鈍擊傷害","expression":"2d6+3","fixed":10}],"id":"attack-1","mode":"action","recovery":"recharge-6"},{"id":"multi","name":"多重攻擊","mode":"action"}],"conditionalDamage":[]},
-  "black_bear": {"abilities":{"str":15,"dex":12,"con":14,"int":2,"wis":12,"cha":7},"skills":{"察覺":5},"speeds":{"步行":30,"攀爬":30,"游泳":30},"actions":[{"name":"撕裂","hit":4,"damage":[{"type":"揮砍傷害","expression":"1d6+2","fixed":5}],"id":"attack-0","mode":"action"},{"id":"multi","name":"多重攻擊","mode":"action"}],"conditionalDamage":[]},
-  "crocodile": {"abilities":{"str":15,"dex":10,"con":13,"int":2,"wis":10,"cha":5},"skills":{"隱匿":2},"speeds":{"步行":20,"游泳":30},"actions":[{"name":"咬擊","hit":4,"damage":[{"type":"刺傷","expression":"1d8+2","fixed":6}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "giant_goat": {"abilities":{"str":17,"dex":13,"con":12,"int":3,"wis":12,"cha":6},"skills":{"察覺":3},"speeds":{"步行":40,"攀爬":30},"actions":[{"name":"衝撞","hit":5,"damage":[{"type":"鈍擊傷害","expression":"1d6+3","fixed":6}],"id":"attack-0","mode":"action"}],"conditionalDamage":[{"name":"衝鋒額外傷害","expression":"2d4"}]},
-  "reef_shark": {"abilities":{"str":14,"dex":15,"con":13,"int":1,"wis":10,"cha":4},"skills":{"察覺":2},"speeds":{"步行":5,"游泳":30},"actions":[{"name":"咬擊","hit":4,"damage":[{"type":"刺傷","expression":"2d4+2","fixed":7}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "warhorse": {"abilities":{"str":18,"dex":12,"con":13,"int":2,"wis":12,"cha":7},"skills":{},"speeds":{"步行":60},"actions":[{"name":"蹄擊","hit":6,"damage":[{"type":"鈍擊傷害","expression":"2d4+4","fixed":9}],"id":"attack-0","mode":"action"}],"conditionalDamage":[{"name":"衝鋒額外傷害","expression":"2d4"}]},
-  "baboon": {"abilities":{"str":8,"dex":14,"con":11,"int":4,"wis":12,"cha":6},"skills":{},"speeds":{"步行":30,"攀爬":30},"actions":[{"name":"咬擊","hit":1,"damage":[{"type":"刺傷","expression":"1d4-1","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "badger": {"abilities":{"str":10,"dex":11,"con":16,"int":2,"wis":12,"cha":5},"skills":{"察覺":3},"speeds":{"步行":5},"actions":[{"name":"咬擊","hit":2,"damage":[{"type":"刺傷","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "boar": {"abilities":{"str":13,"dex":11,"con":14,"int":2,"wis":9,"cha":5},"skills":{},"speeds":{"步行":40},"actions":[{"name":"撞擊","hit":3,"damage":[{"type":"刺傷","expression":"1d6+1","fixed":4}],"id":"attack-0","mode":"action"}],"conditionalDamage":[{"name":"衝鋒額外傷害","expression":"1d6"}]},
-  "camel": {"abilities":{"str":15,"dex":8,"con":17,"int":2,"wis":11,"cha":5},"skills":{},"speeds":{"步行":50},"actions":[{"name":"咬擊","hit":4,"damage":[{"type":"鈍擊傷害","expression":"1d4+2","fixed":4}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "cat": {"abilities":{"str":3,"dex":15,"con":10,"int":3,"wis":12,"cha":7},"skills":{"察覺":3,"隱匿":4},"speeds":{"步行":40,"攀爬":40},"actions":[{"name":"抓擊","hit":4,"damage":[{"type":"揮砍傷害","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "constrictor_snake": {"abilities":{"str":15,"dex":14,"con":12,"int":1,"wis":10,"cha":3},"skills":{"察覺":2,"隱匿":4},"speeds":{"步行":30,"游泳":30},"actions":[{"name":"咬擊","hit":4,"damage":[{"type":"刺傷","expression":"1d8+2","fixed":6}],"id":"attack-0","mode":"action"},{"id":"constrict","name":"絞纏","mode":"action","damage":[{"type":"鈍擊傷害","expression":"3d4"}],"save":{"ability":"力量","dc":12}}],"conditionalDamage":[]},
-  "crab": {"abilities":{"str":6,"dex":11,"con":12,"int":1,"wis":8,"cha":2},"skills":{"隱匿":2},"speeds":{"步行":20,"游泳":20},"actions":[{"name":"螯擊","hit":2,"damage":[{"type":"鈍擊傷害","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "deer": {"abilities":{"str":11,"dex":16,"con":11,"int":2,"wis":14,"cha":5},"skills":{"察覺":4},"speeds":{"步行":50},"actions":[{"name":"頂撞","hit":2,"damage":[{"type":"鈍擊傷害","expression":"1d4","fixed":2}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "draft_horse": {"abilities":{"str":18,"dex":10,"con":15,"int":2,"wis":11,"cha":7},"skills":{},"speeds":{"步行":40},"actions":[{"name":"蹄擊","hit":6,"damage":[{"type":"鈍擊傷害","expression":"1d4+4","fixed":6}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "elk": {"abilities":{"str":16,"dex":10,"con":11,"int":2,"wis":10,"cha":6},"skills":{"察覺":2},"speeds":{"步行":50},"actions":[{"name":"衝撞","hit":5,"damage":[{"type":"鈍擊傷害","expression":"1d6+3","fixed":6}],"id":"attack-0","mode":"action"}],"conditionalDamage":[{"name":"衝鋒額外傷害","expression":"1d6"}]},
-  "giant_badger": {"abilities":{"str":13,"dex":10,"con":17,"int":2,"wis":12,"cha":5},"skills":{"察覺":3},"speeds":{"步行":10},"actions":[{"name":"咬擊","hit":3,"damage":[{"type":"刺傷","expression":"2d4+1","fixed":6}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "giant_centipede": {"abilities":{"str":5,"dex":14,"con":12,"int":1,"wis":7,"cha":3},"skills":{},"speeds":{"步行":30,"攀爬":30},"actions":[{"name":"咬擊","hit":4,"damage":[{"type":"刺傷","expression":"1d4+2","fixed":4}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "giant_crab": {"abilities":{"str":13,"dex":13,"con":11,"int":1,"wis":9,"cha":3},"skills":{"隱匿":3},"speeds":{"步行":30,"游泳":30},"actions":[{"name":"螯擊","hit":3,"damage":[{"type":"鈍擊傷害","expression":"1d6+1","fixed":4}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "giant_frog": {"abilities":{"str":12,"dex":13,"con":11,"int":2,"wis":10,"cha":3},"skills":{"察覺":2,"隱匿":4},"speeds":{"步行":30,"游泳":30},"actions":[{"name":"咬擊","hit":3,"damage":[{"type":"刺傷","expression":"1d6+2","fixed":5}],"id":"attack-0","mode":"action"},{"id":"swallow","name":"吞下","mode":"action","damage":[{"type":"酸傷（下回合結束）","expression":"2d4"}]}],"conditionalDamage":[]},
-  "giant_lizard": {"abilities":{"str":15,"dex":12,"con":13,"int":2,"wis":10,"cha":5},"skills":{},"speeds":{"步行":40,"攀爬":40},"actions":[{"name":"咬擊","hit":4,"damage":[{"type":"刺傷","expression":"1d8+2","fixed":6}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "giant_rat": {"abilities":{"str":7,"dex":16,"con":11,"int":2,"wis":10,"cha":4},"skills":{"察覺":2},"speeds":{"步行":30,"攀爬":30},"actions":[{"name":"咬擊","hit":5,"damage":[{"type":"刺傷","expression":"1d4+3","fixed":5}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "giant_weasel": {"abilities":{"str":11,"dex":17,"con":10,"int":4,"wis":12,"cha":5},"skills":{"體操":5,"察覺":3,"隱匿":5},"speeds":{"步行":40,"攀爬":30},"actions":[{"name":"咬擊","hit":5,"damage":[{"type":"刺傷","expression":"1d4+3","fixed":5}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "giant_wolf_spider": {"abilities":{"str":12,"dex":16,"con":13,"int":3,"wis":12,"cha":4},"skills":{"察覺":3,"隱匿":7},"speeds":{"步行":40,"攀爬":40},"actions":[{"name":"咬擊","hit":5,"damage":[{"type":"刺傷","expression":"1d4+3","fixed":5},{"type":"毒傷","expression":"2d4","fixed":5}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "goat": {"abilities":{"str":11,"dex":10,"con":11,"int":2,"wis":10,"cha":5},"skills":{"察覺":2},"speeds":{"步行":40,"攀爬":30},"actions":[{"name":"衝撞","hit":2,"damage":[{"type":"鈍擊傷害","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[{"name":"衝鋒替代傷害","expression":"1d4"}]},
-  "hyena": {"abilities":{"str":11,"dex":13,"con":12,"int":2,"wis":12,"cha":5},"skills":{"察覺":3},"speeds":{"步行":50},"actions":[{"name":"咬擊","hit":2,"damage":[{"type":"刺傷","expression":"1d6","fixed":3}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "jackal": {"abilities":{"str":8,"dex":15,"con":11,"int":3,"wis":12,"cha":6},"skills":{"察覺":5,"隱匿":4},"speeds":{"步行":40},"actions":[{"name":"咬擊","hit":1,"damage":[{"type":"刺傷","expression":"1d4-1","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "lizard": {"abilities":{"str":2,"dex":11,"con":10,"int":1,"wis":8,"cha":3},"skills":{},"speeds":{"步行":20,"攀爬":20},"actions":[{"name":"咬擊","hit":2,"damage":[{"type":"刺傷","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "mastiff": {"abilities":{"str":13,"dex":14,"con":12,"int":3,"wis":12,"cha":7},"skills":{"察覺":5},"speeds":{"步行":40},"actions":[{"name":"咬擊","hit":3,"damage":[{"type":"刺傷","expression":"1d6+1","fixed":4}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "mule": {"abilities":{"str":14,"dex":10,"con":13,"int":2,"wis":10,"cha":5},"skills":{},"speeds":{"步行":40},"actions":[{"name":"蹄擊","hit":4,"damage":[{"type":"鈍擊傷害","expression":"1d4+2","fixed":4}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "octopus": {"abilities":{"str":4,"dex":15,"con":11,"int":3,"wis":10,"cha":4},"skills":{"察覺":2,"隱匿":6},"speeds":{"步行":5,"游泳":30},"actions":[{"name":"觸手","hit":4,"damage":[{"type":"鈍擊傷害","expression":"","fixed":1}],"id":"attack-0","mode":"action"},{"id":"ink","name":"墨雲","mode":"reaction","recovery":"daily"}],"conditionalDamage":[]},
-  "panther": {"abilities":{"str":14,"dex":16,"con":10,"int":3,"wis":14,"cha":7},"skills":{"察覺":4,"隱匿":7},"speeds":{"步行":50,"攀爬":40},"actions":[{"name":"撕裂","hit":5,"damage":[{"type":"揮砍傷害","expression":"1d6+3","fixed":6}],"id":"attack-0","mode":"action"},{"id":"escape","name":"靈巧脫逃","mode":"bonus"}],"conditionalDamage":[]},
-  "piranha": {"abilities":{"str":2,"dex":16,"con":9,"int":1,"wis":7,"cha":2},"skills":{},"speeds":{"步行":5,"游泳":40},"actions":[{"name":"咬擊","hit":5,"damage":[{"type":"刺傷","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "pony": {"abilities":{"str":15,"dex":10,"con":13,"int":2,"wis":11,"cha":7},"skills":{},"speeds":{"步行":40},"actions":[{"name":"蹄擊","hit":4,"damage":[{"type":"鈍擊傷害","expression":"1d4+2","fixed":4}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "scorpion": {"abilities":{"str":2,"dex":11,"con":8,"int":1,"wis":8,"cha":2},"skills":{},"speeds":{"步行":10},"actions":[{"name":"螫刺","hit":2,"damage":[{"type":"刺傷","expression":"","fixed":1},{"type":"毒傷","expression":"1d6","fixed":3}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "seahorse": {"abilities":{"str":1,"dex":12,"con":8,"int":1,"wis":10,"cha":2},"skills":{"察覺":2,"隱匿":5},"speeds":{"步行":5,"游泳":20},"actions":[{"id":"dash","name":"泡泡衝刺","mode":"action"}],"conditionalDamage":[]},
-  "venomous_snake": {"abilities":{"str":2,"dex":15,"con":11,"int":1,"wis":10,"cha":3},"skills":{},"speeds":{"步行":30,"游泳":30},"actions":[{"name":"啃咬","hit":4,"damage":[{"type":"刺傷","expression":"1d4+2","fixed":4},{"type":"毒傷","expression":"1d6","fixed":3}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "weasel": {"abilities":{"str":3,"dex":16,"con":8,"int":2,"wis":12,"cha":3},"skills":{"體操":5,"察覺":3,"隱匿":5},"speeds":{"步行":30,"攀爬":30},"actions":[{"name":"咬擊","hit":5,"damage":[{"type":"刺傷","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "bat": {"abilities":{"str":2,"dex":15,"con":8,"int":2,"wis":12,"cha":4},"skills":{},"speeds":{"步行":5,"飛行":30},"actions":[{"name":"咬擊","hit":4,"damage":[{"type":"刺傷","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "blood_hawk": {"abilities":{"str":6,"dex":14,"con":10,"int":3,"wis":14,"cha":5},"skills":{"察覺":6},"speeds":{"步行":10,"飛行":60},"actions":[{"name":"喙擊","hit":4,"damage":[{"type":"刺傷","expression":"1d4+2","fixed":4}],"id":"attack-0","mode":"action"}],"conditionalDamage":[{"name":"受創目標替代傷害","expression":"1d8+2"}]},
-  "eagle": {"abilities":{"str":6,"dex":15,"con":12,"int":2,"wis":14,"cha":7},"skills":{"察覺":6},"speeds":{"步行":10,"飛行":60},"actions":[{"name":"爪擊","hit":4,"damage":[{"type":"揮砍傷害","expression":"1d4+2","fixed":4}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "giant_bat": {"abilities":{"str":15,"dex":16,"con":11,"int":2,"wis":12,"cha":6},"skills":{},"speeds":{"步行":10,"飛行":60},"actions":[{"name":"咬擊","hit":5,"damage":[{"type":"刺傷","expression":"1d6+3","fixed":6}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "giant_wasp": {"abilities":{"str":10,"dex":14,"con":10,"int":1,"wis":10,"cha":3},"skills":{},"speeds":{"步行":10,"飛行":50},"actions":[{"name":"螫刺","hit":4,"damage":[{"type":"刺傷","expression":"1d6+2","fixed":5},{"type":"毒傷","expression":"2d4","fixed":5}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "hawk": {"abilities":{"str":5,"dex":16,"con":8,"int":2,"wis":14,"cha":6},"skills":{"察覺":6},"speeds":{"步行":10,"飛行":60},"actions":[{"name":"爪擊","hit":5,"damage":[{"type":"揮砍傷害","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "owl": {"abilities":{"str":3,"dex":13,"con":8,"int":2,"wis":12,"cha":7},"skills":{"察覺":5,"隱匿":5},"speeds":{"步行":5,"飛行":60},"actions":[{"name":"爪擊","hit":3,"damage":[{"type":"揮砍傷害","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "pteranodon": {"abilities":{"str":12,"dex":15,"con":10,"int":2,"wis":9,"cha":5},"skills":{"察覺":1},"speeds":{"步行":10,"飛行":60},"actions":[{"name":"咬擊","hit":4,"damage":[{"type":"刺傷","expression":"1d8+2","fixed":6}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "raven": {"abilities":{"str":2,"dex":14,"con":10,"int":5,"wis":13,"cha":6},"skills":{"察覺":3},"speeds":{"步行":10,"飛行":50},"actions":[{"name":"喙擊","hit":4,"damage":[{"type":"刺傷","expression":"","fixed":1}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "vulture": {"abilities":{"str":7,"dex":10,"con":13,"int":2,"wis":12,"cha":4},"skills":{"察覺":3},"speeds":{"步行":10,"飛行":50},"actions":[{"name":"喙擊","hit":2,"damage":[{"type":"刺傷","expression":"1d4","fixed":2}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "brown_bear": {"abilities":{"str":17,"dex":12,"con":15,"int":2,"wis":13,"cha":7},"skills":{"察覺":3},"speeds":{"步行":40,"攀爬":30},"actions":[{"name":"咬擊","hit":5,"damage":[{"type":"刺傷","expression":"1d8+3","fixed":7}],"id":"attack-0","mode":"action"},{"name":"爪擊","hit":5,"damage":[{"type":"揮砍傷害","expression":"1d4+3","fixed":5}],"id":"attack-1","mode":"action"},{"id":"multi","name":"多重攻擊","mode":"action"}],"conditionalDamage":[]},
-  "dire_wolf": {"abilities":{"str":17,"dex":15,"con":15,"int":3,"wis":12,"cha":7},"skills":{"察覺":5,"隱匿":4},"speeds":{"步行":50},"actions":[{"name":"咬擊","hit":5,"damage":[{"type":"刺傷","expression":"1d10+3","fixed":8}],"id":"attack-0","mode":"action"}],"conditionalDamage":[]},
-  "giant_hyena": {"abilities":{"str":16,"dex":14,"con":14,"int":2,"wis":12,"cha":7},"skills":{"察覺":3},"speeds":{"步行":50},"actions":[{"name":"咬擊","hit":5,"damage":[{"type":"刺傷","expression":"2d6+3","fixed":10}],"id":"attack-0","mode":"action"},{"id":"rampage","name":"暴走","mode":"bonus","recovery":"daily"}],"conditionalDamage":[]},
-  "giant_octopus": {"abilities":{"str":17,"dex":13,"con":13,"int":5,"wis":10,"cha":4},"skills":{"察覺":4,"隱匿":5},"speeds":{"步行":10,"游泳":60},"actions":[{"name":"觸手","hit":5,"damage":[{"type":"鈍擊傷害","expression":"2d6+3","fixed":10}],"id":"attack-0","mode":"action"},{"id":"ink","name":"墨雲","mode":"reaction","recovery":"daily"}],"conditionalDamage":[]},
-  "giant_spider": {"abilities":{"str":14,"dex":16,"con":12,"int":2,"wis":11,"cha":4},"skills":{"察覺":4,"隱匿":7},"speeds":{"步行":30,"攀爬":30},"actions":[{"name":"咬擊","hit":5,"damage":[{"type":"刺傷","expression":"1d8+3","fixed":7},{"type":"毒傷","expression":"2d6","fixed":7}],"id":"attack-0","mode":"action"},{"id":"web","name":"蛛網","mode":"action","recovery":"recharge-5","damage":[],"save":{"ability":"敏捷","dc":13}}],"conditionalDamage":[]},
-  "giant_toad": {"abilities":{"str":15,"dex":13,"con":13,"int":2,"wis":10,"cha":3},"skills":{},"speeds":{"步行":30,"游泳":30},"actions":[{"name":"咬擊","hit":4,"damage":[{"type":"刺傷","expression":"1d6+2","fixed":5},{"type":"毒傷","expression":"2d4","fixed":5}],"id":"attack-0","mode":"action"},{"id":"swallow","name":"吞下","mode":"action","damage":[{"type":"酸傷（回合結束）","expression":"3d6"}]}],"conditionalDamage":[]},
-  "lion": {"abilities":{"str":17,"dex":15,"con":11,"int":3,"wis":12,"cha":8},"skills":{"察覺":3,"隱匿":4},"speeds":{"步行":50},"actions":[{"name":"撕裂","hit":5,"damage":[{"type":"揮砍傷害","expression":"1d8+3","fixed":7}],"id":"attack-0","mode":"action"},{"id":"multi","name":"多重攻擊","mode":"action"},{"id":"roar","name":"咆哮","mode":"action","damage":[],"save":{"ability":"感知","dc":11}}],"conditionalDamage":[]},
-  "tiger": {"abilities":{"str":17,"dex":16,"con":14,"int":3,"wis":12,"cha":8},"skills":{"察覺":3,"隱匿":7},"speeds":{"步行":40},"actions":[{"name":"撕裂","hit":5,"damage":[{"type":"揮砍傷害","expression":"2d6+3","fixed":10}],"id":"attack-0","mode":"action"},{"id":"escape","name":"靈巧脫逃","mode":"bonus"}],"conditionalDamage":[]}
-});
+// 跑團讀取的野獸數值：資料卡文字加上 abilities、saves、skills（技能名 → 加值）、speeds（中文速度名 → 呎）、
+// actions（name、hit、damage[{ type, expression, fixed }]、id、mode、recovery、save{ ability, dc }）與 conditionalDamage。
+// 數值隨施法變化的召喚物（異界坐騎）沒有跑團數值，回傳 null。
+function beastTabletopView(key) {
+  if (!Object.hasOwn(monsterRules, key) || !Object.hasOwn(monsterText, key)) return null;
+  const rules = monsterRules[key], text = monsterText[key];
+  if (rules.variable) return null;
+  const damageType = item => `${monsterLabels.damage[item.type]}${item.timing ? `（${monsterLabels.timing[item.timing]}）` : ""}`;
+  const damage = item => ({ type: damageType(item), expression: item.dice || "", fixed: item.dice ? item.average : item.fixed });
+  return {
+    ...text.statBlock,
+    abilities: { ...rules.abilities },
+    ...(rules.saves ? { saves: { ...rules.saves } } : {}),
+    skills: { ...(rules.skills || {}) },
+    speeds: Object.fromEntries(Object.entries(rules.speed).filter(([type]) => type !== "hover").map(([type, feet]) => [monsterLabels.speed[type], feet])),
+    actions: rules.actions.map(action => ({
+      name: text.actions[action.id].name,
+      ...(action.attack ? { hit: action.attack.hit } : {}),
+      ...(action.damage ? { damage: action.damage.map(damage) } : {}),
+      id: action.id,
+      mode: action.mode || "action",
+      ...(action.recovery ? { recovery: action.recovery } : {}),
+      ...(action.save ? { save: { ability: monsterLabels.ability[action.save.ability], dc: action.save.dc } } : {})
+    })),
+    conditionalDamage: rules.actions.flatMap(action => (action.conditional || []).map(item => ({ name: monsterLabels.conditional[item.when], expression: item.dice }))),
+    ...(text.summary ? { summary: text.summary } : {}),
+    traitList: text.traits.map(trait => ({ ...trait })),
+    key
+  };
+}
+
+// SRD 版（資料卡的「SRD 版」，SRD 5.2.1 繁中直譯）：monster-srd.generated.js 在第一次需要時才載入，離線版已內嵌。
+function hasBeastSrdText(key) {
+  return Object.hasOwn(monsterRules, key) && monsterRules[key].source === "srd";
+}
+
+let beastSrdPromise = null;
+function loadBeastSrdData() {
+  if (globalThis.monsterSrdText) return Promise.resolve(globalThis.monsterSrdText);
+  beastSrdPromise ||= new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = typeof monsterSrdFile === "string" ? monsterSrdFile : "monster-srd.generated.js";
+    script.onload = () => globalThis.monsterSrdText ? resolve(globalThis.monsterSrdText) : reject(new Error("SRD 版資料格式不符"));
+    script.onerror = () => {
+      script.remove();
+      reject(new Error("SRD 版資料載入失敗"));
+    };
+    document.head.appendChild(script);
+  }).catch(error => {
+    beastSrdPromise = null;
+    throw error;
+  });
+  return beastSrdPromise;
+}
+
+// 回傳 { html }（建置產生的 HTML）；沒有 SRD 版時為 null，載入失敗時 reject（之後可再試）。
+async function loadBeastSrdText(key) {
+  if (!hasBeastSrdText(key)) return null;
+  const data = await loadBeastSrdData();
+  return Object.hasOwn(data, key) ? data[key] : null;
+}
+
 globalThis.BeastCatalog = Object.freeze({
-  getStatBlock(key) { return BEAST_STATS[key] || null; },
-  get(key) { const stats = BEAST_STATS[key], data = BEAST_TABLETOP_DATA[key]; return stats && data ? { ...stats, ...data, key } : null; }
+  getStatBlock(key) { return Object.hasOwn(BEAST_STATS, key) ? BEAST_STATS[key] : null; },
+  get: beastTabletopView,
+  // 結構化數值（CR、體型、速度、感官等；荒野形態的篩選與之後的形態比較讀這裡）。
+  getRules(key) { return Object.hasOwn(monsterRules, key) ? monsterRules[key] : null; },
+  keys() { return Object.keys(monsterRules); },
+  hasSrdText: hasBeastSrdText,
+  loadSrdText: loadBeastSrdText
 });
 
 // 野獸資料卡（職業頁 .beast-tip 浮層、法術頁召喚物、跑團已知形態共用）。
-function renderBeastPopupHtml(s) {
+// renderBeastPopupHtml(s) 是整張網站版資料卡（標題＋內容）；createBeastCard(key) 另加「網站版｜SRD 版」切換（sheet-spells.js 的 createContentVersionView）。
+function renderBeastPopupTitle(s) {
+  return `<div class="title">${escapeHtml(s.name)} <span class="muted">${escapeHtml(s.size_type)}</span></div>`;
+}
+
+function renderBeastPopupBody(s) {
   const renderDetailLine = (label, value, className = "") => {
     const text = String(value ?? "").trim();
     if (!text || text === "—") return "";
@@ -947,16 +92,40 @@ function renderBeastPopupHtml(s) {
   };
 
   return `
-    <div class="title">${escapeHtml(s.name)} <span class="muted">${escapeHtml(s.size_type)}</span></div>
     <div class="row">
       <div><strong>AC</strong> ${escapeHtml(String(s.ac))}</div>
       <div><strong>HP</strong> ${escapeHtml(String(s.hp))}</div>
       <div><strong>速度</strong> ${escapeHtml(String(s.speed))}</div>
     </div>
 ${renderDetailLine("能力值", s.ability, "monster-detail-line--first")}
+${renderDetailLine("豁免", s.savingThrows)}
 ${renderDetailLine("感官", s.senses)}
 ${renderDetailLine("技能", s.skills)}
 ${renderDetailLine("特性", s.traits)}
 ${renderDetailLine("攻擊", s.attacks)}
   `;
+}
+
+function renderBeastPopupHtml(s) {
+  return `
+    ${renderBeastPopupTitle(s)}${renderBeastPopupBody(s)}`;
+}
+
+// 野獸資料卡元素：標題、版本切換（網站版／SRD 版）與內容。沒有該 key 時回傳 null。onChange(version) 在切換版本後呼叫（浮層重新定位用）。
+function createBeastCard(key, { onChange = null } = {}) {
+  const stats = Object.hasOwn(BEAST_STATS, key) ? BEAST_STATS[key] : null;
+  if (!stats) return null;
+  const card = document.createElement("div");
+  card.className = "beast-card";
+  card.dataset.beast = key;
+  card.innerHTML = renderBeastPopupTitle(stats);
+  const renderSite = container => { container.innerHTML = renderBeastPopupBody(stats); };
+  if (typeof createContentVersionView !== "function") {
+    const body = document.createElement("div");
+    renderSite(body);
+    card.appendChild(body);
+    return card;
+  }
+  card.appendChild(createContentVersionView({ renderSite, loadSrd: hasBeastSrdText(key) ? () => loadBeastSrdText(key) : null, onChange }));
+  return card;
 }

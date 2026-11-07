@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_hyena
+name: 巨鬣狗
+nameEn: Giant Hyena
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 12
+initiative: 2
+hp: { average: 45, dice: 6d10+12 }
+speed: { walk: 50 }
+abilities: { str: 16, dex: 14, con: 14, int: 2, wis: 12, cha: 7 }
+skills: { 察覺: 3 }
+senses: { darkvision: 60 }
+passivePerception: 13
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: piercing, dice: 2d6+3 } ]
+  - id: rampage
+    mode: bonus
+    recovery: daily
+site:
+  summary: 追擊受創目標
+  actions:
+    attack-0: { name: 咬擊 }
+    rampage: { name: 暴走, text: 對一名原本已處於受創的生物造成傷害後，可立即移動至多一半速度，並進行一次咬擊。 }
+srd:
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 10（2d6 + 3）穿刺傷害。
+  bonusActions:
+    - name: 暴走（每天1次）
+      text: 對一個原本已處於受創的生物造成傷害後，鬣狗可以立即移動至多其速度的一半，並進行一次咬擊。
+en:
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 10 (2d6 + 3) Piercing damage.
+  bonusActions:
+    - name: Rampage (1/Day)
+      text: Immediately after dealing damage to a creature that was already Bloodied, the hyena can move up to half its Speed, and it makes one Bite attack.

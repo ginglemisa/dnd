@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: plesiosaurus
+name: 蛇頸龍
+nameEn: Plesiosaurus
+source: srd
+size: large
+type: beast
+subtype: dinosaur
+alignment: unaligned
+cr: "2"
+xp: 450
+ac: 13
+initiative: 2
+hp: { average: 68, dice: 8d10+24 }
+speed: { walk: 20, swim: 40 }
+abilities: { str: 18, dex: 15, con: 16, int: 2, wis: 12, cha: 5 }
+skills: { 察覺: 3, 隱匿: 4 }
+passivePerception: 13
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 6, reach: 10 }
+    damage: [ { type: piercing, dice: 2d6+4 } ]
+site:
+  traits:
+    - name: 憋氣
+      text: 可憋氣1小時。
+  actions:
+    attack-0: { name: 咬擊 }
+srd:
+  traits:
+    - name: 憋氣
+      text: 蛇頸龍能憋氣1小時。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +6，觸及10呎。_命中：_ 11（2d6 + 4）穿刺傷害。
+en:
+  traits:
+    - name: Hold Breath
+      text: The plesiosaurus can hold its breath for 1 hour.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +6, reach 10 ft. _Hit:_ 11 (2d6 + 4) Piercing damage.

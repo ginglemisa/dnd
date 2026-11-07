@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_crab
+name: 巨蟹
+nameEn: Giant Crab
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/8"
+xp: 25
+ac: 15
+initiative: 1
+hp: { average: 13, dice: 3d8 }
+speed: { walk: 30, swim: 30 }
+abilities: { str: 13, dex: 13, con: 11, int: 1, wis: 9, cha: 3 }
+skills: { 隱匿: 3 }
+senses: { blindsight: 30 }
+passivePerception: 9
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 3, reach: 5 }
+    damage: [ { type: bludgeoning, dice: 1d6+1 } ]
+site:
+  summary: 水陸兩棲、擒抱
+  traits:
+    - name: 兩棲
+      text: 可在空氣和水中呼吸。
+  actions:
+    attack-0: { name: 螯擊, text: 命中中型或更小的目標：目標被兩隻螯的其中一隻擒抱（掙脫DC11）。 }
+srd:
+  traits:
+    - name: 兩棲
+      text: 螃蟹能呼吸空氣和水。
+  actions:
+    - name: 螯擊
+      text: _近戰攻擊檢定：_ +3，觸及5呎。_命中：_ 4（1d6 + 1）鈍擊傷害。若目標是中型或更小的生物，目標被兩隻螯的其中一隻擒抱，陷入擒抱狀態（掙脫DC 11）。
+en:
+  traits:
+    - name: Amphibious
+      text: The crab can breathe air and water.
+  actions:
+    - name: Claw
+      text: _Melee Attack Roll:_ +3, reach 5 ft. _Hit:_ 4 (1d6 + 1) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 11) from one of two claws.

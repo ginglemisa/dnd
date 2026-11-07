@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: ankylosaurus
+name: 甲龍
+nameEn: Ankylosaurus
+source: srd
+size: huge
+type: beast
+subtype: dinosaur
+alignment: unaligned
+cr: "3"
+xp: 700
+ac: 15
+initiative: 0
+hp: { average: 68, dice: 8d12+16 }
+speed: { walk: 30 }
+abilities: { str: 19, dex: 11, con: 15, int: 2, wis: 12, cha: 5 }
+saves: { str: 6 }
+passivePerception: 11
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 6, reach: 10 }
+    damage: [ { type: bludgeoning, dice: 1d10+4 } ]
+site:
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次尾擊。 }
+    attack-0: { name: 尾擊, text: 命中巨型或更小的目標：目標倒地。 }
+srd:
+  actions:
+    - name: 多重攻擊
+      text: 甲龍進行兩次尾擊。
+    - name: 尾擊
+      text: _近戰攻擊檢定：_ +6，觸及10呎。_命中：_ 9（1d10 + 4）鈍擊傷害。若目標是巨型或更小的生物，目標陷入倒地狀態。
+en:
+  actions:
+    - name: Multiattack
+      text: The ankylosaurus makes two Tail attacks.
+    - name: Tail
+      text: _Melee Attack Roll:_ +6, reach 10 ft. _Hit:_ 9 (1d10 + 4) Bludgeoning damage. If the target is a Huge or smaller creature, it has the Prone condition.

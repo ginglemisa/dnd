@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: octopus
+name: 章魚
+nameEn: Octopus
+source: srd
+size: small
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 12
+initiative: 2
+hp: { average: 3, dice: 1d6 }
+speed: { walk: 5, swim: 30 }
+abilities: { str: 4, dex: 15, con: 11, int: 3, wis: 10, cha: 4 }
+skills: { 察覺: 2, 隱匿: 6 }
+senses: { darkvision: 30 }
+passivePerception: 12
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: bludgeoning, fixed: 1 } ]
+  - id: ink
+    mode: reaction
+    recovery: daily
+site:
+  summary: 水中潛行、擠過窄縫
+  traits:
+    - name: 壓縮
+      text: 可穿過最窄1吋寬的空間，且不需額外花費移動力。
+    - name: 水下呼吸
+      text: 只能在水下呼吸。
+  actions:
+    attack-0: { name: 觸手 }
+    ink: { name: 墨雲, text: 觸發：在水下時，有生物在章魚5呎內結束回合。釋放墨汁填滿以自身為中心的5呎立方，並移動至多其游泳速度；該區域重度遮蔽1分鐘，或直到強水流等效果將墨汁沖散。 }
+srd:
+  traits:
+    - name: 壓縮
+      text: 章魚能穿過最窄1吋寬的空間，且不需為此額外花費移動力。
+    - name: 水下呼吸
+      text: 章魚只能在水下呼吸。
+  actions:
+    - name: 觸手
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 1點鈍擊傷害。
+  reactions:
+    - name: 墨雲（每天1次）
+      text: _觸發：_ 章魚在水下時，有一個生物在章魚5呎內結束其回合。_回應：_ 章魚釋放墨汁，填滿以自身為中心的一個5呎立方，並移動至多其游泳速度。該立方重度遮蔽1分鐘，或直到強烈水流或類似效果將墨汁沖散。
+en:
+  traits:
+    - name: Compression
+      text: The octopus can move through a space as narrow as 1 inch without expending extra movement to do so.
+    - name: Water Breathing
+      text: The octopus can breathe only underwater.
+  actions:
+    - name: Tentacles
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 1 Bludgeoning damage.
+  reactions:
+    - name: Ink Cloud (1/Day)
+      text: _Trigger:_ A creature ends its turn within 5 feet of the octopus while underwater. _Response:_ The octopus releases ink that fills a 5-foot Cube centered on itself, and the octopus moves up to its Swim Speed. The Cube is Heavily Obscured for 1 minute or until a strong current or similar effect disperses the ink.

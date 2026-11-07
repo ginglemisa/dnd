@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: reef_shark
+name: 礁鯊
+nameEn: Reef Shark
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/2"
+xp: 100
+ac: 12
+initiative: 2
+hp: { average: 22, dice: 4d8+4 }
+speed: { walk: 5, swim: 30 }
+abilities: { str: 14, dex: 15, con: 13, int: 1, wis: 10, cha: 4 }
+skills: { 察覺: 2 }
+senses: { blindsight: 30 }
+passivePerception: 12
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, dice: 2d4+2 } ]
+site:
+  summary: 水中群體攻擊
+  traits:
+    - name: 群攻
+      text: 若目標5呎內至少有一名鯊魚的盟友，且該盟友未陷入失能，鯊魚對該目標的攻擊檢定具有優勢。
+    - name: 水下呼吸
+      text: 只能在水下呼吸。
+  actions:
+    attack-0: { name: 咬擊 }
+srd:
+  traits:
+    - name: 群攻
+      text: 若鯊魚至少有一名盟友位於某生物5呎內，且該盟友未陷入失能狀態，鯊魚對該生物的攻擊檢定具有優勢。
+    - name: 水下呼吸
+      text: 鯊魚只能在水下呼吸。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 7（2d4 + 2）穿刺傷害。
+en:
+  traits:
+    - name: Pack Tactics
+      text: The shark has Advantage on an attack roll against a creature if at least one of the shark's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.
+    - name: Water Breathing
+      text: The shark can breathe only underwater.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 7 (2d4 + 2) Piercing damage.

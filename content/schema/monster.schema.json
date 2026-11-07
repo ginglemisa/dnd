@@ -1,0 +1,196 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "monster.schema.json",
+  "title": "twD20 怪物／野獸內容檔",
+  "description": "一個怪物一個檔。頂層是結構化數值（只寫一次，網站版的資料卡文字與跑團數值都由此產生）；site 是網站版的特性與動作說明，srd 是 SRD 5.2.1 繁中直譯（資料卡的「SRD 版」），en 是 SRD 英文原文（只供校對，不送到網站）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "nameEn", "source", "size", "type", "alignment", "cr", "xp", "speed", "abilities", "passivePerception", "actions", "site"],
+  "definitions": {
+    "line": { "type": "string", "minLength": 1, "pattern": "^[^\\n]+$" },
+    "feet": { "type": "integer", "minimum": 0 },
+    "dice": { "type": "string", "pattern": "^\\d+d(?:4|6|8|10|12|20)(?:[+-]\\d+)?$" },
+    "ability": { "enum": ["str", "dex", "con", "int", "wis", "cha"] },
+    "creatureType": { "enum": ["aberration", "beast", "celestial", "construct", "dragon", "elemental", "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "undead"] },
+    "damageType": { "enum": ["acid", "bludgeoning", "cold", "fire", "force", "lightning", "necrotic", "piercing", "poison", "psychic", "radiant", "slashing", "thunder"] },
+    "damageTypes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/definitions/damageType" } },
+    "damage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "description": "一項傷害：dice（平均值由建置計算）或 fixed（固定值，例如 1）擇一。",
+      "properties": {
+        "type": { "$ref": "#/definitions/damageType" },
+        "dice": { "$ref": "#/definitions/dice" },
+        "fixed": { "type": "integer", "minimum": 1 },
+        "timing": { "enum": ["next-turn-end", "each-turn-end"], "description": "不在命中當下、而是之後才造成的傷害（吞下）：next-turn-end 下回合結束、each-turn-end 每個回合結束。跑團擲骰按鈕的傷害類型後加註。" }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "text"],
+      "properties": {
+        "name": { "$ref": "#/definitions/line" },
+        "text": { "type": "string", "minLength": 1, "description": "說明；SRD 版可用 _斜體_、**粗體**，段落以空行分隔。" }
+      }
+    },
+    "entries": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/entry" } },
+    "variableText": { "$ref": "#/definitions/line", "description": "數值隨施法變化的怪物（variable: true）的 AC、HP 或 CR 文字。" },
+    "srdBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "SRD 版（srd）或英文原文（en）。traits、actions、bonusActions、reactions 依 SRD 順序；動作區塊的項目依序對應頂層 actions 中同一 mode 的動作。",
+      "properties": {
+        "traits": { "$ref": "#/definitions/entries" },
+        "actions": { "$ref": "#/definitions/entries" },
+        "bonusActions": { "$ref": "#/definitions/entries" },
+        "reactions": { "$ref": "#/definitions/entries" },
+        "languages": { "$ref": "#/definitions/line", "description": "語言；省略時 SRD 版顯示「無」。" },
+        "gear": { "$ref": "#/definitions/line", "description": "裝備。" },
+        "senseNotes": { "type": "object", "additionalProperties": false, "properties": { "darkvision": { "$ref": "#/definitions/line" } }, "description": "感官的附註（例如小魔鬼的黑暗視覺不受魔法黑暗阻礙）。" },
+        "speedNote": { "$ref": "#/definitions/line", "description": "速度的附註，接在速度後面。" },
+        "ac": { "$ref": "#/definitions/variableText" },
+        "hp": { "$ref": "#/definitions/variableText" },
+        "cr": { "$ref": "#/definitions/variableText" }
+      }
+    }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(_[a-z0-9]+)*$", "description": "怪物 key（英文名轉小寫、以底線連接），須等於檔名。會寫進跑團狀態（德魯伊已知形態、目前形態）、職業頁 data-beast 與法術頁的野獸按鈕，不可改名（列在 monster-id-baseline.json）。" },
+    "name": { "$ref": "#/definitions/line", "description": "中文名。職業頁的 [[中文名]] 提示框以此查表，全部怪物不可重複。" },
+    "nameEn": { "$ref": "#/definitions/line", "description": "英文名。" },
+    "source": { "enum": ["srd"], "description": "內容來源：srd（出自 SRD 5.2.1，須有 srd、en 區塊）。" },
+    "size": { "enum": ["tiny", "small", "medium", "large", "huge", "gargantuan"], "description": "體型：微型、小型、中型、大型、巨型、超巨型。" },
+    "type": {
+      "description": "生物類型；可選類型的召喚物（異界坐騎）寫成陣列。",
+      "oneOf": [
+        { "$ref": "#/definitions/creatureType" },
+        { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "$ref": "#/definitions/creatureType" } }
+      ]
+    },
+    "subtype": { "enum": ["devil", "demon", "dinosaur"], "description": "類型標籤：魔鬼、惡魔、恐龍。" },
+    "alignment": { "enum": ["unaligned", "lawful-good", "neutral-good", "chaotic-good", "lawful-neutral", "neutral", "chaotic-neutral", "lawful-evil", "neutral-evil", "chaotic-evil"], "description": "陣營（只在 SRD 版顯示）。" },
+    "cr": { "enum": ["none", "0", "1/8", "1/4", "1/2", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"], "description": "挑戰等級；none 為沒有 CR 的召喚物。德魯伊荒野形態依此判斷可選範圍。" },
+    "xp": { "type": "integer", "minimum": 0, "description": "經驗值（只在 SRD 版顯示）。" },
+    "variable": { "const": true, "description": "AC、HP 等數值隨施法變化（異界坐騎）：不寫 ac、hp、initiative，改在各文字區塊寫 ac、hp、cr；沒有跑團數值（BeastCatalog.get 回傳 null）。" },
+    "ac": { "type": "integer", "minimum": 0 },
+    "initiative": { "type": "integer", "description": "先攻調整值（只在 SRD 版顯示）。" },
+    "hp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["average", "dice"],
+      "properties": { "average": { "type": "integer", "minimum": 1 }, "dice": { "$ref": "#/definitions/dice" } }
+    },
+    "speed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["walk"],
+      "description": "速度（呎）：walk 步行、burrow 挖掘、climb 攀爬、fly 飛行、swim 游泳；hover: true 為懸浮。",
+      "properties": {
+        "walk": { "$ref": "#/definitions/feet" }, "burrow": { "$ref": "#/definitions/feet" }, "climb": { "$ref": "#/definitions/feet" },
+        "fly": { "$ref": "#/definitions/feet" }, "swim": { "$ref": "#/definitions/feet" }, "hover": { "const": true }
+      }
+    },
+    "abilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["str", "dex", "con", "int", "wis", "cha"],
+      "properties": { "str": { "type": "integer" }, "dex": { "type": "integer" }, "con": { "type": "integer" }, "int": { "type": "integer" }, "wis": { "type": "integer" }, "cha": { "type": "integer" } }
+    },
+    "saves": { "type": "object", "additionalProperties": false, "minProperties": 1, "description": "與屬性調整值不同（具熟練）的豁免加值。", "properties": { "str": { "type": "integer" }, "dex": { "type": "integer" }, "con": { "type": "integer" }, "int": { "type": "integer" }, "wis": { "type": "integer" }, "cha": { "type": "integer" } } },
+    "skills": { "type": "object", "minProperties": 1, "additionalProperties": { "type": "integer" }, "description": "技能加值，key 為網站的技能名稱（例如 察覺、隱匿）。" },
+    "senses": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "特殊感官（呎）：blindsight 盲視、darkvision 黑暗視覺、tremorsense 顫動感知、truesight 真實視覺。",
+      "properties": { "blindsight": { "$ref": "#/definitions/feet" }, "darkvision": { "$ref": "#/definitions/feet" }, "tremorsense": { "$ref": "#/definitions/feet" }, "truesight": { "$ref": "#/definitions/feet" } }
+    },
+    "passivePerception": { "type": "integer" },
+    "damageResistances": { "$ref": "#/definitions/damageTypes" },
+    "damageImmunities": { "$ref": "#/definitions/damageTypes" },
+    "damageVulnerabilities": { "$ref": "#/definitions/damageTypes" },
+    "conditionImmunities": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" }, "description": "狀態免疫（condition.js 的狀態 key，例如 poisoned）。" },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "動作、附贈動作與反應動作，依 SRD 順序。網站版的名稱與說明寫在 site.actions（以 id 對應）。",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "動作 ID，不可改名：寫進跑團狀態（beastUsed「key:id」）、跑團動作 key（druid-beast-<key>-<id>）與動作偏好。攻擊檢定的動作依序為 attack-0、attack-1…，其他動作用英文名（多重攻擊為 multi）。列在 monster-id-baseline.json。" },
+          "mode": { "enum": ["bonus", "reaction"], "description": "附贈動作或反應動作；省略為動作。跑團依此放進動作／附贈／反應分頁。" },
+          "recovery": { "enum": ["recharge-5", "recharge-6", "daily", "long-rest"], "description": "使用限制：充能5–6、充能6、每天（次數寫 uses，預設 1）、長休後恢復。跑團以此追蹤已使用。" },
+          "uses": { "type": "integer", "minimum": 2, "description": "每天可用次數（recovery: daily）。" },
+          "attack": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "hit"],
+            "properties": {
+              "kind": { "enum": ["melee", "ranged", "melee-or-ranged"] },
+              "hit": { "type": "integer", "description": "攻擊檢定加值。" },
+              "reach": { "$ref": "#/definitions/feet", "description": "觸及（呎）。" },
+              "range": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/definitions/feet" }, "description": "射程（呎）：[正常, 最遠]。" }
+            }
+          },
+          "save": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ability", "dc"],
+            "properties": { "ability": { "$ref": "#/definitions/ability" }, "dc": { "type": "integer" }, "half": { "const": true, "description": "豁免成功時傷害減半。" } }
+          },
+          "damage": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/damage" }, "description": "命中（或豁免失敗）時的傷害；第二項起顯示為「外加」。" },
+          "conditional": {
+            "type": "array",
+            "minItems": 1,
+            "description": "條件成立時的額外或替代傷害（跑團另有擲骰按鈕）。site 說明以 {conditional} 代入。",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["when", "type", "dice"],
+              "properties": {
+                "when": { "enum": ["charge-extra", "charge-instead", "bloodied-target-instead"], "description": "charge-extra 衝鋒額外傷害、charge-instead 衝鋒替代傷害、bloodied-target-instead 目標受創時的替代傷害。" },
+                "type": { "$ref": "#/definitions/damageType" },
+                "dice": { "$ref": "#/definitions/dice" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actions"],
+      "description": "網站版：特性與動作各自的說明。資料卡的數值行（AC、HP、速度、屬性、技能、感官、攻擊檢定與傷害）由頂層數值產生，不寫在這裡。",
+      "properties": {
+        "summary": { "$ref": "#/definitions/line", "description": "一句話用途短說明（例如「偵查、爬牆用」），沒把握時不寫。" },
+        "traits": { "$ref": "#/definitions/entries" },
+        "actions": {
+          "type": "object",
+          "minProperties": 1,
+          "description": "動作 id → { name, text }，須涵蓋頂層 actions 的每個 id。text 接在產生的攻擊檢定與傷害之後；可用 {save}（豁免 DC，例如「DC12力量豁免」）、{damage}（傷害）、{conditional}（條件傷害）代入數值，豁免動作的說明須含 {save}。",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": { "name": { "$ref": "#/definitions/line" }, "text": { "$ref": "#/definitions/line" } }
+          }
+        },
+        "languages": { "$ref": "#/definitions/line", "description": "語言（沒有語言時不寫，網站版不顯示）。" },
+        "gear": { "$ref": "#/definitions/line" },
+        "senseNotes": { "$ref": "#/definitions/srdBlock/properties/senseNotes" },
+        "speedNote": { "$ref": "#/definitions/line" },
+        "ac": { "$ref": "#/definitions/variableText" },
+        "hp": { "$ref": "#/definitions/variableText" },
+        "cr": { "$ref": "#/definitions/variableText" }
+      }
+    },
+    "srd": { "$ref": "#/definitions/srdBlock" },
+    "en": { "$ref": "#/definitions/srdBlock" }
+  }
+}

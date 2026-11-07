@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: weasel
+name: 鼬
+nameEn: Weasel
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 13
+initiative: 3
+hp: { average: 1, dice: 1d4-1 }
+speed: { walk: 30, climb: 30 }
+abilities: { str: 3, dex: 16, con: 8, int: 2, wis: 12, cha: 3 }
+skills: { 體操: 5, 察覺: 3, 隱匿: 5 }
+senses: { darkvision: 60 }
+passivePerception: 13
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: piercing, fixed: 1 } ]
+site:
+  summary: 潛行、偵查
+  actions:
+    attack-0: { name: 咬擊 }
+srd:
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 1點穿刺傷害。
+en:
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 1 Piercing damage.

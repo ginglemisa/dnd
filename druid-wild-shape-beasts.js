@@ -1,6 +1,7 @@
 // druid-wild-shape-beasts.js
 // 德魯伊荒野形態可選的野獸（使用者自編的參考清單）：跑團模式以 DruidBeastForms 讀取，
-// 職業頁「查看其他動物」由 npm run build 讀取同一份清單產生。
+// 職業頁「查看其他動物」由 npm run build 讀取同一份清單產生。野獸資料在 content/srd/monsters；
+// label、cr、hasFlight 須與該野獸的中文名、CR、飛行速度一致（建置檢查）。
 const DRUID_WILD_SHAPE_BEASTS = [
   { key: "rat", label: "老鼠", cr: "0" },
   { key: "riding_horse", label: "騎乘馬", cr: "1/4" },
@@ -44,6 +45,10 @@ const DRUID_WILD_SHAPE_BEASTS = [
   { key: "seahorse", label: "海馬", cr: "0" },
   { key: "venomous_snake", label: "毒蛇", cr: "1/8" },
   { key: "weasel", label: "鼬", cr: "0" },
+  { key: "frog", label: "青蛙", cr: "0" },
+  { key: "giant_fire_beetle", label: "巨火甲蟲", cr: "0" },
+  { key: "giant_venomous_snake", label: "巨毒蛇", cr: "1/4" },
+  { key: "giant_seahorse", label: "巨海馬", cr: "1/2" },
   { key: "bat", label: "蝙蝠", cr: "0", hasFlight: true },
   { key: "blood_hawk", label: "血鷹", cr: "1/8", hasFlight: true },
   { key: "eagle", label: "鷹", cr: "0", hasFlight: true },

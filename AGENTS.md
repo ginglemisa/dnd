@@ -13,15 +13,17 @@
 
 * 原生 HTML／CSS／JavaScript 靜態網站，`index.html` 以傳統 `<script>` 依序載入全域模組。未經使用者同意，不新增前端框架、runtime dependency 或測試框架；開發依賴僅 `yaml`、`ajv`、Playwright。
 * 載入順序與每個標籤是否 `defer` 屬於契約：部分自 `index.html` 搬出的模組（如 `sheet-spells.js`、`rule-tips.js`）為同步載入，留在原本行內程式的位置：頂層可綁定在它之前已解析的 DOM、建立浮層並註冊事件，時機與順序和原本相同；`defer` 模組的 API 只在事件或呼叫時使用。驗證腳本與離線建置都依賴這個配置。變更全域 API、DOM ID、data attribute、檔名或載入順序時，搜尋並同步所有 JS、CSS、驗證腳本與 `build-offline-nopdf.ps1`。
-* 唯一的建置是內容檔：職業、子職、專長、背景、種族與法術都寫在 `content/` 的 YAML，`npm run build` 驗證後產生下列檔案。寫法見 [content/README.md](content/README.md)。產物不提交、不手改；網站只經讀取 API 使用，不從顯示文字反推規則。
+* 唯一的建置是內容檔：職業、子職、專長、背景、種族、法術與怪物都寫在 `content/` 的 YAML，`npm run build` 驗證後產生下列檔案。寫法見 [content/README.md](content/README.md)。產物不提交、不手改；網站只經讀取 API 使用，不從顯示文字反推規則。
   * `class-content.generated.js`：`classFeatures`（職業頁 HTML）、`classTabletopText`、`classRules`，經 `character-rules.js` 的 `getClassRules()` 等讀取。
   * `feat-content.generated.js`：`featRules`、`featText`，經 `getFeatRules()`、`getFeatText()`、`getAllFeatRules()` 讀取。
   * `background-content.generated.js`：`backgroundRules`、`backgroundText`，經 `getBackgroundRules()`、`getBackgroundText()`、`getBackgroundSource()` 讀取。
   * `race-content.generated.js`：`raceRules`、`raceText`，經 `getRaceRules()`、`getRaceText()`、`getRaceChoiceOption()` 讀取。
   * `spell-content.generated.js`：`spellRules`、`spellText`，經 `spell-list.js` 的 `SpellCatalog` 讀取；只有 `playable`（有網站版）的法術能給角色使用，其餘 SRD 法術只供查閱。
   * `spell-srd.generated.js`：法術詳情「SRD 版」的譯文，網頁版延遲載入、離線版內嵌。法術 YAML 的英文原文不進任何產物。
+  * `monster-content.generated.js`：`monsterRules`、`monsterText`、`monsterLabels`，經 `monster.js` 的 `BeastCatalog`（`get()`、`getStatBlock()`、`getRules()`）與 `createBeastCard()`／`renderBeastPopupHtml()` 讀取；野獸資料卡文字與跑團數值都由結構化數值產生。
+  * `monster-srd.generated.js`：野獸資料卡「SRD 版」的 HTML，網頁版延遲載入、離線版內嵌。怪物 YAML 的英文原文不進任何產物。
 * `content/private/` 是私人內容包（gitignore），目前只有職業類會被建置讀取（私人職業、子職、`class-extensions/`、`rules/multiclass.yaml`），寫進只在本機使用的 `class-content.private.generated.js`。私人法術只訂了格式、建置不讀；私人專長、背景、種族不支援（資料夾存在時建置失敗）。私人內容不得提交或複製到公開檔案，公開建置不得依賴它。
-* 持久化 ID 以基準檔把關：職業／子職／選項／動作 key／資源 key 用 `class-id-baseline.json`，專長（含專長選擇欄位、快速創角草稿的專長名稱、跑團動作 key）用 `feat-id-baseline.json`，背景用 `background-id-baseline.json`，種族（含血統選單值、快速創角草稿值、跑團動作與資源 key）用 `race-id-baseline.json`，法術用 `spell-id-baseline.json`（只列有網站版、角色可用的法術），物品欄品項（裝備說明的中文品名）用 `equipment-id-baseline.json`（不在建置內，由 `validate-spell-search.js --equipment-only` 比對，需手動更新）。只在確認刻意新增，或已處理舊資料相容的移除／改名後，才更新基準檔（`npm run build -- --update-id-baseline`）；不得用基準檔掩蓋意外遺失。`spellId` 不隨顯示名稱改動。
+* 持久化 ID 以基準檔把關：職業／子職／選項／動作 key／資源 key 用 `class-id-baseline.json`，專長（含專長選擇欄位、快速創角草稿的專長名稱、跑團動作 key）用 `feat-id-baseline.json`，背景用 `background-id-baseline.json`，種族（含血統選單值、快速創角草稿值、跑團動作與資源 key）用 `race-id-baseline.json`，法術用 `spell-id-baseline.json`（只列有網站版、角色可用的法術），怪物（野獸 key 與「key:動作 id」，寫進德魯伊已知形態、`beastUsed` 與跑團動作 key）用 `monster-id-baseline.json`，物品欄品項（裝備說明的中文品名）用 `equipment-id-baseline.json`（不在建置內，由 `validate-spell-search.js --equipment-only` 比對，需手動更新）。只在確認刻意新增，或已處理舊資料相容的移除／改名後，才更新基準檔（`npm run build -- --update-id-baseline`）；不得用基準檔掩蓋意外遺失。`spellId` 不隨顯示名稱改動。
 * UI 模組讀取主要資料與公開 API，不複製平行規則、狀態、亂數或擲骰歷史。表單控制項可作為角色目前選擇的 canonical state；純顯示文字不作為規則資料來源。既有錯誤行為不是規格。
 * 「規則以內容檔為準」的唯一例外是分享模式換法術的職業表：只有分享模式用得到，寫在 `share-readonly.js` 的 `SPELL_CHANGE`，不進內容檔；只有分享模式的法術頁、準備視窗與寫入防護讀這張表，一般角色卡的規則不得引用它。
 * 職業機制以 `classRules` 為準，`classFeatures` HTML 與能力名稱、標題只供顯示：程式不得從中反推規則，判斷特定能力時用能力 id。職業頁上找能力的位置用 `data-feature-id`；建置工具不以正則解析產生後的 HTML 或網站原始碼。
@@ -44,14 +46,15 @@
 | 範圍 | 檔案 |
 | --- | --- |
 | 共用計算 | `character-rules.js`（函式直接掛在 `window`，沒有 `CharacterRules` 物件） |
-| 職業／子職 | `content/srd/`（建置產物見上）；德魯伊野獸清單 `druid-wild-shape-beasts.js` |
+| 職業／子職 | `content/srd/`（建置產物見上）；德魯伊荒野形態清單 `druid-wild-shape-beasts.js`（label／cr／hasFlight 須與怪物內容檔一致） |
 | 背景 | `content/srd/backgrounds/`（建置產物見上）；自訂背景 `custom-background.js` |
 | 種族 | `content/srd/races/`（建置產物見上） |
 | 專長 | `content/srd/feats/`（建置產物見上） |
-| 工具、怪物 | `tool-data.js`、`monster.js` |
+| 工具 | `tool-data.js` |
+| 怪物（野獸、召喚物） | `content/srd/monsters/`（建置產物見上），`monster.js`（`BeastCatalog`、`createBeastCard`） |
 | 法術 | `content/srd/spells/`（建置產物見上），`spell-list.js`（`SpellCatalog`）建立索引與 API；SRD 譯文檢查 `tools/spell-reference/` |
 | 狀態、神祇 | `condition.js`、`deity-info.js` |
-| 規則說明提示框（技能／規則詞表、技能／狀態／野獸浮層） | `rule-tips.js`；野獸資料卡 HTML `monster.js` 的 `renderBeastPopupHtml` |
+| 規則說明提示框（技能／規則詞表、技能／狀態／野獸浮層） | `rule-tips.js`；野獸資料卡 `monster.js` 的 `createBeastCard`（網站版／SRD 版切換共用 `sheet-spells.js` 的 `createContentVersionView`） |
 | 裝備與商店 | `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；物品欄資料 `inventory.js`（`Inventory`）、標籤介面 `inventory-ui.js` |
 | 角色卡 DOM、初始化、持久化、分享 | `index.html` |
 | 分享模式的鎖定、換法術職業表、AC 提示 | `share-readonly.js` |

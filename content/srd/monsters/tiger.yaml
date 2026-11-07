@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: tiger
+name: 老虎
+nameEn: Tiger
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 13
+initiative: 3
+hp: { average: 30, dice: 4d10+8 }
+speed: { walk: 40 }
+abilities: { str: 17, dex: 16, con: 14, int: 3, wis: 12, cha: 8 }
+skills: { 察覺: 3, 隱匿: 7 }
+senses: { darkvision: 60 }
+passivePerception: 13
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: slashing, dice: 2d6+3 } ]
+  - id: escape
+    mode: bonus
+site:
+  summary: 潛行、撲倒
+  actions:
+    attack-0: { name: 撕裂, text: 命中大型或更小的目標：目標倒地。 }
+    escape: { name: 靈巧脫逃, text: 執行撤離或躲藏動作。 }
+srd:
+  actions:
+    - name: 撕裂
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 10（2d6 + 3）揮砍傷害。若目標是大型或更小的生物，目標陷入倒地狀態。
+  bonusActions:
+    - name: 靈巧脫逃
+      text: 老虎執行撤離或躲藏動作。
+en:
+  actions:
+    - name: Rend
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 10 (2d6 + 3) Slashing damage. If the target is a Large or smaller creature, it has the Prone condition.
+  bonusActions:
+    - name: Nimble Escape
+      text: The tiger takes the Disengage or Hide action.

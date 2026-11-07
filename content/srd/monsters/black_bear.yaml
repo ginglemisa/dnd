@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: black_bear
+name: 黑熊
+nameEn: Black Bear
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/2"
+xp: 100
+ac: 11
+initiative: 1
+hp: { average: 19, dice: 3d8+6 }
+speed: { walk: 30, climb: 30, swim: 30 }
+abilities: { str: 15, dex: 12, con: 14, int: 2, wis: 12, cha: 7 }
+skills: { 察覺: 5 }
+senses: { darkvision: 60 }
+passivePerception: 15
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: slashing, dice: 1d6+2 } ]
+site:
+  summary: 攀爬、游泳、近戰
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次撕裂。 }
+    attack-0: { name: 撕裂 }
+srd:
+  actions:
+    - name: 多重攻擊
+      text: 熊進行兩次撕裂。
+    - name: 撕裂
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 5（1d6 + 2）揮砍傷害。
+en:
+  actions:
+    - name: Multiattack
+      text: The bear makes two Rend attacks.
+    - name: Rend
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 5 (1d6 + 2) Slashing damage.

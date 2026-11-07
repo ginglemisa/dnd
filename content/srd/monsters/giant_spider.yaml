@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_spider
+name: 巨蜘蛛
+nameEn: Giant Spider
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 14
+initiative: 3
+hp: { average: 26, dice: 4d10+4 }
+speed: { walk: 30, climb: 30 }
+abilities: { str: 14, dex: 16, con: 12, int: 2, wis: 11, cha: 4 }
+skills: { 察覺: 4, 隱匿: 7 }
+senses: { darkvision: 60 }
+passivePerception: 14
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: piercing, dice: 1d8+3 }, { type: poison, dice: 2d6 } ]
+  - id: web
+    recovery: recharge-5
+    save: { ability: dex, dc: 13 }
+site:
+  summary: 攀牆、蛛網束縛
+  traits:
+    - name: 蛛行
+      text: 可攀爬困難表面（包括沿著天花板移動），無需進行屬性檢定。
+    - name: 網行者
+      text: 忽略蛛網造成的移動限制，並知道與同一張蛛網接觸的其他生物所在位置。
+  actions:
+    attack-0: { name: 咬擊 }
+    web: { name: 蛛網, text: "60呎內一名可見生物進行{save}；失敗：目標陷入束縛，直到蛛網被摧毀（蛛網AC10、HP5，易受火焰傷害，免疫毒素與心靈傷害）。" }
+srd:
+  traits:
+    - name: 蛛行
+      text: 蜘蛛能攀爬困難的表面，包括沿著天花板移動，無需進行屬性檢定。
+    - name: 網行者
+      text: 蜘蛛忽略蛛網造成的移動限制，並知道與同一張蛛網接觸的任何其他生物所在的位置。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 7（1d8 + 3）穿刺傷害外加7（2d6）毒素傷害。
+    - name: 蛛網（充能5–6）
+      text: _敏捷豁免：_ DC 13，目標為蜘蛛看得見、60呎內的一個生物。_失敗：_ 目標陷入束縛狀態，直到蛛網被摧毀（AC 10；HP 5；對火焰傷害易傷；對毒素與心靈傷害免疫）。
+en:
+  traits:
+    - name: Spider Climb
+      text: The spider can climb difficult surfaces, including along ceilings, without needing to make an ability check.
+    - name: Web Walker
+      text: The spider ignores movement restrictions caused by webs, and it knows the location of any other creature in contact with the same web.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 7 (1d8 + 3) Piercing damage plus 7 (2d6) Poison damage.
+    - name: Web (Recharge 5–6)
+      text: _Dexterity Saving Throw:_ DC 13, one creature the spider can see within 60 feet. _Failure:_ The target has the Restrained condition until the web is destroyed (AC 10; HP 5; Vulnerability to Fire damage; Immunity to Poison and Psychic damage).

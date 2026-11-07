@@ -1,4 +1,4 @@
-// 建置讀取的既有網站資料：專案根目錄、提示框詞表（[[名稱]]）、德魯伊野獸清單，以及背景檢查用的技能、內容來源標籤、工具與 index.html 選單。
+// 建置讀取的既有網站資料：專案根目錄、提示框詞表（[[名稱]]，野獸名取自建置中的怪物內容）、德魯伊野獸清單，以及背景檢查用的技能、內容來源標籤、工具與 index.html 選單。
 // 網站資料檔照網站載入方式整份執行（獨立的 vm 沙箱，沒有 document），再讀取頂層常數或檔案公開的全域；不截取原始碼。
 "use strict";
 const fs = require("fs");
@@ -23,24 +23,30 @@ function loadRuleTipData() {
   return ruleTipData;
 }
 
-let monsterData = null;
-function loadMonsterData() {
-  monsterData ||= runSiteScript("monster.js", ["BEAST_STATS"]);
-  return monsterData;
+// 怪物內容（content/srd/monsters）：建置先載入怪物內容檔，再以 useMonsterContent 指定（key → 中文名），不讀舊的產生檔。
+// 建置以外的呼叫（例如回歸測試直接產生職業頁）沒有指定時，自行讀取內容檔。
+let monsterNames = null;
+let monsterForms = null;
+function useMonsterContent(monsters) {
+  monsterNames = new Map([...monsters.values()].map(monster => [monster.id, monster.name]));
+  monsterForms = new Map([...monsters.values()].map(monster => [monster.id, { label: monster.name, cr: monster.cr, hasFlight: monster.speed.fly !== undefined, beast: monster.type === "beast" }]));
+  tipTables = null;
+}
+function loadMonsterNames() {
+  if (!monsterNames) useMonsterContent(require("../monster-content/load").loadMonsters());
+  return monsterNames;
 }
 
 // [[名稱]] 的查表來源：技能／規則用 rule-tips.js 的 skills_example_uses（含別名），狀態用 condition.js 公開的 DND_CONDITIONS，
-// 野獸／怪物用 monster.js 的 BEAST_STATS（中文名取 name「小魔鬼 (Imp) CR:1」括號前的部分）。
+// 野獸／怪物用怪物內容檔的中文名（name）。
 let tipTables = null;
 function loadTipTables() {
   if (tipTables) return tipTables;
   const { skills_example_uses: skills, SKILL_NAME_ALIASES: aliases } = loadRuleTipData();
-  const { BEAST_STATS: beastStats } = loadMonsterData();
   const conditions = new Map(runSiteScript("condition.js").globals.DND_CONDITIONS.map(condition => [condition.zh, condition.key]));
   const beasts = new Map();
-  for (const [key, beast] of Object.entries(beastStats)) {
-    const name = beast.name.split(" (")[0];
-    if (beasts.has(name)) throw new Error(`monster.js BEAST_STATS 的中文名「${name}」重複`);
+  for (const [key, name] of loadMonsterNames()) {
+    if (beasts.has(name)) throw new Error(`怪物內容檔的中文名「${name}」重複`);
     beasts.set(name, key);
   }
   tipTables = { skills: new Set([...Object.keys(skills), ...Object.keys(aliases)]), conditions, beasts };
@@ -48,12 +54,27 @@ function loadTipTables() {
 }
 
 // druid-wild-shape-beasts.js 的野獸清單與 CR 順序（職業頁「查看其他動物」）；只讀不複製。
-// 每個 key 都須存在於 monster.js 的 BEAST_STATS（網站依此顯示野獸提示框），否則建置失敗。
+// 每個 key 都須是怪物內容檔（content/srd/monsters）的 key（網站依此顯示野獸提示框），label、cr、hasFlight 須與該野獸一致，否則建置失敗。
 function loadWildShapeBeasts() {
   const { DRUID_WILD_SHAPE_BEASTS: beasts, DRUID_WILD_SHAPE_CR_ORDER: crOrder } = runSiteScript("druid-wild-shape-beasts.js", ["DRUID_WILD_SHAPE_BEASTS", "DRUID_WILD_SHAPE_CR_ORDER"]);
-  const { BEAST_STATS: beastStats } = loadMonsterData();
-  const missing = beasts.map(beast => beast.key).filter(key => !Object.hasOwn(beastStats, key));
-  if (missing.length) throw new Error(`druid-wild-shape-beasts.js 的野獸 key 不在 monster.js 的 BEAST_STATS：${missing.join("、")}`);
+  const names = loadMonsterNames();
+  const missing = beasts.map(beast => beast.key).filter(key => !names.has(key));
+  if (missing.length) throw new Error(`druid-wild-shape-beasts.js 的野獸 key 不在怪物內容檔：${missing.join("、")}`);
+  const mismatched = beasts.filter(beast => {
+    const form = monsterForms.get(beast.key);
+    return beast.label !== form.label || beast.cr !== form.cr || Boolean(beast.hasFlight) !== form.hasFlight || !crOrder.includes(beast.cr);
+  }).map(beast => beast.key);
+  if (mismatched.length) throw new Error(`druid-wild-shape-beasts.js 的 label、cr 或 hasFlight 與怪物內容檔不符（或 CR 不在 DRUID_WILD_SHAPE_CR_ORDER）：${mismatched.join("、")}`);
+  return { beasts, crOrder };
+}
+
+// 只供查閱的野獸（職業頁「查看其他動物」的第二層收合）：怪物內容檔中類型為野獸、但不在荒野形態清單的野獸，依 CR 分組。
+// 這些野獸無法用荒野形態變身，跑團模式不顯示。
+function loadReferenceOnlyBeasts() {
+  const listed = new Set(loadWildShapeBeasts().beasts.map(beast => beast.key));
+  const crValue = cr => cr.includes("/") ? cr.split("/").reduce((a, b) => Number(a) / Number(b)) : Number(cr);
+  const beasts = [...monsterForms].filter(([key, form]) => form.beast && !listed.has(key)).map(([key, form]) => ({ key, label: form.label, cr: form.cr }));
+  const crOrder = [...new Set(beasts.map(beast => beast.cr))].sort((a, b) => crValue(a) - crValue(b));
   return { beasts, crOrder };
 }
 
@@ -62,6 +83,13 @@ let characterRules = null;
 function loadCharacterRules() {
   characterRules ||= runSiteScript("character-rules.js").globals;
   return characterRules;
+}
+
+// 狀態的顯示名稱（condition.js 的 DND_CONDITIONS：key → 中文名，例如 poisoned →「中毒」）。
+let conditionLabels = null;
+function loadConditionLabels() {
+  conditionLabels ||= Object.fromEntries(runSiteScript("condition.js").globals.DND_CONDITIONS.map(condition => [condition.key, condition.zh]));
+  return conditionLabels;
 }
 
 // 技能 ID（character-rules.js 的 CharacterSkillAbilities：中文名 → 屬性）。
@@ -120,4 +148,4 @@ function readIndexSelectOptions(id) {
   return select ? [...select[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => ({ value: match[1], label: match[2] })) : null;
 }
 
-module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };
+module.exports = { ROOT, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadReferenceOnlyBeasts, loadSkillAbilities, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };

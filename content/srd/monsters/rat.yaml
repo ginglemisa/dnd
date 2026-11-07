@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: rat
+name: 老鼠
+nameEn: Rat
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 10
+initiative: 0
+hp: { average: 1, dice: 1d4-1 }
+speed: { walk: 20, climb: 20 }
+abilities: { str: 2, dex: 11, con: 9, int: 2, wis: 10, cha: 4 }
+skills: { 察覺: 2 }
+senses: { darkvision: 30 }
+passivePerception: 12
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 2, reach: 5 }
+    damage: [ { type: piercing, fixed: 1 } ]
+site:
+  summary: 偵查、鑽進小空間
+  traits:
+    - name: 靈巧
+      text: 移動離開敵人的觸及範圍時，不會引發藉機攻擊。
+  actions:
+    attack-0: { name: 咬擊 }
+srd:
+  traits:
+    - name: 靈巧
+      text: 老鼠移動離開敵人的觸及範圍時，不會引發藉機攻擊。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +2，觸及5呎。_命中：_ 1點穿刺傷害。
+en:
+  traits:
+    - name: Agile
+      text: The rat doesn't provoke an Opportunity Attack when it moves out of an enemy's reach.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +2, reach 5 ft. _Hit:_ 1 Piercing damage.

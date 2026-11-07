@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: mammoth
+name: 猛獁象
+nameEn: Mammoth
+source: srd
+size: huge
+type: beast
+alignment: unaligned
+cr: "6"
+xp: 2300
+ac: 13
+initiative: 2
+hp: { average: 126, dice: 11d12+55 }
+speed: { walk: 50 }
+abilities: { str: 24, dex: 9, con: 21, int: 3, wis: 11, cha: 6 }
+saves: { str: 10, con: 8 }
+passivePerception: 10
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 10, reach: 10 }
+    damage: [ { type: piercing, dice: 2d10+7 } ]
+  - id: trample
+    mode: bonus
+    save: { ability: dex, dc: 18, half: true }
+    damage: [ { type: bludgeoning, dice: 4d10+7 } ]
+site:
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次獠牙攻擊。 }
+    attack-0: { name: 獠牙, text: 先直線朝目標移動20呎以上再命中巨型或更小的目標：目標倒地。 }
+    trample: { name: 踐踏, text: "5呎內一名倒地的生物進行{save}；失敗：{damage}，成功：傷害減半。" }
+srd:
+  actions:
+    - name: 多重攻擊
+      text: 猛獁象進行兩次獠牙攻擊。
+    - name: 獠牙
+      text: _近戰攻擊檢定：_ +10，觸及10呎。_命中：_ 18（2d10 + 7）穿刺傷害。若目標是巨型或更小的生物，且猛獁象在命中前剛直線朝它移動了20呎以上，目標陷入倒地狀態。
+  bonusActions:
+    - name: 踐踏
+      text: _敏捷豁免：_ DC 18，一個位於猛獁象5呎內、處於倒地狀態的生物。_失敗：_ 29（4d10 + 7）鈍擊傷害。_成功：_ 傷害減半。
+en:
+  actions:
+    - name: Multiattack
+      text: The mammoth makes two Gore attacks.
+    - name: Gore
+      text: _Melee Attack Roll:_ +10, reach 10 ft. _Hit:_ 18 (2d10 + 7) Piercing damage. If the target is a Huge or smaller creature and the mammoth moved 20+ feet straight toward it immediately before the hit, the target has the Prone condition.
+  bonusActions:
+    - name: Trample
+      text: _Dexterity Saving Throw:_ DC 18, one creature within 5 feet that has the Prone condition. _Failure:_ 29 (4d10 + 7) Bludgeoning damage. _Success:_ Half damage.

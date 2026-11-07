@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: deer
+name: 鹿
+nameEn: Deer
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 13
+initiative: 3
+hp: { average: 4, dice: 1d8 }
+speed: { walk: 50 }
+abilities: { str: 11, dex: 16, con: 11, int: 2, wis: 14, cha: 5 }
+skills: { 察覺: 4 }
+senses: { darkvision: 60 }
+passivePerception: 14
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 2, reach: 5 }
+    damage: [ { type: bludgeoning, dice: 1d4 } ]
+site:
+  summary: 快速移動
+  traits:
+    - name: 靈巧
+      text: 移動離開敵人的觸及範圍時，不會引發藉機攻擊。
+  actions:
+    attack-0: { name: 頂撞 }
+srd:
+  traits:
+    - name: 靈巧
+      text: 鹿移動離開敵人的觸及範圍時，不會引發藉機攻擊。
+  actions:
+    - name: 頂撞
+      text: _近戰攻擊檢定：_ +2，觸及5呎。_命中：_ 2（1d4）鈍擊傷害。
+en:
+  traits:
+    - name: Agile
+      text: The deer doesn't provoke an Opportunity Attack when it moves out of an enemy's reach.
+  actions:
+    - name: Ram
+      text: _Melee Attack Roll:_ +2, reach 5 ft. _Hit:_ 2 (1d4) Bludgeoning damage.

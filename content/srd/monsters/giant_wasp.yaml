@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_wasp
+name: 巨蜂
+nameEn: Giant Wasp
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/2"
+xp: 100
+ac: 13
+initiative: 2
+hp: { average: 22, dice: 5d8 }
+speed: { walk: 10, fly: 50 }
+abilities: { str: 10, dex: 14, con: 10, int: 1, wis: 10, cha: 3 }
+passivePerception: 10
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, dice: 1d6+2 }, { type: poison, dice: 2d4 } ]
+site:
+  summary: 飛行、毒螫
+  traits:
+    - name: 飛掠
+      text: 飛行離開敵人的觸及範圍時，不會引發藉機攻擊。
+  actions:
+    attack-0: { name: 螫刺 }
+srd:
+  traits:
+    - name: 飛掠
+      text: 蜂飛行離開敵人的觸及範圍時，不會引發藉機攻擊。
+  actions:
+    - name: 螫刺
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 5（1d6 + 2）穿刺傷害外加5（2d4）毒素傷害。
+en:
+  traits:
+    - name: Flyby
+      text: The wasp doesn't provoke an Opportunity Attack when it flies out of an enemy's reach.
+  actions:
+    - name: Sting
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 5 (1d6 + 2) Piercing damage plus 5 (2d4) Poison damage.

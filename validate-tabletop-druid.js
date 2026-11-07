@@ -163,6 +163,13 @@ async function main() {
       check(!isDruidBeastAllowed(DruidBeastForms.find(f => f.key === "owl"), 7), "flight below 8");
       check(isDruidBeastAllowed(DruidBeastForms.find(f => f.key === "owl"), 8), "flight at 8");
       check(!isDruidBeastAllowed(DruidBeastForms.find(f => f.key === "brown_bear"), 4), "CR limit");
+      for (const key of ["frog", "giant_fire_beetle", "giant_venomous_snake", "giant_seahorse"]) check(DruidBeastForms.some(f => f.key === key), `${key} is a wild shape form`);
+      check(!isDruidBeastAllowed(DruidBeastForms.find(f => f.key === "giant_seahorse"), 2) && isDruidBeastAllowed(DruidBeastForms.find(f => f.key === "giant_seahorse"), 4), "giant seahorse CR 1/2");
+      const seahorse = BeastCatalog.get("giant_seahorse");
+      check(seahorse.actions.find(a => a.id === "dash")?.mode === "bonus" && seahorse.conditionalDamage[0]?.expression === "2d8+2", "giant seahorse bonus dash and charge damage");
+      check(BeastCatalog.get("goat").saves?.str === 2 && JSON.stringify(BeastCatalog.get("badger").speeds) === JSON.stringify({ 步行: 20, 挖掘: 5 }), "beast saves and burrow speed");
+      check(!DruidBeastForms.some(f => f.key === "tyrannosaurus_rex") && BeastCatalog.get("tyrannosaurus_rex")?.actions.length === 3, "CR 2+ beasts are reference-only");
+      check(BeastCatalog.get("otherworldly_steed") === null && BeastCatalog.getStatBlock("otherworldly_steed"), "variable steed has no tabletop stats");
       check(run("known", { keys: ["wolf", "rat", "spider", "riding_horse", "giant_spider", "owl"] }).ok, "save known forms");
       const originalStr = document.getElementById("str").value;
       TabletopMode.setConcentrationSpellId("entangle");
@@ -247,7 +254,7 @@ async function main() {
     await dialog.getByRole("button", { name: "狼", exact: true }).click();
     await dialog.locator(".druid-beast-tooltip").getByText(/Wolf/).waitFor();
     assert.doesNotMatch(await dialog.locator(".druid-beast-tooltip").innerText(), /\[object Object\]/);
-    assert.match(await dialog.locator(".druid-beast-tooltip").innerText(), /察覺\+5, 隱匿\+4/);
+    assert.match(await dialog.locator(".druid-beast-tooltip").innerText(), /察覺\+5、隱匿\+4/);
     assert.equal(await wolfCheckbox.isChecked(), true, "tooltip must not toggle known form");
     await page.keyboard.press("Escape");
     assert.equal(await dialog.isVisible(), true, "Escape closes tooltip before dialog");
@@ -374,6 +381,60 @@ async function main() {
     await page.reload();
     await page.waitForFunction(() => TabletopMode.getDruidForm()?.key === "wolf");
     assert.equal(await page.evaluate(() => TabletopMode.collectState().druid.companion), true, "autosave restores companion");
+
+    // 不在荒野形態清單的野獸（私人內容的形態，例如北極熊）：存檔保留 key，跑團不顯示、不能變形、不計入已知數量。
+    const beforeHidden = await page.evaluate(() => TabletopMode.collectState());
+    await page.evaluate(() => {
+      TabletopMode.applyState({ druid: { knownForms: ["wolf", "polar_bear"], formKey: "polar_bear" } });
+      TabletopMode.setMode("tabletop");
+      TabletopMode.setPanel("overview");
+      document.getElementById("str").dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await page.waitForTimeout(100);
+    const hiddenState = await page.evaluate(() => ({
+      druid: TabletopMode.collectState().druid, form: TabletopMode.getDruidForm(),
+      overview: document.getElementById("tabletop-druid-overview").innerText,
+      options: ["action", "bonus", "reaction"].flatMap(mode => TabletopDruid.getActionOptions(mode).map(option => option.key))
+    }));
+    assert.deepEqual(hiddenState.druid.knownForms, ["wolf", "polar_bear"], "hidden known form survives load");
+    assert.equal(hiddenState.druid.formKey, "polar_bear", "hidden current form is kept, not cleared by character sync");
+    assert.equal(hiddenState.form, null, "hidden current form counts as the original form");
+    assert.match(hiddenState.overview, /原形/u);
+    assert.equal(hiddenState.options.some(key => key.includes("polar_bear")), false, "hidden form has no tabletop actions");
+    await page.locator("#tabletop-druid-overview").getByRole("button", { name: "已知形態", exact: true }).click();
+    const hiddenDialog = page.getByRole("dialog");
+    assert.match(await hiddenDialog.locator(".druid-known-count").innerText(), /^已選 1／\d+$/u, "hidden forms do not count toward known forms");
+    assert.equal(await hiddenDialog.getByText("北極熊").count(), 0, "hidden forms are not listed");
+    await hiddenDialog.getByRole("checkbox", { name: "已知形態：老鼠", exact: true }).check();
+    await hiddenDialog.getByRole("button", { name: "儲存已知形態" }).click();
+    await hiddenDialog.waitFor({ state: "hidden" });
+    const roundTrips = await page.evaluate(() => {
+      const saved = TabletopMode.collectState().druid;
+      const json = JSON.parse(JSON.stringify(collectStateObject()));
+      TabletopMode.applyState({});
+      TabletopMode.applyState(json);
+      const restored = TabletopMode.collectState().druid;
+      const share = collectShareState();
+      return { saved, restored, shareKnown: share.druid?.knownForms };
+    });
+    assert.deepEqual([...roundTrips.saved.knownForms].sort(), ["polar_bear", "rat", "wolf"], "saving known forms keeps hidden keys");
+    assert.equal(roundTrips.saved.formKey, "polar_bear");
+    assert.deepEqual(roundTrips.restored, roundTrips.saved, "JSON round trip keeps hidden forms");
+    assert.ok(roundTrips.shareKnown.includes("polar_bear"), "share link keeps hidden known form");
+    await page.evaluate(() => saveAllFields());
+    await page.reload();
+    await page.waitForFunction(() => TabletopMode.collectState().druid.formKey === "polar_bear");
+    const reloaded = await page.evaluate(() => {
+      const druid = TabletopMode.collectState().druid;
+      const json = JSON.parse(JSON.stringify(collectStateObject()));
+      TabletopMode.applyState({ druid: collectShareState().druid });
+      const fromShare = TabletopMode.collectState().druid.knownForms;
+      return { druid, json: JSON.stringify(json), fromShare };
+    });
+    assert.ok(reloaded.druid.knownForms.includes("polar_bear") && reloaded.druid.formKey === "polar_bear", "autosave keeps hidden forms");
+    assert.match(reloaded.json, /polar_bear/u, "JSON export keeps hidden forms");
+    assert.ok(reloaded.fromShare.includes("polar_bear"), "share restore keeps hidden known form");
+    await page.evaluate(state => { TabletopMode.applyState(state); saveAllFields(); }, beforeHidden);
     await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); window.scrollTo(0, 0); });
     if (process.env.DND_SCREENSHOT_DIR) {
       fs.mkdirSync(process.env.DND_SCREENSHOT_DIR, { recursive: true });

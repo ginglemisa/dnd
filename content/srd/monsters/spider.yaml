@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: spider
+name: 蜘蛛
+nameEn: Spider
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 12
+initiative: 2
+hp: { average: 1, dice: 1d4-1 }
+speed: { walk: 20, climb: 20 }
+abilities: { str: 2, dex: 14, con: 8, int: 1, wis: 10, cha: 2 }
+skills: { 隱匿: 4 }
+senses: { darkvision: 30 }
+passivePerception: 10
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, fixed: 1 }, { type: poison, dice: 1d4 } ]
+site:
+  summary: 爬牆、偵查
+  traits:
+    - name: 蛛行
+      text: 可攀爬困難表面（包括沿著天花板移動），無需進行屬性檢定。
+    - name: 網行者
+      text: 忽略蛛網造成的移動限制，並知道與同一張蛛網接觸的其他生物所在位置。
+  actions:
+    attack-0: { name: 咬擊 }
+srd:
+  traits:
+    - name: 蛛行
+      text: 蜘蛛能攀爬困難的表面，包括沿著天花板移動，無需進行屬性檢定。
+    - name: 網行者
+      text: 蜘蛛忽略蛛網造成的移動限制，並知道與同一張蛛網接觸的任何其他生物所在的位置。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 1點穿刺傷害外加2（1d4）毒素傷害。
+en:
+  traits:
+    - name: Spider Climb
+      text: The spider can climb difficult surfaces, including along ceilings, without needing to make an ability check.
+    - name: Web Walker
+      text: The spider ignores movement restrictions caused by webs, and the spider knows the location of any other creature in contact with the same web.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 1 Piercing damage plus 2 (1d4) Poison damage.

@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_octopus
+name: 巨章魚
+nameEn: Giant Octopus
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 11
+initiative: 1
+hp: { average: 45, dice: 7d10+7 }
+speed: { walk: 10, swim: 60 }
+abilities: { str: 17, dex: 13, con: 13, int: 5, wis: 10, cha: 4 }
+skills: { 察覺: 4, 隱匿: 5 }
+senses: { darkvision: 60 }
+passivePerception: 14
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 10 }
+    damage: [ { type: bludgeoning, dice: 2d6+3 } ]
+  - id: ink
+    mode: reaction
+    recovery: daily
+site:
+  summary: 水中擒抱、墨雲脫身
+  traits:
+    - name: 水下呼吸
+      text: 只能在水下呼吸，但在水外可憋氣1小時。
+  actions:
+    attack-0: { name: 觸手, text: 命中中型或更小的目標：目標被八條觸手擒抱（掙脫DC13），擒抱期間同時陷入束縛。 }
+    ink: { name: 墨雲, text: 觸發：在水下受到傷害。釋放墨汁填滿以自身為中心的10呎立方，並移動至多其游泳速度；該區域重度遮蔽1分鐘，或直到強水流等效果將墨汁沖散。 }
+srd:
+  traits:
+    - name: 水下呼吸
+      text: 章魚只能在水下呼吸。它在水外能憋氣1小時。
+  actions:
+    - name: 觸手
+      text: _近戰攻擊檢定：_ +5，觸及10呎。_命中：_ 10（2d6 + 3）鈍擊傷害。若目標是中型或更小的生物，目標被全部八條觸手擒抱，陷入擒抱狀態（掙脫DC 13）。在擒抱期間，目標陷入束縛狀態。
+  reactions:
+    - name: 墨雲（每天1次）
+      text: _觸發：_ 章魚在水下時受到傷害。_回應：_ 章魚釋放墨汁，填滿以自身為中心的一個10呎立方，並移動至多其游泳速度。該立方重度遮蔽1分鐘，或直到強烈水流或類似效果將墨汁沖散。
+en:
+  traits:
+    - name: Water Breathing
+      text: The octopus can breathe only underwater. It can hold its breath for 1 hour outside water.
+  actions:
+    - name: Tentacles
+      text: _Melee Attack Roll:_ +5, reach 10 ft. _Hit:_ 10 (2d6 + 3) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 13) from all eight tentacles. While Grappled, the target has the Restrained condition.
+  reactions:
+    - name: Ink Cloud (1/Day)
+      text: _Trigger:_ The octopus takes damage while underwater. _Response:_ The octopus releases ink that fills a 10-foot Cube centered on itself, and the octopus moves up to its Swim Speed. The Cube is Heavily Obscured for 1 minute or until a strong current or similar effect disperses the ink.

@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: piranha
+name: 食人魚
+nameEn: Piranha
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 13
+initiative: 3
+hp: { average: 1, dice: 1d4-1 }
+speed: { walk: 5, swim: 40 }
+abilities: { str: 2, dex: 16, con: 9, int: 1, wis: 7, cha: 2 }
+senses: { darkvision: 60 }
+passivePerception: 8
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: piercing, fixed: 1 } ]
+site:
+  summary: 水中群體攻擊
+  traits:
+    - name: 水下呼吸
+      text: 只能在水下呼吸。
+  actions:
+    attack-0: { name: 咬擊, text: 目標未滿生命值時，此攻擊檢定具有優勢。 }
+srd:
+  traits:
+    - name: 水下呼吸
+      text: 食人魚只能在水下呼吸。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +5（若目標的生命值未滿則具有優勢），觸及5呎。_命中：_ 1點穿刺傷害。
+en:
+  traits:
+    - name: Water Breathing
+      text: The piranha can breathe only underwater.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +5 (with Advantage if the target doesn't have all its Hit Points), reach 5 ft. _Hit:_ 1 Piercing damage.

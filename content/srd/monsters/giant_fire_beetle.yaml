@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_fire_beetle
+name: 巨火甲蟲
+nameEn: Giant Fire Beetle
+source: srd
+size: small
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 13
+initiative: 0
+hp: { average: 4, dice: 1d6+1 }
+speed: { walk: 30, climb: 30 }
+abilities: { str: 8, dex: 10, con: 12, int: 1, wis: 7, cha: 3 }
+senses: { blindsight: 30 }
+passivePerception: 8
+damageResistances: [ fire ]
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 1, reach: 5 }
+    damage: [ { type: fire, fixed: 1 } ]
+site:
+  summary: 照明、抗火
+  traits:
+    - name: 發光
+      text: 發出半徑10呎的明亮光照，並在外圍再發出10呎的微光光照。
+  actions:
+    attack-0: { name: 咬擊 }
+srd:
+  traits:
+    - name: 發光
+      text: 甲蟲發出半徑10呎的明亮光照，並在外圍再發出10呎的微光光照。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +1，觸及5呎。_命中：_ 1點火焰傷害。
+en:
+  traits:
+    - name: Illumination
+      text: The beetle sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +1, reach 5 ft. _Hit:_ 1 Fire damage.

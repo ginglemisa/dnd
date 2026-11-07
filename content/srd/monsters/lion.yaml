@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: lion
+name: 獅子
+nameEn: Lion
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 12
+initiative: 2
+hp: { average: 22, dice: 4d10 }
+speed: { walk: 50 }
+abilities: { str: 17, dex: 15, con: 11, int: 3, wis: 12, cha: 8 }
+skills: { 察覺: 3, 隱匿: 4 }
+senses: { darkvision: 60 }
+passivePerception: 13
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: slashing, dice: 1d8+3 } ]
+  - id: roar
+    save: { ability: wis, dc: 11 }
+site:
+  summary: 群體戰鬥、咆哮恐嚇
+  traits:
+    - name: 群攻
+      text: 若目標5呎內至少有一名獅子的盟友，且該盟友未陷入失能，獅子對該目標的攻擊檢定具有優勢。
+    - name: 助跑跳躍
+      text: 助跑10呎後，跳遠最遠25呎。
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次撕裂，可將其中一次攻擊換成一次咆哮。 }
+    attack-0: { name: 撕裂 }
+    roar: { name: 咆哮, text: "15呎內一名生物進行{save}；失敗：目標陷入恐慌，直到獅子的下個回合開始。" }
+srd:
+  traits:
+    - name: 群攻
+      text: 若獅子至少有一名盟友位於某生物5呎內，且該盟友未陷入失能狀態，獅子對該生物的攻擊檢定具有優勢。
+    - name: 助跑跳躍
+      text: 若先助跑10呎，獅子的跳遠距離最遠可達25呎。
+  actions:
+    - name: 多重攻擊
+      text: 獅子進行兩次撕裂。它可以將其中一次攻擊替換成使用一次咆哮。
+    - name: 撕裂
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 7（1d8 + 3）揮砍傷害。
+    - name: 咆哮
+      text: _感知豁免：_ DC 11，目標為15呎內的一個生物。_失敗：_ 目標陷入恐慌狀態，直到獅子的下個回合開始。
+en:
+  traits:
+    - name: Pack Tactics
+      text: The lion has Advantage on an attack roll against a creature if at least one of the lion's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.
+    - name: Running Leap
+      text: With a 10-foot running start, the lion can Long Jump up to 25 feet.
+  actions:
+    - name: Multiattack
+      text: The lion makes two Rend attacks. It can replace one attack with a use of Roar.
+    - name: Rend
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 7 (1d8 + 3) Slashing damage.
+    - name: Roar
+      text: _Wisdom Saving Throw:_ DC 11, one creature within 15 feet. _Failure:_ The target has the Frightened condition until the start of the lion's next turn.
