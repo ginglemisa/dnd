@@ -163,6 +163,13 @@ async function main() {
       check(!isDruidBeastAllowed(DruidBeastForms.find(f => f.key === "owl"), 7), "flight below 8");
       check(isDruidBeastAllowed(DruidBeastForms.find(f => f.key === "owl"), 8), "flight at 8");
       check(!isDruidBeastAllowed(DruidBeastForms.find(f => f.key === "brown_bear"), 4), "CR limit");
+      for (const key of ["frog", "giant_fire_beetle", "giant_venomous_snake", "giant_seahorse"]) check(DruidBeastForms.some(f => f.key === key), `${key} is a wild shape form`);
+      check(!isDruidBeastAllowed(DruidBeastForms.find(f => f.key === "giant_seahorse"), 2) && isDruidBeastAllowed(DruidBeastForms.find(f => f.key === "giant_seahorse"), 4), "giant seahorse CR 1/2");
+      const seahorse = BeastCatalog.get("giant_seahorse");
+      check(seahorse.actions.find(a => a.id === "dash")?.mode === "bonus" && seahorse.conditionalDamage[0]?.expression === "2d8+2", "giant seahorse bonus dash and charge damage");
+      check(BeastCatalog.get("goat").saves?.str === 2 && JSON.stringify(BeastCatalog.get("badger").speeds) === JSON.stringify({ 步行: 20, 挖掘: 5 }), "beast saves and burrow speed");
+      check(!DruidBeastForms.some(f => f.key === "tyrannosaurus_rex") && BeastCatalog.get("tyrannosaurus_rex")?.actions.length === 3, "CR 2+ beasts are reference-only");
+      check(BeastCatalog.get("otherworldly_steed") === null && BeastCatalog.getStatBlock("otherworldly_steed"), "variable steed has no tabletop stats");
       check(run("known", { keys: ["wolf", "rat", "spider", "riding_horse", "giant_spider", "owl"] }).ok, "save known forms");
       const originalStr = document.getElementById("str").value;
       TabletopMode.setConcentrationSpellId("entangle");

@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: saber_toothed_tiger
+name: 劍齒虎
+nameEn: Saber-Toothed Tiger
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "2"
+xp: 450
+ac: 13
+initiative: 3
+hp: { average: 52, dice: 7d10+14 }
+speed: { walk: 40 }
+abilities: { str: 18, dex: 17, con: 15, int: 3, wis: 12, cha: 8 }
+saves: { str: 6, dex: 5 }
+skills: { 察覺: 5, 隱匿: 7 }
+senses: { darkvision: 60 }
+passivePerception: 15
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 6, reach: 5 }
+    damage: [ { type: slashing, dice: 2d6+4 } ]
+  - id: escape
+    mode: bonus
+site:
+  traits:
+    - name: 助跑跳躍
+      text: 助跑10呎後，跳遠最遠25呎。
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次撕裂。 }
+    attack-0: { name: 撕裂 }
+    escape: { name: 靈巧脫逃, text: 執行撤離或躲藏動作。 }
+srd:
+  traits:
+    - name: 助跑跳躍
+      text: 若先助跑10呎，老虎的跳遠距離最遠可達25呎。
+  actions:
+    - name: 多重攻擊
+      text: 老虎進行兩次撕裂。
+    - name: 撕裂
+      text: _近戰攻擊檢定：_ +6，觸及5呎。_命中：_ 11（2d6 + 4）揮砍傷害。
+  bonusActions:
+    - name: 靈巧脫逃
+      text: 老虎執行撤離或躲藏動作。
+en:
+  traits:
+    - name: Running Leap
+      text: With a 10-foot running start, the tiger can Long Jump up to 25 feet.
+  actions:
+    - name: Multiattack
+      text: The tiger makes two Rend attacks.
+    - name: Rend
+      text: _Melee Attack Roll:_ +6, reach 5 ft. _Hit:_ 11 (2d6 + 4) Slashing damage.
+  bonusActions:
+    - name: Nimble Escape
+      text: The tiger takes the Disengage or Hide action.

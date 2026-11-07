@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: archelon
+name: 古巨龜
+nameEn: Archelon
+source: srd
+size: huge
+type: beast
+subtype: dinosaur
+alignment: unaligned
+cr: "4"
+xp: 1100
+ac: 17
+initiative: 3
+hp: { average: 90, dice: 12d12+12 }
+speed: { walk: 20, swim: 80 }
+abilities: { str: 18, dex: 16, con: 13, int: 4, wis: 14, cha: 6 }
+skills: { 隱匿: 5 }
+passivePerception: 12
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 6, reach: 5 }
+    damage: [ { type: piercing, dice: 3d6+4 } ]
+site:
+  traits:
+    - name: 兩棲
+      text: 可在空氣和水中呼吸。
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次咬擊。 }
+    attack-0: { name: 咬擊 }
+srd:
+  traits:
+    - name: 兩棲
+      text: 古巨龜能呼吸空氣和水。
+  actions:
+    - name: 多重攻擊
+      text: 古巨龜進行兩次咬擊。
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +6，觸及5呎。_命中：_ 14（3d6 + 4）穿刺傷害。
+en:
+  traits:
+    - name: Amphibious
+      text: The archelon can breathe air and water.
+  actions:
+    - name: Multiattack
+      text: The archelon makes two Bite attacks.
+    - name: Bite
+      text: _Melee Attack Roll:_ +6, reach 5 ft. _Hit:_ 14 (3d6 + 4) Piercing damage.

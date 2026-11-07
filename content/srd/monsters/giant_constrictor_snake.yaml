@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_constrictor_snake
+name: 巨蟒
+nameEn: Giant Constrictor Snake
+source: srd
+size: huge
+type: beast
+alignment: unaligned
+cr: "2"
+xp: 450
+ac: 12
+initiative: 2
+hp: { average: 60, dice: 8d12+8 }
+speed: { walk: 30, swim: 30 }
+abilities: { str: 19, dex: 14, con: 12, int: 1, wis: 10, cha: 3 }
+skills: { 察覺: 2 }
+senses: { blindsight: 10 }
+passivePerception: 12
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 6, reach: 10 }
+    damage: [ { type: piercing, dice: 2d6+4 } ]
+  - id: constrict
+    save: { ability: str, dc: 14 }
+    damage: [ { type: bludgeoning, dice: 2d8+4 } ]
+site:
+  actions:
+    multi: { name: 多重攻擊, text: 進行一次咬擊並使用絞纏。 }
+    attack-0: { name: 咬擊 }
+    constrict: { name: 絞纏, text: "10呎內一名可見的大型或更小生物進行{save}；失敗：{damage}，並陷入擒抱（掙脫DC14）。" }
+srd:
+  actions:
+    - name: 多重攻擊
+      text: 蛇進行一次咬擊並使用絞纏。
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +6，觸及10呎。_命中：_ 11（2d6 + 4）穿刺傷害。
+    - name: 絞纏
+      text: _力量豁免：_ DC 14，目標為蛇看得見、10呎內的一個大型或更小的生物。_失敗：_ 13（2d8 + 4）鈍擊傷害，且目標陷入擒抱狀態（掙脫DC 14）。
+en:
+  actions:
+    - name: Multiattack
+      text: The snake makes one Bite attack and uses Constrict.
+    - name: Bite
+      text: _Melee Attack Roll:_ +6, reach 10 ft. _Hit:_ 11 (2d6 + 4) Piercing damage.
+    - name: Constrict
+      text: _Strength Saving Throw:_ DC 14, one Large or smaller creature the snake can see within 10 feet. _Failure:_ 13 (2d8 + 4) Bludgeoning damage, and the target has the Grappled condition (escape DC 14).

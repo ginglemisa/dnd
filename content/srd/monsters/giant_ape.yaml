@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_ape
+name: 巨猿
+nameEn: Giant Ape
+source: srd
+size: huge
+type: beast
+alignment: unaligned
+cr: "7"
+xp: 2900
+ac: 12
+initiative: 5
+hp: { average: 168, dice: 16d12+64 }
+speed: { walk: 40, climb: 40 }
+abilities: { str: 23, dex: 14, con: 18, int: 5, wis: 12, cha: 7 }
+skills: { 運動: 9, 察覺: 4, 求生: 4 }
+passivePerception: 14
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 9, reach: 10 }
+    damage: [ { type: bludgeoning, dice: 3d10+6 } ]
+  - id: boulder-toss
+    recovery: recharge-6
+    save: { ability: dex, dc: 17, half: true }
+    damage: [ { type: bludgeoning, dice: 7d6 } ]
+  - id: leap
+    mode: bonus
+site:
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次拳擊。 }
+    attack-0: { name: 拳擊 }
+    boulder-toss: { name: 投擲巨石, text: "朝90呎內一個看得見的點投擲巨石，以該點為中心半徑5呎球形區域內的每個生物進行{save}；失敗：{damage}，大型或更小的目標另陷入倒地；成功：只受一半傷害。" }
+    leap: { name: 跳躍, text: 花費10呎移動力，跳躍最遠30呎。 }
+srd:
+  actions:
+    - name: 多重攻擊
+      text: 巨猿進行兩次拳擊。
+    - name: 拳擊
+      text: _近戰攻擊檢定：_ +9，觸及10呎。_命中：_ 22（3d10 + 6）鈍擊傷害。
+    - name: 投擲巨石（充能6）
+      text: 巨猿朝90呎內一個它看得見的點投擲巨石。_敏捷豁免：_ DC 17，以該點為中心、半徑5呎球形區域內的每個生物。_失敗：_ 24（7d6）鈍擊傷害。若目標是大型或更小的生物，目標陷入倒地狀態。_成功：_ 只受一半傷害。
+  bonusActions:
+    - name: 跳躍
+      text: 巨猿花費10呎移動力，跳躍最遠30呎。
+en:
+  actions:
+    - name: Multiattack
+      text: The ape makes two Fist attacks.
+    - name: Fist
+      text: _Melee Attack Roll:_ +9, reach 10 ft. _Hit:_ 22 (3d10 + 6) Bludgeoning damage.
+    - name: Boulder Toss (Recharge 6)
+      text: The ape hurls a boulder at a point it can see within 90 feet. _Dexterity Saving Throw:_ DC 17, each creature in a 5-foot-radius Sphere centered on that point. _Failure:_ 24 (7d6) Bludgeoning damage. If the target is a Large or smaller creature, it has the Prone condition. _Success:_ Half damage only.
+  bonusActions:
+    - name: Leap
+      text: The ape jumps up to 30 feet by spending 10 feet of movement.

@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_scorpion
+name: 巨蠍
+nameEn: Giant Scorpion
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "3"
+xp: 700
+ac: 15
+initiative: 1
+hp: { average: 52, dice: 7d10+14 }
+speed: { walk: 40 }
+abilities: { str: 16, dex: 13, con: 15, int: 1, wis: 9, cha: 3 }
+senses: { blindsight: 60 }
+passivePerception: 9
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: bludgeoning, dice: 1d6+3 } ]
+  - id: attack-1
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: piercing, dice: 1d8+3 }, { type: poison, dice: 2d10 } ]
+site:
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次螯擊與一次螫刺。 }
+    attack-0: { name: 螯擊, text: 命中大型或更小的目標：目標被兩隻螯的其中一隻擒抱（掙脫DC13）。 }
+    attack-1: { name: 螫刺 }
+srd:
+  actions:
+    - name: 多重攻擊
+      text: 蠍子進行兩次螯擊與一次螫刺。
+    - name: 螯擊
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 6（1d6 + 3）鈍擊傷害。若目標是大型或更小的生物，目標被兩隻螯的其中一隻擒抱，陷入擒抱狀態（掙脫DC 13）。
+    - name: 螫刺
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 7（1d8 + 3）穿刺傷害外加11（2d10）毒素傷害。
+en:
+  actions:
+    - name: Multiattack
+      text: The scorpion makes two Claw attacks and one Sting attack.
+    - name: Claw
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 6 (1d6 + 3) Bludgeoning damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 13) from one of two claws.
+    - name: Sting
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 7 (1d8 + 3) Piercing damage plus 11 (2d10) Poison damage.

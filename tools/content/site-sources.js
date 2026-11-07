@@ -25,8 +25,10 @@ function loadRuleTipData() {
 
 // 怪物內容（content/srd/monsters）：建置先載入怪物內容檔，再以 useMonsterContent 指定（key → 中文名），不讀舊的產生檔。
 let monsterNames = null;
+let monsterForms = null;
 function useMonsterContent(monsters) {
   monsterNames = new Map([...monsters.values()].map(monster => [monster.id, monster.name]));
+  monsterForms = new Map([...monsters.values()].map(monster => [monster.id, { label: monster.name, cr: monster.cr, hasFlight: monster.speed.fly !== undefined }]));
   tipTables = null;
 }
 function loadMonsterNames() {
@@ -51,12 +53,17 @@ function loadTipTables() {
 }
 
 // druid-wild-shape-beasts.js 的野獸清單與 CR 順序（職業頁「查看其他動物」）；只讀不複製。
-// 每個 key 都須是怪物內容檔（content/srd/monsters）的 key（網站依此顯示野獸提示框），否則建置失敗。
+// 每個 key 都須是怪物內容檔（content/srd/monsters）的 key（網站依此顯示野獸提示框），label、cr、hasFlight 須與該野獸一致，否則建置失敗。
 function loadWildShapeBeasts() {
   const { DRUID_WILD_SHAPE_BEASTS: beasts, DRUID_WILD_SHAPE_CR_ORDER: crOrder } = runSiteScript("druid-wild-shape-beasts.js", ["DRUID_WILD_SHAPE_BEASTS", "DRUID_WILD_SHAPE_CR_ORDER"]);
   const names = loadMonsterNames();
   const missing = beasts.map(beast => beast.key).filter(key => !names.has(key));
   if (missing.length) throw new Error(`druid-wild-shape-beasts.js 的野獸 key 不在怪物內容檔：${missing.join("、")}`);
+  const mismatched = beasts.filter(beast => {
+    const form = monsterForms.get(beast.key);
+    return beast.label !== form.label || beast.cr !== form.cr || Boolean(beast.hasFlight) !== form.hasFlight || !crOrder.includes(beast.cr);
+  }).map(beast => beast.key);
+  if (mismatched.length) throw new Error(`druid-wild-shape-beasts.js 的 label、cr 或 hasFlight 與怪物內容檔不符（或 CR 不在 DRUID_WILD_SHAPE_CR_ORDER）：${mismatched.join("、")}`);
   return { beasts, crOrder };
 }
 
