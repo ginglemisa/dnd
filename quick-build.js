@@ -168,18 +168,18 @@
       { id: "thaumaturge", label: "魔術使", description: "額外學會 1 個牧師戲法\n奧秘和宗教檢定額外加感知調整值（至少 +1）" }
     ],
     fighter: [
-      { id: "strength", label: "力量型", description: "預填高力量\n適合穿重甲、用巨劍等近戰武器" },
-      { id: "dexterity", label: "敏捷型", description: "預填高敏捷\n適合用長弓、彎刀等靠敏捷的武器" }
+      { id: "strength", label: "力量型", description: "先幫你把力量配高\n適合穿重甲、用巨劍等近戰武器" },
+      { id: "dexterity", label: "敏捷型", description: "先幫你把敏捷配高\n適合用長弓、彎刀等靠敏捷的武器" }
     ]
   };
   // 牧師的類型是神聖使命（規則選擇），戰士的類型只決定預填屬性，兩者的標題與引導句不同。
   const CLASS_TYPE_COPY = {
     cleric: { name: "神聖使命", lead: "選擇你侍奉神祇的方式：披甲上陣，還是鑽研學識？" },
-    fighter: { name: "預填方向", lead: "只決定預填屬性，不改變戰士能力，之後都能調整。" }
+    fighter: { name: "預填方向", lead: "這只決定系統先幫你配好的屬性，不會改變戰士的能力，之後都能調整。" }
   };
   const CLASS_TOOL_NOTES = {
-    monk: "選你角色會用的即可，不影響攻擊；選初始裝備時會一併拿到。",
-    bard: "任選 3 種你會的樂器；初始裝備會再從中給你 1 件。"
+    monk: "挑一個符合角色形象的就好，不影響攻擊；拿初始裝備時會一起拿到它。",
+    bard: "任選 3 種你會演奏的樂器；初始裝備會從中送你 1 件。"
   };
   const FIXED_TOOL_INTROS = {
     草藥工具: "草藥工具：辨識植物，也能製作抗毒劑、醫療包、治療藥水等。",
@@ -344,7 +344,7 @@
     barbarian: { fixed: ["狂暴", "無甲防禦"], prefillMasteryFromDefaultWeapon: true },
     bard: { fixed: ["吟遊詩人激勵"], spellChange: { cantrip: "每升 1 級可換 1 個。", prepared: "每升 1 級可換 1 個。" }, defaultCantrips: ["dancing-lights", "vicious-mockery"], defaultPreparedSpells: ["charm-person", "color-spray", "dissonant-whispers", "healing-word"] },
     cleric: { extraCantripClassType: "thaumaturge", spellChange: { cantrip: "每升 1 級可換 1 個。", prepared: "每次長休後可全部更換。" }, defaultCantrips: ["guidance", "sacred-flame", "thaumaturgy"], defaultPreparedSpells: ["bless", "cure-wounds", "guiding-bolt", "shield-of-faith"] },
-    druid: { fixed: ["德魯伊語", "動物交談（始終準備）"], classOption: { key: "primalOrder", label: "原初使命", lead: "選擇你守護自然的方式：鑽研魔法知識，還是投身武裝戰鬥？", options: [{ id: "magician", label: "巫祝", intro: "額外學會 1 個德魯伊戲法\n奧秘和自然技能檢定額外 +{X}（等於感知調整值，至少 +1）" }, { id: "warden", label: "哨衛", intro: "獲得軍用武器熟練與中甲訓練\n可使用長劍、戰斧等武器，穿半身鎖甲等中甲；起始裝備不變，之後可自行添購。" }] }, extraCantripOption: "magician", alwaysPrepared: ["speak-with-animals"], alwaysPreparedIntros: { "speak-with-animals": "能理解野獸並與牠們交談。" }, spellChange: { cantrip: "每升 1 級可換 1 個。", prepared: "每次長休後可全部更換。" }, defaultCantrips: ["druidcraft", "produce-flame"], defaultPreparedSpells: ["animal-friendship", "cure-wounds", "faerie-fire", "thunderwave"] },
+    druid: { fixed: ["德魯伊語", "動物交談（始終準備）"], classOption: { key: "primalOrder", label: "原初使命", lead: "選擇你守護自然的方式：鑽研魔法知識，還是投身武裝戰鬥？", options: [{ id: "magician", label: "巫祝", intro: "額外學會 1 個德魯伊戲法\n奧秘和自然技能檢定額外 +{X}（等於感知調整值，至少 +1）" }, { id: "warden", label: "哨衛", intro: "獲得軍用武器熟練與中甲訓練\n可使用長劍、戰斧等武器，穿半身鎖甲等中甲；初始裝備不變，之後可自行添購。" }] }, extraCantripOption: "magician", alwaysPrepared: ["speak-with-animals"], alwaysPreparedIntros: { "speak-with-animals": "能理解野獸並與牠們交談。" }, spellChange: { cantrip: "每升 1 級可換 1 個。", prepared: "每次長休後可全部更換。" }, defaultCantrips: ["druidcraft", "produce-flame"], defaultPreparedSpells: ["animal-friendship", "cure-wounds", "faerie-fire", "thunderwave"] },
     fighter: { fixed: ["回氣"], fightingStyle: true, prefillMasteryFromDefaultWeapon: true },
     monk: { fixed: ["武藝", "無甲防禦"] },
     paladin: { fixed: ["聖療"], spellChange: { prepared: "每次長休後可換 1 個。" }, defaultWeaponMasteries: ["長劍", "標槍"], defaultPreparedSpells: ["heroism", "searing-smite"] },
@@ -357,26 +357,26 @@
   // 1 級自動獲得的能力：id 為職業內容檔的能力 id，名稱與「查看」內容讀內容檔；這裡只放給新手的一句話介紹。回歸測試確認 id 都存在。
   const LEVEL_ONE_FEATURE_INTROS = {
     barbarian: [
-      { id: "barbarian-rage", text: ctx => `未穿重甲時可進入狂暴：鈍擊、穿刺、揮砍傷害減半，力量造成的傷害 +${ctx.value("rageDamage")}，但不能施法。\n可用 ${ctx.value("rageUses")} 次，短休回 1 次，長休全滿。` },
+      { id: "barbarian-rage", text: ctx => `未穿重甲時可進入狂暴：受到的鈍擊、穿刺、揮砍傷害減半，用力量攻擊時傷害 +${ctx.value("rageDamage")}，但不能施法。\n可用 ${ctx.value("rageUses")} 次，短休恢復 1 次，長休後全部恢復。` },
       { id: "barbarian-unarmored-defense", text: () => "沒穿護甲時，AC = 10 + 敏捷調整值 + 體質調整值；可以持盾。" }
     ],
-    bard: [{ id: "bard-inspiration", text: ctx => `給 60 呎內 1 名同伴一顆 d${ctx.value("inspirationDie")} 激勵骰，對方 d20 檢定失敗後可擲來加上。\n可用 ${Math.max(1, ctx.mod("cha"))} 次，長休全滿。` }],
+    bard: [{ id: "bard-inspiration", text: ctx => `給 60 呎內 1 名同伴一顆 d${ctx.value("inspirationDie")} 激勵骰；對方之後擲 d20 失敗時，可以擲這顆骰加上去。\n可用 ${Math.max(1, ctx.mod("cha"))} 次，長休後全部恢復。` }],
     cleric: [{ id: "cleric-divine-order", text: ctx => ctx.classType === "thaumaturge"
       ? `額外學會 1 個牧師戲法；奧秘和宗教檢定額外 +${Math.max(1, ctx.mod("wis"))}（等於感知調整值，至少 +1）。`
       : "獲得軍用武器熟練與重甲訓練。" }],
-    druid: [{ id: "druid-druidic", text: () => "會說祕密語言德魯伊語，能留下只有懂這種語言的人才會自動發現的訊息。" }],
-    fighter: [{ id: "fighter-second-wind", text: ctx => `關鍵時刻恢復 1d10 + ${QUICK_BUILD_LEVEL} 生命值。\n可用 ${ctx.value("secondWindUses")} 次，短休回 1 次，長休全滿。` }],
+    druid: [{ id: "druid-druidic", text: () => "會說德魯伊的祕密語言「德魯伊語」，也能留下只有懂這種語言的人才會自動發現的暗號。" }],
+    fighter: [{ id: "fighter-second-wind", text: ctx => `關鍵時刻恢復 1d10 + ${QUICK_BUILD_LEVEL} 生命值。\n可用 ${ctx.value("secondWindUses")} 次，短休恢復 1 次，長休後全部恢復。` }],
     monk: [
       { id: "monk-martial-arts", text: ctx => `未穿護甲、未持盾時：可多打 1 次徒手攻擊，傷害可改用 1d${ctx.value("martialArtsDie")}，攻擊與傷害可用敏捷取代力量。\n只適用徒手或武僧武器。` },
       { id: "monk-unarmored-defense", text: () => "未穿護甲、未持盾時，AC = 10 + 敏捷調整值 + 感知調整值。" }
     ],
-    paladin: [{ id: "paladin-lay-on-hands", text: () => `擁有 ${QUICK_BUILD_LEVEL * 5} 點治療能量，觸碰生物（可以是自己）分配點數回血；也可花 5 點改為移除中毒。\n長休全滿。` }],
-    ranger: [{ id: "ranger-favored-enemy", text: ctx => `始終準備獵人印記，可不耗法術位施放 ${ctx.value("favoredEnemy")} 次，長休恢復。` }],
+    paladin: [{ id: "paladin-lay-on-hands", text: () => `擁有 ${QUICK_BUILD_LEVEL * 5} 點治療能量，觸碰生物（可以是自己）分配點數回血；也可花 5 點改為移除中毒。\n長休後全部恢復。` }],
+    ranger: [{ id: "ranger-favored-enemy", text: ctx => `始終準備獵人印記，可不耗法術位施放 ${ctx.value("favoredEnemy")} 次，長休後恢復。` }],
     rogue: [
       { id: "rogue-sneak-attack", text: ctx => `每回合 1 次，用靈巧或遠程武器命中時，若有優勢，或目標 5 呎內有未失能的同伴且沒有劣勢，傷害多 ${ctx.value("sneakAttackDice")}d6。` },
       { id: "rogue-thieves-cant", text: () => "學會盜賊黑話，並額外學會 1 種語言（在語言區選）。" }
     ],
-    sorcerer: [{ id: "sorcerer-innate-sorcery", text: () => "啟動後 1 分鐘內，敵人更難抵抗你的法術（豁免難度 +1），法術攻擊具有優勢。\n可用 2 次，長休全滿。" }],
+    sorcerer: [{ id: "sorcerer-innate-sorcery", text: () => "啟動後 1 分鐘內，敵人更難抵抗你的法術（豁免難度 +1），法術攻擊具有優勢。\n可用 2 次，長休後全部恢復。" }],
     warlock: [{ id: "warlock-pact-magic", text: ctx => `法術位只有 ${ctx.value("spellSlots")} 個，但短休或長休都會全部恢復。` }],
     wizard: [
       { id: "wizard-ritual-adept", text: () => "法術書裡有「儀式」標籤的法術，不用準備也能施放：多花 10 分鐘、要讀法術書，不耗法術位。" },
@@ -398,7 +398,7 @@
   const WEAPON_MASTERY_SUMMARIES = {
     順劈: "順劈：近戰命中後，可再攻擊旁邊另一個敵人（不加屬性調整值）。每回合一次。",
     劃傷: "劃傷：沒打中也會造成傷害，數值等於這次攻擊的屬性調整值。",
-    迅切: "迅切：輕型武器的額外攻擊可併入攻擊動作，不必用附贈。每回合一次。",
+    迅切: "迅切：輕型武器的額外攻擊可併入攻擊動作，不必用附贈動作。每回合一次。",
     推離: "推離：命中大型或更小的敵人時，可把它推開最多 10 呎。",
     削弱: "削弱：命中後，目標在你下回合開始前的下一次攻擊有劣勢。",
     緩速: "緩速：命中並造成傷害時，目標速度降低 10 呎，直到你下回合開始。",
@@ -434,7 +434,7 @@
     盾面繪有聖徽: "聖徽就畫在盾牌上，可當施法器具。",
     "奧術法器，施法用。": "長棍也是奧術法器，施法時可使用。"
   };
-  const EQUIPMENT_LIST_NOTE = "點物品名稱可看內容。套組是一整包冒險用品。";
+  const EQUIPMENT_LIST_NOTE = "點物品名稱可以看說明。「套組」是一整包常用的冒險用品。";
 
   function findWeaponEntry(name) {
     const { simple, martial } = weaponMasteryCatalog();
@@ -500,8 +500,8 @@
     human: { 中型: "約 4-7 呎高", 小型: "約 2-4 呎高" },
     tiefling: { 中型: "約 4-7 呎高", 小型: "約 3-4 呎高" }
   };
-  const RACE_SIZE_NOTE = "差別主要是身高，依你想像的角色選；速度與攜帶上限相同。";
-  const KNOWN_PROFICIENCY_NOTE = "標示「已熟練」的項目再選一次不會更強，建議換一項。";
+  const RACE_SIZE_NOTE = "兩者主要差在身高，照你想像中的角色選就好；移動速度和能背多重都一樣。";
+  const KNOWN_PROFICIENCY_NOTE = "標示「已熟練」的技能你已經會了（例如來自背景），再選也不會更強，建議換別的。";
   // 起源專長（專長內容檔 type: origin）的一句話介紹，回歸測試確認涵蓋全部起源專長。
   const ORIGIN_FEAT_BLURBS = {
     警覺: "戰鬥時更容易搶先行動，也能和隊友交換順序。",
@@ -517,8 +517,8 @@
   }
   const BACKGROUND_TOOL_COPY = {
     賭具: {
-      lead: "你的角色平常愛玩什麼？這未必在冒險中有用，卻能看出你是什麼樣的人，不同賭具效果相同。",
-      note: "若真遇上賭局，你也能看出誰在作弊。"
+      lead: "你的角色平常愛玩哪種賭具？冒險時不一定用得上，但能看出角色的個性。不管選哪一種，規則效果都一樣。",
+      note: "真的遇上賭局時，你也比較能看出誰在作弊。"
     }
   };
   const DRAGONBORN_SUMMARY = {
@@ -999,8 +999,8 @@
   function duplicateGroupText(group) {
     const sources = [...new Set(group.items.map(item => item.source?.label || item.sourceType || "其他來源"))];
     const advice = group.type === "spells"
-      ? "這個法術已經會了，可以的話改學別的。不改也能繼續。"
-      : "同一項熟練只算一次，建議回上一步改選。不改也能繼續。";
+      ? "這個法術你已經會了，建議改學別的；不改也能繼續。"
+      : "同一項熟練重複取得也只算一次，建議回前面改選；不改也能繼續。";
     return `${group.name}（${sources.join("／")}）：${advice}`;
   }
 
@@ -1912,13 +1912,13 @@
   }
 
   function renderBackgroundCards(body) {
-    const wizardIntro = draft.choices.background ? "" : `<p class="quick-build-lead">${activeSteps(draft).length - 1} 個步驟完成 1 級角色。中途關閉會保留進度，最後按「匯入」才會寫入角色卡。</p>`;
+    const wizardIntro = draft.choices.background ? "" : `<p class="quick-build-lead">${activeSteps(draft).length - 1} 步建立你的新角色。<br>進度自動保存，隨時可以離開；按下最後的「匯入」，創角才會完成。</p>`;
     const featDetail = draft.choices.background ? `<div class="quick-build-card-detail"><button type="button" class="quick-build-spell-view" data-background-feat-view>查看起源專長</button></div>` : "";
-    body.innerHTML = `${wizardIntro}<h3>選擇背景</h3><p class="quick-build-lead">背景是玩家角色成為冒險者之前的身分</p><p class="quick-build-equipment-help">${infoTip("卡片上的項目是什麼？ ℹ️")}</p><div class="quick-build-background-grid">${BACKGROUND_ORDER.map(key => {
+    body.innerHTML = `${wizardIntro}<h3>選擇背景</h3><p class="quick-build-lead">背景是角色在成為冒險者之前的身分，例如侍僧、士兵或賢者。</p><p class="quick-build-equipment-help">${infoTip("卡片上的項目是什麼？ ℹ️")}</p><div class="quick-build-background-grid">${BACKGROUND_ORDER.map(key => {
       const { rules, text } = presetBackground(key);
       const tool = text.toolGroup || rules.tool.fixed;
       const sourceLabel = window.getContentSourceLabel(window.getBackgroundSource(key));
-      return `<button type="button" class="quick-build-card" data-background="${key}"><h4>${rules.name}${sourceLabel ? `<span class="quick-build-expansion-tag">${escapeHtml(sourceLabel)}</span>` : ""}</h4><dl class="quick-build-summary"><dt>技能熟練</dt><dd>${escapeHtml(rules.skills.join("、"))}</dd><dt>起源專長</dt><dd>${escapeHtml(text.feat)}<span class="quick-build-card-note">${escapeHtml(backgroundFeatBlurb(rules.feat))}</span></dd><dt>工具</dt><dd>${escapeHtml(tool)}</dd><dt>可調整屬性</dt><dd>${escapeHtml(text.abilities)}</dd></dl></button>`;
+      return `<button type="button" class="quick-build-card" data-background="${key}"><h4>${rules.name}${sourceLabel ? `<span class="quick-build-expansion-tag">${escapeHtml(sourceLabel)}</span>` : ""}</h4><dl class="quick-build-summary"><dt>技能熟練</dt><dd>${escapeHtml(rules.skills.join("、"))}</dd><dt>起源專長</dt><dd>${escapeHtml(text.feat)}<span class="quick-build-card-note">${escapeHtml(backgroundFeatBlurb(rules.feat))}</span></dd><dt>工具熟練</dt><dd>${escapeHtml(tool)}</dd><dt>可調整屬性</dt><dd>${escapeHtml(text.abilities)}</dd></dl></button>`;
     }).join("")}</div>${featDetail}`;
     body.querySelectorAll("[data-background]").forEach(card => card.addEventListener("click", () => handleChoiceCardSelection("background", card.dataset.background, chooseBackground)));
     body.querySelector("[data-background-feat-view]")?.addEventListener("click", event => {
@@ -1930,7 +1930,7 @@
     const key = draft.choices.background;
     const text = presetBackground(key)?.text || {};
     const gold = presetBackground(key)?.rules.equipment.B.gold;
-    body.innerHTML = `<h3>${backgroundName(key)}：背景裝備</h3><p class="quick-build-lead">背景也附一份裝備，新手建議一起拿。</p><section class="quick-build-choice-panel"><strong>背景初始裝備</strong>${optionNote(EQUIPMENT_LIST_NOTE)}<div class="quick-build-equipment-list">${equipmentLinks(String(text.equipmentA || "").split("、"))}</div><div class="quick-build-choice-actions quick-build-equipment-actions"><button type="button" data-wealth="default">取得初始裝備</button><button type="button" data-wealth="gold">改拿 ${gold} 金幣，自己買</button></div></section>${conceptHelp("為什麼初始裝備要選兩次？ ℹ️")}`;
+    body.innerHTML = `<h3>${backgroundName(key)}：背景裝備</h3><p class="quick-build-lead">背景會附一套初始裝備，新手建議直接拿。</p><section class="quick-build-choice-panel"><strong>背景初始裝備</strong>${optionNote(EQUIPMENT_LIST_NOTE)}<div class="quick-build-equipment-list">${equipmentLinks(String(text.equipmentA || "").split("、"))}</div><div class="quick-build-choice-actions quick-build-equipment-actions"><button type="button" data-wealth="default">取得初始裝備</button><button type="button" data-wealth="gold">改拿 ${gold} 金幣，自己買</button></div></section>${conceptHelp("為什麼初始裝備要選兩次？ ℹ️")}`;
     body.querySelectorAll("[data-wealth]").forEach(button => button.addEventListener("click", () => chooseBackgroundWealth(button.dataset.wealth)));
   }
 
@@ -1938,8 +1938,8 @@
     const selected = draft.choices.backgroundToolChoice || "";
     const key = draft.choices.background;
     const group = presetBackground(key)?.text.toolGroup || "";
-    const copy = BACKGROUND_TOOL_COPY[group] || { lead: `選一種你的角色會用的${group}，規則效果都一樣。` };
-    body.innerHTML = `<h3>${backgroundName(key)}：熟練${group}選擇</h3><p class="quick-build-lead">${escapeHtml(copy.lead)}</p><section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-background-game-tool">${group}</label><select id="quick-build-background-game-tool"><option value="">請選擇</option>${(backgroundToolChoices(key) || []).map(name => `<option value="${escapeHtml(name)}"${name === selected ? " selected" : ""}>${escapeHtml(name)}</option>`).join("")}</select>${optionNote(copy.note)}</div></section>`;
+    const copy = BACKGROUND_TOOL_COPY[group] || { lead: `選一種你的角色拿手的${group}。不管選哪一種，規則效果都一樣。` };
+    body.innerHTML = `<h3>${backgroundName(key)}：選擇拿手的${group}</h3><p class="quick-build-lead">${escapeHtml(copy.lead)}</p><section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-background-game-tool">${group}</label><select id="quick-build-background-game-tool"><option value="">請選擇</option>${(backgroundToolChoices(key) || []).map(name => `<option value="${escapeHtml(name)}"${name === selected ? " selected" : ""}>${escapeHtml(name)}</option>`).join("")}</select>${optionNote(copy.note)}</div></section>`;
     body.querySelector("#quick-build-background-game-tool").addEventListener("change", chooseBackgroundTool);
   }
 
@@ -1957,7 +1957,7 @@
     const magic = draft.choices.backgroundMagic;
     const cantrips = spellOptions("cantrips");
     const levelOne = spellOptions("1");
-    body.innerHTML = `<h3>${backgroundName(draft.choices.background)}：選擇法術</h3><p class="quick-build-lead">起源專長「${escapeHtml(presetBackground(draft.choices.background)?.rules.feat.id || "")}」讓你學會這些法術。</p>${optionNote("戲法：不耗法術位，次數不限。\n一環法術：每次長休可免費施放 1 次。\n施法用的屬性在步驟 3 確定；按「查看」看法術內容。")}<div class="quick-build-spell-layout"><div class="quick-build-spell-fields">${spellSelect("quick-build-cantrip-1", "戲法 1", cantrips, magic.cantrips[0], magic.cantrips[1])}${spellSelect("quick-build-cantrip-2", "戲法 2", cantrips, magic.cantrips[1], magic.cantrips[0])}${spellSelect("quick-build-level-one", "一環法術", levelOne, magic.levelOneSpells[0])}</div></div>`;
+    body.innerHTML = `<h3>${backgroundName(draft.choices.background)}：選擇法術</h3><p class="quick-build-lead">起源專長「${escapeHtml(presetBackground(draft.choices.background)?.rules.feat.id || "")}」讓你學會這些法術。</p>${optionNote("戲法：小型法術，想用幾次就用幾次。\n一環法術：效果較強，每次長休（休息 8 小時）後可以免費施放 1 次。\n施法要靠哪項屬性，會在步驟 3 決定；按「查看」可以看法術效果。")}<div class="quick-build-spell-layout"><div class="quick-build-spell-fields">${spellSelect("quick-build-cantrip-1", "戲法 1", cantrips, magic.cantrips[0], magic.cantrips[1])}${spellSelect("quick-build-cantrip-2", "戲法 2", cantrips, magic.cantrips[1], magic.cantrips[0])}${spellSelect("quick-build-level-one", "一環法術", levelOne, magic.levelOneSpells[0])}</div></div>`;
     body.querySelectorAll("[data-spell-field]").forEach(select => {
       select.addEventListener("change", event => updateBackgroundSpells(event.currentTarget));
     });
@@ -1980,7 +1980,7 @@
     const toolName = rules.tool.chooseFrom ? draft.choices.backgroundToolChoice : rules.tool.fixed;
     const tool = toolName ? annotatedDuplicateName("tools", toolName, "background", "已熟練") : "無";
     const annotatedSpells = spells.map(spellId => annotatedDuplicateName("spells", spellId, "background", "已學會"));
-    const classBonusWarning = draft.choices.classOptions?.backgroundBonusInvalidated ? `<div class="quick-build-warning"><strong>改變背景需要重新設定屬性加值</strong><br>你的 27 點基礎屬性已保留，但背景加值已重設為 0/3；按下一步後會前往「職業：屬性與背景加值」重新分配。</div>` : "";
+    const classBonusWarning = draft.choices.classOptions?.backgroundBonusInvalidated ? `<div class="quick-build-warning"><strong>換了背景，背景加值要重新分配</strong><br>你分配好的 27 點屬性都還在，只有背景給的 3 點已經歸零。按「下一步」會帶你回到屬性頁重新分配。</div>` : "";
     body.innerHTML = `<h3>背景選擇完成</h3><div class="quick-build-complete"><strong>${rules.name}</strong><br>技能：${skills.map(escapeHtml).join("、")}<br>起源專長：${escapeHtml(text.feat)}<br>工具：${escapeHtml(tool)}<br>可調整屬性：${escapeHtml(backgroundAbilityLabels(draft.choices.background).join("、"))}${annotatedSpells.length ? `<br>法術：${annotatedSpells.map(escapeHtml).join("、")}` : ""}</div>${classBonusWarning}${duplicateReviewWarning()}`;
   }
 
@@ -2008,7 +2008,7 @@
 
   function renderRaceCards(body) {
     const raceDetail = draft.choices.race ? `<div class="quick-build-card-detail"><button type="button" class="quick-build-spell-view" data-race-detail-view>查看種族完整能力</button></div>` : "";
-    body.innerHTML = `<h3>選擇種族</h3><p class="quick-build-lead">種族決定角色的外觀、體型、速度以及特殊能力。</p><div class="quick-build-background-grid">${raceIds().map(key => `<button type="button" class="quick-build-card" data-race="${key}"><h4>${raceName(key)}</h4><p>${escapeHtml(RACE_CARD_DESCRIPTIONS[key])}</p></button>`).join("")}</div>${raceDetail}`;
+    body.innerHTML = `<h3>選擇種族</h3><p class="quick-build-lead">種族決定角色的外貌、體型、移動速度，以及與生俱來的特殊能力。</p><div class="quick-build-background-grid">${raceIds().map(key => `<button type="button" class="quick-build-card" data-race="${key}"><h4>${raceName(key)}</h4><p>${escapeHtml(RACE_CARD_DESCRIPTIONS[key])}</p></button>`).join("")}</div>${raceDetail}`;
     body.querySelectorAll("[data-race]").forEach(card => card.addEventListener("click", () => handleChoiceCardSelection("race", card.dataset.race, chooseRace)));
     body.querySelector("[data-race-detail-view]")?.addEventListener("click", event => {
       openFeatDetail({ html: raceData(draft.choices.race) }, event.currentTarget, `${raceName(draft.choices.race)}：完整能力`);
@@ -2068,7 +2068,7 @@
     while (selected.length < 3) selected.push("");
     const acquiredSkills = new Set((draft.acquisitions.skills || []).filter(item => item.source?.feature !== "靈活人才：熟習").map(item => item.name));
     const acquiredTools = new Set((draft.acquisitions.tools || []).filter(item => item.source?.feature !== "靈活人才：熟習").map(item => item.name));
-    return `<section class="quick-build-choice-panel"><h4>熟習選項</h4><p class="quick-build-option-note">選 3 項不同的技能或工具。標示「已熟練」的再選一次不會更強。</p><div class="quick-build-race-options">${selected.map((value, index) => mixedProficiencySelect(index, value, selected.filter((_, other) => other !== index), acquiredSkills, acquiredTools)).join("")}</div></section>`;
+    return `<section class="quick-build-choice-panel"><h4>熟習選項</h4><p class="quick-build-option-note">選 3 項不同的技能或工具。標示「已熟練」的你已經會了，再選也不會更強。</p><div class="quick-build-race-options">${selected.map((value, index) => mixedProficiencySelect(index, value, selected.filter((_, other) => other !== index), acquiredSkills, acquiredTools)).join("")}</div></section>`;
   }
 
   function renderRaceOptions(body) {
@@ -2086,14 +2086,14 @@
       const ancestry = DRAGONBORN_SUMMARY[options.ancestry];
       fields.push(choiceSelect({
         formatOption: value => `${DRAGONBORN_SUMMARY[value]?.ancestry || value}（${DRAGONBORN_SUMMARY[value]?.damage || ""}）`,
-        note: `血統決定吐息的傷害類型，你受到該類傷害時也會減半。同元素的龍規則效果相同。${ancestry ? `\n吐息造成${ancestry.damage}傷害；受到${ancestry.damage}傷害時減半。` : ""}`
+        note: `血統決定你吐息的傷害種類，受到同種傷害時也只會承受一半。元素相同的龍，規則效果完全一樣，挑喜歡的顏色就好。${ancestry ? `\n吐息造成${ancestry.damage}傷害；受到${ancestry.damage}傷害時減半。` : ""}`
       }));
     }
     if (key === "elf") {
       fields.push(choiceSelect({ note: raceLineageNote(options.lineage) }));
       fields.push(raceSelect("skill", `${raceSkillTrait(key).name}：多熟練 1 項技能`, raceSkillChoices(key), { disabled: backgroundSkills, note: KNOWN_PROFICIENCY_NOTE }));
       const cantripChoice = raceChoiceOption(key, options)?.cantripChoice;
-      if (cantripChoice) fields.push(raceSelectWithDetail("cantrip", `${raceChoiceOption(key, options)?.label}：自選 1 個${CLASS_LABELS[cantripChoice.spellList]}戲法`, SpellCatalog.getSpells(cantripChoice.spellList, "cantrips").map(spell => spell.spellId), { showSpellView: true, formatOption: spellNameZh, note: `戲法不耗法術位，次數不限。長休後可換成其他${CLASS_LABELS[cantripChoice.spellList]}戲法。` }));
+      if (cantripChoice) fields.push(raceSelectWithDetail("cantrip", `${raceChoiceOption(key, options)?.label}：自選 1 個${CLASS_LABELS[cantripChoice.spellList]}戲法`, SpellCatalog.getSpells(cantripChoice.spellList, "cantrips").map(spell => spell.spellId), { showSpellView: true, formatOption: spellNameZh, note: `戲法是小型法術，想用幾次就用幾次。每次長休後，可以換成別的${CLASS_LABELS[cantripChoice.spellList]}戲法。` }));
     }
     if (key === "gnome") {
       fields.push(choiceSelect({ note: raceLineageNote(options.lineage) }));
@@ -2102,7 +2102,7 @@
     if (key === "human") {
       fields.push(raceSelect("size", "體型", rules.sizes, sizeSelectOptions));
       fields.push(raceSelect("skill", `${raceSkillTrait(key).name}：多熟練 1 項技能`, raceSkillChoices(key), { disabled: backgroundSkills, note: KNOWN_PROFICIENCY_NOTE }));
-      fields.push(raceFeatSelect("靈活人才：選 1 個起源專長", originFeats, { disabled: backgroundFeats, note: ORIGIN_FEAT_BLURBS[options.feat] || "起源專長是創角就能得到的特殊能力。不知道選什麼，推薦「熟習」。" }));
+      fields.push(raceFeatSelect("靈活人才：選 1 個起源專長", originFeats, { disabled: backgroundFeats, note: ORIGIN_FEAT_BLURBS[options.feat] || "起源專長是角色一開始就擁有的特殊能力。不知道選什麼的話，推薦「熟習」。" }));
     }
     if (key === "tiefling") {
       fields.push(raceSelect("size", "體型", rules.sizes, sizeSelectOptions));
@@ -2115,7 +2115,7 @@
     const goliathDetail = ancestryDetail
       ? `<div class="quick-build-ancestry-detail"><strong>${escapeHtml(`${ancestryOption.label}（${ancestryOption.name}）`)}</strong>${escapeHtml(ancestryDetail)}</div>`
       : "";
-    body.innerHTML = `<h3>${raceName(key)}種族選項</h3><p class="quick-build-lead">這些選擇會決定你的種族能力。</p><section class="quick-build-choice-panel quick-build-race-options">${fields.join("")}${goliathDetail}</section>${humanFeatPanel}`;
+    body.innerHTML = `<h3>${raceName(key)}種族選項</h3><p class="quick-build-lead">選好下面幾項，你的種族能力就確定了。</p><section class="quick-build-choice-panel quick-build-race-options">${fields.join("")}${goliathDetail}</section>${humanFeatPanel}`;
     body.querySelectorAll("[data-race-option]").forEach(select => select.addEventListener("change", updateRaceOption));
     body.querySelectorAll("[data-race-spell-view]").forEach(button => button.addEventListener("click", () => showRaceSpellDescription(button.dataset.raceSpellView, button)));
     body.querySelector("[data-race-feat-view]")?.addEventListener("click", event => showHumanFeatDescription(event.currentTarget));
@@ -2189,7 +2189,7 @@
       return name ? text.replaceAll(name, annotatedDuplicateName(item.type, item.id, "race", item.verb)) : text;
     }, line));
     const pending = racePendingChoices().filter(item => item.includes("後續步驟選擇"));
-    body.innerHTML = `<h3>種族選擇完成</h3><div class="quick-build-complete"><strong>${raceName(key)}</strong>${completionLines.map(line => `<br>${escapeHtml(line).replace("黑暗視覺", infoTip("黑暗視覺")).replace("豁免", infoTip("豁免"))}`).join("")}</div>${duplicateReviewWarning()}${pending.length ? `<div class="quick-build-pending"><strong>尚未完成的後續必要選擇</strong><br>${pending.map(escapeHtml).join("、")}。</div>` : ""}`;
+    body.innerHTML = `<h3>種族選擇完成</h3><div class="quick-build-complete"><strong>${raceName(key)}</strong>${completionLines.map(line => `<br>${escapeHtml(line).replace("黑暗視覺", infoTip("黑暗視覺")).replace("豁免", infoTip("豁免"))}`).join("")}</div>${duplicateReviewWarning()}${pending.length ? `<div class="quick-build-pending"><strong>後面的步驟還要選</strong><br>${pending.map(escapeHtml).join("、")}。</div>` : ""}`;
   }
 
   function classAbilitiesComplete(target = draft) {
@@ -2214,7 +2214,7 @@
   }
 
   function renderClassCards(body) {
-    body.innerHTML = `<h3>選擇職業</h3><p class="quick-build-lead">職業決定你怎麼戰鬥、會不會施法。</p><div class="quick-build-class-grid">${CLASS_ORDER.map(key => `<button type="button" class="quick-build-card quick-build-class-card" data-class-choice="${key}"><h4>${CLASS_LABELS[key]}</h4><p>${escapeHtml(CLASS_CARD_DESCRIPTIONS[key])}</p><p class="quick-build-option-note">關鍵屬性：${escapeHtml(CLASS_KEY_ABILITY_TEXT[key])}｜${SPELLCASTER_CLASS_IDS.has(key) ? "施法職業" : "不靠施法"}</p></button>`).join("")}</div>`;
+    body.innerHTML = `<h3>選擇職業</h3><p class="quick-build-lead">職業決定你在隊伍裡擔任什麼角色：怎麼戰鬥、會不會施法。</p><div class="quick-build-class-grid">${CLASS_ORDER.map(key => `<button type="button" class="quick-build-card quick-build-class-card" data-class-choice="${key}"><h4>${CLASS_LABELS[key]}</h4><p>${escapeHtml(CLASS_CARD_DESCRIPTIONS[key])}</p><p class="quick-build-option-note">關鍵屬性：${escapeHtml(CLASS_KEY_ABILITY_TEXT[key])}｜${SPELLCASTER_CLASS_IDS.has(key) ? "施法職業" : "不靠施法"}</p></button>`).join("")}</div>`;
     body.querySelectorAll("[data-class-choice]").forEach(card => card.addEventListener("click", () => handleChoiceCardSelection("class", card.dataset.classChoice, chooseClass)));
   }
 
@@ -2231,8 +2231,10 @@
     const allowedBonuses = new Set((draft.choices.backgroundAbilities || []).map(label => ABILITY_KEYS_BY_LABEL[label]));
     const spent = abilityPointCost(draft.choices.abilities);
     const bonusTotal = backgroundBonusTotal(draft.choices.backgroundAbilityBonuses);
-    const backgroundBonusWarning = draft.choices.classOptions?.backgroundBonusInvalidated ? `<div class="quick-build-warning"><strong>改變背景需要重新設定屬性加值</strong><br>已保留你上次的 27 點基礎屬性；請重新分配背景加值 3 點後再確認。</div>` : "";
-    body.innerHTML = `<div class="quick-build-ability-heading"><h3>${CLASS_LABELS[key]}${draft.choices.classOptions.classType ? `（${CLASS_TYPE_OPTIONS[key]?.find(option => option.id === draft.choices.classOptions.classType)?.label || ""}）` : ""}：屬性與背景加值</h3><div class="quick-build-ability-status"><span class="quick-build-status-pill${spent === 27 ? " is-complete" : ""}">購點 <strong>${spent}</strong> / 27</span><span class="quick-build-status-pill${bonusTotal === 3 ? " is-complete" : ""}">背景加值 <strong>${bonusTotal}</strong> / 3</span></div></div>${backgroundBonusWarning}<p class="quick-build-lead">${draft.choices.classOptions?.abilitiesCustomized || draft.choices.classOptions?.backgroundBonusInvalidated ? "按 ▲▼ 調整屬性。" : "數值已依職業預填，可直接下一步；想調整再按 ▲▼。"}</p><div class="quick-build-ability-help"><span>${CLASS_LABELS[key]}最看重：<strong>${escapeHtml(CLASS_KEY_ABILITY_TEXT[key] || "")}</strong></span><span>${escapeHtml(backgroundName(draft.choices.background) || "背景")}再給你 3 點，可加在<strong>${escapeHtml((draft.choices.backgroundAbilities || []).join("、") || "無")}</strong>，單項最多 +2；顯示「—」的屬性不能加。</span></div><section class="quick-build-choice-panel quick-build-ability-grid"><div class="quick-build-ability-table-head"><span>屬性</span><span>基礎值</span><span>背景加值</span><span class="skill-tip quick-build-total-head" data-skill="調整值" role="button" tabindex="0" aria-label="總值與調整值：開啟說明">總值<small>調整值</small></span></div>${ABILITY_ORDER.map(ability => {
+    const backgroundBonusWarning = draft.choices.classOptions?.backgroundBonusInvalidated ? `<div class="quick-build-warning"><strong>換了背景，背景加值要重新分配</strong><br>你分配好的 27 點屬性都還在；請把新背景給的 3 點重新加上。</div>` : "";
+    const bonusAbilities = draft.choices.backgroundAbilities || [];
+    const bonusAbilityText = bonusAbilities.length > 1 ? `${bonusAbilities.slice(0, -1).join("、")}或${bonusAbilities[bonusAbilities.length - 1]}` : bonusAbilities[0] || "無";
+    body.innerHTML = `<div class="quick-build-ability-heading"><h3>${CLASS_LABELS[key]}${draft.choices.classOptions.classType ? `（${CLASS_TYPE_OPTIONS[key]?.find(option => option.id === draft.choices.classOptions.classType)?.label || ""}）` : ""}的屬性</h3><div class="quick-build-ability-status"><span class="quick-build-status-pill${spent === 27 ? " is-complete" : ""}">購點 <strong>${spent}</strong> / 27</span><span class="quick-build-status-pill${bonusTotal === 3 ? " is-complete" : ""}">背景加值 <strong>${bonusTotal}</strong> / 3</span></div></div>${backgroundBonusWarning}<p class="quick-build-lead">${draft.choices.classOptions?.abilitiesCustomized || draft.choices.classOptions?.backgroundBonusInvalidated ? "按 ▲▼ 調整屬性。" : "我們已按照職業特長配好數值，不想調整可直接下一步。"}</p><div class="quick-build-ability-help"><span>${CLASS_LABELS[key]}最需要：<strong>${escapeHtml(CLASS_KEY_ABILITY_TEXT[key] || "")}</strong></span><span>背景加值：「${escapeHtml(backgroundName(draft.choices.background) || "背景")}」背景讓你額外獲得 3 點，可加在<strong>${escapeHtml(bonusAbilityText)}</strong>（例如 +2/+1，或各 +1）。其他屬性無法加點，會顯示「—」。</span></div><section class="quick-build-choice-panel quick-build-ability-grid"><div class="quick-build-ability-table-head"><span>屬性</span><span>基礎值</span><span>背景加值</span><span class="skill-tip quick-build-total-head" data-skill="調整值" role="button" tabindex="0" aria-label="總值與調整值：開啟說明">總值<small>調整值</small></span></div>${ABILITY_ORDER.map(ability => {
       const bonusEnabled = allowedBonuses.has(ability);
       const baseValue = draft.choices.abilities[ability];
       const bonusValue = draft.choices.backgroundAbilityBonuses[ability] || 0;
@@ -2240,7 +2242,7 @@
       const canIncreaseBase = baseValue < 15 && spent - POINT_BUY_COSTS[baseValue] + nextBaseCost <= 27;
       const canIncreaseBonus = bonusEnabled && bonusValue < 2 && bonusTotal < 3;
       return `<div class="quick-build-ability-row${bonusEnabled ? "" : " is-bonus-locked"}"><div class="quick-build-ability-name"><strong>${infoTip(ABILITY_LABELS[ability])}</strong><small>${ability.toUpperCase()}</small></div><div class="quick-build-ability-control"><button type="button" class="quick-build-ability-step" data-class-ability-base="${ability}" data-ability-adjustment="-1" aria-label="降低${ABILITY_LABELS[ability]}基礎值"${baseValue > 8 ? "" : " disabled"}>▼</button><span class="quick-build-ability-value">${baseValue}</span><button type="button" class="quick-build-ability-step" data-class-ability-base="${ability}" data-ability-adjustment="1" aria-label="提高${ABILITY_LABELS[ability]}基礎值"${canIncreaseBase ? "" : " disabled"}>▲</button></div><div class="quick-build-ability-control"><button type="button" class="quick-build-ability-step" data-class-ability-bonus="${ability}" data-ability-adjustment="-1" aria-label="降低${ABILITY_LABELS[ability]}背景加值"${bonusEnabled && bonusValue > 0 ? "" : " disabled"}>▼</button><span class="quick-build-ability-value is-bonus">${bonusEnabled ? `+${bonusValue}` : "—"}</span><button type="button" class="quick-build-ability-step" data-class-ability-bonus="${ability}" data-ability-adjustment="1" aria-label="提高${ABILITY_LABELS[ability]}背景加值"${canIncreaseBonus ? "" : " disabled"}>▲</button></div><div class="quick-build-ability-total"><strong>${abilityTotal(draft, ability)}</strong><small>${signedModifierText(abilityTotal(draft, ability))}</small></div></div>`;
-    }).join("")}</section>${optionNote(`27 點買基礎值：每項 8～15，要剛好用完。\n花費：${Object.entries(POINT_BUY_COSTS).map(([score, cost]) => `${score}=${cost}`).join("、")} 點。\n▲ 變灰代表點數用完或已到 15：先把別項按 ▼ 退點。`)}${spent !== 27 ? `<div class="quick-build-warning">還有 ${27 - spent} 點沒用完，用完才能繼續。</div>` : ""}${bonusTotal !== 3 ? `<div class="quick-build-warning">背景加值還差 ${3 - bonusTotal} 點，分配完才能繼續。</div>` : ""}`;
+    }).join("")}</section>${optionNote("你有 27 點可分配到六項屬性。\n每項從 8 開始，最高 15；點數需全部用完才能下一步。")}${conceptHelp("屬性怎麼調整？ ℹ️")}${spent !== 27 ? `<div class="quick-build-warning">還有 ${27 - spent} 點沒分配，全部用完才能下一步。</div>` : ""}${bonusTotal !== 3 ? `<div class="quick-build-warning">背景加值還有 ${3 - bonusTotal} 點沒分配，分完才能下一步。</div>` : ""}`;
     body.querySelectorAll("[data-class-ability-base],[data-class-ability-bonus]").forEach(button => button.addEventListener("click", updateClassAbility));
   }
 
@@ -2258,7 +2260,7 @@
       body.innerHTML = `<h3>${label}：施法屬性</h3><div class="quick-build-fixed-list">${label}固定用${ABILITY_LABELS[fixed]}施法（目前 ${total}，調整值 ${signedModifierText(total)}）。</div>${conceptHelp("什麼是施法屬性？ ℹ️")}`;
       return;
     }
-    body.innerHTML = `<h3>${label}：選擇施法屬性</h3><p class="quick-build-lead">${label}的法術看這個屬性；已預選最高的一項，可更改。</p><section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-class-spellcasting">施法屬性</label><select id="quick-build-class-spellcasting" data-class-spellcasting>${["int", "wis", "cha"].map(ability => `<option value="${ability}"${ability === selected ? " selected" : ""}>${ABILITY_LABELS[ability]} ${abilityTotal(draft, ability)}（${signedModifierText(abilityTotal(draft, ability))}）</option>`).join("")}</select></div></section>${conceptHelp("什麼是施法屬性？ ℹ️")}`;
+    body.innerHTML = `<h3>${label}：選擇施法屬性</h3><p class="quick-build-lead">${label}的法術強弱取決於這項屬性。已幫你選好目前最高的一項，也可以自己改。</p><section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-class-spellcasting">施法屬性</label><select id="quick-build-class-spellcasting" data-class-spellcasting>${["int", "wis", "cha"].map(ability => `<option value="${ability}"${ability === selected ? " selected" : ""}>${ABILITY_LABELS[ability]} ${abilityTotal(draft, ability)}（${signedModifierText(abilityTotal(draft, ability))}）</option>`).join("")}</select></div></section>${conceptHelp("什麼是施法屬性？ ℹ️")}`;
     body.querySelector("[data-class-spellcasting]")?.addEventListener("change", updateClassSpellcasting);
   }
 
@@ -2284,9 +2286,9 @@
     const tools = Array.isArray(options.tools) ? options.tools : [];
     const backgroundSkills = new Set((draft.acquisitions.skills || []).filter(item => item.sourceType === "background").map(item => item.name));
     const proficiencyBonus = quickBuildProficiencyBonus();
-    const toolIntro = `用這項工具做檢定時，可多加 +${proficiencyBonus}。`;
+    const toolIntro = `使用這些工具擲骰時，同樣會多加 +${proficiencyBonus}。`;
     const toolNote = [toolIntro, CLASS_TOOL_NOTES[draft.choices.class]].filter(Boolean).join("\n");
-    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：技能與工具</h3><p class="quick-build-lead">選你想擅長的技能：熟練後，該技能檢定多加 +${proficiencyBonus}。</p><div class="quick-build-proficiency-grid"><section class="quick-build-choice-panel"><h4>技能熟練：選擇 ${definition.skillCount} 項</h4>${optionNote("括號是對應屬性，屬性越高越有利。標示「已熟練」的項目重複選不會多加，建議換一項。")}<div class="quick-build-spell-fields">${Array.from({ length: definition.skillCount }, (_, index) => classProficiencySelect("skill", index, definition.skillOptions, skills, backgroundSkills)).join("")}</div></section>${definition.toolCount ? `<section class="quick-build-choice-panel"><h4>工具熟練：選擇 ${definition.toolCount} 項${definition.toolLabel ? `（${escapeHtml(definition.toolLabel)}）` : ""}</h4>${optionNote(toolNote)}<div class="quick-build-spell-fields">${Array.from({ length: definition.toolCount }, (_, index) => classProficiencySelect("tool", index, definition.toolOptions, tools)).join("")}</div></section>` : ""}${(definition.fixedTools || []).length ? `<section class="quick-build-choice-panel"><h4>固定工具熟練</h4>${optionNote(toolIntro)}${definition.fixedTools.map(tool => `<div class="quick-build-field-control quick-build-fixed-tool"><div class="quick-build-fixed-list">${escapeHtml(FIXED_TOOL_INTROS[tool] || tool)}</div>${equipmentDetailButton(tool)}</div>`).join("")}</section>` : ""}</div>`;
+    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：技能與工具</h3><p class="quick-build-lead">挑出角色拿手的事。做這類事情擲骰時，會多加 +${proficiencyBonus}。</p><div class="quick-build-proficiency-grid"><section class="quick-build-choice-panel"><h4>選擇 ${definition.skillCount} 項拿手技能</h4>${optionNote("括號內是這項技能依靠的屬性，該屬性越高，越容易成功。\n標示「已熟練」的技能你已經會了（例如來自背景），再選也不會更強，建議換別的。")}<div class="quick-build-spell-fields">${Array.from({ length: definition.skillCount }, (_, index) => classProficiencySelect("skill", index, definition.skillOptions, skills, backgroundSkills)).join("")}</div></section>${definition.toolCount ? `<section class="quick-build-choice-panel"><h4>選擇 ${definition.toolCount} 項會用的${escapeHtml(definition.toolLabel || "工具")}</h4>${optionNote(toolNote)}<div class="quick-build-spell-fields">${Array.from({ length: definition.toolCount }, (_, index) => classProficiencySelect("tool", index, definition.toolOptions, tools)).join("")}</div></section>` : ""}${(definition.fixedTools || []).length ? `<section class="quick-build-choice-panel"><h4>職業附帶的工具熟練</h4>${optionNote(toolIntro)}${definition.fixedTools.map(tool => `<div class="quick-build-field-control quick-build-fixed-tool"><div class="quick-build-fixed-list">${escapeHtml(FIXED_TOOL_INTROS[tool] || tool)}</div>${equipmentDetailButton(tool)}</div>`).join("")}</section>` : ""}</div>`;
     body.querySelectorAll("[data-class-skill],[data-class-tool]").forEach(select => select.addEventListener("change", updateClassProficiencies));
   }
 
@@ -2305,7 +2307,7 @@
     const spellcastingSummary = content.spellcastingSource ? `<dt>施法屬性</dt><dd>${escapeHtml(ABILITY_LABELS[content.spellcastingAbility] || "")}（${escapeHtml(spellcastingSourceLabel)}）</dd>` : "";
     const skillBonusSummary = groupedSourceAcquisitions("skillBonuses", item => item.sourceType === "class", compactFeatureSource);
     const optionalRow = (label, value) => !value || value === "無" ? "" : `<dt>${summaryLabel(label)}</dt><dd>${escapeHtml(value)}</dd>`;
-    body.innerHTML = `<h3>職業與屬性摘要確認</h3><section class="quick-build-complete"><dl class="quick-build-summary-list"><dt>職業</dt><dd>${escapeHtml(selection?.label || "")}${content.classTypeLabel ? `（${escapeHtml(content.classTypeLabel)}）` : ""}</dd><dt>${summaryLabel("關鍵屬性")}</dt><dd>${escapeHtml(content.keyAbilityText || "")}</dd><dt>${summaryLabel("生命骰")}</dt><dd>${escapeHtml(hitDieSummary)}</dd><dt class="quick-build-summary-full-label">屬性總值（基礎值＋背景加值）・${infoTip("調整值")}</dt><dd class="quick-build-summary-full-value"><div class="quick-build-ability-summary">${abilitySummary}</div></dd>${spellcastingSummary}<dt>${summaryLabel("豁免熟練")}</dt><dd>${escapeHtml((content.saves || []).join("、"))}</dd><dt>技能熟練</dt><dd>${escapeHtml(skillSummary)}</dd>${optionalRow("技能額外加值", skillBonusSummary)}${optionalRow("工具熟練", toolSummary)}${optionalRow("武器熟練", content.weaponProficiencies)}${optionalRow("護甲訓練", content.armorTraining)}</dl></section>${duplicateReviewWarning()}`;
+    body.innerHTML = `<h3>確認職業與屬性</h3><section class="quick-build-complete"><dl class="quick-build-summary-list"><dt>職業</dt><dd>${escapeHtml(selection?.label || "")}${content.classTypeLabel ? `（${escapeHtml(content.classTypeLabel)}）` : ""}</dd><dt>${summaryLabel("關鍵屬性")}</dt><dd>${escapeHtml(content.keyAbilityText || "")}</dd><dt>${summaryLabel("生命骰")}</dt><dd>${escapeHtml(hitDieSummary)}</dd><dt class="quick-build-summary-full-label">屬性總值（基礎值＋背景加值）・${infoTip("調整值")}</dt><dd class="quick-build-summary-full-value"><div class="quick-build-ability-summary">${abilitySummary}</div></dd>${spellcastingSummary}<dt>${summaryLabel("豁免熟練")}</dt><dd>${escapeHtml((content.saves || []).join("、"))}</dd><dt>技能熟練</dt><dd>${escapeHtml(skillSummary)}</dd>${optionalRow("技能額外加值", skillBonusSummary)}${optionalRow("工具熟練", toolSummary)}${optionalRow("武器熟練", content.weaponProficiencies)}${optionalRow("護甲訓練", content.armorTraining)}</dl></section>${duplicateReviewWarning()}`;
   }
 
   function classEquipmentComplete(target = draft) {
@@ -2472,8 +2474,8 @@
   function offHandDescription(mainHand, offHand) {
     if (!offHand) return weaponHasProperty(mainHand, "雙手") ? "空著（這把武器要雙手拿）" : "空著";
     if (offHand === "盾牌") return `盾牌（AC +${globalThis.shield?.[0]?.AC ?? 2}，更難被打中）`;
-    if (offHand === "武藝") return "武藝（徒手攻擊，不用拿武器。未穿護甲、未持盾才能用，攻擊後可用附贈再打一次）";
-    return weaponHasProperty(offHand, "輕型") ? `${offHand}（攻擊後可用附贈再砍一次，這次傷害不加屬性調整值）` : offHand;
+    if (offHand === "武藝") return "武藝（徒手攻擊，不用拿武器。未穿護甲、未持盾才能用，攻擊後可用附贈動作再打一次）";
+    return weaponHasProperty(offHand, "輕型") ? `${offHand}（攻擊後可用附贈動作再砍一次，這次傷害不加屬性調整值）` : offHand;
   }
 
   function mainHandNote(key, mainHand) {
@@ -2514,7 +2516,7 @@
     const items = shopItems();
     const classGold = draft.selections.classEquipment?.content?.currency?.gp || 0;
     const backgroundGold = draft.selections.backgroundEquipment?.content?.currency?.gp || 0;
-    body.innerHTML = `<h3>商店（可略過）</h3><p class="quick-build-lead">用手上的錢買其他物品；不買也可以，直接按下一步。</p><section class="quick-build-choice-panel"><dl class="quick-build-summary-list"><dt>起始金額</dt><dd>${escapeHtml(formatCopperAmount(shopStartingCopper()))}</dd>${items.length ? `<dt>已購買</dt><dd>${escapeHtml(formatShopItems(items))}</dd>` : ""}<dt>剩餘金額</dt><dd>${escapeHtml(formatCopperAmount(shopBalanceCopper()))}</dd></dl>${optionNote(`起始金額＝職業 ${classGold} 金幣＋背景 ${backgroundGold} 金幣。沒花完的錢會帶進角色卡，之後也能在攜帶物品開商店買。`)}<div class="quick-build-choice-actions quick-build-shop-actions"><button type="button" id="quick-build-shop-open" class="primary quick-build-choice-action-full quick-build-shop-open" aria-haspopup="dialog">${SHOP_CART_ICON}<span>開啟商店</span></button></div></section>`;
+    body.innerHTML = `<h3>商店（可略過）</h3><p class="quick-build-lead">用手上的錢買其他物品；不買也可以，直接按下一步。</p><section class="quick-build-choice-panel"><dl class="quick-build-summary-list"><dt>起始金額</dt><dd>${escapeHtml(formatCopperAmount(shopStartingCopper()))}</dd>${items.length ? `<dt>已購買</dt><dd>${escapeHtml(formatShopItems(items))}</dd>` : ""}<dt>剩餘金額</dt><dd>${escapeHtml(formatCopperAmount(shopBalanceCopper()))}</dd></dl>${optionNote(`起始金額＝職業 ${classGold} 金幣＋背景 ${backgroundGold} 金幣。沒花完的錢會帶進角色卡，之後也能在角色卡上開商店購物。`)}<div class="quick-build-choice-actions quick-build-shop-actions"><button type="button" id="quick-build-shop-open" class="primary quick-build-choice-action-full quick-build-shop-open" aria-haspopup="dialog">${SHOP_CART_ICON}<span>開啟商店</span></button></div></section>`;
     body.querySelector("#quick-build-shop-open").addEventListener("click", openDraftShop);
   }
 
@@ -2574,8 +2576,8 @@
     const offControl = effectiveMainHand ? `<div class="quick-build-fixed-list"><strong>副手：</strong>${escapeHtml(offHandDescription(effectiveMainHand, (equipmentPackage.off[effectiveMainHand] || [])[0]))}</div>` : `<div class="quick-build-fixed-list"><strong>副手：</strong>請先選擇主手</div>`;
     const fixedArmor = equipmentPackage.armor ? `<div class="quick-build-fixed-list"><strong>護甲：</strong>${escapeHtml(equipmentPackage.armor)}</div>` : "";
     const mainControl = choosesMainHand ? equipmentSelect("quick-build-equipment-main", "主手", equipmentPackage.main, mainHand, "data-equipment-main", { detail: true, note: mainHandNote(key, mainHand) }) : `<div class="quick-build-fixed-list"><strong>主手：</strong>${escapeHtml(options.mainHand || equipmentPackage.main[0] || "空著")}</div>`;
-    const instrumentControl = configurationFields.includes("instrument") ? equipmentSelect("quick-build-equipment-instrument", "選 1 件樂器帶在身上", classEquipmentInstrumentOptions(draft), options.instrument || "", "data-equipment-instrument", { note: "只列出你前面選的樂器熟練。" }) : "";
-    const configurationLead = choosesMainHand ? '<p class="quick-build-lead">選開場拿在手上的武器。其他武器仍在攜帶物品裡，之後可在角色卡換。</p>' : "";
+    const instrumentControl = configurationFields.includes("instrument") ? equipmentSelect("quick-build-equipment-instrument", "選 1 件樂器帶在身上", classEquipmentInstrumentOptions(draft), options.instrument || "", "data-equipment-instrument", { note: "只會列出你在前面選過的樂器。" }) : "";
+    const configurationLead = choosesMainHand ? '<p class="quick-build-lead">選擇一開始拿在手上的武器。其他武器仍帶在身上，之後隨時能在角色卡上換。</p>' : "";
     body.innerHTML = `<h3>${CLASS_LABELS[key]}：${choosesMainHand ? "選主手武器" : "選樂器"}</h3>${configurationLead}<section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${mainControl}${offControl}${fixedArmor}${instrumentControl}</div></section>`;
     body.querySelector("[data-equipment-main]")?.addEventListener("change", updateClassEquipmentOptions);
     body.querySelector("[data-equipment-instrument]")?.addEventListener("change", updateClassEquipmentOptions);
@@ -2720,14 +2722,14 @@
     }
     if (definition.fightingStyle) {
       const mainHand = draft.selections.classEquipment?.content?.loadout?.mainHand;
-      const styleLead = `選一種專長戰法，依主要使用的武器來挑。不確定就選防禦。${mainHand ? `\n你的主手武器：${mainHand}` : ""}`;
+      const styleLead = `選一種你擅長的戰鬥方式，依你主要用的武器來挑。不確定就選「防禦」。${mainHand ? `\n你的主手武器：${mainHand}` : ""}`;
       panels.push(`<section class="quick-build-choice-panel"><h4>戰鬥風格</h4>${optionNote(styleLead)}<div class="quick-build-field"><label class="sr-only" for="quick-build-fighting-style">戰鬥風格</label><div class="quick-build-field-control"><select id="quick-build-fighting-style" data-level-one-fighting-style><option value="">請選擇</option>${fightingStyleFeatIds().map(id => `<option value="${escapeHtml(id)}"${choices.fightingStyle === id ? " selected" : ""}>${escapeHtml(id)}</option>`).join("")}</select><button type="button" class="quick-build-spell-view" data-fighting-style-view${choices.fightingStyle ? "" : " disabled"}>查看</button></div>${optionNote(FIGHTING_STYLE_INTROS[choices.fightingStyle])}</div></section>`);
     }
     if (definition.invocations) {
       const selected = choices.invocations?.[0] || "";
       const invocationOptions = levelOneInvocationOptions();
       const option = invocationOptions.find(item => item.id === selected);
-      const invocationLead = `從契約獲得一項超自然能力，每次升級可換。${selected && selected === definition.defaultInvocations?.[0] ? `已預選${option?.label || ""}。` : ""}`;
+      const invocationLead = `你從契約中獲得一項超自然能力，每次升級都可以換。${selected && selected === definition.defaultInvocations?.[0] ? `已先幫你選好「${option?.label || ""}」。` : ""}`;
       panels.push(`<section class="quick-build-choice-panel"><h4>魔能祈喚</h4>${optionNote(invocationLead)}<label class="sr-only" for="quick-build-invocation">魔能祈喚</label><div class="quick-build-field-control"><select id="quick-build-invocation" data-level-one-invocation><option value="">請選擇</option>${invocationOptions.map(item => `<option value="${item.id}"${selected === item.id ? " selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select><button type="button" class="quick-build-spell-view" data-invocation-view${selected ? "" : " disabled"}>查看</button></div>${option ? `<p class="quick-build-option-note">${escapeHtml(option.description)}</p>` : ""}</section>`);
     }
     body.innerHTML = `<h3>${CLASS_LABELS[key]}：職業選項</h3>${panels.join("")}`;
@@ -2761,7 +2763,7 @@
       classType: draft.choices.classOptions?.classType
     };
     const rows = (LEVEL_ONE_FEATURE_INTROS[key] || []).map(({ id, text }) => `<div class="quick-build-feature-row"><div class="quick-build-field-control"><div><strong>${escapeHtml(levelOneFeatureName(key, id))}</strong>${optionNote(text(context))}</div><button type="button" class="quick-build-spell-view" data-level-one-feature-view="${escapeHtml(id)}">查看</button></div></div>`).join("");
-    body.innerHTML = `<p class="quick-build-lead">這一步要選：${escapeHtml(stageList)}。</p><h3>1 級自動獲得的能力</h3><p class="quick-build-lead">這些不用選，直接就有。按「查看」看完整規則。</p><div class="quick-build-feature-list">${rows}</div>`;
+    body.innerHTML = `<p class="quick-build-lead">最後一步，接下來要選：${escapeHtml(stageList)}。</p><h3>1 級自動獲得的能力</h3><p class="quick-build-lead">這些能力不用選，1 級就自動擁有。按「查看」可以看完整規則。</p><div class="quick-build-feature-list">${rows}</div>`;
     body.querySelectorAll("[data-level-one-feature-view]").forEach(button => button.addEventListener("click", event => {
       const id = button.dataset.levelOneFeatureView;
       openFeatDetail({ html: classFeatureSectionHtml(key, id) }, event.currentTarget, levelOneFeatureName(key, id));
@@ -2801,7 +2803,7 @@
       ? definition.classOption?.options.find(option => option.id === definition.extraCantripOption)?.label
       : CLASS_TYPE_OPTIONS[key]?.find(option => option.id === definition.extraCantripClassType)?.label;
     const hasExtraCantrip = Boolean(definition.cantrips) && cantripCount > definition.cantrips;
-    const cantripNote = [`不耗法術位、次數不限的小法術。${definition.spellChange?.cantrip || ""}`, hasExtraCantrip ? `因為選了${extraCantripName}，多學 1 個${CLASS_LABELS[key]}戲法。` : ""].filter(Boolean).join("\n");
+    const cantripNote = [`小型法術，想用幾次就用幾次，不消耗法術位。${definition.spellChange?.cantrip || ""}`, hasExtraCantrip ? `因為選了${extraCantripName}，多學 1 個${CLASS_LABELS[key]}戲法。` : ""].filter(Boolean).join("\n");
     const cantripLabel = index => hasExtraCantrip && index >= definition.cantrips ? `戲法 ${index + 1}（${extraCantripName}額外）` : `戲法 ${index + 1}`;
     if (cantripCount) sections.push(`<section class="quick-build-choice-panel"><h4>戲法</h4>${optionNote(cantripNote)}<div class="quick-build-spell-fields">${Array.from({ length: cantripCount }, (_, index) => spellSelectControl(`quick-build-cantrip-${index}`, cantripLabel(index), levelOneSpellOptions(key, "cantrips"), cantrips[index] || "", cantrips, knownFor("1 級戲法"), "data-level-one-cantrip")).join("")}</div></section>`);
     if (definition.spellbookSpells) sections.push(`<section class="quick-build-choice-panel"><h4>法術書法術</h4>${optionNote(`法術書是你的法術庫，先記下 ${definition.spellbookSpells} 個 1 環法術。\n標「（儀式）」的不用準備也能施放：多花 10 分鐘、要讀法術書，不耗法術位。`)}<div class="quick-build-spell-fields">${Array.from({ length: definition.spellbookSpells }, (_, index) => spellSelectControl(`quick-build-spellbook-${index}`, `法術書 ${index + 1}`, levelOneSpellOptions("wizard", "1"), spellbook[index] || "", spellbook, knownFor(["法術書", "1 級準備法術"]), "data-level-one-spellbook")).join("")}</div></section>`);
@@ -2810,8 +2812,8 @@
       const slots = window.getClassProgressionValue?.(key, definition.spellSlotKey || "spellSlots1", QUICK_BUILD_LEVEL);
       const slotRecovery = definition.spellSlotRecovery || "長休後";
       const preparedNote = definition.spellbookSpells
-        ? `從法術書挑 ${definition.preparedSpells} 個能拿出來施放的法術，每次長休後可全部更換。\n你有 ${slots} 個 1 環法術位，${slotRecovery}全部恢復。`
-        : `能拿出來施放的法術，施放通常要消耗法術位。\n你有 ${slots} 個 1 環法術位，${slotRecovery}全部恢復；${definition.spellChange?.prepared || ""}`;
+        ? `從法術書挑 ${definition.preparedSpells} 個準備好的法術，冒險時就能施放；每次長休後可全部更換。\n你有 ${slots} 個 1 環法術位，${slotRecovery}全部恢復。`
+        : `準備好的法術才能施放，每施放一次通常要用掉 1 個法術位。\n你有 ${slots} 個 1 環法術位，${slotRecovery}全部恢復。${definition.spellChange?.prepared ? `\n準備的法術${definition.spellChange.prepared}` : ""}`;
       const alwaysPrepared = (definition.alwaysPrepared || []).map(spellId => {
         const intro = (definition.alwaysPreparedIntros?.[spellId] || "").replace("{宿敵次數}", window.getClassProgressionValue?.(key, "favoredEnemy", QUICK_BUILD_LEVEL));
         return `<div class="quick-build-field-control quick-build-fixed-tool"><div>${escapeHtml(spellNameZh(spellId))}：${escapeHtml(intro)}</div><button type="button" class="quick-build-spell-view" data-always-prepared-view="${escapeHtml(spellId)}">查看</button></div>`;
@@ -2825,7 +2827,7 @@
       const tomeRituals = tome.rituals || [];
       sections.push(`<section class="quick-build-choice-panel"><h4>書之魔契</h4>${optionNote("你有一本影之書，持有時多會下面這些法術，任一職業的都能選。\n它們視為已準備，不佔上面的名額。")}<div class="quick-build-spell-fields"><p class="quick-build-subheading">3 個戲法：不耗法術位、次數不限。</p>${Array.from({ length: 3 }, (_, index) => spellSelectControl(`quick-build-tome-cantrip-${index}`, `影之書戲法 ${index + 1}`, allSpellOptions("cantrips"), tomeCantrips[index] || "", tomeCantrips, knownFor("書之魔契"), "data-level-one-tome-cantrip")).join("")}<p class="quick-build-subheading">2 個 1 環儀式法術：多花 10 分鐘施放就不耗法術位。</p>${Array.from({ length: 2 }, (_, index) => spellSelectControl(`quick-build-tome-ritual-${index}`, `影之書儀式 ${index + 1}`, allSpellOptions("1", isRitualSpell), tomeRituals[index] || "", tomeRituals, knownFor("書之魔契"), "data-level-one-tome-ritual")).join("")}</div></section>`);
     }
-    body.innerHTML = `<h3>${CLASS_LABELS[key]}：法術選擇</h3><p class="quick-build-lead">已先填好推薦法術，可以直接用，也可以按「查看」後更換。</p>${sections.join("")}`;
+    body.innerHTML = `<h3>${CLASS_LABELS[key]}：法術選擇</h3><p class="quick-build-lead">已先幫你填好推薦法術，可以直接用；想換的話，按「查看」了解效果，再從選單改選。</p>${sections.join("")}`;
     body.querySelectorAll("[data-always-prepared-view]").forEach(button => button.addEventListener("click", event => {
       openSpellDetail(canonicalSpell(button.dataset.alwaysPreparedView), event.currentTarget);
     }));
@@ -2871,7 +2873,7 @@
         return `<option value="${escapeHtml(name)}"${current === name ? " selected" : ""}${peerDuplicate ? " disabled" : ""}>${escapeHtml(skillOptionLabel(name))}${peerDuplicate ? "（本頁已選）" : ""}</option>`;
       }).join("")}</select>${skillDescriptionButton(current)}</div></div>`;
     };
-    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：專精</h3><section class="quick-build-choice-panel"><p class="quick-build-option-note">選 ${requiredCount} 個你已熟練的技能，熟練加值加倍（目前 +${quickBuildProficiencyBonus()} 變 +${quickBuildProficiencyBonus() * 2}）。${draft.choices.class === "rogue" ? "\n推薦：巧手、隱匿。清單沒有就表示還沒熟練，可回步驟 3 調整。" : ""}</p><div class="quick-build-spell-fields">${Array.from({ length: requiredCount }, (_, index) => select(index)).join("")}</div></section>`;
+    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：專精</h3><section class="quick-build-choice-panel"><p class="quick-build-option-note">從你已熟練的技能中選 ${requiredCount} 項，擲骰時的額外加分加倍（+${quickBuildProficiencyBonus()} 變成 +${quickBuildProficiencyBonus() * 2}）。${draft.choices.class === "rogue" ? "\n推薦：巧手、隱匿。清單裡找不到的技能，代表你還沒熟練，可以回步驟 3 調整。" : ""}</p><div class="quick-build-spell-fields">${Array.from({ length: requiredCount }, (_, index) => select(index)).join("")}</div></section>`;
     body.querySelectorAll("[data-level-one-expertise]").forEach(selectEl => selectEl.addEventListener("change", () => updateLevelOneField(next => { next.expertise = [...body.querySelectorAll("[data-level-one-expertise]")].map(item => item.value || ""); })));
   }
 
@@ -2915,7 +2917,7 @@
       summaryRow("陣營", alignmentLabel())
     ].join("");
     const summarySection = summaryRows ? `<section class="quick-build-complete"><dl class="quick-build-summary-list">${summaryRows}</dl></section>` : "";
-    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：最後選擇摘要</h3>${pending.length ? `<div class="quick-build-warning"><strong>尚未完成</strong><br>${pending.map(escapeHtml).join("<br>")}</div>` : `<section class="quick-build-complete"><strong>都選好了，下一步確認整張角色。</strong></section>`}${summarySection}${duplicateReviewWarning()}`;
+    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：最後選擇摘要</h3>${pending.length ? `<div class="quick-build-warning"><strong>還有這些沒選</strong><br>${pending.map(escapeHtml).join("<br>")}</div>` : `<section class="quick-build-complete"><strong>都選好了！下一步確認整張角色卡。</strong></section>`}${summarySection}${duplicateReviewWarning()}`;
   }
 
   function formatCurrency(currency) {
@@ -4422,7 +4424,7 @@
     message.id = "quick-build-validation-message";
     message.className = "quick-build-validation-message";
     message.setAttribute("role", "alert");
-    message.textContent = "請先完成此區域的選擇，再進行下一步。";
+    message.textContent = "這裡還有選項沒完成，選好才能下一步。";
     incomplete.target.parentNode.insertBefore(message, incomplete.target);
     incomplete.target.classList.add("quick-build-needs-attention");
     if (incomplete.control) {
@@ -4569,7 +4571,9 @@
     syncShopCartFunding();
     expandedChoiceGroups.clear();
     pendingChoiceCardScrollGroup = null;
-    closeWizard(false);
+    // 重置後留在視窗內，從步驟 1（背景）重新開始；草稿等玩家再次選擇時才會存檔。
+    closeSpellDetail();
+    render();
   }
 
   function closeWizard(save = true) {
