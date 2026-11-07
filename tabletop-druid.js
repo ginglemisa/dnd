@@ -364,7 +364,22 @@
       button(option.druidOperation === "shape" ? "變形所選形態" : labels[option.druidOperation], trigger => openOperation(option.druidOperation, trigger), blocked));
     if (option.druidOperation === "shape") target.append(button("管理已知形態", trigger => openOperation("known", trigger)));
     if (requiresWild && c.remaining === 0 && c.level >= 5) target.append(button("野性復甦：恢復次數", trigger => openOperation("resurge-shape", trigger)));
-    if (option.druidOperation === "companion" && form()) target.append(el("p", "荒野形態期間不能施法。"));
+    if (option.druidOperation === "companion") {
+      if (form()) target.append(el("p", "荒野形態期間不能施法。"));
+      appendCompanionSpell(target);
+    }
+  }
+
+  // 荒野夥伴施放的是獲得魔寵：按鈕下方附法術說明，不必另外開視窗查。
+  function appendCompanionSpell(target) {
+    const spell = globalScope.SpellCatalog?.getSpell("find-familiar");
+    const view = spell && globalScope.TabletopSpells?.createSpellDescriptionView?.(spell);
+    if (!view) return;
+    const section = el("section", "", "druid-companion-spell");
+    const title = el("p", "", "druid-companion-spell__title");
+    title.append(el("strong", spell.nameZh), el("span", spell.nameEn, "tabletop-spell-detail__english"));
+    section.append(title, view);
+    target.append(section);
   }
 
   function appendBeastAction(target, beast, action) {

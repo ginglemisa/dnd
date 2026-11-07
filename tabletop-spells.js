@@ -210,6 +210,12 @@
     if (entry?.sourceLabel) {
       content.appendChild(createElement("p", "tabletop-spell-detail__source", entry.sourceLabel));
     }
+    content.appendChild(createSpellDescriptionView(spell));
+    return content;
+  }
+
+  // 法術說明本文（含網站版／SRD 版切換與野獸資料）；法術詳情與行動頁的荒野夥伴共用。
+  function createSpellDescriptionView(spell) {
     const copy = createElement("div", "tabletop-spell-detail__copy");
     const description = String(globalScope.SpellCatalog?.getTabletopText(spell) || spell.desc || "");
     if (typeof globalScope.appendSpellDescription === "function") {
@@ -217,10 +223,9 @@
     } else {
       appendDiceText(copy, description, spell);
     }
-    content.appendChild(typeof globalScope.createSpellVersionView === "function"
+    return typeof globalScope.createSpellVersionView === "function"
       ? globalScope.createSpellVersionView(spell.spellId, site => site.appendChild(copy))
-      : copy);
-    return content;
+      : copy;
   }
 
   function appendDiceText(copy, description, spell) {
@@ -961,10 +966,6 @@
     }
     const spell = entry?.spell || globalScope.SpellCatalog?.getSpell(spellId);
     if (!spell || !globalScope.AppDialog) return;
-    if (entry?.sourceKey === "class-druid-wild-companion-find-familiar") {
-      await globalScope.TabletopDruid?.openOperation("companion", trigger);
-      return;
-    }
     const currentId = globalScope.TabletopMode?.getConcentrationSpellId?.() || "";
     const actions = [{ label: "關閉", value: "close" }];
     if (currentId === spellId) actions.push({
@@ -1293,6 +1294,7 @@
     getSelectedSpellEntries,
     isSpellCurrentlySelected,
     showSpellDetail,
+    createSpellDescriptionView,
     refresh: scheduleRender,
     logic: Object.freeze({
       buildRollEntries,
