@@ -4290,7 +4290,8 @@
     openFeatDetail(detail, trigger, "魔能祈喚詳情");
   }
 
-  // detail：{ feat: 專長 ID } 顯示專長說明（與角色卡相同）；文字（例如魔能祈喚說明）照原文顯示；空值為尚未選擇。
+  // detail：{ feat: 專長 ID } 顯示專長說明（與角色卡相同）；{ html } 為種族／職業頁內容，狀態標記（span）換成可聚焦的說明按鈕，
+  // 關閉狀態說明後焦點才回得來；文字（例如魔能祈喚說明）照原文顯示；空值為尚未選擇。
   function openFeatDetail(detail, trigger, title = "專長詳情") {
     const modal = ensureSpellDetailModal();
     const wizardShell = ensureWizard().querySelector(".quick-build-shell");
@@ -4303,7 +4304,7 @@
     if (detail?.feat) {
       content.innerHTML = getFeatDescriptionHtml(detail.feat);
     } else if (detail?.html) {
-      content.innerHTML = detail.html;
+      content.innerHTML = decorateDndConditionTips(detail.html);
     } else if (detail) {
       content.textContent = detail;
     } else {
