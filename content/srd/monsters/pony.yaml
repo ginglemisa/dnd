@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: pony
+name: 小馬
+nameEn: Pony
+tabletop:
+  abilities:
+    str: 15
+    dex: 10
+    con: 13
+    int: 2
+    wis: 11
+    cha: 7
+  skills: {}
+  speeds:
+    步行: 40
+  actions:
+    - name: 蹄擊
+      hit: 4
+      damage:
+        - type: 鈍擊傷害
+          expression: 1d4+2
+          fixed: 4
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 小馬 (Pony) CR:1/8
+  size_type: 中型野獸
+  ac: 10
+  hp: 11 (2d8+2)
+  speed: 40呎
+  ability: 力15(+2), 敏10(+0), 體13(+1), 智2(-4), 感11(+0), 魅7(-2)
+  senses: 被動察覺10
+  skills: —
+  traits: —
+  attacks: 蹄擊：近戰攻擊檢定+4, 觸及5呎；命中：鈍擊傷害4(1d4+2)。

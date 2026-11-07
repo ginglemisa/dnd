@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: sprite
+name: 小妖精
+nameEn: Sprite
+site:
+  name: 小妖精 (Sprite) CR:1/4
+  size_type: 微型妖精
+  ac: 15
+  hp: 10 (4d4)
+  speed: 10呎, 飛行40呎
+  ability: 力3(-4), 敏18(+4), 體10(+0), 智14(+2), 感13(+1), 魅11(+0)
+  senses: 被動察覺13
+  skills: 察覺+3, 隱匿+8
+  traits: —
+  attacks: 針劍：近戰攻擊檢定+6, 觸及5呎；命中：刺傷6(1d4+4)。附魔短弓：遠程攻擊檢定+6, 射程40/160呎；命中：刺傷1，目標魅惑至小妖精下回合開始。洞悉心靈：魅力豁免DC10，5呎內可見生物（天界/邪魔/不死生物自動失敗）；失敗則小妖精得知其情緒與陣營。隱形：對自身施展隱形術（無需法術成分，施法屬性為魅力）。

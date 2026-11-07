@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: pteranodon
+name: 翼手龍
+nameEn: Pteranodon
+tabletop:
+  abilities:
+    str: 12
+    dex: 15
+    con: 10
+    int: 2
+    wis: 9
+    cha: 5
+  skills:
+    察覺: 1
+  speeds:
+    步行: 10
+    飛行: 60
+  actions:
+    - name: 咬擊
+      hit: 4
+      damage:
+        - type: 刺傷
+          expression: 1d8+2
+          fixed: 6
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 翼手龍 (Pteranodon) CR:1/4
+  size_type: 中型野獸（恐龍）
+  ac: 13
+  hp: 13 (3d8)
+  speed: 10呎, 飛行60呎
+  ability: 力12(+1), 敏15(+2), 體10(+0), 智2(-4), 感9(-1), 魅5(-3)
+  senses: 被動察覺11
+  skills: 察覺+1
+  traits: 陣營：無陣營；語言：無；飛掠：翼手龍飛行離開敵人的觸及範圍時，不會引發藉機攻擊。
+  attacks: 咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷6(1d8+2)。

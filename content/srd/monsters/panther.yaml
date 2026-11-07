@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: panther
+name: 黑豹
+nameEn: Panther
+tabletop:
+  abilities:
+    str: 14
+    dex: 16
+    con: 10
+    int: 3
+    wis: 14
+    cha: 7
+  skills:
+    察覺: 4
+    隱匿: 7
+  speeds:
+    步行: 50
+    攀爬: 40
+  actions:
+    - name: 撕裂
+      hit: 5
+      damage:
+        - type: 揮砍傷害
+          expression: 1d6+3
+          fixed: 6
+      id: attack-0
+      mode: action
+    - id: escape
+      name: 靈巧脫逃
+      mode: bonus
+  conditionalDamage: []
+site:
+  name: 黑豹 (Panther) CR:1/4
+  size_type: 中型野獸
+  ac: 13
+  hp: 13 (3d8)
+  speed: 50呎, 攀爬40呎
+  ability: 力14(+2), 敏16(+3), 體10(+0), 智3(-4), 感14(+2), 魅7(-2)
+  senses: 黑暗視覺60呎, 被動察覺14
+  skills: 察覺+4, 隱匿+7
+  traits: —
+  attacks: 撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害6(1d6+3)。附贈─靈巧脫逃：執行撤離或躲藏。

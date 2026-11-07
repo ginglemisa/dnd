@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: pseudodragon
+name: 偽龍
+nameEn: Pseudodragon
+site:
+  name: 偽龍 (Pseudodragon) CR:1/4
+  size_type: 微型龍類
+  ac: 14
+  hp: 10 (3d4+3)
+  speed: 15呎, 飛行60呎
+  ability: 力6(-2), 敏15(+2), 體13(+1), 智10(+0), 感12(+1), 魅10(+0)
+  senses: 盲視10呎, 黑暗視覺60呎, 被動察覺15
+  skills: 察覺+5, 隱匿+4
+  traits: 魔法抗性：對抗法術與其他魔法效應的豁免檢定具有優勢
+  attacks: 多重攻擊：進行兩次啃咬。啃咬：近戰攻擊檢定+4, 觸及5呎；命中：刺傷4(1d4+2)。螫刺：體質豁免DC12，5呎內可見生物；失敗：毒傷5(2d4)且中毒1小時。目標中毒期間同時陷入昏迷；若目標受傷，或5呎內生物用動作喚醒，則可提前結束。

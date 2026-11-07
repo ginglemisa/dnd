@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_lizard
+name: 巨蜥蜴
+nameEn: Giant Lizard
+tabletop:
+  abilities:
+    str: 15
+    dex: 12
+    con: 13
+    int: 2
+    wis: 10
+    cha: 5
+  skills: {}
+  speeds:
+    步行: 40
+    攀爬: 40
+  actions:
+    - name: 咬擊
+      hit: 4
+      damage:
+        - type: 刺傷
+          expression: 1d8+2
+          fixed: 6
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 巨蜥蜴 (Giant Lizard) CR:1/4
+  size_type: 大型野獸
+  ac: 12
+  hp: 19 (3d10+3)
+  speed: 40呎, 攀爬40呎
+  ability: 力15(+2), 敏12(+1), 體13(+1), 智2(-4), 感10(+0), 魅5(-3)
+  senses: 黑暗視覺60呎, 被動察覺10
+  skills: —
+  traits: 蛛行：可攀爬困難表面（含天花板）且無需檢定
+  attacks: 咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷6(1d8+2)。

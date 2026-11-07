@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: skeleton
+name: 骷髏
+nameEn: Skeleton
+site:
+  name: 骷髏 (Skeleton) CR:1/4
+  size_type: 中型不死生物
+  ac: 14
+  hp: 13 (2d8+4)
+  speed: 30呎
+  ability: 力10(+0), 敏16(+3), 體15(+2), 智6(-2), 感8(-1), 魅5(-3)
+  senses: 黑暗視覺60呎, 被動察覺9
+  skills: —
+  traits: 易傷：鈍擊；免疫：毒素、力竭、中毒；裝備：短弓、短劍
+  attacks: 短劍：近戰攻擊檢定+5, 觸及5呎；命中：刺傷6(1d6+3)。短弓：遠程攻擊檢定+5, 射程80/320呎；命中：刺傷6(1d6+3)。

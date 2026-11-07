@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: mastiff
+name: 獒犬
+nameEn: Mastiff
+tabletop:
+  abilities:
+    str: 13
+    dex: 14
+    con: 12
+    int: 3
+    wis: 12
+    cha: 7
+  skills:
+    察覺: 5
+  speeds:
+    步行: 40
+  actions:
+    - name: 咬擊
+      hit: 3
+      damage:
+        - type: 刺傷
+          expression: 1d6+1
+          fixed: 4
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 獒犬 (Mastiff) CR:1/8
+  size_type: 中型野獸
+  ac: 12
+  hp: 5 (1d8+1)
+  speed: 40呎
+  ability: 力13(+1), 敏14(+2), 體12(+1), 智3(-4), 感12(+1), 魅7(-2)
+  senses: 黑暗視覺60呎, 被動察覺15
+  skills: 察覺+5
+  traits: —
+  attacks: 咬擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷4(1d6+1)。若目標為中型或更小，會倒地。

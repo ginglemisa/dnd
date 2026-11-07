@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: crocodile
+name: 鱷魚
+nameEn: Crocodile
+tabletop:
+  abilities:
+    str: 15
+    dex: 10
+    con: 13
+    int: 2
+    wis: 10
+    cha: 5
+  skills:
+    隱匿: 2
+  speeds:
+    步行: 20
+    游泳: 30
+  actions:
+    - name: 咬擊
+      hit: 4
+      damage:
+        - type: 刺傷
+          expression: 1d8+2
+          fixed: 6
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 鱷魚 (Crocodile) CR:1/2
+  size_type: 大型野獸
+  ac: 12
+  hp: 13 (2d10+2)
+  speed: 20呎, 游泳30呎
+  ability: 力15(+2), 敏10(+0), 體13(+1), 智2(-4), 感10(+0), 魅5(-3)
+  senses: 被動察覺10
+  skills: 隱匿+2
+  traits: 憋氣：可閉氣1小時
+  attacks: 咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷6(1d8+2)。若目標為中型或更小，會陷入擒抱（掙脫DC12）；擒抱期間同時受束縛。

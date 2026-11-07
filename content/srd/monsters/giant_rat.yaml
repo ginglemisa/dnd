@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_rat
+name: 巨鼠
+nameEn: Giant Rat
+tabletop:
+  abilities:
+    str: 7
+    dex: 16
+    con: 11
+    int: 2
+    wis: 10
+    cha: 4
+  skills:
+    察覺: 2
+  speeds:
+    步行: 30
+    攀爬: 30
+  actions:
+    - name: 咬擊
+      hit: 5
+      damage:
+        - type: 刺傷
+          expression: 1d4+3
+          fixed: 5
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 巨鼠 (Giant Rat) CR:1/8
+  size_type: 小型野獸
+  ac: 13
+  hp: 7 (2d6)
+  speed: 30呎, 攀爬30呎
+  ability: 力7(-2), 敏16(+3), 體11(+0), 智2(-4), 感10(+0), 魅4(-3)
+  senses: 黑暗視覺60呎, 被動察覺12
+  skills: 察覺+2
+  traits: 群攻：若攻擊目標5呎內有巨鼠的盟友（未失能），該攻擊擲骰具優勢
+  attacks: 咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷5(1d4+3)。

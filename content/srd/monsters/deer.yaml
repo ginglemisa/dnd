@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: deer
+name: 鹿
+nameEn: Deer
+tabletop:
+  abilities:
+    str: 11
+    dex: 16
+    con: 11
+    int: 2
+    wis: 14
+    cha: 5
+  skills:
+    察覺: 4
+  speeds:
+    步行: 50
+  actions:
+    - name: 頂撞
+      hit: 2
+      damage:
+        - type: 鈍擊傷害
+          expression: 1d4
+          fixed: 2
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 鹿 (Deer) CR:0
+  size_type: 中型野獸
+  ac: 13
+  hp: 4 (1d8)
+  speed: 50呎
+  ability: 力11(+0), 敏16(+3), 體11(+0), 智2(-4), 感14(+2), 魅5(-3)
+  senses: 黑暗視覺60呎, 被動察覺14
+  skills: 察覺+4
+  traits: 靈巧：離開敵人威脅範圍時不引發藉機攻擊
+  attacks: 頂撞：近戰攻擊檢定+2, 觸及5呎；命中：鈍擊傷害2(1d4)。

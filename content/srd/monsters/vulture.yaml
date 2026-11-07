@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: vulture
+name: 禿鷹
+nameEn: Vulture
+tabletop:
+  abilities:
+    str: 7
+    dex: 10
+    con: 13
+    int: 2
+    wis: 12
+    cha: 4
+  skills:
+    察覺: 3
+  speeds:
+    步行: 10
+    飛行: 50
+  actions:
+    - name: 喙擊
+      hit: 2
+      damage:
+        - type: 刺傷
+          expression: 1d4
+          fixed: 2
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 禿鷹 (Vulture) CR:0
+  size_type: 中型野獸
+  ac: 10
+  hp: 5 (1d8+1)
+  speed: 10呎, 飛行50呎
+  ability: 力7(-2), 敏10(+0), 體13(+1), 智2(-4), 感12(+1), 魅4(-3)
+  senses: 被動察覺13
+  skills: 察覺+3
+  traits: 陣營：無陣營；語言：無；群攻：若攻擊目標5呎內有禿鷹的盟友，且該盟友未陷入失能，禿鷹對該目標的攻擊檢定具有優勢。
+  attacks: 喙擊：近戰攻擊檢定+2, 觸及5呎；命中：刺傷2(1d4)。

@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "monster.schema.json",
+  "title": "twD20 怪物／野獸內容檔",
+  "description": "一個怪物一個檔。tabletop 是跑團的結構化數值；site 是網站版資料卡的顯示文字。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "nameEn", "site"],
+  "definitions": {
+    "line": { "type": "string", "minLength": 1, "pattern": "^[^\\n]+$" }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(_[a-z0-9]+)*$", "description": "怪物 key，須等於檔名。會寫進跑團狀態（已知形態、目前形態）、職業頁 data-beast 與法術頁的野獸按鈕，不可改名。" },
+    "name": { "$ref": "#/definitions/line", "description": "中文名。[[中文名]] 提示框以此查表，不可重複。" },
+    "nameEn": { "$ref": "#/definitions/line", "description": "英文名。" },
+    "tabletop": { "type": "object", "description": "跑團的結構化數值（BeastCatalog.get）。" },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "size_type", "ac", "hp", "speed", "ability", "senses", "skills", "traits", "attacks"],
+      "properties": {
+        "name": { "type": "string" },
+        "size_type": { "type": "string" },
+        "ac": { "type": ["integer", "string"] },
+        "hp": { "type": "string" },
+        "speed": { "type": "string" },
+        "ability": { "type": "string" },
+        "senses": { "type": "string" },
+        "skills": { "type": "string" },
+        "traits": { "type": "string" },
+        "attacks": { "type": "string" }
+      }
+    }
+  }
+}

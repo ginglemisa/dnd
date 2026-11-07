@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_weasel
+name: 巨鼬
+nameEn: Giant Weasel
+tabletop:
+  abilities:
+    str: 11
+    dex: 17
+    con: 10
+    int: 4
+    wis: 12
+    cha: 5
+  skills:
+    體操: 5
+    察覺: 3
+    隱匿: 5
+  speeds:
+    步行: 40
+    攀爬: 30
+  actions:
+    - name: 咬擊
+      hit: 5
+      damage:
+        - type: 刺傷
+          expression: 1d4+3
+          fixed: 5
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 巨鼬 (Giant Weasel) CR:1/8
+  size_type: 中型野獸
+  ac: 13
+  hp: 9 (2d8)
+  speed: 40呎, 攀爬30呎
+  ability: 力11(+0), 敏17(+3), 體10(+0), 智4(-3), 感12(+1), 魅5(-3)
+  senses: 黑暗視覺60呎, 被動察覺13
+  skills: 特技+5, 察覺+3, 隱匿+5
+  traits: —
+  attacks: 咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷5(1d4+3)。

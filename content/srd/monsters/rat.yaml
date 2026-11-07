@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: rat
+name: 老鼠
+nameEn: Rat
+tabletop:
+  abilities:
+    str: 2
+    dex: 11
+    con: 9
+    int: 2
+    wis: 10
+    cha: 4
+  skills:
+    察覺: 2
+  speeds:
+    步行: 20
+    攀爬: 20
+  actions:
+    - name: 咬擊
+      hit: 2
+      damage:
+        - type: 刺傷
+          expression: ""
+          fixed: 1
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 老鼠 (Rat) CR:0
+  size_type: 微型野獸
+  ac: 10
+  hp: 1 (1d4-1)
+  speed: 20呎, 攀爬20呎
+  ability: 力2(-4), 敏11(0), 體9(-1), 智2(-4), 感10(0), 魅4(-3)
+  senses: 黑暗視覺30呎, 被動察覺12
+  skills: 察覺 +2
+  traits: 迅捷：離開敵人不會引發藉機攻擊
+  attacks: 咬擊：命中+2, 範圍5呎, 刺傷1

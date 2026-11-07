@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_frog
+name: 巨蛙
+nameEn: Giant Frog
+tabletop:
+  abilities:
+    str: 12
+    dex: 13
+    con: 11
+    int: 2
+    wis: 10
+    cha: 3
+  skills:
+    察覺: 2
+    隱匿: 4
+  speeds:
+    步行: 30
+    游泳: 30
+  actions:
+    - name: 咬擊
+      hit: 3
+      damage:
+        - type: 刺傷
+          expression: 1d6+2
+          fixed: 5
+      id: attack-0
+      mode: action
+    - id: swallow
+      name: 吞下
+      mode: action
+      damage:
+        - type: 酸傷（下回合結束）
+          expression: 2d4
+  conditionalDamage: []
+site:
+  name: 巨蛙 (Giant Frog) CR:1/4
+  size_type: 中型野獸
+  ac: 11
+  hp: 18 (4d8)
+  speed: 30呎, 游泳30呎
+  ability: 力12(+1), 敏13(+1), 體11(+0), 智2(-4), 感10(+0), 魅3(-4)
+  senses: 黑暗視覺30呎, 被動察覺12
+  skills: 察覺+2, 隱匿+4
+  traits: 兩棲：可在空氣和水中呼吸；立定跳躍：助跑與否皆可跳遠20呎、跳高10呎
+  attacks: 咬擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷5(1d6+2)。若目標為中型或更小，會陷入擒抱（掙脫DC11）。吞下：吞下其擒抱中的小型或更小目標；目標陷入目盲與束縛，且對外部效果具有全掩護。巨蛙下回合結束時目標承受酸傷5(2d4)，若未因此死亡則被吐出並倒地。

@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: giant_centipede
+name: 巨蜈蚣
+nameEn: Giant Centipede
+tabletop:
+  abilities:
+    str: 5
+    dex: 14
+    con: 12
+    int: 1
+    wis: 7
+    cha: 3
+  skills: {}
+  speeds:
+    步行: 30
+    攀爬: 30
+  actions:
+    - name: 咬擊
+      hit: 4
+      damage:
+        - type: 刺傷
+          expression: 1d4+2
+          fixed: 4
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 巨蜈蚣 (Giant Centipede) CR:1/4
+  size_type: 小型野獸
+  ac: 14
+  hp: 9 (2d6+2)
+  speed: 30呎, 攀爬30呎
+  ability: 力5(-3), 敏14(+2), 體12(+1), 智1(-5), 感7(-2), 魅3(-4)
+  senses: 盲視30呎, 被動察覺8
+  skills: —
+  traits: —
+  attacks: 咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷4(1d4+2)，目標中毒直到巨蜈蚣的下回合開始。

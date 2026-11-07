@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: sphinx_of_wonder
+name: 神奇斯芬克斯
+nameEn: Sphinx of Wonder
+site:
+  name: 神奇斯芬克斯 (Sphinx of Wonder) CR:1
+  size_type: 微型天界生物
+  ac: 13
+  hp: 24 (7d4+7)
+  speed: 20呎, 飛行40呎
+  ability: 力6(-2), 敏17(+3), 體13(+1), 智15(+2), 感12(+1), 魅11(+0)
+  senses: 黑暗視覺60呎, 被動察覺11
+  skills: 奧秘+4, 宗教+4, 隱匿+5
+  traits: 魔法抗性：對抗法術與其他魔法效應的豁免檢定具有優勢；抗性：黯蝕、心靈、光耀
+  attacks: 撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害5(1d4+3)外加光耀傷害7(2d6)。反應─巧思迸發（每天2次）：當自身或30呎內其他生物進行屬性檢定或豁免時，擲骰結果+2。

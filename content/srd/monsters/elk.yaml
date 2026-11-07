@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: elk
+name: 麋鹿
+nameEn: Elk
+tabletop:
+  abilities:
+    str: 16
+    dex: 10
+    con: 11
+    int: 2
+    wis: 10
+    cha: 6
+  skills:
+    察覺: 2
+  speeds:
+    步行: 50
+  actions:
+    - name: 衝撞
+      hit: 5
+      damage:
+        - type: 鈍擊傷害
+          expression: 1d6+3
+          fixed: 6
+      id: attack-0
+      mode: action
+  conditionalDamage:
+    - name: 衝鋒額外傷害
+      expression: 1d6
+site:
+  name: 麋鹿 (Elk) CR:1/4
+  size_type: 大型野獸
+  ac: 10
+  hp: 11 (2d10)
+  speed: 50呎
+  ability: 力16(+3), 敏10(+0), 體11(+0), 智2(-4), 感10(+0), 魅6(-2)
+  senses: 黑暗視覺60呎, 被動察覺12
+  skills: 察覺+2
+  traits: —
+  attacks: 衝撞：近戰攻擊檢定+5, 觸及5呎；命中：鈍擊傷害6(1d6+3)。若麋鹿先直線移動20呎以上再命中大型或更小目標，目標額外承受鈍擊傷害3(1d6)並倒地。

@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: mule
+name: 騾子
+nameEn: Mule
+tabletop:
+  abilities:
+    str: 14
+    dex: 10
+    con: 13
+    int: 2
+    wis: 10
+    cha: 5
+  skills: {}
+  speeds:
+    步行: 40
+  actions:
+    - name: 蹄擊
+      hit: 4
+      damage:
+        - type: 鈍擊傷害
+          expression: 1d4+2
+          fixed: 4
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 騾子 (Mule) CR:1/8
+  size_type: 中型野獸
+  ac: 10
+  hp: 11 (2d8+2)
+  speed: 40呎
+  ability: 力14(+2), 敏10(+0), 體13(+1), 智2(-4), 感10(+0), 魅5(-3)
+  senses: 被動察覺10
+  skills: —
+  traits: 負重獸：計算負重能力時視為大一個體型
+  attacks: 蹄擊：近戰攻擊檢定+4, 觸及5呎；命中：鈍擊傷害4(1d4+2)。

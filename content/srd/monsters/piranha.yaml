@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: piranha
+name: 食人魚
+nameEn: Piranha
+tabletop:
+  abilities:
+    str: 2
+    dex: 16
+    con: 9
+    int: 1
+    wis: 7
+    cha: 2
+  skills: {}
+  speeds:
+    步行: 5
+    游泳: 40
+  actions:
+    - name: 咬擊
+      hit: 5
+      damage:
+        - type: 刺傷
+          expression: ""
+          fixed: 1
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 食人魚 (Piranha) CR:0
+  size_type: 微型野獸
+  ac: 13
+  hp: 1 (1d4-1)
+  speed: 5呎, 游泳40呎
+  ability: 力2(-4), 敏16(+3), 體9(-1), 智1(-5), 感7(-2), 魅2(-4)
+  senses: 黑暗視覺60呎, 被動察覺8
+  skills: —
+  traits: 水下呼吸：僅能在水下呼吸
+  attacks: 咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷1。若目標未滿生命值，該攻擊擲骰具優勢。

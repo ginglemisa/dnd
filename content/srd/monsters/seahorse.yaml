@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: seahorse
+name: 海馬
+nameEn: Seahorse
+tabletop:
+  abilities:
+    str: 1
+    dex: 12
+    con: 8
+    int: 1
+    wis: 10
+    cha: 2
+  skills:
+    察覺: 2
+    隱匿: 5
+  speeds:
+    步行: 5
+    游泳: 20
+  actions:
+    - id: dash
+      name: 泡泡衝刺
+      mode: action
+  conditionalDamage: []
+site:
+  name: 海馬 (Seahorse) CR:0
+  size_type: 微型野獸
+  ac: 12
+  hp: 1 (1d4-1)
+  speed: 5呎, 游泳20呎
+  ability: 力1(-5), 敏12(+1), 體8(-1), 智1(-5), 感10(+0), 魅2(-4)
+  senses: 被動察覺12
+  skills: 察覺+2, 隱匿+5
+  traits: 水下呼吸：僅能在水下呼吸
+  attacks: 泡泡衝刺：在水下可移動至多其游泳速度，且不引發藉機攻擊。

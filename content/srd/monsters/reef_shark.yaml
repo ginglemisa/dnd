@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: reef_shark
+name: 礁鯊
+nameEn: Reef Shark
+tabletop:
+  abilities:
+    str: 14
+    dex: 15
+    con: 13
+    int: 1
+    wis: 10
+    cha: 4
+  skills:
+    察覺: 2
+  speeds:
+    步行: 5
+    游泳: 30
+  actions:
+    - name: 咬擊
+      hit: 4
+      damage:
+        - type: 刺傷
+          expression: 2d4+2
+          fixed: 7
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 礁鯊 (Reef Shark) CR:1/2
+  size_type: 中型野獸
+  ac: 12
+  hp: 22 (4d8+4)
+  speed: 5呎, 游泳30呎
+  ability: 力14(+2), 敏15(+2), 體13(+1), 智1(-5), 感10(+0), 魅4(-3)
+  senses: 盲視30呎, 被動察覺12
+  skills: 察覺+2
+  traits: 群攻：若攻擊目標5呎內有鯊魚的盟友（未失能），該攻擊擲骰具優勢；水下呼吸：僅能在水下呼吸
+  attacks: 咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷7(2d4+2)。

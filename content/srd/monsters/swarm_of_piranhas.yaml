@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: swarm_of_piranhas
+name: 食人魚群
+nameEn: Swarm of Piranhas
+site:
+  name: 食人魚群 (Swarm of Piranhas) CR:1
+  size_type: 中型微型野獸群
+  ac: 13
+  hp: 28 (8d8-8)
+  speed: 5呎, 游泳40呎
+  ability: 力13(+1), 敏16(+3), 體9(-1), 智1(-5), 感7(-2), 魅2(-4)
+  senses: 黑暗視覺60呎, 被動察覺8
+  skills: —
+  traits: 陣營：無陣營；語言：無；抗性：鈍擊、穿刺、揮砍；免疫：魅惑、恐懼、擒抱、麻痺、石化、倒地、束縛、震懾；群集：可與其他生物共享空間，且可穿過任何足以讓一隻微型食人魚通過的開口；無法恢復生命值或獲得臨時生命值；水下呼吸：只能在水下呼吸。
+  attacks: 啃咬：近戰攻擊檢定+5；若目標目前生命值未滿，攻擊檢定具有優勢；觸及5呎。命中：刺傷8(2d4+3)，若食人魚群處於受創則改為刺傷5(1d4+3)。

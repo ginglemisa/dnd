@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: lizard
+name: 蜥蜴
+nameEn: Lizard
+tabletop:
+  abilities:
+    str: 2
+    dex: 11
+    con: 10
+    int: 1
+    wis: 8
+    cha: 3
+  skills: {}
+  speeds:
+    步行: 20
+    攀爬: 20
+  actions:
+    - name: 咬擊
+      hit: 2
+      damage:
+        - type: 刺傷
+          expression: ""
+          fixed: 1
+      id: attack-0
+      mode: action
+  conditionalDamage: []
+site:
+  name: 蜥蜴 (Lizard) CR:0
+  size_type: 微型野獸
+  ac: 10
+  hp: 2 (1d4)
+  speed: 20呎, 攀爬20呎
+  ability: 力2(-4), 敏11(+0), 體10(+0), 智1(-5), 感8(-1), 魅3(-4)
+  senses: 黑暗視覺30呎, 被動察覺9
+  skills: —
+  traits: 蛛行：可攀爬困難表面（含天花板）且無需檢定
+  attacks: 咬擊：近戰攻擊檢定+2, 觸及5呎；命中：刺傷1。

@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: warhorse
+name: 戰馬
+nameEn: Warhorse
+tabletop:
+  abilities:
+    str: 18
+    dex: 12
+    con: 13
+    int: 2
+    wis: 12
+    cha: 7
+  skills: {}
+  speeds:
+    步行: 60
+  actions:
+    - name: 蹄擊
+      hit: 6
+      damage:
+        - type: 鈍擊傷害
+          expression: 2d4+4
+          fixed: 9
+      id: attack-0
+      mode: action
+  conditionalDamage:
+    - name: 衝鋒額外傷害
+      expression: 2d4
+site:
+  name: 戰馬 (Warhorse) CR:1/2
+  size_type: 大型野獸
+  ac: 11
+  hp: 19 (3d10+3)
+  speed: 60呎
+  ability: 力18(+4), 敏12(+1), 體13(+1), 智2(-4), 感12(+1), 魅7(-2)
+  senses: 被動察覺11
+  skills: —
+  traits: —
+  attacks: 蹄擊：近戰攻擊檢定+6, 觸及5呎；命中：鈍擊傷害9(2d4+4)。若戰馬先直線移動20呎以上再命中大型或更小目標，目標額外承受鈍擊傷害5(2d4)並倒地。

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: frog
+name: 青蛙
+nameEn: Frog
+site:
+  name: 青蛙 (Frog) CR:0
+  size_type: 微型野獸
+  ac: 11
+  hp: 1 (1d4-1)
+  speed: 20呎, 游泳20呎
+  ability: 力1(-5), 敏13(+1), 體8(-1), 智1(-5), 感8(-1), 魅3(-4)
+  senses: 黑暗視覺30呎, 被動察覺11
+  skills: 察覺+1, 隱匿+3
+  traits: 兩棲：可在空氣和水中呼吸；立定跳躍：助跑與否皆可跳遠10呎、跳高5呎
+  attacks: 咬擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷1。
