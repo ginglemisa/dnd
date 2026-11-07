@@ -1180,25 +1180,30 @@ async function validateInventoryStacks(page) {
   await page.locator("#mainHand").selectOption("");
   assert.deepEqual((await stacks()).filter(row => row[0] === "匕首").map(row => [row[1], row[2]]).sort(), [[1, ""], [1, "b1"], [1, "b2"]], "the unequipped dagger lands on the body");
 
-  // 從標籤裝備：裝備點的那一堆；數量跟著更新，全部拿完的標籤視窗變成裝備中。
+  // 從標籤裝備：裝備點的那一堆後視窗關閉；再打開時數量已更新，全部拿完的標籤視窗變成裝備中。
   await reset([{ uid: "d5", itemId: "匕首", quantity: 5 }, { uid: "d3", itemId: "匕首", quantity: 3 }, { uid: "d1", itemId: "匕首", quantity: 1 }]);
   const equipDialog = page.locator('.app-dialog[data-variant="inventory-equip"]');
   await tag("d5").click();
   await item.getByRole("button", { name: "裝備匕首" }).click();
   await equipDialog.getByRole("button", { name: "主手", exact: true }).click();
-  await equipDialog.waitFor({ state: "detached" });
-  assert.equal(await item.locator(".inventory-stepper__input").inputValue(), "4", "the open dialog shows the new quantity");
+  await item.waitFor({ state: "detached" });
   assert.deepEqual((await stacks()).map(row => row[1]), [4, 1, 3, 1], "the clicked stack gives up one");
+  await tag("d5").click();
+  assert.equal(await item.locator(".inventory-stepper__input").inputValue(), "4", "the reopened dialog shows the new quantity");
   await page.keyboard.press("Escape");
   await item.waitFor({ state: "detached" });
   await tag("d1").click();
   await item.getByRole("button", { name: "裝備匕首" }).click();
   await equipDialog.getByRole("button", { name: "副手", exact: true }).click();
-  await equipDialog.waitFor({ state: "detached" });
+  await item.waitFor({ state: "detached" });
+  await tag("d1").click();
   assert.deepEqual([await item.locator(".inventory-holding__row").isHidden(), await item.locator(".inventory-item-meta .inventory-tag__badge").isVisible(), await item.getByRole("button", { name: "拆分匕首" }).count(), await item.getByRole("button", { name: "卸除匕首" }).count()],
     [true, true, 0, 1], "a fully taken tag becomes the equipped tag: no quantity, location or split");
   await item.getByRole("button", { name: "卸除匕首" }).click();
-  assert.deepEqual([await item.locator(".inventory-holding__row").isVisible(), await page.locator("#offHand").inputValue()], [true, ""], "unequipping brings the quantity row back");
+  await item.waitFor({ state: "detached" });
+  assert.equal(await page.locator("#offHand").inputValue(), "", "unequipping closes the dialog and clears the slot");
+  await tag("d1").click();
+  assert.equal(await item.locator(".inventory-holding__row").isVisible(), true, "unequipping brings the quantity row back");
   await page.keyboard.press("Escape");
   await item.waitFor({ state: "detached" });
 
@@ -1293,28 +1298,39 @@ async function validateInventoryItemActions(page) {
     await item.waitFor({ state: "detached" });
   };
   const actionButtons = () => item.locator(".inventory-item-actions button").allTextContents();
+  const itemClosed = () => item.waitFor({ state: "detached" });
   const lastToast = () => page.waitForFunction(() => document.querySelector("#app-toast > .app-toast:last-child .app-toast__message")?.textContent, null, { timeout: 2000 })
     .then(handle => handle.jsonValue());
 
-  // 武器：選手視窗列出兩手目前的物品；只有一把時換到另一手會先從原本那手卸下。
+  // 武器：選手視窗列出兩手目前的物品；選定後物品視窗關閉，取消時留著。只有一把時換到另一手會先從原本那手卸下。
   await openItem("長劍");
   assert.deepEqual(await actionButtons(), ["裝備"], "an unequipped weapon offers 裝備 only");
   await item.getByRole("button", { name: "裝備長劍" }).click();
   await equipDialog.waitFor();
   assert.deepEqual(await equipDialog.locator(".inventory-hand-status__row").allInnerTexts().then(rows => rows.map(row => row.replace(/\s+/gu, " "))), ["主手 空手", "副手 空手"]);
-  await equipDialog.getByRole("button", { name: "主手", exact: true }).click();
+  await equipDialog.getByRole("button", { name: "取消", exact: true }).click();
   await equipDialog.waitFor({ state: "detached" });
+  assert.deepEqual([await item.isVisible(), await slots()], [true, ["", "", ""]], "cancelling the hand picker keeps the item dialog open and changes nothing");
+  await item.getByRole("button", { name: "裝備長劍" }).click();
+  await equipDialog.getByRole("button", { name: "主手", exact: true }).click();
+  await itemClosed();
   assert.deepEqual(await slots(), ["長劍", "", ""]);
+  await page.waitForFunction(() => document.activeElement?.closest?.("[data-inventory-uid]")?.textContent.includes("長劍"), null, { timeout: 2000 });
+  await openItem("長劍");
   assert.deepEqual([await actionButtons(), await item.locator(".inventory-item-meta .inventory-tag__badge").isVisible()], [["裝備", "卸除"], true], "equipped weapons show 卸除 and the badge");
-  assert.equal(await item.locator(".inventory-item-actions").evaluate(el => el.contains(document.activeElement)), true, "focus stays on the rebuilt action row");
   await item.getByRole("button", { name: "裝備長劍" }).click();
   assert.equal(await equipDialog.getByRole("button", { name: "主手", exact: true }).isDisabled(), true, "the hand already holding it is disabled");
   assert.match(await equipDialog.locator(".inventory-item-note").first().textContent(), /已裝備在主手/u);
   await equipDialog.getByRole("button", { name: "副手", exact: true }).click();
-  await equipDialog.waitFor({ state: "detached" });
+  await itemClosed();
   assert.deepEqual(await slots(), ["", "長劍", ""], "a single weapon moves to the other hand");
+  await openItem("長劍");
   await item.getByRole("button", { name: "卸除長劍" }).click();
-  assert.deepEqual([await slots(), await actionButtons()], [["", "", ""], ["裝備"]]);
+  await itemClosed();
+  assert.deepEqual(await slots(), ["", "", ""]);
+  await page.waitForFunction(() => document.activeElement?.closest?.("[data-inventory-uid]")?.textContent.includes("長劍"), null, { timeout: 2000 });
+  await openItem("長劍");
+  assert.deepEqual(await actionButtons(), ["裝備"]);
   await closeItem();
 
   // 雙手武器只能裝在主手，副手的物品照裝備頁規則卸下。
@@ -1324,14 +1340,14 @@ async function validateInventoryItemActions(page) {
   assert.equal(await equipDialog.getByRole("button", { name: "副手", exact: true }).isDisabled(), true);
   assert.match(await equipDialog.locator(".inventory-item-note").first().textContent(), /雙手武器只能裝備在主手，副手的匕首會一併卸下/u);
   await equipDialog.getByRole("button", { name: "主手", exact: true }).click();
-  await equipDialog.waitFor({ state: "detached" });
+  await itemClosed();
   assert.deepEqual([(await slots())[0], await page.locator("#offHand").isDisabled()], ["巨劍", true]);
-  await closeItem();
 
-  // 盾牌：主手佔用雙手時只提示；副手已有物品時先確認。
+  // 盾牌：主手佔用雙手時只提示，物品視窗留著；副手已有物品時先確認。
   await openItem("盾牌");
   await item.getByRole("button", { name: "裝備盾牌" }).click();
   assert.match(await lastToast(), /主手的巨劍佔用雙手，無法裝備盾牌/u);
+  assert.equal(await item.isVisible(), true, "a blocked equip keeps the item dialog open");
   await closeItem();
   await page.locator("#mainHand").selectOption("長劍");
   await page.locator("#offHand").selectOption("匕首");
@@ -1341,19 +1357,58 @@ async function validateInventoryItemActions(page) {
   assert.match(await offConfirm.textContent(), /副手目前是匕首/u);
   await offConfirm.getByRole("button", { name: "更換", exact: true }).click();
   await offConfirm.waitFor({ state: "detached" });
-  assert.deepEqual([(await slots())[1], await actionButtons()], ["盾牌", ["卸除"]], "an equipped shield only offers 卸除");
+  await itemClosed();
+  assert.equal((await slots())[1], "盾牌");
+  await openItem("盾牌");
+  assert.deepEqual(await actionButtons(), ["卸除"], "an equipped shield only offers 卸除");
   await closeItem();
 
-  // 護甲：已穿著其他護甲時先確認。
+  // 護甲：已穿著其他護甲時先確認；取消時物品視窗留著，更換後關閉。
   await page.locator("#armor").selectOption("皮甲");
   await openItem("鎖子甲");
   await item.getByRole("button", { name: "裝備鎖子甲" }).click();
   const armorConfirm = page.getByRole("alertdialog", { name: "更換護甲？" });
   assert.match(await armorConfirm.textContent(), /目前穿著皮甲，要換成鎖子甲嗎？/u);
-  await armorConfirm.getByRole("button", { name: "更換", exact: true }).click();
+  await armorConfirm.getByRole("button", { name: "取消", exact: true }).click();
   await armorConfirm.waitFor({ state: "detached" });
+  assert.deepEqual([await item.isVisible(), (await slots())[2]], [true, "皮甲"], "cancelling the swap keeps the item dialog open");
+  await item.getByRole("button", { name: "裝備鎖子甲" }).click();
+  await armorConfirm.getByRole("button", { name: "更換", exact: true }).click();
+  await itemClosed();
   assert.equal((await slots())[2], "鎖子甲");
-  await closeItem();
+
+  // 雙手武器遇到主手 2 持盾：物品視窗先關閉，裝備頁的「卸下盾牌？」確認不疊在關閉的視窗上，繼續後才寫入。
+  await page.evaluate(() => {
+    const check = (id) => {
+      const toggle = document.getElementById(id);
+      toggle.checked = true;
+      toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    const select = (id, value) => {
+      const field = document.getElementById(id);
+      field.value = value;
+      field.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    select("mainHand", "長劍");
+    check("offHandAsMain");
+    select("offHand", "匕首");
+    check("main2Shield");
+  });
+  assert.equal(await page.locator("#main2Shield").isChecked(), true, "alternate main hand holds a shield");
+  await openItem("巨劍");
+  await item.getByRole("button", { name: "裝備巨劍" }).click();
+  await equipDialog.getByRole("button", { name: "主手", exact: true }).click();
+  const shieldConfirm = page.getByRole("alertdialog", { name: "卸下盾牌？" });
+  await shieldConfirm.waitFor();
+  assert.equal(await item.count(), 0, "the item dialog is gone before the shield confirmation");
+  await shieldConfirm.getByRole("button", { name: "繼續", exact: true }).click();
+  await shieldConfirm.waitFor({ state: "detached" });
+  assert.deepEqual([(await slots())[0], await page.locator("#main2Shield").isChecked(), await page.evaluate(() => document.documentElement.classList.contains("app-dialog-open"))], ["巨劍", false, false], "continuing equips the weapon and removes the shield");
+  await page.evaluate(() => {
+    const toggle = document.getElementById("offHandAsMain");
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+  });
 
   // 工具檢定：屬性調整值，熟練時加熟練加值（5 級 +3）；撬棍另標有優勢。擲骰功能關閉時不顯示。
   await page.evaluate(() => { const background = document.getElementById("background"); background.value = "criminal"; background.dispatchEvent(new Event("change", { bubbles: true })); });
@@ -1442,9 +1497,8 @@ async function validateInventoryItemActions(page) {
   await openItem("匕首");
   await item.getByRole("button", { name: "裝備匕首" }).click();
   await equipDialog.getByRole("button", { name: "主手", exact: true }).click();
-  await equipDialog.waitFor({ state: "detached" });
+  await itemClosed();
   assert.equal((await slots())[0], "匕首", "tabletop equips write back to the sheet selects");
-  await closeItem();
   await page.evaluate(() => TabletopMode.setMode("sheet"));
 
   // 窄螢幕：互動列與選手視窗不超出畫面。
