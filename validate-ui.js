@@ -2803,6 +2803,33 @@ async function verifyFeatureReferences(browser, url) {
     assert.equal(await quickTip.evaluate(el => el === document.activeElement), true);
     await quickDetail.locator(".quick-build-spell-detail-close").click();
     await page.locator("#quick-build-wizard .quick-build-close").click();
+    // 快速創角的種族完整能力與 1 級能力「查看」直接顯示內容檔 HTML：狀態標記須換成按鈕，關閉說明後焦點回到觸發的狀態連結。
+    for (const [stepId, viewSelector, key] of [
+      ["race", "[data-race-detail-view]", "poisoned"],
+      ["level-one", '[data-level-one-feature-view="barbarian-rage"]', "incapacitated"]
+    ]) {
+      await page.evaluate(stepId => {
+        const draft = quickBuild.createDraft();
+        Object.assign(draft.choices, { background: "soldier", race: "dwarf", class: "barbarian" });
+        draft.ui.currentStepId = stepId;
+        dndStorage.setItem(quickBuild.storageKey, JSON.stringify(draft));
+        quickBuild.open();
+      }, stepId);
+      await page.locator(viewSelector).click();
+      assert.equal(await quickDetail.locator("span.condition-tip").count(), 0, `${stepId}: undecorated condition`);
+      const tip = quickDetail.locator(`button.condition-tip[data-condition="${key}"]`).first();
+      await tip.focus();
+      await tip.press("Enter");
+      await assertOnTop(page.locator("#skillPopup"));
+      await page.keyboard.press("Escape");
+      assert.equal(await quickDetail.isVisible(), true, `${stepId}: Escape keeps detail open`);
+      assert.equal(await tip.evaluate(el => el === document.activeElement), true, `${stepId}: Escape restores focus`);
+      await tip.click();
+      await page.locator("#skillPopup .close").click();
+      assert.equal(await tip.evaluate(el => el === document.activeElement), true, `${stepId}: close restores focus`);
+      await quickDetail.locator(".quick-build-spell-detail-close").click();
+      await page.locator("#quick-build-wizard .quick-build-close").click();
+    }
     console.log("Ability references: canonical condition coverage, spells, skills and druid beasts; close, Escape, keyboard, focus and reused popups passed on desktop/mobile.");
   } finally { await page.close(); }
 }
