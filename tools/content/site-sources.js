@@ -16,18 +16,26 @@ function runSiteScript(file, names = []) {
   return { ...values, globals };
 }
 
+// rule-tips.js 的浮層只在有 document 時建立，沙箱內只會執行到詞表與函式宣告。
+let ruleTipData = null;
+function loadRuleTipData() {
+  ruleTipData ||= runSiteScript("rule-tips.js", ["skills_example_uses", "SKILL_NAME_ALIASES"]);
+  return ruleTipData;
+}
+
 let monsterData = null;
 function loadMonsterData() {
-  monsterData ||= runSiteScript("monster.js", ["skills_example_uses", "SKILL_NAME_ALIASES", "BEAST_STATS"]);
+  monsterData ||= runSiteScript("monster.js", ["BEAST_STATS"]);
   return monsterData;
 }
 
-// [[名稱]] 的查表來源：技能／規則用 monster.js 的 skills_example_uses（含別名），狀態用 condition.js 公開的 DND_CONDITIONS，
+// [[名稱]] 的查表來源：技能／規則用 rule-tips.js 的 skills_example_uses（含別名），狀態用 condition.js 公開的 DND_CONDITIONS，
 // 野獸／怪物用 monster.js 的 BEAST_STATS（中文名取 name「小魔鬼 (Imp) CR:1」括號前的部分）。
 let tipTables = null;
 function loadTipTables() {
   if (tipTables) return tipTables;
-  const { skills_example_uses: skills, SKILL_NAME_ALIASES: aliases, BEAST_STATS: beastStats } = loadMonsterData();
+  const { skills_example_uses: skills, SKILL_NAME_ALIASES: aliases } = loadRuleTipData();
+  const { BEAST_STATS: beastStats } = loadMonsterData();
   const conditions = new Map(runSiteScript("condition.js").globals.DND_CONDITIONS.map(condition => [condition.zh, condition.key]));
   const beasts = new Map();
   for (const [key, beast] of Object.entries(beastStats)) {
