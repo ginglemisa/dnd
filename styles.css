@@ -9951,21 +9951,9 @@ html[data-view-mode="tabletop"] .share-mode-tip__heading {
   padding-inline-end: 52px;
 }
 
-/* 分享模式少掉的選單項目；其他列維持原本的欄位比例。 */
-html.is-share-mode :is(#help-quick-build-btn, #set-default-abilities, #restart-onboarding-btn, #import-json-btn, #open-qr-btn, .share-url-btn, .utility-menu__setting--auto-calc) {
+/* 分享模式少掉的選單項目；匯出 JSON 由 arrangeShareModeMenu 移到下一列，這一列就空了。其他列維持原本的欄位比例。 */
+html.is-share-mode :is(#help-quick-build-btn, #set-default-abilities, #restart-onboarding-btn, #clear-storage-btn, .utility-menu__row--icon, .share-url-btn, .utility-menu__setting--auto-calc) {
   display: none;
-}
-
-html.is-share-mode .utility-menu__help {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-html.is-share-mode .utility-menu__row--icon {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-html.is-share-mode .utility-menu__row--footer {
-  grid-template-columns: minmax(0, 1fr) 44px;
 }
 
 /* 分享模式鎖定的角色能力：沒有對應操作的按鈕與提示直接不顯示。缺項提示也不顯示，因為看的人無法補填。 */

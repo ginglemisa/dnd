@@ -21,7 +21,7 @@
   const EDITABLE = [
     "textarea",
     "#hp", "#ac-display", "#lifedicen", "#heroic-inspiration", "#druid-natural-recovery-used",
-    "#spellcasting-ability", "#spell-adjustment",
+    "#alignment",
     ".spell-overview-slot-checks input", ".free-spell-use-check", ".dragonborn-breath-uses input", ".proficiency-use-checks input",
     ".equipment-loadout-controls input", ".equipment-loadout-controls select", ".weapon-damage-type-select",
     "#weapon-attack-automation", ".weapon-attack-fields input",
