@@ -167,7 +167,9 @@
         const timing = createElement("span", "tabletop-spell-button__timing");
         const timingLabels = entry.customSpell
           ? globalScope.TabletopCustomSpells.getTimingLabels(entry.customSpell)
-          : getSpellTimingLabels(entry.spell);
+          : isWildCompanionEntry(entry)
+            ? WILD_COMPANION_TIMING_LABELS
+            : getSpellTimingLabels(entry.spell);
         timingLabels.forEach(label => timing.appendChild(createElement("span", "", label)));
         button.setAttribute("aria-label", [entry.spell.nameZh, entry.spell.nameEn, ...timingLabels, entry.source].join(" "));
         button.append(names, timing);
@@ -193,6 +195,8 @@
   }
 
   const SPELL_TIMING_LABELS = Object.freeze({ action: "動作", "bonus-action": "附贈", reaction: "反應" });
+  // 荒野夥伴以魔法動作施放獲得魔寵（消耗法術位或荒野形態），不是法術本身的 1 小時／儀式。
+  const WILD_COMPANION_TIMING_LABELS = Object.freeze([SPELL_TIMING_LABELS.action]);
 
   // 按鈕上的施法時間小標讀法術目錄的結構化施法時間（可有多種），儀式另列。
   function getSpellTimingLabels(spell) {

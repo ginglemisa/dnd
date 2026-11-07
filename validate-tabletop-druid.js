@@ -312,7 +312,9 @@ async function main() {
     assert.equal(await page.evaluate(() => TabletopMode.collectState().druid.companion), true);
     // 法術頁的獲得魔寵和其他法術一樣先看說明，按施法才進荒野夥伴的消耗視窗。
     await page.evaluate(() => { TabletopMode.setPanel("spells"); });
-    await page.locator('.tabletop-spell-button[data-spell-source-key="class-druid-wild-companion-find-familiar"]').click();
+    const familiarButton = page.locator('.tabletop-spell-button[data-spell-source-key="class-druid-wild-companion-find-familiar"]');
+    assert.equal(await familiarButton.locator(".tabletop-spell-button__timing").innerText(), "動作", "spell tab timing follows Wild Companion (Magic action, no ritual)");
+    await familiarButton.click();
     const familiarDetail = dialog.locator(".tabletop-spell-detail");
     assert.match(await familiarDetail.innerText(), /Find Familiar[\s\S]*來源：荒野夥伴[\s\S]*心靈連結/, "spell tab shows the spell text");
     assertWildCompanionText(await familiarDetail.locator(".spell-version__site").innerText(), "spell tab");
