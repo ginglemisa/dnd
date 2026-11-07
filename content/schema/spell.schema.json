@@ -110,6 +110,18 @@
         "trigger": { "$ref": "#/definitions/textBlock/properties/trigger" },
         "body": { "type": "string", "minLength": 1, "description": "網站版說明：以「- 」開頭的分行條列（前置兩個空白為巢狀）。不含標頭，標頭由規則欄位產生。" },
         "tabletop": { "type": "string", "minLength": 1, "description": "跑團版說明（跑團動作分頁與跑團法術詳情）；省略時用 body。" },
+        "wildCompanion": {
+          "description": "德魯伊荒野夥伴施放時的跑團說明，只有 find-familiar 使用。學派與射程同法術，其餘標頭與說明寫在這裡；不會有材料。",
+          "type": "object",
+          "required": ["castingTime", "components", "duration", "body"],
+          "properties": {
+            "castingTime": { "type": "string", "minLength": 1, "description": "「施法時間」的顯示文字。" },
+            "components": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["V", "S"] }, "description": "成分，不含材料成分。" },
+            "duration": { "type": "string", "minLength": 1, "description": "「持續時間」的顯示文字。" },
+            "body": { "type": "string", "minLength": 1, "description": "完整說明，寫法同 body。" }
+          },
+          "additionalProperties": false
+        },
         "outcomes": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/outcome" }, "description": "跑團施法結果（擲骰按鈕）；省略時沒有自動擲骰。" }
       },
       "additionalProperties": false

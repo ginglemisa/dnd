@@ -373,7 +373,7 @@
   // 荒野夥伴施放的是獲得魔寵：按鈕下方附法術說明，不必另外開視窗查。
   function appendCompanionSpell(target) {
     const spell = globalScope.SpellCatalog?.getSpell("find-familiar");
-    const view = spell && globalScope.TabletopSpells?.createSpellDescriptionView?.(spell);
+    const view = spell && globalScope.TabletopSpells?.createSpellDescriptionView?.(spell, { wildCompanion: true });
     if (!view) return;
     const section = el("section", "", "druid-companion-spell");
     const title = el("p", "", "druid-companion-spell__title");

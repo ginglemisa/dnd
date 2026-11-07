@@ -66,6 +66,7 @@ function checkSpell(spell, where, errors) {
     errors.push(`${where}：${spell.upcast ? "upcast: true 但網站版說明沒有以更高環位施放的段落" : "網站版說明有以更高環位施放的段落，但沒有 upcast: true"}`);
   }
   if (!spell.classes.length) errors.push(`${where}：有 site 的法術至少要在一個職業法表`);
+  if (spell.site.wildCompanion && spell.id !== "find-familiar") errors.push(`${where}：site.wildCompanion 只用於 find-familiar`);
   (spell.site.outcomes || []).forEach((outcome, index) => {
     const at = `${where} site.outcomes[${index}]`;
     if (outcome.kind !== "attack" && !outcome.formula && outcome.fixed === undefined) errors.push(`${at}：需要 formula 或 fixed`);

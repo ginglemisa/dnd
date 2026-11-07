@@ -49,6 +49,18 @@ function headerLines(spell, block) {
 
 const headerText = (spell, block) => headerLines(spell, block).map(([label, value]) => `${label}: ${value}`).join("\n");
 
+// 德魯伊荒野夥伴施放獲得魔寵的版本：施法時間、成分與持續時間照能力規則，沒有材料；學派與射程同法術。
+function wildCompanionText(spell, variant) {
+  const lines = [
+    ["學派", SCHOOL_LABELS[spell.school]],
+    ["施法時間", variant.castingTime],
+    ["射程", rangeText(spell.range)],
+    ["成分", variant.components.join("、")],
+    ["持續時間", variant.duration]
+  ];
+  return `${lines.map(([label, value]) => `${label}: ${value}`).join("\n")}\n\n${variant.body}`;
+}
+
 // 結構化規則：網站以此判斷施法時間、儀式、專注、成分、升環與跑團施法結果，不從顯示文字反推。
 function spellRules(spell) {
   return {
@@ -71,6 +83,7 @@ function spellRules(spell) {
 }
 
 // 網站版顯示文字：desc 是標頭加說明（法術詳情、搜尋）；tabletop 是跑團版說明（沒寫時網站用 desc）；
+// wildCompanion 是荒野夥伴施放時的跑團說明（只有獲得魔寵）；
 // header 是標頭各項的顯示字串（PDF、跑團與法術書讀取，不再解析 desc）。
 function spellText(spell) {
   const site = spell.site;
@@ -78,6 +91,7 @@ function spellText(spell) {
   return {
     desc: `${headerText(spell, site)}\n\n${site.body}`,
     ...(site.tabletop ? { tabletop: `${headerText(spell, site)}\n\n${site.tabletop}` } : {}),
+    ...(site.wildCompanion ? { wildCompanion: wildCompanionText(spell, site.wildCompanion) } : {}),
     header: {
       school: header["學派"],
       castingTime: header["施法時間"],
@@ -118,7 +132,7 @@ function renderSpellData(spells, srdSource) {
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd/spells 的法術內容檔產生，請勿手動修改。
 // spellRules：全部法術的結構化規則（依環階、spellId 排序）；playable 為角色可用的法術（有網站版），其餘只供查閱；
 // srdClasses 是與網站法表（classes）不同的 SRD 職業清單，只用於查閱分類。
-// spellText：可用法術的網站版顯示文字（desc 標頭＋說明、tabletop 跑團版說明、header 標頭各項）。
+// spellText：可用法術的網站版顯示文字（desc 標頭＋說明、tabletop 跑團版說明、wildCompanion 荒野夥伴施放時的跑團說明、header 標頭各項）。
 // spellSrdFile：SRD 版產物（spell-srd.generated.js）的網址與快取版本。
 const spellRules = {
 ${entries(ids, rules)}
