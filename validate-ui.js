@@ -984,9 +984,52 @@ async function verifyShareDialog(browser, url) {
     assert.equal(await page.evaluate(() => shortShareCalls), 1, "failed short URL is not retried");
     assert.equal(await cards.last().isDisabled(), false);
     assert.equal(await page.evaluate(() => copiedShareUrls.length), 0, "failure never copies the long URL");
+    assert.match(await cards.last().innerText(), /網址可能長達數千字元/);
+
+    // The second step copies only on request, so choosing a link leaves the clipboard alone.
+    const link = page.getByRole("dialog", { name: "分享連結", exact: true });
+    const linkInput = link.getByRole("textbox", { name: "分享連結", exact: true });
+    const copyLink = link.getByRole("button", { name: "複製連結", exact: true });
+    const toasts = page.locator(".app-toast");
     await cards.last().click();
     await dialog.waitFor({ state: "detached" });
-    assert.match(await page.evaluate(() => copiedShareUrls[0]), /#s2?=/);
+    await link.waitFor();
+    const fullUrl = await linkInput.inputValue();
+    assert.match(fullUrl, /#s2?=/);
+    assert.equal(await page.evaluate(() => copiedShareUrls.length), 0, "opening the link dialog copies nothing");
+    assert.equal(await link.locator(".share-link__qr").count(), 0, "full data URLs have no QR code");
+    assert.equal(await link.getByText("網址可能長達數千字元", { exact: true }).count(), 1);
+    assert.equal(await link.locator(".app-dialog__actions").count(), 0, "copy sits under the input, with no footer");
+    assert.ok((await link.locator(".app-dialog__header h2").boundingBox()).width <= 1, "the title only names the dialog");
+    assert.equal(await copyLink.evaluate(node => document.activeElement === node), true);
+    assert.ok((await linkInput.boundingBox()).height <= 60, "the input stays one line tall");
+    assert.equal(await link.evaluate(node => node.scrollWidth <= node.clientWidth + 1), true, "link dialog fits 390px");
+    assert.equal(Math.round((await link.boundingBox()).width), 390, "phones get the full-width bottom sheet");
+    await copyLink.click();
+    assert.deepEqual(await page.evaluate(() => copiedShareUrls), [fullUrl]);
+    await toasts.getByText("連結已複製。", { exact: true }).first().waitFor();
+    assert.equal(await copyLink.innerText(), "複製連結", "the button text does not change after copying");
+    assert.equal(await link.isVisible(), true, "copying keeps the dialog open");
+
+    await page.evaluate(() => {
+      window.grantedClipboardWrite = navigator.clipboard.writeText;
+      navigator.clipboard.writeText = async () => { throw new Error("denied"); };
+    });
+    await copyLink.click();
+    await toasts.getByText("瀏覽器未允許自動複製，已選取連結，請手動複製。", { exact: true }).first().waitFor();
+    assert.deepEqual(await linkInput.evaluate(node => [document.activeElement === node, node.selectionStart, node.selectionEnd]), [true, 0, fullUrl.length], "a denied copy selects the link");
+    await page.evaluate(() => { navigator.clipboard.writeText = window.grantedClipboardWrite; });
+    await link.getByRole("button", { name: "關閉訊息", exact: true }).click();
+    await link.waitFor({ state: "detached" });
+
+    await page.evaluate(() => { showShareLinkDialog(`https://twd20.com/#s2=${"A".repeat(4100)}`); });
+    await link.getByText("網址長度為 4122，部分瀏覽器可能無法完整讀取。建議改用「匯入 JSON／匯出 JSON」保存與還原。", { exact: true }).waitFor();
+    assert.equal(await link.getByText("網址可能長達數千字元", { exact: true }).count(), 0, "the measured warning replaces the general note");
+    assert.equal(await linkInput.evaluate(node => node.scrollWidth > node.clientWidth), true, "the rest of a long URL stays out of view");
+    assert.equal(await link.evaluate(node => node.scrollWidth <= node.clientWidth + 1), true, "a long URL never widens the dialog");
+    await page.keyboard.press("Escape");
+    await link.waitFor({ state: "detached" });
+
     await page.evaluate(() => {
       window.createShortShareUrl = (hash, signal) => new Promise((resolve, reject) => {
         signal.addEventListener("abort", () => { window.shortShareAborted = true; reject(new Error("aborted")); });
@@ -999,12 +1042,39 @@ async function verifyShareDialog(browser, url) {
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "detached" });
     assert.equal(await page.evaluate(() => window.shortShareAborted), true, "closing cancels the pending request");
-    await page.evaluate(() => { window.createShortShareUrl = async () => "https://twd20.com/s/Abc1234"; });
+    const shortUrl = "https://twd20.com/s/Abc1234";
+    await page.evaluate(value => { window.createShortShareUrl = async () => value; }, shortUrl);
+    const qrArea = link.locator(".share-link__qr");
+
+    // A QR library that fails to load only costs the QR code.
+    await page.route("**/qrcode-generator.js*", route => route.abort());
     await open();
     await cards.first().click();
-    await dialog.waitFor({ state: "detached" });
-    assert.deepEqual(await page.evaluate(() => copiedShareUrls.slice(1)), ["https://twd20.com/s/Abc1234"]);
-    console.log("Share dialog: choice cards, unavailable reason, failure without retry, cancel and copy passed.");
+    await link.waitFor();
+    await qrArea.getByText("QR Code 無法產生，請複製連結傳送。", { exact: true }).waitFor();
+    await copyLink.click();
+    assert.equal(await page.evaluate(() => copiedShareUrls.at(-1)), shortUrl, "copy works without the QR code");
+    await page.keyboard.press("Escape");
+    await link.waitFor({ state: "detached" });
+    await page.unroute("**/qrcode-generator.js*");
+
+    const copiesBefore = await page.evaluate(() => copiedShareUrls.length);
+    await open();
+    await cards.first().click();
+    await link.waitFor();
+    await qrArea.locator("svg").waitFor();
+    assert.equal(await qrArea.locator("svg").getAttribute("viewBox"), "0 0 37 37", "a short URL is 29 modules plus the quiet zone");
+    assert.deepEqual(await qrArea.evaluate(node => [getComputedStyle(node).backgroundColor, getComputedStyle(node.querySelector("path")).fill]), ["rgb(255, 255, 255)", "rgb(0, 0, 0)"]);
+    assert.equal(Math.round((await qrArea.boundingBox()).width), 222);
+    assert.equal(await link.getByText("有效期限 90 天", { exact: true }).count(), 1);
+    assert.equal(await linkInput.inputValue(), shortUrl);
+    assert.equal(await page.evaluate(() => copiedShareUrls.length), copiesBefore, "opening the link dialog copies nothing");
+    assert.equal(await link.evaluate(node => node.scrollWidth <= node.clientWidth + 1), true, "short link dialog fits 390px");
+    await copyLink.click();
+    assert.equal(await page.evaluate(() => copiedShareUrls.at(-1)), shortUrl);
+    await page.keyboard.press("Escape");
+    await link.waitFor({ state: "detached" });
+    console.log("Share dialog: choice cards, unavailable reason, failure without retry, cancel, link step, QR code and copy passed.");
   } finally { await page.close(); }
 }
 

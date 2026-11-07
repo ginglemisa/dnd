@@ -242,21 +242,6 @@
       options.renderContent(body, contentControls);
     }
 
-    let copyArea = null;
-    if (typeof options.copyValue === "string") {
-      const copyLabel = document.createElement("label");
-      copyLabel.className = "app-dialog__copy-label";
-      copyLabel.textContent = "分享網址";
-      copyArea = document.createElement("textarea");
-      copyArea.className = "app-dialog__copy-value";
-      copyArea.readOnly = true;
-      copyArea.rows = 5;
-      copyArea.value = options.copyValue;
-      copyArea.dataset.stateTransient = "true";
-      copyLabel.appendChild(copyArea);
-      body.appendChild(copyLabel);
-    }
-
     const actions = document.createElement("div");
     actions.className = "app-dialog__actions";
     const cancelButton = options.cancelLabel ? document.createElement("button") : null;
@@ -265,18 +250,6 @@
       cancelButton.className = "app-dialog__button app-dialog__button--secondary";
       cancelButton.textContent = String(options.cancelLabel);
       actions.appendChild(cancelButton);
-    }
-
-    if (copyArea) {
-      const selectButton = document.createElement("button");
-      selectButton.type = "button";
-      selectButton.className = "app-dialog__button app-dialog__button--secondary";
-      selectButton.textContent = "選取網址";
-      selectButton.addEventListener("click", () => {
-        copyArea.focus();
-        copyArea.select();
-      });
-      actions.appendChild(selectButton);
     }
 
     const customActions = Array.isArray(options.actions) ? options.actions : null;
@@ -307,7 +280,9 @@
       actions.appendChild(confirmButton);
     }
 
-    surface.append(header, body, actions);
+    surface.append(header, body);
+    // A dialog whose content holds every control (for example the share link) has no footer.
+    if (options.showActions !== false) surface.appendChild(actions);
     root.appendChild(surface);
     document.body.appendChild(root);
     const inertedBackground = setBackgroundInert(root);
@@ -420,7 +395,7 @@
         ? (actionButtons.find(button => button.classList.contains("app-dialog__button--primary")) || confirmButton)
         : options.initialFocus === "content"
           ? getFocusableElements(body)[0]
-        : (cancelButton || actionButtons[0] || copyArea || confirmButton);
+        : (cancelButton || actionButtons[0] || confirmButton);
       (initialTarget || surface).focus();
     });
   }
@@ -520,9 +495,6 @@
         return open({ ...options, role: "alertdialog" });
       },
       requestNumber,
-      showCopy(options) {
-        return open(options);
-      },
       showContent(options) {
         return open(options);
       }
