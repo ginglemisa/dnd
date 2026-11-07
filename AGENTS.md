@@ -51,6 +51,7 @@
 | 工具、怪物 | `tool-data.js`、`monster.js` |
 | 法術 | `content/srd/spells/`（建置產物見上），`spell-list.js`（`SpellCatalog`）建立索引與 API；SRD 譯文檢查 `tools/spell-reference/` |
 | 狀態、神祇 | `condition.js`、`deity-info.js` |
+| 規則說明提示框（技能／規則詞表、技能／狀態／野獸浮層） | `rule-tips.js`；野獸資料卡 HTML `monster.js` 的 `renderBeastPopupHtml` |
 | 裝備與商店 | `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；物品欄資料 `inventory.js`（`Inventory`）、標籤介面 `inventory-ui.js` |
 | 角色卡 DOM、初始化、持久化、分享 | `index.html` |
 | 分享模式的鎖定、換法術職業表、AC 提示 | `share-readonly.js` |
