@@ -20559,6 +20559,8 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabs-shell.utility-
 .druid-shape-description p, .druid-shape-description ul { margin: .85rem 0; }
 .druid-shape-description ul { padding-left: 1.4rem; }
 .druid-shape-description li { margin: .4rem 0; }
+.druid-companion-spell { margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--border); color: var(--text-body); font-size: var(--fs-sm); line-height: 1.5; }
+.druid-companion-spell__title { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .5rem; margin: 0 0 .35rem; color: var(--text); }
 .druid-check { display: flex; align-items: center; gap: .5rem; min-height: 40px; }
 .druid-check input { flex: 0 0 auto; width: 18px; height: 18px; }
 .druid-button-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0; }

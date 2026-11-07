@@ -289,10 +289,24 @@ async function main() {
     assert.equal(await shapeDescription.getByRole("button", { name: "變形所選形態", exact: true }).count(), 1, "state refresh preserves the selected action");
     await page.click("#tabletop-action-tab-action");
     await page.getByRole("button", { name: "荒野夥伴", exact: false }).first().click();
+    const companionSpell = page.locator(".tabletop-action-description:visible .druid-companion-spell");
+    assert.match(await companionSpell.locator(".druid-companion-spell__title").innerText(), /獲得魔寵\s*Find Familiar/, "wild companion action names the spell");
+    assert.match(await companionSpell.innerText(), /心靈連結/, "wild companion action shows the spell text");
+    assert.equal(await companionSpell.locator(".spell-version__tab").count(), 2, "wild companion action offers both spell versions");
+    assert.equal(await companionSpell.locator("button.spell-readonly-reference[data-beast]").count(), 11, "wild companion action links the familiar forms");
     await page.locator(".tabletop-action-description:visible").getByRole("button", { name: "荒野夥伴", exact: true }).click();
     await dialog.getByLabel("消耗方式").selectOption("slot");
     await dialog.getByRole("button", { name: "召喚荒野夥伴" }).click();
     assert.equal(await page.evaluate(() => TabletopMode.collectState().druid.companion), true);
+    // 法術頁的獲得魔寵和其他法術一樣先看說明，按施法才進荒野夥伴的消耗視窗。
+    await page.evaluate(() => { TabletopMode.setPanel("spells"); });
+    await page.locator('.tabletop-spell-button[data-spell-source-key="class-druid-wild-companion-find-familiar"]').click();
+    const familiarDetail = dialog.locator(".tabletop-spell-detail");
+    assert.match(await familiarDetail.innerText(), /Find Familiar[\s\S]*來源：荒野夥伴[\s\S]*心靈連結/, "spell tab shows the spell text");
+    await dialog.getByRole("button", { name: "施法", exact: true }).click();
+    await dialog.getByRole("button", { name: "召喚荒野夥伴" }).waitFor();
+    await dialog.getByRole("button", { name: "取消", exact: true }).click();
+    await dialog.waitFor({ state: "detached" });
     await page.evaluate(() => { TabletopMode.setPanel("resources"); });
     const recoveryRow = page.locator('[data-resource-key="druid-natural-recovery-spell-slots"]');
     const recoveryButton = recoveryRow.getByRole("button", { name: "自然恢復", exact: true });
