@@ -210,14 +210,20 @@
     if (entry?.sourceLabel) {
       content.appendChild(createElement("p", "tabletop-spell-detail__source", entry.sourceLabel));
     }
-    content.appendChild(createSpellDescriptionView(spell));
+    content.appendChild(createSpellDescriptionView(spell, { wildCompanion: isWildCompanionEntry(entry) }));
     return content;
   }
 
+  function isWildCompanionEntry(entry) {
+    return entry?.sourceKey === "class-druid-wild-companion-find-familiar";
+  }
+
   // 法術說明本文（含網站版／SRD 版切換與野獸資料）；法術詳情與行動頁的荒野夥伴共用。
-  function createSpellDescriptionView(spell) {
+  // wildCompanion：網站版改用荒野夥伴施放時的說明；SRD 版是法術原文的譯文，不變。
+  function createSpellDescriptionView(spell, { wildCompanion = false } = {}) {
     const copy = createElement("div", "tabletop-spell-detail__copy");
-    const description = String(globalScope.SpellCatalog?.getTabletopText(spell) || spell.desc || "");
+    const description = String((wildCompanion && globalScope.SpellCatalog?.getWildCompanionText(spell))
+      || globalScope.SpellCatalog?.getTabletopText(spell) || spell.desc || "");
     if (typeof globalScope.appendSpellDescription === "function") {
       globalScope.appendSpellDescription(copy, spell.spellId, description, (target, text) => appendDiceText(target, text, spell));
     } else {
@@ -937,7 +943,7 @@
       globalScope.AppDialog?.notify("荒野形態期間不能施法；既有專注仍保留。");
       return;
     }
-    if (entry?.sourceKey === "class-druid-wild-companion-find-familiar") {
+    if (isWildCompanionEntry(entry)) {
       await globalScope.TabletopDruid?.openOperation("companion", trigger);
       return;
     }
