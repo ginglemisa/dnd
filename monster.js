@@ -144,7 +144,7 @@ const BEAST_STATS = {
     attacks: "咬擊：命中+2, 範圍5呎, 刺傷1"
   },
   riding_horse: {
-    name: "馱用馬 (Riding Horse) CR:¼",
+    name: "騎乘馬 (Riding Horse) CR:¼",
     size_type: "大型野獸",
     ac: 11,
     hp: "13 (2d10+2)",
