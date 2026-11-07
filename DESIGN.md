@@ -88,6 +88,7 @@
 
 - 新 dialog／toast 一律使用 `app-dialog.js`，依用途建立變體（如 `class-feature-choices`、`spell-readonly`、`spell-browser`、`spell-primer`、`custom-background`、`legal-about`、`equipment-shop`、`equipment-shop-cart`、`equipment-detail`）。背景隔離、Escape、焦點還原與內容獨立捲動沿用共用行為。
 - 內容自身就是選項時，`renderContent(body, dialog)` 以 `dialog.close(value)` 結束視窗，`onClose` 負責取消進行中的請求。**分享角色卡**（`share-character`）採此寫法：「短網址」「完整資料網址」兩個整框按鈕比照 PDF 輸出選項，上下方向鍵切換，底部只留「取消」。短網址不可用時方框停用並顯示原因；建立中方框停用並顯示狀態，失敗時保留視窗與錯誤訊息、可改點完整資料網址，不自動重試。
+- 選定方式後開第二步**分享連結**（`share-link`，`showActions: false`）：畫面上沒有標題與底部按鈕列，關閉用右上角 ×，標題只留給螢幕閱讀器。由上而下是 QR Code（只有短網址，固定白底黑格、222px）、提示（短網址「有效期限 90 天」；完整資料網址「網址可能長達數千字元」，超過 4,000 字元改顯示實際長度與建議改用 JSON）、單行唯讀輸入框（超出的文字留在可視範圍外）、「複製連結」。不自動複製；複製成功以 toast 回報，按鈕文字不變，視窗不關；失敗時選取輸入框文字並以 toast 提示手動複製。QR 函式庫 `qrcode-generator.js` 在開視窗時才載入，載入失敗時 QR 區改顯示文字，連結與複製照常可用。離線版只有完整資料網址，不含 QR 函式庫。
 - 從視窗內開啟另一個視窗時（例如準備法術視窗開啟「職業特性表」），背景視窗暫用 `--z-character-features`，讓後開的角色能力視窗在上方，並保留技能／野獸及法術詳情浮層；關閉後恢復原層級，背景視窗的草稿與篩選不變。
 
 ### Toast

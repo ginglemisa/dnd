@@ -100,7 +100,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261107-first-table-tour">
+  <link rel="stylesheet" href="styles.css?v=20261107-share-link">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261105-quick-build-guidance" defer></script>
@@ -117,7 +117,7 @@
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
   <script src="character-rules.js?v=20261106-skills-auto" defer></script>
-  <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
+  <script src="app-dialog.js?v=20261107-share-link" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261107-first-table-tour" defer></script>
@@ -5957,8 +5957,41 @@ async function createShortShareUrl(hash, signal) {
   }
 }
 
+// Only short URLs get a QR code, so the library loads on demand and stays out of the offline build.
+async function renderShareLinkQr(container, shareUrl) {
+  try {
+    await loadScriptOnce("qrcode-generator.js");
+    const qr = window.qrcode(0, "M");
+    qr.addData(shareUrl, "Byte");
+    qr.make();
+    const moduleCount = qr.getModuleCount();
+    const quietZone = 4;
+    const viewSize = moduleCount + quietZone * 2;
+    let pathData = "";
+    for (let row = 0; row < moduleCount; row += 1) {
+      for (let column = 0; column < moduleCount; column += 1) {
+        if (qr.isDark(row, column)) pathData += `M${column + quietZone} ${row + quietZone}h1v1h-1z`;
+      }
+    }
+    const svgNamespace = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNamespace, "svg");
+    svg.setAttribute("viewBox", `0 0 ${viewSize} ${viewSize}`);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", "分享連結的 QR Code");
+    svg.setAttribute("shape-rendering", "crispEdges");
+    const path = document.createElementNS(svgNamespace, "path");
+    path.setAttribute("d", pathData);
+    svg.appendChild(path);
+    container.replaceChildren(svg);
+  } catch (error) {
+    container.classList.add("is-error");
+    container.textContent = "QR Code 無法產生，請複製連結傳送。";
+  }
+}
+
 let shareDialogPending = false;
 let exitShareDialogPending = false;
+const SHARE_FULL_URL_NOTE = "網址可能長達數千字元";
 async function exitShareMode(event) {
   event.preventDefault();
   if (!SHARE_MODE || exitShareDialogPending) return;
@@ -6000,18 +6033,6 @@ async function copyShareUrl() {
       // Closing while a short URL is pending cancels that single request.
       onClose: () => shortUrlController?.abort(),
       renderContent(body, dialog) {
-        const iconPaths = {
-          link: '<path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
-          clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-          info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>'
-        };
-        const makeIcon = name => {
-          const icon = document.createElement("span");
-          icon.className = "share-dialog__icon";
-          icon.setAttribute("aria-hidden", "true");
-          icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + iconPaths[name] + "</svg>";
-          return icon;
-        };
         const options = document.createElement("div");
         options.className = "share-dialog__options";
         options.setAttribute("role", "group");
@@ -6049,7 +6070,7 @@ async function copyShareUrl() {
           {
             title: "完整資料網址",
             description: "角色資料直接包含在網址中，不受 90 天期限限制。",
-            detail: "網址可能長達 1,000～2,000 字元",
+            detail: SHARE_FULL_URL_NOTE,
             detailIcon: "info",
             choose: () => dialog.close(permanentUrl)
           }
@@ -6063,7 +6084,7 @@ async function copyShareUrl() {
 
           const heading = document.createElement("span");
           heading.className = "share-dialog__heading";
-          heading.append(makeIcon("link"), document.createTextNode(option.title));
+          heading.append(makeShareDialogIcon("link"), document.createTextNode(option.title));
 
           const description = document.createElement("span");
           description.className = "share-dialog__description";
@@ -6071,7 +6092,7 @@ async function copyShareUrl() {
 
           const detail = document.createElement("span");
           detail.className = "share-dialog__detail";
-          detail.append(makeIcon(option.detailIcon), document.createTextNode(option.detail));
+          detail.append(makeShareDialogIcon(option.detailIcon), document.createTextNode(option.detail));
 
           card.append(heading, description, detail);
           if (option.unavailable) {
@@ -6097,7 +6118,7 @@ async function copyShareUrl() {
         const privacy = document.createElement("p");
         privacy.className = "share-dialog__privacy";
         privacy.append(
-          makeIcon("info"),
+          makeShareDialogIcon("info"),
           document.createTextNode("取得分享網址的人都能查看其中的角色資料，請勿填寫個人隱私或敏感資訊。")
         );
 
@@ -6111,8 +6132,9 @@ async function copyShareUrl() {
       initialFocus: "content"
     });
     if (typeof shareUrl === "string") {
-      await copyResolvedShareUrl(shareUrl);
+      // Scanning the QR code never reaches the copy button, so count the share here.
       window.twAnalytics?.track?.("character_shared");
+      await showShareLinkDialog(shareUrl, { renderQr: shareUrl === permanentUrl ? null : renderShareLinkQr });
     }
   } catch (error) {
     window.AppDialog.notify("分享網址產生失敗，請稍後再試。", { tone: "error" });
@@ -6121,26 +6143,77 @@ async function copyShareUrl() {
   }
 }
 
-async function copyResolvedShareUrl(shareUrl) {
-  try {
-    await navigator.clipboard.writeText(shareUrl);
-    if (shareUrl.length > 4000) {
-      await window.AppDialog.showMessage({
-        title: "分享網址已複製",
-        message: `網址長度為 ${shareUrl.length}，部分瀏覽器可能無法完整讀取。建議改用「匯入 JSON／匯出 JSON」保存與還原。`,
-        confirmLabel: "知道了"
+function makeShareDialogIcon(name) {
+  const iconPaths = {
+    link: '<path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>'
+  };
+  const icon = document.createElement("span");
+  icon.className = "share-dialog__icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + iconPaths[name] + "</svg>";
+  return icon;
+}
+
+// The second share step: nothing reaches the clipboard until the player presses copy.
+async function showShareLinkDialog(shareUrl, { renderQr = null } = {}) {
+  let copyButton = null;
+  const closed = window.AppDialog.showContent({
+    title: "分享連結",
+    variant: "share-link",
+    trigger: document.getElementById("utility-menu-toggle"),
+    showActions: false,
+    renderContent(body) {
+      if (renderQr) {
+        const qr = document.createElement("div");
+        qr.className = "share-link__qr";
+        renderQr(qr, shareUrl);
+        body.appendChild(qr);
+      }
+
+      const note = document.createElement("p");
+      note.className = "share-dialog__detail";
+      const noteText = renderQr
+        ? "有效期限 90 天"
+        : shareUrl.length > 4000
+          ? `網址長度為 ${shareUrl.length}，部分瀏覽器可能無法完整讀取。建議改用「匯入 JSON／匯出 JSON」保存與還原。`
+          : SHARE_FULL_URL_NOTE;
+      note.append(makeShareDialogIcon(renderQr ? "clock" : "info"), document.createTextNode(noteText));
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "share-link__url";
+      input.readOnly = true;
+      input.value = shareUrl;
+      input.spellcheck = false;
+      input.autocomplete = "off";
+      input.setAttribute("aria-label", "分享連結");
+      input.dataset.stateTransient = "true";
+      ["focus", "click"].forEach(type => input.addEventListener(type, () => input.select()));
+
+      copyButton = document.createElement("button");
+      copyButton.type = "button";
+      copyButton.className = "app-dialog__button app-dialog__button--primary share-link__copy";
+      copyButton.textContent = "複製連結";
+      copyButton.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          // Phones show the toast over this button, so it clears sooner than the default.
+          window.AppDialog.notify("連結已複製。", { tone: "success", duration: 2500 });
+        } catch (error) {
+          input.focus();
+          input.setSelectionRange(0, input.value.length);
+          window.AppDialog.notify("瀏覽器未允許自動複製，已選取連結，請手動複製。", { tone: "error" });
+        }
       });
-    } else {
-      window.AppDialog.notify("分享網址已複製。", { tone: "success" });
+
+      body.append(note, input, copyButton);
     }
-  } catch (e) {
-    await window.AppDialog.showCopy({
-      title: "手動複製分享網址",
-      message: "瀏覽器未允許自動複製。請選取下方網址後使用裝置的複製功能。",
-      copyValue: shareUrl,
-      confirmLabel: "關閉"
-    });
-  }
+  });
+  // Starting on the button keeps screen readers from reading the whole URL aloud.
+  copyButton.focus();
+  await closed;
 }
 
 function collectJsonExportText() {

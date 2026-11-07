@@ -429,16 +429,16 @@ $html = [System.Text.RegularExpressions.Regex]::Replace(
   [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
 )
 
-# Offline sharing copies a public permanent URL without any network request.
+# Offline sharing shows a public permanent URL without any network request.
 # Never share local file/content paths or temporary provider permissions. Remove the
-# online-only chooser and API helpers separately. Keep shared mode lifecycle
+# online-only chooser and API/QR helpers separately. Keep shared mode lifecycle
 # functions between those sections (including exitShareMode) intact.
 $offlineHelpersPattern = '(?m)^function getShortShareUnavailableReason\(hash\) \{[\s\S]*?^let shareDialogPending = false;\r?\n'
 if ([System.Text.RegularExpressions.Regex]::Matches($html, $offlineHelpersPattern).Count -ne 1) {
   throw "build-offline-nopdf.ps1: expected one short URL helper section; check index.html."
 }
 $html = [System.Text.RegularExpressions.Regex]::Replace($html, $offlineHelpersPattern, '')
-$offlineSharePattern = '(?m)^async function copyShareUrl\(\) \{[\s\S]*?^async function copyResolvedShareUrl\(shareUrl\) \{'
+$offlineSharePattern = '(?m)^async function copyShareUrl\(\) \{[\s\S]*?^function makeShareDialogIcon\(name\) \{'
 if ([System.Text.RegularExpressions.Regex]::Matches($html, $offlineSharePattern).Count -ne 1) {
   throw "build-offline-nopdf.ps1: expected one share flow to replace; check the sharing functions in index.html."
 }
@@ -446,7 +446,10 @@ $offlineShareReplacement = @'
 async function copyShareUrl() {
   if (SHARE_MODE) return;
   const hash = await encodeStateToHash(collectShareState());
-  const shareUrl = `https://twd20.com/${hash}`;
+  await showShareLinkDialog(`https://twd20.com/${hash}`);
+}
+
+function makeShareDialogIcon(name) {
 '@
 $html = [System.Text.RegularExpressions.Regex]::Replace(
   $html,
@@ -456,18 +459,20 @@ $html = [System.Text.RegularExpressions.Regex]::Replace(
 
 # Match the offline feature set while keeping the website source copy intact.
 $html = $html.Replace(
-  'window.AppDialog.notify("分享網址已複製。", { tone: "success" });',
-  'window.AppDialog.notify("分享網址已複製，接收者需連網開啟 twd20.com；完全離線交換請使用 JSON。", { tone: "success" });'
+  'window.AppDialog.notify("連結已複製。", { tone: "success", duration: 2500 });',
+  'window.AppDialog.notify("連結已複製，接收者需連網開啟 twd20.com；完全離線交換請使用 JSON。", { tone: "success" });'
 ).Replace(
-  '瀏覽器未允許自動複製。請選取下方網址後使用裝置的複製功能。',
-  '請手動複製下方網址。接收者需連網開啟 twd20.com；完全離線交換請使用 JSON。'
+  '瀏覽器未允許自動複製，已選取連結，請手動複製。',
+  '已選取連結，請手動複製。接收者需連網開啟 twd20.com；完全離線交換請使用 JSON。'
 )
 
 if (-not $html.Contains('async function exitShareMode(event) {') -or
     -not $html.Contains('function closeShareModeGuideEntries(') -or
     -not $html.Contains('function lockShareModeIdentitySelects() {') -or
+    -not $html.Contains('async function showShareLinkDialog(') -or
+    $html.Contains('qrcode-generator.js') -or
     $html.Contains('twd20-url.ginglemisa.workers.dev/api/create')) {
-  throw "build-offline-nopdf.ps1: offline sharing must retain the share mode lifecycle functions and exclude the short URL API."
+  throw "build-offline-nopdf.ps1: offline sharing must retain the share mode lifecycle functions and the link dialog, and exclude the short URL API and QR library."
 }
 
 if ($html.Contains('const SPELL_QR_IMAGE_SRC = "./qr.png";')) {
@@ -549,12 +554,33 @@ const paths = [
     let confirmed = false;
     let replaced = "";
     let reloads = 0;
+    let toast = "";
+    const elements = [];
+    const makeElement = tag => {
+      const element = {
+        tag, dataset: {}, listeners: {}, selected: false,
+        setAttribute() {}, append() {}, appendChild() {}, focus() {},
+        addEventListener(type, listener) { this.listeners[type] = listener; },
+        select() { this.selected = true; },
+        setSelectionRange() { this.selected = true; }
+      };
+      elements.push(element);
+      return element;
+    };
+    const openLinkDialog = async () => {
+      elements.length = 0;
+      await context.copyShareUrl();
+      return {
+        input: elements.find(element => element.tag === "input"),
+        copyButton: elements.find(element => element.textContent === "複製連結")
+      };
+    };
     const context = vm.createContext({
       URL,
       SHARE_MODE: false,
       location: { href: `${base}#s2=original`, reload() { reloads++; } },
       history: { replaceState(_state, _title, url) { replaced = url; } },
-      document: { getElementById() { return {}; } },
+      document: { getElementById() { return {}; }, createElement: makeElement, createTextNode: text => text },
       navigator: { clipboard: { async writeText(value) { copied = value; } } },
       collectShareState() { return { str: "17" }; },
       async encodeStateToHash(data) {
@@ -562,22 +588,27 @@ const paths = [
         return "#s2=current";
       },
       window: { AppDialog: {
-        notify() {},
+        notify(message) { toast = message; },
         async requestDecision() { return confirmed; },
-        async showCopy(options) { copied = options.copyValue; }
+        async showContent(options) { options.renderContent(makeElement("div")); }
       } }
     });
     script.runInContext(context);
-    await context.copyShareUrl();
+    let { input, copyButton } = await openLinkDialog();
+    assert.equal(input.value, "https://twd20.com/#s2=current", base);
+    assert.equal(copied, "", "opening the dialog copies nothing");
+    assert(!elements.some(element => element.className === "share-link__qr"), "offline has no QR code");
+    await copyButton.listeners.click();
     assert.equal(copied, "https://twd20.com/#s2=current", base);
+    assert.match(toast, /^連結已複製，接收者需連網/);
     context.navigator.clipboard.writeText = async () => { throw new Error("clipboard denied"); };
-    copied = "";
-    await context.copyShareUrl();
-    assert.equal(copied, "https://twd20.com/#s2=current", "manual copy fallback");
+    ({ input, copyButton } = await openLinkDialog());
+    await copyButton.listeners.click();
+    assert.equal(input.selected, true, "manual copy fallback selects the link");
+    assert.match(toast, /^已選取連結，請手動複製。接收者需連網/);
     context.SHARE_MODE = true;
-    copied = "";
-    await context.copyShareUrl();
-    assert.equal(copied, "", "sharing disabled in share mode");
+    await openLinkDialog();
+    assert.equal(elements.length, 0, "sharing disabled in share mode");
     await context.exitShareMode({ preventDefault() {} });
     assert.equal(replaced, "", "cancel does not navigate");
     assert.equal(reloads, 0);

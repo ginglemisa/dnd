@@ -15913,6 +15913,77 @@ button.share-dialog__option:disabled .share-dialog__detail {
   color: var(--danger);
 }
 
+/* Second share step: no visible title, so only the close button sits above the content.
+   Phones keep the shared full-width bottom sheet (max-width: 520px). */
+@media (min-width: 521px) {
+  .app-dialog[data-variant="share-link"] .app-dialog__surface {
+    width: min(100%, 24rem);
+  }
+}
+
+.app-dialog[data-variant="share-link"] .app-dialog__header {
+  justify-content: flex-end;
+  padding: 0.5rem 0.5rem 0;
+  border-bottom: 0;
+}
+
+/* Hidden from view only: the title still names the dialog for screen readers. */
+.app-dialog[data-variant="share-link"] .app-dialog__header h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.app-dialog[data-variant="share-link"] .app-dialog__body {
+  gap: 0.75rem;
+  padding: 0 1rem max(1rem, env(safe-area-inset-bottom, 0px));
+  scrollbar-gutter: auto;
+}
+
+/* Always black on white: scanners cannot read a code that follows the dark themes.
+   222px is 6 CSS pixels per module for a short URL (29 modules + 8 of quiet zone). */
+.share-link__qr {
+  width: 222px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.share-link__qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: #000;
+}
+
+.share-link__qr.is-error {
+  width: auto;
+  aspect-ratio: auto;
+  margin: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+input.share-link__url {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+}
+
+button.share-link__copy {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+}
+
 /* Keep manual spell mode changes scannable on narrow screens. */
 .app-dialog[data-variant="manual-spell-management"] .manual-spell-management__heading {
   font-weight: 700;
@@ -15938,18 +16009,6 @@ button.share-dialog__option:disabled .share-dialog__detail {
 .manual-spell-management__marker {
   line-height: inherit;
   text-align: center;
-}
-
-.app-dialog__copy-label {
-  display: grid;
-  gap: 0.4rem;
-  margin: 0;
-}
-
-.app-dialog__copy-value {
-  min-height: 8rem;
-  resize: none;
-  overflow-wrap: anywhere;
 }
 
 .app-dialog__number-field {
