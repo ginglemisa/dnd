@@ -1,6 +1,6 @@
 # 內容檔
 
-網站的職業、子職、專長、背景、種族與法術資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、專長、背景、種族、法術各一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；專長、背景、種族與法術見下方「專長」「背景」「種族」「法術」。
+網站的職業、子職、專長、背景、種族、法術與怪物資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、專長、背景、種族、法術、怪物各一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；專長、背景、種族、法術與怪物見下方「專長」「背景」「種族」「法術」「怪物」。
 
 職業與子職的說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
 
@@ -16,6 +16,7 @@
 | 公開背景 | `content/srd/backgrounds/<背景 ID>.yaml` |
 | 公開種族 | `content/srd/races/<種族 ID>.yaml` |
 | 公開法術 | `content/srd/spells/<法術 ID>.yaml` |
+| 公開怪物（野獸、召喚物） | `content/srd/monsters/<key>.yaml` |
 | 私人內容包（不進公開 repo） | `content/private/classes/`、`content/private/subclasses/` |
 | 私人法術（格式已訂、尚未啟用） | `content/private/spells/<法術 ID>.yaml` |
 | 私人內容包補充既有職業（例如兼職） | `content/private/class-extensions/<職業 ID>.yaml` |
@@ -47,7 +48,7 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 - 段落之間空一行；清單用 `- `；粗體用 `**粗體**`。
 - 同一段內要換行，在行尾加 `\`（清單項目的下一行再縮排兩格）。創角資訊的單行欄位（例如 `weapons`）也可用同樣寫法換行。
 - `#### 標題` 開始一個小節，直到下一個 `####` 或文字結束。只是排版分段時用它；小節有自己的跑團按鈕時改用子能力（見下方「子能力」），預設收合的小節改用 `collapsible`（見下方「可收合小節」）。
-- `[[運動]]`、`[[抗性]]`、`[[失能]]`、`[[小魔鬼]]`：提示框，名稱須存在於技能／規則提示表、狀態表或野獸表（`monster.js` 的 `BEAST_STATS`，取中文名）。
+- `[[運動]]`、`[[抗性]]`、`[[失能]]`、`[[小魔鬼]]`：提示框，名稱須存在於技能／規則提示表、狀態表或怪物內容檔的中文名（見下方「怪物」）。
 - `{rageDamageText|數值見特性表}`：職業頁顯示 `|` 後的文字，跑團模式換成目前數值（網站依目前等級與屬性值計算）。名稱須是 `progression` 欄位、`values` 或內建的 `level`、`proficiencyBonus`；特性表欄位套用欄位的 `format`，要另加跑團字樣（例如「3 次」「目前 +2」）時在 `values` 另取名稱並寫 `format`（見下方「職業層級的欄位」）。整個數值標記要粗體時寫 `**{名稱|文字}**`；只有部分頁面文字粗體時寫在 `|` 後，例如 `{searUndeadDice|**等同感知調整值數量的 d8**（至少 1d8）}`。
 - `[文字]{標記名}`：網站功能標記，把方括號內的文字標給網站程式使用，職業頁與跑團說明的顯示不變。**只供網站功能使用，一般文字不要用。** 標記名須是建置工具（`tools/content/markdown.js` 的 `MARKS`）列出的名稱，否則建置失敗；方括號內可有粗體，不可再有 `[`、`]`（也就不能放提示框）。目前沒有可用的標記（清單為空）。
 - `{spellSaveDc|}`：`|` 後留空＝只在跑團出現。職業頁不顯示，跑團模式顯示目前數值（`values` 有 `format` 時套用格式，例如「（DC 13）」）。
@@ -220,7 +221,7 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 
 一般欄位表達不了的特殊排版寫 `behavior: <名稱>`，對應 `tools/class-content/behaviors/<名稱>.js`，並在 `text` 中把要特殊排版的小節標題寫成 `#### 標題 {#名稱}`（名稱同 `behavior`，只能有一個）。這個小節不照一般小節輸出，改由 behavior 依小節內的段落與清單產生；標記缺少、名稱不符或小節內容不符時建置失敗。網站程式只需要插入點或標記時，改用 `mount`（見「插入點」）或網站功能標記 `[文字]{標記名}`（見「文字寫法」）。
 
-- `wild-shape-known-forms`：荒野形態的 `#### 已知形態 {#wild-shape-known-forms}` 小節（依序為說明段落、推薦段落、規則清單）輸出成已知形態區塊（推薦框等排版），並在區塊末端接上「查看其他動物」的野獸清單；緊接其後須有一個小節（變形規則），會加上分隔樣式。野獸清單是另外整理的參考資料，不寫進內容檔，讀取 `druid-wild-shape-beasts.js` 的 `DRUID_WILD_SHAPE_BEASTS`（跑團模式的 `DruidBeastForms` 也來自這份清單），每個 `key` 須存在於 `monster.js` 的 `BEAST_STATS`，否則建置失敗。
+- `wild-shape-known-forms`：荒野形態的 `#### 已知形態 {#wild-shape-known-forms}` 小節（依序為說明段落、推薦段落、規則清單）輸出成已知形態區塊（推薦框等排版），並在區塊末端接上「查看其他動物」的野獸清單；緊接其後須有一個小節（變形規則），會加上分隔樣式。野獸清單是另外整理的參考資料，不寫進內容檔，讀取 `druid-wild-shape-beasts.js` 的 `DRUID_WILD_SHAPE_BEASTS`（跑團模式的 `DruidBeastForms` 也來自這份清單），每個 `key` 須是怪物內容檔的 key，`label`、`cr`、`hasFlight` 須與該野獸一致，否則建置失敗（見下方「怪物」）。
 
 ## 職業層級的欄位
 
@@ -249,7 +250,7 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 
 選項的 `id`、起始裝備組合的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註；子職法術的來源識別碼（見「能力給予的法術」）會寫進角色的法術清單。改顯示文字沒關係，這些 ID 不可改。
 
-這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；專長、背景、種族與法術各有 `feat-id-baseline.json`、`background-id-baseline.json`、`race-id-baseline.json`、`spell-id-baseline.json`（見各節）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
+這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；專長、背景、種族、法術與怪物各有 `feat-id-baseline.json`、`background-id-baseline.json`、`race-id-baseline.json`、`spell-id-baseline.json`、`monster-id-baseline.json`（見各節）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
 
 ```bash
 npm run build -- --update-id-baseline
@@ -575,14 +576,106 @@ referenceEn:
     (English original)
 ```
 
+## 怪物
+
+每個怪物一個檔：`content/srd/monsters/<key>.yaml`，格式定義是 `content/schema/monster.schema.json`。收錄德魯伊荒野形態清單的野獸、CR 2 以上的 SRD 野獸（只供查閱，之後給私人內容的子職用）、獲得魔寵／尋獲坐騎的召喚物與魔寵（小魔鬼、偽龍等）。做法比照法術：上半部是只寫一次的結構化數值；下半部是文字區塊：
+
+- `site`：網站版，只寫特性與動作各自的說明、用途短說明（`summary`）、語言與裝備。資料卡的數值行（AC、HP、速度、屬性、豁免、技能、感官、攻擊檢定與傷害）由頂層數值產生，不手寫。網站版不顯示 XP、熟練加值、陣營、先攻，沒有語言時不顯示語言。
+- `srd`：SRD 5.2.1 繁中直譯，野獸資料卡的「SRD 版」（唯讀，頁尾註明譯自 SRD 5.2.1）。特性與動作的名稱沿用網站版。
+- `en`：SRD 英文原文，只供校對，建置不會送到網站。
+
+```yaml
+# yaml-language-server: $schema=../../schema/monster.schema.json
+id: wolf
+name: 狼
+nameEn: Wolf
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/4"
+xp: 50
+ac: 12
+initiative: 2
+hp: { average: 11, dice: 2d8+2 }
+speed: { walk: 40 }
+abilities: { str: 14, dex: 15, con: 12, int: 3, wis: 12, cha: 6 }
+skills: { 察覺: 5, 隱匿: 4 }
+senses: { darkvision: 60 }
+passivePerception: 15
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, dice: 1d6+2 } ]
+site:
+  summary: 群體戰鬥、追蹤
+  traits:
+    - name: 群攻
+      text: 若目標5呎內至少有一名狼的盟友，且該盟友未陷入失能，狼對該目標的攻擊檢定具有優勢。
+  actions:
+    attack-0: { name: 咬擊, text: 命中中型或更小的目標：目標倒地。 }
+srd:
+  traits:
+    - name: 群攻
+      text: ……
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 5（1d6 + 2）穿刺傷害。若目標是中型或更小的生物，目標陷入倒地狀態。
+en:
+  traits:
+    - name: Pack Tactics
+      text: ……
+  actions:
+    - name: Bite
+      text: "_Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 5 (1d6 + 2) Piercing damage. If the target is a Medium or smaller creature, it has the Prone condition."
+```
+
+### 數值欄位
+
+| 欄位 | 說明 |
+| --- | --- |
+| `id` | 怪物 key，英文名轉小寫、以底線連接，須等於檔名。寫進跑團狀態（德魯伊已知形態、目前形態）、職業頁 `data-beast` 與法術頁的野獸按鈕，不可改名（列在 `monster-id-baseline.json`）。 |
+| `name`、`nameEn` | 中文名、英文名。職業頁的 `[[中文名]]` 提示框以中文名查表，全部怪物不可重複。 |
+| `size`、`type`、`subtype` | 體型（`tiny`～`gargantuan`）、生物類型（可選類型的召喚物寫成陣列）、類型標籤（`devil` 魔鬼、`demon` 惡魔、`dinosaur` 恐龍）。 |
+| `alignment`、`xp`、`initiative` | 陣營、經驗值、先攻調整值，只在 SRD 版顯示。熟練加值由 CR 計算。 |
+| `cr` | 挑戰等級（字串，`"1/4"`）。德魯伊荒野形態依此判斷可選範圍。 |
+| `ac`、`hp` | AC；HP 寫 `{ average, dice }`，建置核對平均值。 |
+| `speed` | `walk`、`burrow`、`climb`、`fly`、`swim`（呎），`hover: true` 為懸浮。 |
+| `abilities`、`saves`、`skills` | 屬性值；與調整值不同（具熟練）的豁免加值；技能加值（key 是網站的技能名稱）。跑團變形後的豁免與技能和角色自己的取高。 |
+| `senses`、`passivePerception` | `blindsight`、`darkvision`、`tremorsense`、`truesight`（呎）；被動察覺。 |
+| `damageResistances`、`damageImmunities`、`damageVulnerabilities`、`conditionImmunities` | 傷害類型 ID（同法術的 `damageType`）；狀態免疫用 `condition.js` 的狀態 key。 |
+| `variable` | `true`：AC、HP 隨施法變化的召喚物（異界坐騎）。不寫 `ac`、`hp`、`initiative`，改在 `site`、`srd`、`en` 各寫 `ac`、`hp`、`cr` 文字；沒有跑團數值。 |
+
+### 動作
+
+`actions` 依 SRD 順序列出動作、附贈動作（`mode: bonus`）與反應動作（`mode: reaction`）。
+
+- `id`：寫進跑團狀態（`beastUsed` 的「key:id」）、跑團動作 key（`druid-beast-<key>-<id>`）與動作偏好，不可改名。有攻擊檢定的動作依序為 `attack-0`、`attack-1`…，其他動作用英文名（多重攻擊為 `multi`，例如 `web`、`ink`）。
+- `attack`：`{ kind: melee | ranged | melee-or-ranged, hit, reach, range: [正常, 最遠] }`。
+- `save`：`{ ability, dc, half: true }`（`half` 為成功減半）。
+- `damage`：`[{ type, dice }]` 或 `[{ type, fixed: 1 }]`，第二項起顯示為「外加」；平均值由建置計算。之後才發生的傷害（吞下）加 `timing: next-turn-end | each-turn-end`。
+- `recovery`：`recharge-5`、`recharge-6`、`daily`（次數寫 `uses`）、`long-rest`；跑團依此追蹤已使用。
+- `conditional`：條件成立時的額外或替代傷害 `[{ when, type, dice }]`，`when` 為 `charge-extra`（衝鋒額外）、`charge-instead`（衝鋒替代）、`bloodied-target-instead`（目標受創時替代）；跑團另有擲骰按鈕。
+
+`site.actions` 以 id 對應每個動作的 `name` 與 `text`。攻擊動作的 `text` 接在產生的「近戰攻擊檢定+4，觸及5呎；命中：5（1d6+2）穿刺傷害。」之後，只寫額外效果；其他動作的 `text` 是整句說明，可用 `{save}`（「DC12力量豁免」）、`{damage}`、`{conditional}` 代入數值（豁免動作必須用 `{save}`，沒有攻擊檢定的傷害必須用 `{damage}`），數值不手寫。
+
+### 文字區塊與檢查
+
+- `srd`、`en` 的 `traits`、`actions`、`bonusActions`、`reactions` 依 SRD 順序，項目數須與 `site.traits`、頂層 `actions`（依 `mode`）相同；SRD 版名稱沿用網站版（使用限制寫在名稱後，例如「蛛網（充能5–6）」）。語言、裝備與黑暗視覺附註寫在 `languages`、`gear`、`senseNotes`。
+- 建置檢查：格式、檔名、中文名不重複、技能名稱與狀態 key、HP 平均值、動作 id 與 `site.actions` 對應、代入標記、SRD 版與英文的項目數與骰式一致，以及 `monster-id-baseline.json`（`monsters` 為 key，`actions` 為「key:動作 id」）。
+- `npm run build` 產生根目錄的 `monster-content.generated.js`：`monsterRules`（結構化數值）、`monsterText`（網站版資料卡文字 `statBlock`、`summary`、`traits`、`actions`）、`monsterLabels`（跑團顯示的名稱）。網站經 `monster.js` 的 `BeastCatalog`（`get`、`getStatBlock`、`getRules`）讀取，資料卡由 `createBeastCard`（含「網站版｜SRD 版」切換）與 `renderBeastPopupHtml` 產生。`monster-srd.generated.js` 是 SRD 版的 HTML，第一次切到「SRD 版」時才載入，離線版內嵌。英文原文不寫進任何產生檔。
+- 德魯伊荒野形態可選的野獸另列在 `druid-wild-shape-beasts.js`（使用者自編的參考清單）；`label`、`cr`、`hasFlight` 須與該野獸的中文名、CR、飛行速度一致，建置會檢查。CR 2 以上的野獸只收在內容檔，不列進這份清單。
+- 異界坐騎不在 SRD 的怪物章節，是尋獲坐騎法術內附的數據塊；`srd`、`en` 取自該法術的 SRD 譯文與原文。
+- 用語同法術譯文（見 [tools/spell-reference/glossary.md](../tools/spell-reference/glossary.md)）：傷害類型用 `SpellCatalog.damageTypeLabels`、狀態用 `condition.js` 的名稱，數字與單位之間不留空格。
+
 ## 檢查與預覽
 
 | 指令 | 用途 |
 | --- | --- |
 | `npm run dev` | 開本機預覽，存檔後自動重新建置，重新整理瀏覽器即可看到；畫面網址會顯示在終端機 |
-| `npm run build` | 檢查全部內容檔並產生 `spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`class-content.private.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
+| `npm run build` | 檢查全部內容檔並產生 `monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`class-content.private.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
 | `npm run build -- --public-only` | 同上，但私人資料檔為空檔（只看公開內容） |
 | `npm run build -- --update-id-baseline` | 確定是刻意新增 ID 時更新各基準檔（見「不可改名的 ID」） |
 | `node tools/spell-reference/validate.js` | 檢查法術的 SRD 譯文（見 [tools/spell-reference/README.md](../tools/spell-reference/README.md)） |
 
-改完內容檔只要提交內容檔本身。`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。這些檔案只含公開內容包；私人內容只寫進 `class-content.private.generated.js`（同樣不提交），上線建置與離線角色卡的這個檔一律是空檔。
+改完內容檔只要提交內容檔本身。`monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。這些檔案只含公開內容包；私人內容只寫進 `class-content.private.generated.js`（同樣不提交），上線建置與離線角色卡的這個檔一律是空檔。
