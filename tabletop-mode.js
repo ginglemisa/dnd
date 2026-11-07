@@ -1578,6 +1578,13 @@
     return globalScope.BeastCatalog?.get(form.key) || null;
   }
 
+  // 變形中數值旁的標記「(狼)」：比照樹膚術的「(樹膚)」，只標屬性（力敏體）、AC 與速度。
+  function getDruidFormMarks() {
+    const beast = getDruidForm();
+    if (!beast) return [];
+    return [`(${globalScope.DruidBeastForms?.find(item => item.key === beast.key)?.label || beast.key})`];
+  }
+
   function getDruidEffectiveValue(id, fallback) {
     const read = key => document.getElementById(key)?.value || "0";
     const original = fallback ?? read(id);
@@ -2594,15 +2601,22 @@
   function renderAbilityModifiers() {
     if (!elements.abilityModifiers) return;
 
+    const formMarks = getDruidFormMarks();
     const values = ABILITY_KEYS.map(ability => {
       const label = getAbilityLabel(ability);
-      return createReadOnlyValue(
+      const value = getDruidEffectiveValue(`${ability}-mod`, getReadOnlySourceValue(document.getElementById(`${ability}-mod`)));
+      const item = createReadOnlyValue(
         label,
-        getDruidEffectiveValue(`${ability}-mod`, getReadOnlySourceValue(document.getElementById(`${ability}-mod`))),
+        value,
         "tabletop-ability-modifier",
         "",
         `${label}檢定`
       );
+      // 荒野形態只換力量、敏捷、體質；心智屬性保留角色原值，不加標記。
+      if (formMarks.length && ["str", "dex", "con"].includes(ability)) {
+        renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, formMarks);
+      }
+      return item;
     });
 
     elements.abilityModifiers.replaceChildren(...values);
@@ -2737,10 +2751,12 @@
     elements.ac.textContent =
       getDruidEffectiveValue("ac-display", getDisplayValue("ac-display"));
     const mageArmor = getMageArmorEffect();
-    if (mageArmor.active || combatState.barkskinActive) {
+    const formMarks = getDruidFormMarks();
+    if (mageArmor.active || combatState.barkskinActive || formMarks.length) {
       const baseAc = mageArmor.active ? mageArmor.ac : Number(elements.ac.textContent);
       const ac = combatState.barkskinActive && Number.isFinite(baseAc) ? Math.max(17, baseAc) : baseAc;
       renderEffectStat(elements.ac, Number.isFinite(ac) ? String(ac) : "—", [
+        ...formMarks,
         ...(mageArmor.active ? ["(法護)"] : []),
         ...(combatState.barkskinActive ? ["(樹膚)"] : [])
       ]);
@@ -2775,7 +2791,9 @@
       const speed = beast
         ? Object.entries(beast.speeds).map(([label, feet]) => `${label} ${feet + (hasSelectedFeat("迅捷步法") ? 10 : 0) + 10} 呎`).join("、")
         : baseSpeed && Number.isFinite(Number(baseSpeed)) ? `${Number(baseSpeed) + 10} 呎` : "—";
-      renderEffectStat(elements.speed, speed, ["(大步)"]);
+      renderEffectStat(elements.speed, speed, [...formMarks, "(大步)"]);
+    } else if (formMarks.length) {
+      renderEffectStat(elements.speed, elements.speed.textContent, formMarks);
     }
     if (onboardingKeyStatPreview && !/\d/.test(elements.speed.textContent)) {
       elements.speed.textContent = "30 呎";

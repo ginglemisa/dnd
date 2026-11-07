@@ -100,7 +100,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261108-reference-beasts">
+  <link rel="stylesheet" href="styles.css?v=20261108-wild-shape-ux">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster-content.generated.js?v=0" defer></script>
@@ -121,9 +121,9 @@
   <script src="app-dialog.js?v=20261107-share-link" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261108-hidden-forms" defer></script>
-  <script src="tabletop-druid.js?v=20261108-hidden-forms" defer></script>
-  <script src="tabletop-resources.js?v=20261107-first-table-tour" defer></script>
+  <script src="tabletop-mode.js?v=20261108-wild-shape-ux" defer></script>
+  <script src="tabletop-druid.js?v=20261108-wild-shape-ux" defer></script>
+  <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
   <script src="tabletop-actions.js?v=20261107-share-copy" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261108-companion-timing" defer></script>
@@ -302,7 +302,7 @@
     </div>
 
     <section id="tabletop-panel-overview" class="tabletop-panel" role="tabpanel" aria-labelledby="tabletop-tab-overview" data-tabletop-panel="overview">
-      <section id="tabletop-druid-overview" class="tabletop-section druid-status" aria-label="德魯伊目前形態" hidden></section>
+      <section id="tabletop-druid-overview" class="druid-card" aria-label="荒野形態" hidden></section>
 
     <div id="tabletop-ability-modifiers" class="tabletop-ability-modifiers" aria-label="六大屬性加值"></div>
 
@@ -424,6 +424,7 @@
     </section>
 
     <section id="tabletop-panel-skills" class="tabletop-panel" role="tabpanel" aria-labelledby="tabletop-tab-skills" data-tabletop-panel="skills" hidden>
+      <section id="tabletop-druid-skills" class="druid-strip" aria-label="荒野形態狀態" hidden></section>
       <section class="tabletop-section tabletop-saving-throws" aria-labelledby="tabletop-saving-throws-title">
         <div class="tabletop-section-heading"><h2 id="tabletop-saving-throws-title">屬性豁免</h2></div>
         <div id="tabletop-saving-throw-values" class="tabletop-saving-throw-values" aria-label="屬性豁免數值"></div>
@@ -445,7 +446,7 @@
     </section>
 
     <section id="tabletop-panel-actions" class="tabletop-panel" role="tabpanel" aria-labelledby="tabletop-tab-actions" data-tabletop-panel="actions" hidden>
-      <section id="tabletop-druid-actions" class="tabletop-section druid-status" aria-label="德魯伊形態操作" hidden></section>
+      <section id="tabletop-druid-actions" class="druid-strip" aria-label="荒野形態狀態" hidden></section>
       <p id="tabletop-actions-notice" class="tabletop-panel-intro tabletop-panel-notice" hidden></p>
 
       <section class="tabletop-section" aria-label="武器攻擊">
@@ -488,6 +489,7 @@
         <span class="tabletop-eyebrow">施法查閱</span>
         <h2>法術</h2>
       </header>
+      <section id="tabletop-druid-spells" class="druid-strip" aria-label="荒野形態狀態" hidden></section>
       <div id="tabletop-concentration-spells" class="tabletop-concentration-list tabletop-concentration-list--spells" aria-live="polite" hidden></div>
       <div id="tabletop-spells-empty" class="tabletop-empty-state" hidden></div>
       <div id="tabletop-spells-content">
@@ -546,7 +548,6 @@
       <section class="tabletop-section" aria-labelledby="tabletop-built-in-resources-title">
         <div class="tabletop-section-heading"><h3 id="tabletop-built-in-resources-title">角色資源</h3></div>
         <div id="tabletop-built-in-resources" class="tabletop-resource-list"></div>
-        <div id="tabletop-druid-resources" class="druid-operation" hidden></div>
       </section>
       <section class="tabletop-section" aria-labelledby="tabletop-custom-resources-title">
         <div class="tabletop-section-heading">

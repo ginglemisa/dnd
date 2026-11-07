@@ -727,11 +727,11 @@
     )));
 
     getAutomaticResourceSpecs().forEach(spec => {
-      const resource = spec.key === "druid-natural-recovery-spell-slots" && globalScope.TabletopDruid
-        ? globalScope.TabletopDruid.createNaturalRecoveryRow()
-        : spec.kind === "points"
+      // 德魯伊的自然恢復與野性復甦由 tabletop-druid.js 畫成一列（按鈕與已使用勾選在一起）。
+      const resource = globalScope.TabletopDruid?.createResourceRow?.(spec.key)
+        || (spec.kind === "points"
         ? createPointPoolRow(spec)
-        : createStoredUseRow(spec);
+        : createStoredUseRow(spec));
       if (resource) rows.push(resource);
     });
 
