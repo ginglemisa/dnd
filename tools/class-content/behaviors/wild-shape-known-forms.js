@@ -7,9 +7,26 @@
 "use strict";
 const { ContentError } = require("../../content/errors");
 const { escapeHtml } = require("../../content/markdown");
-const { loadWildShapeBeasts } = require("../../content/site-sources");
+const { loadWildShapeBeasts, loadReferenceOnlyBeasts } = require("../../content/site-sources");
 
-// 與舊版 class-features.js 的 DRUID_WILD_SHAPE_BEAST_LIST_HTML 相同的範本（含排版空白）。
+// CR 2 以上、只供查閱的野獸：「查看其他動物」清單下方的第二層小字收合，註明無法用荒野形態變身（跑團模式不顯示）。
+function referenceBeastsHtml() {
+  const { beasts, crOrder } = loadReferenceOnlyBeasts();
+  if (!beasts.length) return "";
+  return `
+  <details class="wild-shape-reference-beasts">
+    <summary>其他野獸（只供查閱）</summary>
+    <p class="wild-shape-reference-beasts__note">以下野獸目前<strong>無法用荒野形態變身</strong>，只提供資料查閱；跑團模式不會列出。</p>
+    <div class="wild-shape-beast-groups">
+      ${crOrder.map(cr => `<section class="wild-shape-beast-group" aria-labelledby="wild-shape-reference-cr-${cr}">
+        <h4 id="wild-shape-reference-cr-${cr}">CR ${cr}</h4>
+        <div class="wild-shape-beast-grid">${beasts.filter(beast => beast.cr === cr).map(({ key, label }) => `<span class="beast-tip" data-beast="${escapeHtml(key)}">${escapeHtml(label)}</span>`).join("")}</div>
+      </section>`).join("")}
+    </div>
+  </details>`;
+}
+
+// 與舊版 class-features.js 的 DRUID_WILD_SHAPE_BEAST_LIST_HTML 相同的範本（含排版空白），清單之後接只供查閱的野獸。
 function beastListHtml() {
   const { beasts, crOrder } = loadWildShapeBeasts();
   return `<details class="wild-shape-beast-disclosure">
@@ -25,7 +42,7 @@ function beastListHtml() {
         <div class="wild-shape-beast-grid">${group.map(({ key, label, hasFlight }) => `<span class="beast-tip" data-beast="${escapeHtml(key)}">${escapeHtml(label)}${hasFlight ? "（飛行；8 級+）" : ""}</span>`).join("")}</div>
       </section>`;
     }).join("")}
-  </div>
+  </div>${referenceBeastsHtml()}
 </details>`;
 }
 

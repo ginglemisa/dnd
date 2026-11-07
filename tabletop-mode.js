@@ -1529,10 +1529,19 @@
     return unconsciousAdded || proneAdded || incapacitatedAdded;
   }
 
+  // 荒野形態清單（DruidBeastForms）裡的形態才會在跑團顯示、可以變形。
+  function isVisibleDruidForm(key) {
+    return Boolean(globalScope.DruidBeastForms?.some(form => form.key === key));
+  }
+
+  // 已知形態與目前形態：有跑團數值的野獸 key 都保留（包括不在公開清單、只有私人內容才能選的形態），
+  // 不在清單的只是不顯示、不能變形，存檔、JSON 與分享照原樣帶著。清單內與清單外各最多 8 種。
   function normalizeDruidState(value = {}) {
     const data = value && typeof value === "object" ? value : {};
-    const exists = key => Boolean(globalScope.DruidBeastForms?.some(form => form.key === key));
-    const knownForms = [...new Set(Array.isArray(data.knownForms) ? data.knownForms : [])].filter(exists).slice(0, 8);
+    const exists = key => typeof key === "string" && key.length < 100 && Boolean(globalScope.BeastCatalog?.get?.(key));
+    let visible = 0, hidden = 0;
+    const knownForms = [...new Set(Array.isArray(data.knownForms) ? data.knownForms : [])].filter(exists)
+      .filter(key => isVisibleDruidForm(key) ? visible++ < 8 : hidden++ < 8);
     const equipment = {};
     for (const key of ["armor", "main", "off", "other"]) {
       equipment[key] = ["wear", "drop", "merge"].includes(data.equipment?.[key]) ? data.equipment[key] : "merge";
@@ -1630,11 +1639,12 @@
     if (operation === "known") {
       const keys = Array.isArray(selection.keys) ? [...new Set(selection.keys)] : [];
       if (!keys.length || keys.length > rules.known || keys.some(key => !globalScope.isDruidBeastAllowed(globalScope.DruidBeastForms.find(form => form.key === key), level))) return fail(`請選擇 1～${rules.known} 種符合等級的形態。`);
-      if (next.formKey && !keys.includes(next.formKey)) return fail("請先解除目前形態，再移除該已知形態。");
-      next.knownForms = keys;
+      if (next.formKey && isVisibleDruidForm(next.formKey) && !keys.includes(next.formKey)) return fail("請先解除目前形態，再移除該已知形態。");
+      // 清單外的已知形態（這裡看不到、不能勾選）原樣保留，不被這次的選擇覆寫。
+      next.knownForms = [...keys, ...next.knownForms.filter(key => !isVisibleDruidForm(key))];
     } else if (operation === "shape") {
       if (!remaining) return fail("荒野形態次數已耗盡。");
-      if (next.knownForms.length > rules.known) return fail("等級已變更，請先調整已知形態數量。");
+      if (next.knownForms.filter(isVisibleDruidForm).length > rules.known) return fail("等級已變更，請先調整已知形態數量。");
       const form = globalScope.DruidBeastForms.find(item => item.key === selection.key);
       if (!next.knownForms.includes(selection.key) || !globalScope.isDruidBeastAllowed(form, level)) return fail("請選擇符合等級的已知形態。");
       next.formKey = selection.key;
@@ -3064,7 +3074,9 @@
       scheduleCharacterSave();
       emitStateChange();
     }
-    if (combatState.druid?.formKey && !getDruidForm()) {
+    // 失能或等級不符時結束形態；目前形態不在清單（私人內容的形態）時視為原形，但保留 formKey。
+    if (combatState.druid?.formKey && !getDruidForm()
+      && (getDruidContext().incapacitated || isVisibleDruidForm(combatState.druid.formKey))) {
       if (getDruidContext().incapacitated) combatState.concentrationSpellId = "";
       combatState.druid.formKey = "";
       scheduleCharacterSave();

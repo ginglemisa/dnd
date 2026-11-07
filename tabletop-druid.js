@@ -54,6 +54,11 @@
     return input;
   }
 
+  // 已知形態中在荒野形態清單裡的（清單外的形態保留在存檔，但不顯示、不計入數量）。
+  function visibleKnownForms(c = context()) {
+    return c.druid.knownForms.filter(key => (globalScope.DruidBeastForms || []).some(item => item.key === key));
+  }
+
   function availableForms(c = context()) {
     return (globalScope.DruidBeastForms || []).filter(item => globalScope.isDruidBeastAllowed(item, c.level));
   }
@@ -192,7 +197,7 @@
 
   async function openOperation(operation, trigger) {
     if (!api() || context().level < 2) return;
-    if (operation === "shape" && (!context().druid.knownForms.length || context().druid.knownForms.length > context().rules.known)) {
+    if (operation === "shape" && (!visibleKnownForms().length || visibleKnownForms().length > context().rules.known)) {
       if (!await openOperation("known", trigger)) return;
     }
     const c = context();

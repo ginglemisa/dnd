@@ -221,7 +221,7 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 
 一般欄位表達不了的特殊排版寫 `behavior: <名稱>`，對應 `tools/class-content/behaviors/<名稱>.js`，並在 `text` 中把要特殊排版的小節標題寫成 `#### 標題 {#名稱}`（名稱同 `behavior`，只能有一個）。這個小節不照一般小節輸出，改由 behavior 依小節內的段落與清單產生；標記缺少、名稱不符或小節內容不符時建置失敗。網站程式只需要插入點或標記時，改用 `mount`（見「插入點」）或網站功能標記 `[文字]{標記名}`（見「文字寫法」）。
 
-- `wild-shape-known-forms`：荒野形態的 `#### 已知形態 {#wild-shape-known-forms}` 小節（依序為說明段落、推薦段落、規則清單）輸出成已知形態區塊（推薦框等排版），並在區塊末端接上「查看其他動物」的野獸清單；緊接其後須有一個小節（變形規則），會加上分隔樣式。野獸清單是另外整理的參考資料，不寫進內容檔，讀取 `druid-wild-shape-beasts.js` 的 `DRUID_WILD_SHAPE_BEASTS`（跑團模式的 `DruidBeastForms` 也來自這份清單），每個 `key` 須是怪物內容檔的 key，`label`、`cr`、`hasFlight` 須與該野獸一致，否則建置失敗（見下方「怪物」）。
+- `wild-shape-known-forms`：荒野形態的 `#### 已知形態 {#wild-shape-known-forms}` 小節（依序為說明段落、推薦段落、規則清單）輸出成已知形態區塊（推薦框等排版），並在區塊末端接上「查看其他動物」的野獸清單；緊接其後須有一個小節（變形規則），會加上分隔樣式。野獸清單是另外整理的參考資料，不寫進內容檔，讀取 `druid-wild-shape-beasts.js` 的 `DRUID_WILD_SHAPE_BEASTS`（跑團模式的 `DruidBeastForms` 也來自這份清單），每個 `key` 須是怪物內容檔的 key，`label`、`cr`、`hasFlight` 須與該野獸一致，否則建置失敗；清單之後接只供查閱的野獸（第二層收合，見下方「怪物」）。
 
 ## 職業層級的欄位
 
@@ -664,7 +664,8 @@ en:
 - `srd`、`en` 的 `traits`、`actions`、`bonusActions`、`reactions` 依 SRD 順序，項目數須與 `site.traits`、頂層 `actions`（依 `mode`）相同；SRD 版名稱沿用網站版（使用限制寫在名稱後，例如「蛛網（充能5–6）」）。語言、裝備與黑暗視覺附註寫在 `languages`、`gear`、`senseNotes`。
 - 建置檢查：格式、檔名、中文名不重複、技能名稱與狀態 key、HP 平均值、動作 id 與 `site.actions` 對應、代入標記、SRD 版與英文的項目數與骰式一致，以及 `monster-id-baseline.json`（`monsters` 為 key，`actions` 為「key:動作 id」）。
 - `npm run build` 產生根目錄的 `monster-content.generated.js`：`monsterRules`（結構化數值）、`monsterText`（網站版資料卡文字 `statBlock`、`summary`、`traits`、`actions`）、`monsterLabels`（跑團顯示的名稱）。網站經 `monster.js` 的 `BeastCatalog`（`get`、`getStatBlock`、`getRules`）讀取，資料卡由 `createBeastCard`（含「網站版｜SRD 版」切換）與 `renderBeastPopupHtml` 產生。`monster-srd.generated.js` 是 SRD 版的 HTML，第一次切到「SRD 版」時才載入，離線版內嵌。英文原文不寫進任何產生檔。
-- 德魯伊荒野形態可選的野獸另列在 `druid-wild-shape-beasts.js`（使用者自編的參考清單）；`label`、`cr`、`hasFlight` 須與該野獸的中文名、CR、飛行速度一致，建置會檢查。CR 2 以上的野獸只收在內容檔，不列進這份清單。
+- 德魯伊荒野形態可選的野獸另列在 `druid-wild-shape-beasts.js`（使用者自編的參考清單）；`label`、`cr`、`hasFlight` 須與該野獸的中文名、CR、飛行速度一致，建置會檢查。類型為野獸、但不在這份清單的野獸（目前是 CR 2 以上的 20 種）只供查閱：職業頁「查看其他動物」下方的第二層收合「其他野獸（只供查閱）」依 CR 列出並註明無法變形，跑團模式不顯示。
+- 存檔裡的已知形態與目前形態：有跑團數值的野獸 key 即使不在清單也保留（例如私人內容才能選的形態），只是不顯示、不能變形、不計入已知數量；目前形態不在清單時視為原形但不清掉，autosave、JSON 與分享都照原樣帶著。
 - 異界坐騎不在 SRD 的怪物章節，是尋獲坐騎法術內附的數據塊；`srd`、`en` 取自該法術的 SRD 譯文與原文。
 - 用語同法術譯文（見 [tools/spell-reference/glossary.md](../tools/spell-reference/glossary.md)）：傷害類型用 `SpellCatalog.damageTypeLabels`、狀態用 `condition.js` 的名稱，數字與單位之間不留空格。
 

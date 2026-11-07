@@ -9,8 +9,9 @@ const BEAST_STATS = Object.freeze(Object.fromEntries(Object.entries(monsterText)
 // actions（name、hit、damage[{ type, expression, fixed }]、id、mode、recovery、save{ ability, dc }）與 conditionalDamage。
 // 數值隨施法變化的召喚物（異界坐騎）沒有跑團數值，回傳 null。
 function beastTabletopView(key) {
+  if (!Object.hasOwn(monsterRules, key) || !Object.hasOwn(monsterText, key)) return null;
   const rules = monsterRules[key], text = monsterText[key];
-  if (!rules || !text || rules.variable) return null;
+  if (rules.variable) return null;
   const damageType = item => `${monsterLabels.damage[item.type]}${item.timing ? `（${monsterLabels.timing[item.timing]}）` : ""}`;
   const damage = item => ({ type: damageType(item), expression: item.dice || "", fixed: item.dice ? item.average : item.fixed });
   return {
@@ -67,10 +68,10 @@ async function loadBeastSrdText(key) {
 }
 
 globalThis.BeastCatalog = Object.freeze({
-  getStatBlock(key) { return BEAST_STATS[key] || null; },
+  getStatBlock(key) { return Object.hasOwn(BEAST_STATS, key) ? BEAST_STATS[key] : null; },
   get: beastTabletopView,
   // 結構化數值（CR、體型、速度、感官等；荒野形態的篩選與之後的形態比較讀這裡）。
-  getRules(key) { return monsterRules[key] || null; },
+  getRules(key) { return Object.hasOwn(monsterRules, key) ? monsterRules[key] : null; },
   keys() { return Object.keys(monsterRules); },
   hasSrdText: hasBeastSrdText,
   loadSrdText: loadBeastSrdText
@@ -112,7 +113,7 @@ function renderBeastPopupHtml(s) {
 
 // 野獸資料卡元素：標題、版本切換（網站版／SRD 版）與內容。沒有該 key 時回傳 null。onChange(version) 在切換版本後呼叫（浮層重新定位用）。
 function createBeastCard(key, { onChange = null } = {}) {
-  const stats = BEAST_STATS[key];
+  const stats = Object.hasOwn(BEAST_STATS, key) ? BEAST_STATS[key] : null;
   if (!stats) return null;
   const card = document.createElement("div");
   card.className = "beast-card";

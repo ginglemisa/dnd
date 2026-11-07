@@ -29,7 +29,7 @@ let monsterNames = null;
 let monsterForms = null;
 function useMonsterContent(monsters) {
   monsterNames = new Map([...monsters.values()].map(monster => [monster.id, monster.name]));
-  monsterForms = new Map([...monsters.values()].map(monster => [monster.id, { label: monster.name, cr: monster.cr, hasFlight: monster.speed.fly !== undefined }]));
+  monsterForms = new Map([...monsters.values()].map(monster => [monster.id, { label: monster.name, cr: monster.cr, hasFlight: monster.speed.fly !== undefined, beast: monster.type === "beast" }]));
   tipTables = null;
 }
 function loadMonsterNames() {
@@ -65,6 +65,16 @@ function loadWildShapeBeasts() {
     return beast.label !== form.label || beast.cr !== form.cr || Boolean(beast.hasFlight) !== form.hasFlight || !crOrder.includes(beast.cr);
   }).map(beast => beast.key);
   if (mismatched.length) throw new Error(`druid-wild-shape-beasts.js 的 label、cr 或 hasFlight 與怪物內容檔不符（或 CR 不在 DRUID_WILD_SHAPE_CR_ORDER）：${mismatched.join("、")}`);
+  return { beasts, crOrder };
+}
+
+// 只供查閱的野獸（職業頁「查看其他動物」的第二層收合）：怪物內容檔中類型為野獸、但不在荒野形態清單的野獸，依 CR 分組。
+// 這些野獸無法用荒野形態變身，跑團模式不顯示。
+function loadReferenceOnlyBeasts() {
+  const listed = new Set(loadWildShapeBeasts().beasts.map(beast => beast.key));
+  const crValue = cr => cr.includes("/") ? cr.split("/").reduce((a, b) => Number(a) / Number(b)) : Number(cr);
+  const beasts = [...monsterForms].filter(([key, form]) => form.beast && !listed.has(key)).map(([key, form]) => ({ key, label: form.label, cr: form.cr }));
+  const crOrder = [...new Set(beasts.map(beast => beast.cr))].sort((a, b) => crValue(a) - crValue(b));
   return { beasts, crOrder };
 }
 
@@ -138,4 +148,4 @@ function readIndexSelectOptions(id) {
   return select ? [...select[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => ({ value: match[1], label: match[2] })) : null;
 }
 
-module.exports = { ROOT, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };
+module.exports = { ROOT, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadReferenceOnlyBeasts, loadSkillAbilities, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };
