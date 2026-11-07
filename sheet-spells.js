@@ -677,6 +677,9 @@ const SPELL_BEAST_REFERENCES = Object.freeze({
   "find-steed": Object.freeze([
     ["異界坐騎", "otherworldly_steed"]
   ]),
+  "phantom-steed": Object.freeze([
+    ["騎乘馬", "riding_horse"]
+  ]),
   "find-familiar": Object.freeze([
     ["蝙蝠", "bat"],
     ["貓", "cat"],

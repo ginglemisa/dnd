@@ -3,7 +3,7 @@
 // 職業頁「查看其他動物」由 npm run build 讀取同一份清單產生。
 const DRUID_WILD_SHAPE_BEASTS = [
   { key: "rat", label: "老鼠", cr: "0" },
-  { key: "riding_horse", label: "馱用馬", cr: "1/4" },
+  { key: "riding_horse", label: "騎乘馬", cr: "1/4" },
   { key: "spider", label: "蜘蛛", cr: "0" },
   { key: "wolf", label: "狼", cr: "1/4" },
   { key: "ape", label: "猿猴", cr: "1/2" },

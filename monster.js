@@ -1,122 +1,6 @@
 // monster.js
-// 共用怪物/野獸 tooltip 資料
-
-const skills_example_uses = {
-  "為什麼初始裝備要選兩次？ ℹ️": "職業和背景各自附一套初始裝備，所以要分開選。\n\n每一套都可以改拿金幣、自己去商店買；新手建議兩套都直接拿。",
-  "什麼是武器精通？ ℹ️": "每種武器都有一種精通效果，例如「推離」把敵人推開、「失衡」讓敵人倒地、「緩速」讓敵人走得更慢。\n\n只有你選定的武器才有這個效果，而且不用另外花動作。",
-  "卡片上的項目是什麼？ ℹ️": "**技能熟練**：你特別拿手的事。做這類事情擲骰時，會額外加分（1 級為 +2）。\n\n**起源專長**：角色一開始就擁有的特殊能力。\n\n**工具熟練**：你受過訓練的工具或樂器。使用它們擲骰時，同樣會額外加分。\n\n**可調整屬性**：步驟 3 可以把背景給的 3 點加在這幾項屬性上，單項最多 +2。\n\n**擴充**：本站以 SRD 為基礎另外編寫的內容，一樣可以選。如果你們的團只用官方內容，開團前先問 DM（帶團的主持人）。",
-  "什麼是施法屬性？ ℹ️": "施法屬性決定你的法術有多準、多難抵擋：這項屬性越高，法術攻擊越容易命中，敵人也越難躲開你的法術。\n\n**法術攻擊加值** = 調整值 + 熟練加值\n\n**法術豁免難度** = 8 + 熟練加值 + 調整值（敵人擲骰要達到這個數字，才能抵抗你的法術）",
-  "屬性怎麼調整？ ℹ️": "每項屬性從 8 開始，按 ▲ 升級會花掉點數，按 ▼ 降級會把點數還給你。\n\n**升到 9～13**：每 +1 花 1 點\n\n**升到 14、15**：每 +1 花 2 點\n\n**▲ 按不了？**代表已達上限 15，或剩餘點數不夠。點數不夠時，可把其他屬性按 ▼ 調低來換回點數。",
-  力量: "影響近戰武器的命中與傷害，以及運動技能。",
-  敏捷: "影響遠程與靈巧武器的命中與傷害、AC（防禦）和先攻，以及體操、巧手、隱匿技能。",
-  體質: "影響最大 HP，也影響受傷時能否維持專注。",
-  智力: "影響奧秘、歷史、調查、自然、宗教技能。\n\n法師用它施法。",
-  感知: "影響馴獸、洞悉、醫藥、察覺、求生技能。\n\n牧師、德魯伊、遊俠用它施法。",
-  魅力: "影響欺瞞、威嚇、表演、遊說技能。\n\n吟遊詩人、聖騎士、術士、契術師用它施法。",
-  調整值: "調整值是擲骰時實際加減的數字：（總值 − 10）÷ 2，無條件捨去。\n\n例如 15 是 +2、16 是 +3，所以加到偶數才會變強。",
-  關鍵屬性: "這個職業最依賴的屬性，建議優先調高。",
-  生命骰: "面數越大，血量越多：1 級最大 HP 以生命骰最大面數為基礎，再加體質調整值。\n\n休息時可消耗生命骰回復 HP。",
-  豁免熟練: "遇到危險或法術效果時，常要擲「豁免」來抵抗。\n\n這些屬性的豁免可多加熟練加值。",
-  技能額外加值: "除了熟練之外，這些技能的檢定還會多加這個數字。括號是來源。",
-  武器熟練: "用熟練的武器攻擊，命中檢定可加熟練加值。\n\n未熟練的武器也能用，但命中不加熟練加值，傷害照常。",
-  護甲訓練: "未受訓的護甲 AC 仍生效，但力量與敏捷相關的 D20 檢定有劣勢，且無法施放法術。\n\n未熟練的盾牌沒有 AC 加值。",
-  黑暗視覺: "即使沒有光，也能看見這個距離內的東西。魔法黑暗除外。",
-  豁免: "遇到法術、毒素等危險時，擲 D20 看能不能撐住或躲開。",
-  英雄激勵: "消耗**英雄激勵**可以重新擲出自己剛擲過的一顆骰子，並採用新結果。\n\n如果你在遊戲中表現精采，也許主持人會獎勵你一次英雄激勵。",
-  優勢: "當一次 D20 檢定具有優勢時，擲兩次 D20，取較高的結果，再加上原本的數字加值。\n\n例如擲出 7 和 16，就採用 16，再加上該次檢定的加值。",
-  劣勢: "當一次 D20 檢定具有劣勢時，擲兩次 D20，取較低的結果，再加上原本的數字加值。\n\n例如擲出 7 和 16，就採用 7，再加上該次檢定的加值。",
-  抗性: "對某種傷害具有抗性時，你受到的該類型傷害減半。\n\n例如你具有火焰傷害抗性，原本會受到 10 點火焰傷害，就只受到 5 點。抗性只適用於說明指定的傷害類型或該次傷害。",
-  藉機攻擊: "當你能看見的生物自行離開你的觸及範圍時，你可以使用反應，對該生物進行一次近戰攻擊。\n\n生物執行「撤離」後，本回合的移動不會引發藉機攻擊。",
-  武器未熟練: "使用此武器攻擊時，命中檢定不加入熟練加值，傷害正常計算。",
-  盾牌未熟練: "裝備此盾牌時，無法獲得盾牌提供的 AC 加值。",
-  護甲未熟練: "護甲 AC 正常生效，但力量與敏捷相關的 D20 檢定具有劣勢，且無法施放法術。",
-  目前HP: "在此填寫目前HP，再進入跑團模式。",
-  體操: "站穩不跌倒，或做出各種特技動作。",
-  馴獸: "安撫、訓練動物，或讓牠照你的意思行動。",
-  奧秘: "回憶法術、魔法物品和各種位面的知識。",
-  運動: "跳得比平常更遠、在急流中保持漂浮，或弄壞東西。",
-  欺瞞: "把謊話說得像真的，或讓自己的偽裝不露破綻。",
-  歷史: "回憶歷史事件、人物、國家和文化的知識。",
-  洞悉: "看出一個人的情緒和意圖。",
-  威嚇: "用氣勢或威脅逼對方照你的意思做。",
-  調查: "從書中找出冷門資訊，或推理某樣東西怎麼運作。",
-  醫藥: "判斷得了什麼病，或查明剛斷氣的人是怎麼死的。",
-  自然: "回憶地形、植物、動物和天氣的知識。",
-  察覺: "運用各種感官，注意到容易忽略的事物。",
-  表演: "演戲、說故事、演奏音樂，或跳舞。",
-  遊說: "以真誠、有禮的方式說服別人。",
-  宗教: "回憶神祇、宗教儀式和聖徽的知識。",
-  巧手: "扒竊、藏起手中的小東西，或表演手上把戲。",
-  隱匿: "安靜移動並躲藏，避免被人發現。",
-  生存: "追蹤足跡、尋找食物、找路，或避開自然危險。"
-};
-
-const SKILL_NAME_ALIASES = {
-  求生: "生存",
-  醫學: "醫藥",
-  說服: "遊說"
-};
-
-function normalizeSkillKey(skillName) {
-  return SKILL_NAME_ALIASES[skillName] || skillName;
-}
-
-// 套組提示框的內容物文字（職業起始裝備的套組名稱）：取自 equipment-data.js 的 EQUIPMENT_PACK_CONTENTS，與物品欄拆開的品項相同。
-function packTipText(packName) {
-  const contents = globalThis.EQUIPMENT_PACK_CONTENTS?.[packName];
-  return contents ? contents.map(([name, count]) => count > 1 ? `${name} ×${count}` : name).join("、") : "";
-}
-
-function skillTip(skillName) {
-  const safeLabel = String(skillName ?? "");
-  return `<span class="skill-tip" data-skill="${safeLabel}">${safeLabel}</span>`;
-}
-
-// 規則說明的鍵盤可操作入口；label 須對應 skills_example_uses 的鍵，text 可另訂顯示文字。
-function createFeatureRuleTip(label, text = label) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "skill-tip feature-rule-tip";
-  button.dataset.skill = label;
-  button.textContent = text;
-  button.setAttribute("aria-controls", "skillPopup");
-  return button;
-}
-
-// 僅處理職業／種族的顯示 HTML，不改寫供規則、摘要與 PDF 使用的原始資料。
-function highlightFeatureRuleTerms(html) {
-  // 技能、抗性與藉機攻擊只接受來源中的 skillTip() 標記，避免把一般敘述或標題當成引用。
-  const pattern = /優勢|劣勢/g;
-  const template = document.createElement("template");
-  template.innerHTML = html;
-  const makeTip = createFeatureRuleTip;
-  // 已有的技能連結也使用相同的鍵盤可操作入口，避免重複包裝。
-  template.content.querySelectorAll("span.skill-tip").forEach(tip => {
-    if (!tip.closest('a, button, select, [role="button"]')) tip.replaceWith(makeTip(tip.dataset.skill));
-  });
-  const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_TEXT);
-  const nodes = [];
-  while (walker.nextNode()) {
-    const node = walker.currentNode;
-    const boldLabel = node.parentElement?.closest("strong, b");
-    if (boldLabel && /[：:]\s*$/.test(boldLabel.textContent)) continue;
-    if (!node.parentElement?.closest('h1, h2, h3, h4, h5, h6, a, button, select, option, textarea, script, style, .skill-tip, .beast-tip, [role="button"], [contenteditable]')) nodes.push(node);
-  }
-  nodes.forEach(node => {
-    const text = node.textContent;
-    const matches = [...text.matchAll(pattern)];
-    if (!matches.length) return;
-    const fragment = document.createDocumentFragment();
-    let offset = 0;
-    matches.forEach(match => {
-      fragment.append(text.slice(offset, match.index), makeTip(match[0]));
-      offset = match.index + match[0].length;
-    });
-    fragment.append(text.slice(offset));
-    node.replaceWith(fragment);
-  });
-  return decorateDndConditionTips(template.innerHTML);
-}
+// 共用怪物/野獸資料（BEAST_STATS、BEAST_TABLETOP_DATA、BeastCatalog）與野獸資料卡的 HTML（renderBeastPopupHtml）；
+// 提示框浮層與技能／規則說明在 rule-tips.js。
 
 const BEAST_STATS = {
   otherworldly_steed: {
@@ -144,7 +28,7 @@ const BEAST_STATS = {
     attacks: "咬擊：命中+2, 範圍5呎, 刺傷1"
   },
   riding_horse: {
-    name: "馱用馬 (Riding Horse) CR:¼",
+    name: "騎乘馬 (Riding Horse) CR:¼",
     size_type: "大型野獸",
     ac: 11,
     hp: "13 (2d10+2)",
@@ -1052,3 +936,27 @@ globalThis.BeastCatalog = Object.freeze({
   getStatBlock(key) { return BEAST_STATS[key] || null; },
   get(key) { const stats = BEAST_STATS[key], data = BEAST_TABLETOP_DATA[key]; return stats && data ? { ...stats, ...data, key } : null; }
 });
+
+// 野獸資料卡（職業頁 .beast-tip 浮層、法術頁召喚物、跑團已知形態共用）。
+function renderBeastPopupHtml(s) {
+  const renderDetailLine = (label, value, className = "") => {
+    const text = String(value ?? "").trim();
+    if (!text || text === "—") return "";
+    const content = escapeHtml(text).replaceAll("\n", "<br>");
+    return `<div class="monster-detail-line${className ? ` ${className}` : ""}"><strong>${label}</strong> ${content}</div>`;
+  };
+
+  return `
+    <div class="title">${escapeHtml(s.name)} <span class="muted">${escapeHtml(s.size_type)}</span></div>
+    <div class="row">
+      <div><strong>AC</strong> ${escapeHtml(String(s.ac))}</div>
+      <div><strong>HP</strong> ${escapeHtml(String(s.hp))}</div>
+      <div><strong>速度</strong> ${escapeHtml(String(s.speed))}</div>
+    </div>
+${renderDetailLine("能力值", s.ability, "monster-detail-line--first")}
+${renderDetailLine("感官", s.senses)}
+${renderDetailLine("技能", s.skills)}
+${renderDetailLine("特性", s.traits)}
+${renderDetailLine("攻擊", s.attacks)}
+  `;
+}

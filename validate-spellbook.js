@@ -1235,6 +1235,14 @@ async function verifyFamiliarReferences(browser, url) {
       await page.evaluate(() => { void Spellbook.openReadOnly("find-steed", document.getElementById("spell-prepare")); });
       assert.equal(await readOnly.locator('button.spell-readonly-reference[data-beast="otherworldly_steed"]').textContent(), "異界坐騎", "find steed links the otherworldly steed");
       assert.equal((await readOnly.locator(".spell-readonly-description").textContent()).includes("<span"), false, "find steed shows no raw markup");
+      // 行內的野獸按鈕不套主題按鈕的最小高度，所在那一行和一般文字同高。
+      assert.equal(await readOnly.locator('button.spell-readonly-reference[data-beast="otherworldly_steed"]').evaluate(el => {
+        const line = parseFloat(getComputedStyle(el.parentElement).lineHeight);
+        return el.getBoundingClientRect().height <= line + 1;
+      }), true, "find steed: beast reference does not stretch its line");
+      await readOnly.locator(".app-dialog__button--primary").click();
+      await page.evaluate(() => { void Spellbook.openReadOnly("phantom-steed", document.getElementById("spell-prepare")); });
+      assert.equal(await readOnly.locator('button.spell-readonly-reference[data-beast="riding_horse"]').textContent(), "騎乘馬", "phantom steed links the riding horse");
       await readOnly.locator(".app-dialog__button--primary").click();
 
       // 魔祈頁的「獲得魔寵」：角色能力視窗上的法術詳情（快速創角視窗）

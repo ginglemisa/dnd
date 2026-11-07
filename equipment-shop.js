@@ -300,7 +300,10 @@
     });
     renderSpellOptions();
     options.append(levelSelect, spellSelect);
-    row.append(name, options, add);
+    // 已選數量合計這一列所有環階的卷軸。
+    const count = createElement("span", "equipment-shop__in-cart");
+    count.dataset.shopCount = items.map(item => item.key).join("\n");
+    row.append(name, options, count, add);
     return row;
   }
 
@@ -335,7 +338,7 @@
 
   function updateItemCounts() {
     view?.list.querySelectorAll("[data-shop-count]").forEach(element => {
-      const count = getItemCartQuantity(element.dataset.shopCount);
+      const count = element.dataset.shopCount.split("\n").reduce((sum, key) => sum + getItemCartQuantity(key), 0);
       element.textContent = count ? `已選 ${count}` : "";
     });
   }

@@ -12,7 +12,7 @@
 ## 架構
 
 * 原生 HTML／CSS／JavaScript 靜態網站，`index.html` 以傳統 `<script>` 依序載入全域模組。未經使用者同意，不新增前端框架、runtime dependency 或測試框架；開發依賴僅 `yaml`、`ajv`、Playwright。
-* 載入順序與每個標籤是否 `defer` 屬於契約：部分自 `index.html` 搬出的模組為同步載入，頂層只放宣告，驗證腳本與離線建置都依賴這個配置。變更全域 API、DOM ID、data attribute、檔名或載入順序時，搜尋並同步所有 JS、CSS、驗證腳本與 `build-offline-nopdf.ps1`。
+* 載入順序與每個標籤是否 `defer` 屬於契約：部分自 `index.html` 搬出的模組（如 `sheet-spells.js`、`rule-tips.js`）為同步載入，留在原本行內程式的位置：頂層可綁定在它之前已解析的 DOM、建立浮層並註冊事件，時機與順序和原本相同；`defer` 模組的 API 只在事件或呼叫時使用。驗證腳本與離線建置都依賴這個配置。變更全域 API、DOM ID、data attribute、檔名或載入順序時，搜尋並同步所有 JS、CSS、驗證腳本與 `build-offline-nopdf.ps1`。
 * 唯一的建置是內容檔：職業、子職、專長、背景、種族與法術都寫在 `content/` 的 YAML，`npm run build` 驗證後產生下列檔案。寫法見 [content/README.md](content/README.md)。產物不提交、不手改；網站只經讀取 API 使用，不從顯示文字反推規則。
   * `class-content.generated.js`：`classFeatures`（職業頁 HTML）、`classTabletopText`、`classRules`，經 `character-rules.js` 的 `getClassRules()` 等讀取。
   * `feat-content.generated.js`：`featRules`、`featText`，經 `getFeatRules()`、`getFeatText()`、`getAllFeatRules()` 讀取。
@@ -51,6 +51,7 @@
 | 工具、怪物 | `tool-data.js`、`monster.js` |
 | 法術 | `content/srd/spells/`（建置產物見上），`spell-list.js`（`SpellCatalog`）建立索引與 API；SRD 譯文檢查 `tools/spell-reference/` |
 | 狀態、神祇 | `condition.js`、`deity-info.js` |
+| 規則說明提示框（技能／規則詞表、技能／狀態／野獸浮層） | `rule-tips.js`；野獸資料卡 HTML `monster.js` 的 `renderBeastPopupHtml` |
 | 裝備與商店 | `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；物品欄資料 `inventory.js`（`Inventory`）、標籤介面 `inventory-ui.js` |
 | 角色卡 DOM、初始化、持久化、分享 | `index.html` |
 | 分享模式的鎖定、換法術職業表、AC 提示 | `share-readonly.js` |

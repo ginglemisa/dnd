@@ -86,7 +86,7 @@
     return text ? `<p class="quick-build-option-note">${escapeHtml(text)}</p>` : "";
   }
 
-  // 規則說明的提示入口：內容在 monster.js 的 skills_example_uses；鍵盤操作由 ensureWizard 統一處理。
+  // 規則說明的提示入口：內容在 rule-tips.js 的 skills_example_uses；鍵盤操作由 ensureWizard 統一處理。
   function infoTip(key, label = key) {
     const name = String(label).replace(/\s*ℹ️$/u, "");
     return `<span class="skill-tip" data-skill="${escapeHtml(key)}" role="button" tabindex="0" aria-label="${escapeHtml(`${name}：開啟說明`)}">${escapeHtml(label)}</span>`;
