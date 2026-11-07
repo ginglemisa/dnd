@@ -2,35 +2,25 @@
 id: camel
 name: 駱駝
 nameEn: Camel
-tabletop:
-  abilities:
-    str: 15
-    dex: 8
-    con: 17
-    int: 2
-    wis: 11
-    cha: 5
-  skills: {}
-  speeds:
-    步行: 50
-  actions:
-    - name: 咬擊
-      hit: 4
-      damage:
-        - type: 鈍擊傷害
-          expression: 1d4+2
-          fixed: 4
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1/8"
+xp: 25
+ac: 10
+initiative: -1
+hp: { average: 17, dice: 2d10+6 }
+speed: { walk: 50 }
+abilities: { str: 15, dex: 8, con: 17, int: 2, wis: 11, cha: 5 }
+saves: { con: 5 }
+senses: { darkvision: 60 }
+passivePerception: 10
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: bludgeoning, dice: 1d4+2 } ]
 site:
-  name: 駱駝 (Camel) CR:1/8
-  size_type: 大型野獸
-  ac: 10
-  hp: 17 (2d10+6)
-  speed: 50呎
-  ability: 力15(+2), 敏8(-1), 體17(+3), 智2(-4), 感11(+0), 魅5(-3)
-  senses: 黑暗視覺60呎, 被動察覺10
-  skills: —
-  traits: —
-  attacks: 咬擊：近戰攻擊檢定+4, 觸及5呎；命中：鈍擊傷害4(1d4+2)。
+  summary: 騎乘、長途負重
+  actions:
+    attack-0: { name: 咬擊 }

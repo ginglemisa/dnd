@@ -2,36 +2,24 @@
 id: giant_centipede
 name: 巨蜈蚣
 nameEn: Giant Centipede
-tabletop:
-  abilities:
-    str: 5
-    dex: 14
-    con: 12
-    int: 1
-    wis: 7
-    cha: 3
-  skills: {}
-  speeds:
-    步行: 30
-    攀爬: 30
-  actions:
-    - name: 咬擊
-      hit: 4
-      damage:
-        - type: 刺傷
-          expression: 1d4+2
-          fixed: 4
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: small
+type: beast
+alignment: unaligned
+cr: "1/4"
+xp: 50
+ac: 14
+initiative: 2
+hp: { average: 9, dice: 2d6+2 }
+speed: { walk: 30, climb: 30 }
+abilities: { str: 5, dex: 14, con: 12, int: 1, wis: 7, cha: 3 }
+senses: { blindsight: 30 }
+passivePerception: 8
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, dice: 1d4+2 } ]
 site:
-  name: 巨蜈蚣 (Giant Centipede) CR:1/4
-  size_type: 小型野獸
-  ac: 14
-  hp: 9 (2d6+2)
-  speed: 30呎, 攀爬30呎
-  ability: 力5(-3), 敏14(+2), 體12(+1), 智1(-5), 感7(-2), 魅3(-4)
-  senses: 盲視30呎, 被動察覺8
-  skills: —
-  traits: —
-  attacks: 咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷4(1d4+2)，目標中毒直到巨蜈蚣的下回合開始。
+  summary: 攀爬、使目標中毒
+  actions:
+    attack-0: { name: 咬擊, text: 目標陷入中毒，直到巨蜈蚣的下個回合開始。 }

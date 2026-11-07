@@ -2,40 +2,30 @@
 id: spider
 name: 蜘蛛
 nameEn: Spider
-tabletop:
-  abilities:
-    str: 2
-    dex: 14
-    con: 8
-    int: 1
-    wis: 10
-    cha: 2
-  skills:
-    隱匿: 4
-  speeds:
-    步行: 20
-    攀爬: 20
-  actions:
-    - name: 咬擊
-      hit: 4
-      damage:
-        - type: 刺傷
-          expression: ""
-          fixed: 1
-        - type: 毒傷
-          expression: 1d4
-          fixed: 2
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 12
+initiative: 2
+hp: { average: 1, dice: 1d4-1 }
+speed: { walk: 20, climb: 20 }
+abilities: { str: 2, dex: 14, con: 8, int: 1, wis: 10, cha: 2 }
+skills: { 隱匿: 4 }
+senses: { darkvision: 30 }
+passivePerception: 10
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, fixed: 1 }, { type: poison, dice: 1d4 } ]
 site:
-  name: 蜘蛛 (Spider) CR:0
-  size_type: 微型野獸
-  ac: 12
-  hp: 1 (1d4-1)
-  speed: 20呎, 攀爬20呎
-  ability: 力2(-4), 敏14(+2), 體8(-1), 智1(-5), 感10(+0), 魅2(-4)
-  senses: 黑暗視覺30呎, 被動察覺10
-  skills: 隱匿+4
-  traits: 蛛爬：可攀險地(如天花板)且毋須檢定, 網主：不受蛛網限制，感知同網生物
-  attacks: 咬擊：命中+4, 範圍5呎, 刺傷1 + 毒傷2(1d4)
+  summary: 爬牆、偵查
+  traits:
+    - name: 蛛行
+      text: 可攀爬困難表面（包括沿著天花板移動），無需進行屬性檢定。
+    - name: 網行者
+      text: 忽略蛛網造成的移動限制，並知道與同一張蛛網接觸的其他生物所在位置。
+  actions:
+    attack-0: { name: 咬擊 }

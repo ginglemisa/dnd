@@ -2,37 +2,28 @@
 id: wolf
 name: 狼
 nameEn: Wolf
-tabletop:
-  abilities:
-    str: 14
-    dex: 15
-    con: 12
-    int: 3
-    wis: 12
-    cha: 6
-  skills:
-    察覺: 5
-    隱匿: 4
-  speeds:
-    步行: 40
-  actions:
-    - name: 咬擊
-      hit: 4
-      damage:
-        - type: 刺傷
-          expression: 1d6+2
-          fixed: 5
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/4"
+xp: 50
+ac: 12
+initiative: 2
+hp: { average: 11, dice: 2d8+2 }
+speed: { walk: 40 }
+abilities: { str: 14, dex: 15, con: 12, int: 3, wis: 12, cha: 6 }
+skills: { 察覺: 5, 隱匿: 4 }
+senses: { darkvision: 60 }
+passivePerception: 15
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, dice: 1d6+2 } ]
 site:
-  name: 狼 (Wolf) CR:¼
-  size_type: 中型野獸
-  ac: 12
-  hp: 11 (2d8+2)
-  speed: 40呎
-  ability: 力14(+2), 敏15(+2), 體12(+1), 智3(-4), 感12(+1), 魅6(-2)
-  senses: 黑暗視覺60呎, 被動察覺15
-  skills: 察覺+5, 隱匿+4
-  traits: 群攻：若攻擊目標5呎內有狼方盟友(未失能),D20擲二取一
-  attacks: 咬擊：命中+4, 範圍5呎, 刺傷5(1d6+2), 使中小型目標獲得倒地狀態
+  summary: 群體戰鬥、追蹤
+  traits:
+    - name: 群攻
+      text: 若目標5呎內至少有一名狼的盟友，且該盟友未陷入失能，狼對該目標的攻擊檢定具有優勢。
+  actions:
+    attack-0: { name: 咬擊, text: 命中中型或更小的目標：目標倒地。 }

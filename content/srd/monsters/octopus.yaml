@@ -2,42 +2,34 @@
 id: octopus
 name: 章魚
 nameEn: Octopus
-tabletop:
-  abilities:
-    str: 4
-    dex: 15
-    con: 11
-    int: 3
-    wis: 10
-    cha: 4
-  skills:
-    察覺: 2
-    隱匿: 6
-  speeds:
-    步行: 5
-    游泳: 30
-  actions:
-    - name: 觸手
-      hit: 4
-      damage:
-        - type: 鈍擊傷害
-          expression: ""
-          fixed: 1
-      id: attack-0
-      mode: action
-    - id: ink
-      name: 墨雲
-      mode: reaction
-      recovery: daily
-  conditionalDamage: []
+source: srd
+size: small
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 12
+initiative: 2
+hp: { average: 3, dice: 1d6 }
+speed: { walk: 5, swim: 30 }
+abilities: { str: 4, dex: 15, con: 11, int: 3, wis: 10, cha: 4 }
+skills: { 察覺: 2, 隱匿: 6 }
+senses: { darkvision: 30 }
+passivePerception: 12
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: bludgeoning, fixed: 1 } ]
+  - id: ink
+    mode: reaction
+    recovery: daily
 site:
-  name: 章魚 (Octopus) CR:0
-  size_type: 小型野獸
-  ac: 12
-  hp: 3 (1d6)
-  speed: 5呎, 游泳30呎
-  ability: 力4(-3), 敏15(+2), 體11(+0), 智3(-4), 感10(+0), 魅4(-3)
-  senses: 黑暗視覺30呎, 被動察覺12
-  skills: 察覺+2, 隱匿+6
-  traits: 壓縮：可穿越最窄1吋空間且不額外耗移動；水下呼吸：僅能在水下呼吸
-  attacks: 觸手：近戰攻擊檢定+4, 觸及5呎；命中：鈍擊傷害1。反應─墨雲（每天1次）：水下5呎內生物回合結束時可觸發，釋放5呎立方重度遮蔽墨雲並立刻移動至多游泳速度。
+  summary: 水中潛行、擠過窄縫
+  traits:
+    - name: 壓縮
+      text: 可穿過最窄1吋寬的空間，且不需額外花費移動力。
+    - name: 水下呼吸
+      text: 只能在水下呼吸。
+  actions:
+    attack-0: { name: 觸手 }
+    ink: { name: 墨雲, text: 觸發：在水下時，有生物在章魚5呎內結束回合。釋放墨汁填滿以自身為中心的5呎立方，並移動至多其游泳速度；該區域重度遮蔽1分鐘，或直到強水流等效果將墨汁沖散。 }

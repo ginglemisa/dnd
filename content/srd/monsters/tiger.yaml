@@ -2,40 +2,28 @@
 id: tiger
 name: 老虎
 nameEn: Tiger
-tabletop:
-  abilities:
-    str: 17
-    dex: 16
-    con: 14
-    int: 3
-    wis: 12
-    cha: 8
-  skills:
-    察覺: 3
-    隱匿: 7
-  speeds:
-    步行: 40
-  actions:
-    - name: 撕裂
-      hit: 5
-      damage:
-        - type: 揮砍傷害
-          expression: 2d6+3
-          fixed: 10
-      id: attack-0
-      mode: action
-    - id: escape
-      name: 靈巧脫逃
-      mode: bonus
-  conditionalDamage: []
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 13
+initiative: 3
+hp: { average: 30, dice: 4d10+8 }
+speed: { walk: 40 }
+abilities: { str: 17, dex: 16, con: 14, int: 3, wis: 12, cha: 8 }
+skills: { 察覺: 3, 隱匿: 7 }
+senses: { darkvision: 60 }
+passivePerception: 13
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: slashing, dice: 2d6+3 } ]
+  - id: escape
+    mode: bonus
 site:
-  name: 老虎 (Tiger) CR:1
-  size_type: 大型野獸
-  ac: 13
-  hp: 30 (4d10+8)
-  speed: 40呎
-  ability: 力17(+3), 敏16(+3), 體14(+2), 智3(-4), 感12(+1), 魅8(-1)
-  senses: 黑暗視覺60呎, 被動察覺13
-  skills: 察覺+3, 隱匿+7
-  traits: 陣營：無陣營；語言：無
-  attacks: 撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害10(2d6+3)。若目標為大型或更小生物，目標倒地。附贈─靈巧脫逃：老虎執行撤離或躲藏動作。
+  summary: 潛行、撲倒
+  actions:
+    attack-0: { name: 撕裂, text: 命中大型或更小的目標：目標倒地。 }
+    escape: { name: 靈巧脫逃, text: 執行撤離或躲藏動作。 }

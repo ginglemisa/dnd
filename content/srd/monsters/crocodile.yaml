@@ -2,37 +2,28 @@
 id: crocodile
 name: 鱷魚
 nameEn: Crocodile
-tabletop:
-  abilities:
-    str: 15
-    dex: 10
-    con: 13
-    int: 2
-    wis: 10
-    cha: 5
-  skills:
-    隱匿: 2
-  speeds:
-    步行: 20
-    游泳: 30
-  actions:
-    - name: 咬擊
-      hit: 4
-      damage:
-        - type: 刺傷
-          expression: 1d8+2
-          fixed: 6
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1/2"
+xp: 100
+ac: 12
+initiative: 0
+hp: { average: 13, dice: 2d10+2 }
+speed: { walk: 20, swim: 30 }
+abilities: { str: 15, dex: 10, con: 13, int: 2, wis: 10, cha: 5 }
+saves: { con: 3 }
+skills: { 隱匿: 2 }
+passivePerception: 10
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, dice: 1d8+2 } ]
 site:
-  name: 鱷魚 (Crocodile) CR:1/2
-  size_type: 大型野獸
-  ac: 12
-  hp: 13 (2d10+2)
-  speed: 20呎, 游泳30呎
-  ability: 力15(+2), 敏10(+0), 體13(+1), 智2(-4), 感10(+0), 魅5(-3)
-  senses: 被動察覺10
-  skills: 隱匿+2
-  traits: 憋氣：可閉氣1小時
-  attacks: 咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷6(1d8+2)。若目標為中型或更小，會陷入擒抱（掙脫DC12）；擒抱期間同時受束縛。
+  summary: 游泳、擒抱
+  traits:
+    - name: 憋氣
+      text: 可憋氣1小時。
+  actions:
+    attack-0: { name: 咬擊, text: 命中中型或更小的目標：目標陷入擒抱（掙脫DC12），擒抱期間同時陷入束縛。 }

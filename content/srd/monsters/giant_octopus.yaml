@@ -2,42 +2,32 @@
 id: giant_octopus
 name: 巨章魚
 nameEn: Giant Octopus
-tabletop:
-  abilities:
-    str: 17
-    dex: 13
-    con: 13
-    int: 5
-    wis: 10
-    cha: 4
-  skills:
-    察覺: 4
-    隱匿: 5
-  speeds:
-    步行: 10
-    游泳: 60
-  actions:
-    - name: 觸手
-      hit: 5
-      damage:
-        - type: 鈍擊傷害
-          expression: 2d6+3
-          fixed: 10
-      id: attack-0
-      mode: action
-    - id: ink
-      name: 墨雲
-      mode: reaction
-      recovery: daily
-  conditionalDamage: []
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 11
+initiative: 1
+hp: { average: 45, dice: 7d10+7 }
+speed: { walk: 10, swim: 60 }
+abilities: { str: 17, dex: 13, con: 13, int: 5, wis: 10, cha: 4 }
+skills: { 察覺: 4, 隱匿: 5 }
+senses: { darkvision: 60 }
+passivePerception: 14
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 10 }
+    damage: [ { type: bludgeoning, dice: 2d6+3 } ]
+  - id: ink
+    mode: reaction
+    recovery: daily
 site:
-  name: 巨章魚 (Giant Octopus) CR:1
-  size_type: 大型野獸
-  ac: 11
-  hp: 45 (7d10+7)
-  speed: 10呎, 游泳60呎
-  ability: 力17(+3), 敏13(+1), 體13(+1), 智5(-3), 感10(+0), 魅4(-3)
-  senses: 黑暗視覺60呎, 被動察覺14
-  skills: 察覺+4, 隱匿+5
-  traits: 陣營：無陣營；語言：無；水下呼吸：巨章魚只能在水下呼吸，但在水外可憋氣1小時。
-  attacks: 觸手：近戰攻擊檢定+5, 觸及10呎；命中：鈍擊傷害10(2d6+3)。若目標為中型或更小生物，目標被八條觸手擒抱（掙脫DC13），且擒抱期間同時受束縛。反應─墨雲（每天1次）：巨章魚在水下受到傷害時觸發；巨章魚釋放墨汁，填滿以自身為中心的10呎立方區域，並移動至多其游泳速度。該區域重度遮蔽1分鐘，或直到強水流或類似效果將墨汁沖散。
+  summary: 水中擒抱、墨雲脫身
+  traits:
+    - name: 水下呼吸
+      text: 只能在水下呼吸，但在水外可憋氣1小時。
+  actions:
+    attack-0: { name: 觸手, text: 命中中型或更小的目標：目標被八條觸手擒抱（掙脫DC13），擒抱期間同時陷入束縛。 }
+    ink: { name: 墨雲, text: 觸發：在水下受到傷害。釋放墨汁填滿以自身為中心的10呎立方，並移動至多其游泳速度；該區域重度遮蔽1分鐘，或直到強水流等效果將墨汁沖散。 }

@@ -2,35 +2,23 @@
 id: draft_horse
 name: 挽馬
 nameEn: Draft Horse
-tabletop:
-  abilities:
-    str: 18
-    dex: 10
-    con: 15
-    int: 2
-    wis: 11
-    cha: 7
-  skills: {}
-  speeds:
-    步行: 40
-  actions:
-    - name: 蹄擊
-      hit: 6
-      damage:
-        - type: 鈍擊傷害
-          expression: 1d4+4
-          fixed: 6
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1/4"
+xp: 50
+ac: 10
+initiative: 0
+hp: { average: 15, dice: 2d10+4 }
+speed: { walk: 40 }
+abilities: { str: 18, dex: 10, con: 15, int: 2, wis: 11, cha: 7 }
+passivePerception: 10
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 6, reach: 5 }
+    damage: [ { type: bludgeoning, dice: 1d4+4 } ]
 site:
-  name: 挽馬 (Draft Horse) CR:1/4
-  size_type: 大型野獸
-  ac: 10
-  hp: 15 (2d10+4)
-  speed: 40呎
-  ability: 力18(+4), 敏10(+0), 體15(+2), 智2(-4), 感11(+0), 魅7(-2)
-  senses: 被動察覺10
-  skills: —
-  traits: —
-  attacks: 蹄擊：近戰攻擊檢定+6, 觸及5呎；命中：鈍擊傷害6(1d4+4)。
+  summary: 負重、拉車
+  actions:
+    attack-0: { name: 蹄擊 }

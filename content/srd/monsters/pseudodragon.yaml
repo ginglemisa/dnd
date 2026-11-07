@@ -2,14 +2,34 @@
 id: pseudodragon
 name: 偽龍
 nameEn: Pseudodragon
+source: srd
+size: tiny
+type: dragon
+alignment: neutral-good
+cr: "1/4"
+xp: 50
+ac: 14
+initiative: 2
+hp: { average: 10, dice: 3d4+3 }
+speed: { walk: 15, fly: 60 }
+abilities: { str: 6, dex: 15, con: 13, int: 10, wis: 12, cha: 10 }
+skills: { 察覺: 5, 隱匿: 4 }
+senses: { blindsight: 10, darkvision: 60 }
+passivePerception: 15
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, dice: 1d4+2 } ]
+  - id: sting
+    save: { ability: con, dc: 12 }
+    damage: [ { type: poison, dice: 2d4 } ]
 site:
-  name: 偽龍 (Pseudodragon) CR:1/4
-  size_type: 微型龍類
-  ac: 14
-  hp: 10 (3d4+3)
-  speed: 15呎, 飛行60呎
-  ability: 力6(-2), 敏15(+2), 體13(+1), 智10(+0), 感12(+1), 魅10(+0)
-  senses: 盲視10呎, 黑暗視覺60呎, 被動察覺15
-  skills: 察覺+5, 隱匿+4
-  traits: 魔法抗性：對抗法術與其他魔法效應的豁免檢定具有優勢
-  attacks: 多重攻擊：進行兩次啃咬。啃咬：近戰攻擊檢定+4, 觸及5呎；命中：刺傷4(1d4+2)。螫刺：體質豁免DC12，5呎內可見生物；失敗：毒傷5(2d4)且中毒1小時。目標中毒期間同時陷入昏迷；若目標受傷，或5呎內生物用動作喚醒，則可提前結束。
+  traits:
+    - name: 魔法抗性
+      text: 對抗法術與其他魔法效應的豁免具有優勢。
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次咬擊。 }
+    attack-0: { name: 咬擊 }
+    sting: { name: 螫刺, text: "5呎內一名可見生物進行{save}；失敗：{damage}，並陷入中毒1小時。失敗5以上：中毒期間同時陷入昏迷；目標受到傷害，或5呎內的生物以一個動作喚醒它時提早結束。" }
+  languages: 聽得懂通用語和龍語，但不會說

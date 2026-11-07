@@ -2,36 +2,24 @@
 id: giant_bat
 name: 巨蝙蝠
 nameEn: Giant Bat
-tabletop:
-  abilities:
-    str: 15
-    dex: 16
-    con: 11
-    int: 2
-    wis: 12
-    cha: 6
-  skills: {}
-  speeds:
-    步行: 10
-    飛行: 60
-  actions:
-    - name: 咬擊
-      hit: 5
-      damage:
-        - type: 刺傷
-          expression: 1d6+3
-          fixed: 6
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1/4"
+xp: 50
+ac: 13
+initiative: 3
+hp: { average: 22, dice: 4d10 }
+speed: { walk: 10, fly: 60 }
+abilities: { str: 15, dex: 16, con: 11, int: 2, wis: 12, cha: 6 }
+senses: { blindsight: 120 }
+passivePerception: 11
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: piercing, dice: 1d6+3 } ]
 site:
-  name: 巨蝙蝠 (Giant Bat) CR:1/4
-  size_type: 大型野獸
-  ac: 13
-  hp: 22 (4d10)
-  speed: 10呎, 飛行60呎
-  ability: 力15(+2), 敏16(+3), 體11(+0), 智2(-4), 感12(+1), 魅6(-2)
-  senses: 盲視120呎, 被動察覺11
-  skills: —
-  traits: 陣營：無陣營；語言：無
-  attacks: 咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷6(1d6+3)。
+  summary: 飛行、盲視偵查
+  actions:
+    attack-0: { name: 咬擊 }

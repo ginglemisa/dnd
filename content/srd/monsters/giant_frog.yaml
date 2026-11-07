@@ -2,44 +2,33 @@
 id: giant_frog
 name: 巨蛙
 nameEn: Giant Frog
-tabletop:
-  abilities:
-    str: 12
-    dex: 13
-    con: 11
-    int: 2
-    wis: 10
-    cha: 3
-  skills:
-    察覺: 2
-    隱匿: 4
-  speeds:
-    步行: 30
-    游泳: 30
-  actions:
-    - name: 咬擊
-      hit: 3
-      damage:
-        - type: 刺傷
-          expression: 1d6+2
-          fixed: 5
-      id: attack-0
-      mode: action
-    - id: swallow
-      name: 吞下
-      mode: action
-      damage:
-        - type: 酸傷（下回合結束）
-          expression: 2d4
-  conditionalDamage: []
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/4"
+xp: 50
+ac: 11
+initiative: 1
+hp: { average: 18, dice: 4d8 }
+speed: { walk: 30, swim: 30 }
+abilities: { str: 12, dex: 13, con: 11, int: 2, wis: 10, cha: 3 }
+skills: { 察覺: 2, 隱匿: 4 }
+senses: { darkvision: 30 }
+passivePerception: 12
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 3, reach: 5 }
+    damage: [ { type: piercing, dice: 1d6+2 } ]
+  - id: swallow
+    damage: [ { type: acid, dice: 2d4, timing: next-turn-end } ]
 site:
-  name: 巨蛙 (Giant Frog) CR:1/4
-  size_type: 中型野獸
-  ac: 11
-  hp: 18 (4d8)
-  speed: 30呎, 游泳30呎
-  ability: 力12(+1), 敏13(+1), 體11(+0), 智2(-4), 感10(+0), 魅3(-4)
-  senses: 黑暗視覺30呎, 被動察覺12
-  skills: 察覺+2, 隱匿+4
-  traits: 兩棲：可在空氣和水中呼吸；立定跳躍：助跑與否皆可跳遠20呎、跳高10呎
-  attacks: 咬擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷5(1d6+2)。若目標為中型或更小，會陷入擒抱（掙脫DC11）。吞下：吞下其擒抱中的小型或更小目標；目標陷入目盲與束縛，且對外部效果具有全掩護。巨蛙下回合結束時目標承受酸傷5(2d4)，若未因此死亡則被吐出並倒地。
+  summary: 水陸兩棲、吞下小型目標
+  traits:
+    - name: 兩棲
+      text: 可在空氣和水中呼吸。
+    - name: 立定跳躍
+      text: 無論有無助跑，跳遠最遠20呎、跳高最高10呎。
+  actions:
+    attack-0: { name: 咬擊, text: 命中中型或更小的目標：目標陷入擒抱（掙脫DC11）。 }
+    swallow: { name: 吞下, text: "吞下一名被巨蛙擒抱的小型或更小目標。目標不再被擒抱，但陷入失明與束縛，且對巨蛙外部的攻擊與效果具有全掩護；吞著目標時巨蛙不能咬擊。巨蛙的下個回合結束時，目標受到{damage}；若沒因此死亡，就被吐出並倒地。巨蛙死亡時，被吞下的目標不再受束縛，可花費5呎移動力從屍體爬出並倒地。" }

@@ -2,49 +2,34 @@
 id: giant_spider
 name: 巨蜘蛛
 nameEn: Giant Spider
-tabletop:
-  abilities:
-    str: 14
-    dex: 16
-    con: 12
-    int: 2
-    wis: 11
-    cha: 4
-  skills:
-    察覺: 4
-    隱匿: 7
-  speeds:
-    步行: 30
-    攀爬: 30
-  actions:
-    - name: 咬擊
-      hit: 5
-      damage:
-        - type: 刺傷
-          expression: 1d8+3
-          fixed: 7
-        - type: 毒傷
-          expression: 2d6
-          fixed: 7
-      id: attack-0
-      mode: action
-    - id: web
-      name: 蛛網
-      mode: action
-      recovery: recharge-5
-      damage: []
-      save:
-        ability: 敏捷
-        dc: 13
-  conditionalDamage: []
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 14
+initiative: 3
+hp: { average: 26, dice: 4d10+4 }
+speed: { walk: 30, climb: 30 }
+abilities: { str: 14, dex: 16, con: 12, int: 2, wis: 11, cha: 4 }
+skills: { 察覺: 4, 隱匿: 7 }
+senses: { darkvision: 60 }
+passivePerception: 14
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: piercing, dice: 1d8+3 }, { type: poison, dice: 2d6 } ]
+  - id: web
+    recovery: recharge-5
+    save: { ability: dex, dc: 13 }
 site:
-  name: 巨蜘蛛 (Giant Spider) CR:1
-  size_type: 大型野獸
-  ac: 14
-  hp: 26 (4d10+4)
-  speed: 30呎, 攀爬30呎
-  ability: 力14(+2), 敏16(+3), 體12(+1), 智2(-4), 感11(+0), 魅4(-3)
-  senses: 黑暗視覺60呎, 被動察覺14
-  skills: 察覺+4, 隱匿+7
-  traits: 陣營：無陣營；語言：無；蛛行：可攀爬困難表面，包括沿著天花板移動，而無需進行屬性檢定；網行者：忽略蛛網造成的移動限制，並知道與同一張蛛網接觸的其他生物所在位置。
-  attacks: 咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷7(1d8+3)外加毒傷7(2d6)。蛛網（充能5–6）：60呎內一名可見生物進行DC13敏捷豁免；失敗：目標陷入束縛，直到蛛網被摧毀。蛛網AC10、HP5、易受火焰傷害，並免疫毒素與心靈傷害。
+  summary: 攀牆、蛛網束縛
+  traits:
+    - name: 蛛行
+      text: 可攀爬困難表面（包括沿著天花板移動），無需進行屬性檢定。
+    - name: 網行者
+      text: 忽略蛛網造成的移動限制，並知道與同一張蛛網接觸的其他生物所在位置。
+  actions:
+    attack-0: { name: 咬擊 }
+    web: { name: 蛛網, text: "60呎內一名可見生物進行{save}；失敗：目標陷入束縛，直到蛛網被摧毀（蛛網AC10、HP5，易受火焰傷害，免疫毒素與心靈傷害）。" }

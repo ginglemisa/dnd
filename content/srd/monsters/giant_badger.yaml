@@ -2,36 +2,26 @@
 id: giant_badger
 name: 巨獾
 nameEn: Giant Badger
-tabletop:
-  abilities:
-    str: 13
-    dex: 10
-    con: 17
-    int: 2
-    wis: 12
-    cha: 5
-  skills:
-    察覺: 3
-  speeds:
-    步行: 10
-  actions:
-    - name: 咬擊
-      hit: 3
-      damage:
-        - type: 刺傷
-          expression: 2d4+1
-          fixed: 6
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/4"
+xp: 50
+ac: 13
+initiative: 0
+hp: { average: 15, dice: 2d8+6 }
+speed: { walk: 30, burrow: 10 }
+abilities: { str: 13, dex: 10, con: 17, int: 2, wis: 12, cha: 5 }
+skills: { 察覺: 3 }
+senses: { darkvision: 60 }
+passivePerception: 13
+damageResistances: [ poison ]
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 3, reach: 5 }
+    damage: [ { type: piercing, dice: 2d4+1 } ]
 site:
-  name: 巨獾 (Giant Badger) CR:1/4
-  size_type: 中型野獸
-  ac: 13
-  hp: 15 (2d8+6)
-  speed: 30呎, 挖掘10呎
-  ability: 力13(+1), 敏10(+0), 體17(+3), 智2(-4), 感12(+1), 魅5(-3)
-  senses: 黑暗視覺60呎, 被動察覺13
-  skills: 察覺+3
-  traits: 抗性：毒素
-  attacks: 咬擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷6(2d4+1)。
+  summary: 挖洞、抗毒
+  actions:
+    attack-0: { name: 咬擊 }

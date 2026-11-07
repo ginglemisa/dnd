@@ -2,37 +2,27 @@
 id: boar
 name: 野豬
 nameEn: Boar
-tabletop:
-  abilities:
-    str: 13
-    dex: 11
-    con: 14
-    int: 2
-    wis: 9
-    cha: 5
-  skills: {}
-  speeds:
-    步行: 40
-  actions:
-    - name: 撞擊
-      hit: 3
-      damage:
-        - type: 刺傷
-          expression: 1d6+1
-          fixed: 4
-      id: attack-0
-      mode: action
-  conditionalDamage:
-    - name: 衝鋒額外傷害
-      expression: 1d6
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/4"
+xp: 50
+ac: 11
+initiative: 0
+hp: { average: 13, dice: 2d8+4 }
+speed: { walk: 40 }
+abilities: { str: 13, dex: 11, con: 14, int: 2, wis: 9, cha: 5 }
+passivePerception: 9
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 3, reach: 5 }
+    damage: [ { type: piercing, dice: 1d6+1 } ]
+    conditional: [ { when: charge-extra, type: piercing, dice: 1d6 } ]
 site:
-  name: 野豬 (Boar) CR:1/4
-  size_type: 中型野獸
-  ac: 11
-  hp: 13 (2d8+4)
-  speed: 40呎
-  ability: 力13(+1), 敏11(+0), 體14(+2), 智2(-4), 感9(-1), 魅5(-3)
-  senses: 被動察覺9
-  skills: —
-  traits: 浴血之怒：處於受創（Bloodied）時，攻擊檢定具優勢
-  attacks: 撞擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷4(1d6+1)。若野豬先直線移動20呎以上再命中中型或更小目標，目標額外承受刺傷3(1d6)並倒地。
+  summary: 衝鋒撞倒
+  traits:
+    - name: 浴血之怒
+      text: 處於受創時，攻擊檢定具有優勢。
+  actions:
+    attack-0: { name: 獠牙, text: "先直線朝目標移動20呎以上再命中中型或更小的目標：目標額外受到{conditional}並倒地。" }

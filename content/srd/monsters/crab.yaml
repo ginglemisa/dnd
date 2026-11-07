@@ -2,37 +2,28 @@
 id: crab
 name: 螃蟹
 nameEn: Crab
-tabletop:
-  abilities:
-    str: 6
-    dex: 11
-    con: 12
-    int: 1
-    wis: 8
-    cha: 2
-  skills:
-    隱匿: 2
-  speeds:
-    步行: 20
-    游泳: 20
-  actions:
-    - name: 螯擊
-      hit: 2
-      damage:
-        - type: 鈍擊傷害
-          expression: ""
-          fixed: 1
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 11
+initiative: 0
+hp: { average: 3, dice: 1d4+1 }
+speed: { walk: 20, swim: 20 }
+abilities: { str: 6, dex: 11, con: 12, int: 1, wis: 8, cha: 2 }
+skills: { 隱匿: 2 }
+senses: { blindsight: 30 }
+passivePerception: 9
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 2, reach: 5 }
+    damage: [ { type: bludgeoning, fixed: 1 } ]
 site:
-  name: 螃蟹 (Crab) CR:0
-  size_type: 微型野獸
-  ac: 11
-  hp: 3 (1d4+1)
-  speed: 20呎, 游泳20呎
-  ability: 力6(-2), 敏11(+0), 體12(+1), 智1(-5), 感8(-1), 魅2(-4)
-  senses: 盲視30呎, 被動察覺9
-  skills: 隱匿+2
-  traits: 兩棲：可在空氣和水中呼吸
-  attacks: 螯擊：近戰攻擊檢定+2, 觸及5呎；命中：鈍擊傷害1。
+  summary: 水陸兩棲、盲視
+  traits:
+    - name: 兩棲
+      text: 可在空氣和水中呼吸。
+  actions:
+    attack-0: { name: 螯擊 }

@@ -2,50 +2,31 @@
 id: ape
 name: 猿猴
 nameEn: Ape
-tabletop:
-  abilities:
-    str: 16
-    dex: 14
-    con: 14
-    int: 6
-    wis: 12
-    cha: 7
-  skills:
-    運動: 5
-    察覺: 3
-  speeds:
-    步行: 30
-    攀爬: 30
-  actions:
-    - name: 拳擊
-      hit: 5
-      damage:
-        - type: 鈍擊傷害
-          expression: 1d4+3
-          fixed: 5
-      id: attack-0
-      mode: action
-    - name: 石塊（充能6）
-      hit: 5
-      damage:
-        - type: 鈍擊傷害
-          expression: 2d6+3
-          fixed: 10
-      id: attack-1
-      mode: action
-      recovery: recharge-6
-    - id: multi
-      name: 多重攻擊
-      mode: action
-  conditionalDamage: []
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/2"
+xp: 100
+ac: 12
+initiative: 2
+hp: { average: 19, dice: 3d8+6 }
+speed: { walk: 30, climb: 30 }
+abilities: { str: 16, dex: 14, con: 14, int: 6, wis: 12, cha: 7 }
+skills: { 運動: 5, 察覺: 3 }
+passivePerception: 13
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: bludgeoning, dice: 1d4+3 } ]
+  - id: attack-1
+    recovery: recharge-6
+    attack: { kind: ranged, hit: 5, range: [ 25, 50 ] }
+    damage: [ { type: bludgeoning, dice: 2d6+3 } ]
 site:
-  name: 猿猴 (Ape) CR:1/2
-  size_type: 中型野獸
-  ac: 12
-  hp: 19 (3d8+6)
-  speed: 30呎, 攀爬30呎
-  ability: 力16(+3), 敏14(+2), 體14(+2), 智6(-2), 感12(+1), 魅7(-2)
-  senses: 被動察覺13
-  skills: 運動+5, 察覺+3
-  traits: —
-  attacks: 多重攻擊：進行兩次拳擊。拳擊：近戰攻擊檢定+5, 觸及5呎；命中：鈍擊傷害5(1d4+3)。石塊（充能6）：遠程攻擊檢定+5, 射程25/50呎；命中：鈍擊傷害10(2d6+3)。
+  summary: 攀爬、投擲石塊
+  actions:
+    multi: { name: 多重攻擊, text: 進行兩次拳擊。 }
+    attack-0: { name: 拳擊 }
+    attack-1: { name: 石塊 }

@@ -11,7 +11,7 @@ const BASELINE_FILE = path.join(ROOT, "monster-id-baseline.json");
 const CATEGORIES = Object.freeze({ monsters: "怪物 key", actions: "怪物動作 ID（key:動作 id）" });
 
 function monsterActions(monster) {
-  return (monster.tabletop?.actions || []).map(action => `${monster.id}:${action.id}`);
+  return monster.actions.map(action => `${monster.id}:${action.id}`);
 }
 
 function checkMonsterIdBaseline(monsters, { update = false } = {}) {

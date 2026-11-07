@@ -2,14 +2,34 @@
 id: sphinx_of_wonder
 name: 神奇斯芬克斯
 nameEn: Sphinx of Wonder
+source: srd
+size: tiny
+type: celestial
+alignment: lawful-good
+cr: "1"
+xp: 200
+ac: 13
+initiative: 3
+hp: { average: 24, dice: 7d4+7 }
+speed: { walk: 20, fly: 40 }
+abilities: { str: 6, dex: 17, con: 13, int: 15, wis: 12, cha: 11 }
+skills: { 奧秘: 4, 宗教: 4, 隱匿: 5 }
+senses: { darkvision: 60 }
+passivePerception: 11
+damageResistances: [ necrotic, psychic, radiant ]
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: slashing, dice: 1d4+3 }, { type: radiant, dice: 2d6 } ]
+  - id: burst-of-ingenuity
+    mode: reaction
+    recovery: daily
+    uses: 2
 site:
-  name: 神奇斯芬克斯 (Sphinx of Wonder) CR:1
-  size_type: 微型天界生物
-  ac: 13
-  hp: 24 (7d4+7)
-  speed: 20呎, 飛行40呎
-  ability: 力6(-2), 敏17(+3), 體13(+1), 智15(+2), 感12(+1), 魅11(+0)
-  senses: 黑暗視覺60呎, 被動察覺11
-  skills: 奧秘+4, 宗教+4, 隱匿+5
-  traits: 魔法抗性：對抗法術與其他魔法效應的豁免檢定具有優勢；抗性：黯蝕、心靈、光耀
-  attacks: 撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害5(1d4+3)外加光耀傷害7(2d6)。反應─巧思迸發（每天2次）：當自身或30呎內其他生物進行屬性檢定或豁免時，擲骰結果+2。
+  traits:
+    - name: 魔法抗性
+      text: 對抗法術與其他魔法效應的豁免具有優勢。
+  actions:
+    attack-0: { name: 撕裂 }
+    burst-of-ingenuity: { name: 巧思迸發, text: 觸發：斯芬克斯或其30呎內的另一名生物進行屬性檢定或豁免。該擲骰結果+2。 }
+  languages: 天界語、通用語

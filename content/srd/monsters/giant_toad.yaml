@@ -2,45 +2,32 @@
 id: giant_toad
 name: 巨蟾蜍
 nameEn: Giant Toad
-tabletop:
-  abilities:
-    str: 15
-    dex: 13
-    con: 13
-    int: 2
-    wis: 10
-    cha: 3
-  skills: {}
-  speeds:
-    步行: 30
-    游泳: 30
-  actions:
-    - name: 咬擊
-      hit: 4
-      damage:
-        - type: 刺傷
-          expression: 1d6+2
-          fixed: 5
-        - type: 毒傷
-          expression: 2d4
-          fixed: 5
-      id: attack-0
-      mode: action
-    - id: swallow
-      name: 吞下
-      mode: action
-      damage:
-        - type: 酸傷（回合結束）
-          expression: 3d6
-  conditionalDamage: []
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 11
+initiative: 1
+hp: { average: 39, dice: 6d10+6 }
+speed: { walk: 30, swim: 30 }
+abilities: { str: 15, dex: 13, con: 13, int: 2, wis: 10, cha: 3 }
+senses: { darkvision: 60 }
+passivePerception: 10
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, dice: 1d6+2 }, { type: poison, dice: 2d4 } ]
+  - id: swallow
+    damage: [ { type: acid, dice: 3d6, timing: each-turn-end } ]
 site:
-  name: 巨蟾蜍 (Giant Toad) CR:1
-  size_type: 大型野獸
-  ac: 11
-  hp: 39 (6d10+6)
-  speed: 30呎, 游泳30呎
-  ability: 力15(+2), 敏13(+1), 體13(+1), 智2(-4), 感10(+0), 魅3(-4)
-  senses: 黑暗視覺60呎, 被動察覺10
-  skills: —
-  traits: 陣營：無陣營；語言：無；兩棲：可在空氣和水中呼吸；立定跳躍：無論有無助跑，跳遠距離最多20呎，跳高距離最多10呎。
-  attacks: 咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷5(1d6+2)外加毒傷5(2d4)。若目標為中型或更小生物，目標陷入擒抱（掙脫DC12）。吞下：吞下一名被其擒抱的中型或更小目標。被吞下期間，目標不再被擒抱，但陷入目盲與束縛，且對外界的攻擊與其他效果具有全掩護；此外，目標在巨蟾蜍每回合結束時受到酸傷10(3d6)。巨蟾蜍一次只能吞下一個目標，且吞著目標時不能使用咬擊。若巨蟾蜍死亡，被吞下的生物不再受束縛，並可花費5呎移動力從屍體中逃出，離開時倒地。
+  summary: 水陸兩棲、吞下目標
+  traits:
+    - name: 兩棲
+      text: 可在空氣和水中呼吸。
+    - name: 立定跳躍
+      text: 無論有無助跑，跳遠最遠20呎、跳高最高10呎。
+  actions:
+    attack-0: { name: 咬擊, text: 命中中型或更小的目標：目標陷入擒抱（掙脫DC12）。 }
+    swallow: { name: 吞下, text: "吞下一名被巨蟾蜍擒抱的中型或更小目標。目標不再被擒抱，但陷入失明與束縛，且對巨蟾蜍外部的攻擊與效果具有全掩護；巨蟾蜍每個回合結束時，目標受到{damage}。巨蟾蜍一次只能吞下一個目標，吞著目標時不能咬擊。巨蟾蜍死亡時，被吞下的生物不再受束縛，可花費5呎移動力從屍體爬出並倒地。" }

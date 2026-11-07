@@ -2,48 +2,31 @@
 id: brown_bear
 name: 棕熊
 nameEn: Brown Bear
-tabletop:
-  abilities:
-    str: 17
-    dex: 12
-    con: 15
-    int: 2
-    wis: 13
-    cha: 7
-  skills:
-    察覺: 3
-  speeds:
-    步行: 40
-    攀爬: 30
-  actions:
-    - name: 咬擊
-      hit: 5
-      damage:
-        - type: 刺傷
-          expression: 1d8+3
-          fixed: 7
-      id: attack-0
-      mode: action
-    - name: 爪擊
-      hit: 5
-      damage:
-        - type: 揮砍傷害
-          expression: 1d4+3
-          fixed: 5
-      id: attack-1
-      mode: action
-    - id: multi
-      name: 多重攻擊
-      mode: action
-  conditionalDamage: []
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 11
+initiative: 1
+hp: { average: 22, dice: 3d10+6 }
+speed: { walk: 40, climb: 30 }
+abilities: { str: 17, dex: 12, con: 15, int: 2, wis: 13, cha: 7 }
+skills: { 察覺: 3 }
+senses: { darkvision: 60 }
+passivePerception: 13
+actions:
+  - id: multi
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: piercing, dice: 1d8+3 } ]
+  - id: attack-1
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: slashing, dice: 1d4+3 } ]
 site:
-  name: 棕熊 (Brown Bear) CR:1
-  size_type: 大型野獸
-  ac: 11
-  hp: 22 (3d10+6)
-  speed: 40呎, 攀爬30呎
-  ability: 力17(+3), 敏12(+1), 體15(+2), 智2(-4), 感13(+1), 魅7(-2)
-  senses: 黑暗視覺60呎, 被動察覺13
-  skills: 察覺+3
-  traits: 陣營：無陣營；語言：無
-  attacks: 多重攻擊：棕熊進行一次咬擊與一次爪擊。咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷7(1d8+3)。爪擊：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害5(1d4+3)。若目標為大型或更小生物，目標倒地。
+  summary: 攀爬、近戰
+  actions:
+    multi: { name: 多重攻擊, text: 進行一次咬擊與一次爪擊。 }
+    attack-0: { name: 咬擊 }
+    attack-1: { name: 爪擊, text: 命中大型或更小的目標：目標倒地。 }

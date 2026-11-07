@@ -2,37 +2,27 @@
 id: raven
 name: 渡鴉
 nameEn: Raven
-tabletop:
-  abilities:
-    str: 2
-    dex: 14
-    con: 10
-    int: 5
-    wis: 13
-    cha: 6
-  skills:
-    察覺: 3
-  speeds:
-    步行: 10
-    飛行: 50
-  actions:
-    - name: 喙擊
-      hit: 4
-      damage:
-        - type: 刺傷
-          expression: ""
-          fixed: 1
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 12
+initiative: 2
+hp: { average: 2, dice: 1d4 }
+speed: { walk: 10, fly: 50 }
+abilities: { str: 2, dex: 14, con: 10, int: 5, wis: 13, cha: 6 }
+skills: { 察覺: 3 }
+passivePerception: 13
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, fixed: 1 } ]
 site:
-  name: 渡鴉 (Raven) CR:0
-  size_type: 微型野獸
-  ac: 12
-  hp: 2 (1d4)
-  speed: 10呎, 飛行50呎
-  ability: 力2(-4), 敏14(+2), 體10(+0), 智5(-3), 感13(+1), 魅6(-2)
-  senses: 被動察覺13
-  skills: 察覺+3
-  traits: 擬聲：可模仿聽過的簡單聲音（低語、啁啾等）；聽者可用DC10感知（洞悉）辨識為模仿
-  attacks: 喙擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷1。
+  summary: 飛行偵查、模仿聲音
+  traits:
+    - name: 擬聲
+      text: 可模仿聽過的簡單聲音，例如低語或吱吱聲；聽者以DC10感知（洞悉）檢定成功可辨識出是模仿。
+  actions:
+    attack-0: { name: 喙擊 }

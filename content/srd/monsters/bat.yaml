@@ -2,36 +2,24 @@
 id: bat
 name: 蝙蝠
 nameEn: Bat
-tabletop:
-  abilities:
-    str: 2
-    dex: 15
-    con: 8
-    int: 2
-    wis: 12
-    cha: 4
-  skills: {}
-  speeds:
-    步行: 5
-    飛行: 30
-  actions:
-    - name: 咬擊
-      hit: 4
-      damage:
-        - type: 刺傷
-          expression: ""
-          fixed: 1
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 12
+initiative: 2
+hp: { average: 1, dice: 1d4-1 }
+speed: { walk: 5, fly: 30 }
+abilities: { str: 2, dex: 15, con: 8, int: 2, wis: 12, cha: 4 }
+senses: { blindsight: 60 }
+passivePerception: 11
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, fixed: 1 } ]
 site:
-  name: 蝙蝠 (Bat) CR:0
-  size_type: 微型野獸
-  ac: 12
-  hp: 1 (1d4-1)
-  speed: 5呎, 飛行30呎
-  ability: 力2(-4), 敏15(+2), 體8(-1), 智2(-4), 感12(+1), 魅4(-3)
-  senses: 盲視60呎, 被動察覺11
-  skills: —
-  traits: —
-  attacks: 咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷1。
+  summary: 黑暗中偵查（盲視）
+  actions:
+    attack-0: { name: 咬擊 }

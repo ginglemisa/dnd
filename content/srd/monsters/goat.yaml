@@ -2,39 +2,27 @@
 id: goat
 name: 山羊
 nameEn: Goat
-tabletop:
-  abilities:
-    str: 11
-    dex: 10
-    con: 11
-    int: 2
-    wis: 10
-    cha: 5
-  skills:
-    察覺: 2
-  speeds:
-    步行: 40
-    攀爬: 30
-  actions:
-    - name: 衝撞
-      hit: 2
-      damage:
-        - type: 鈍擊傷害
-          expression: ""
-          fixed: 1
-      id: attack-0
-      mode: action
-  conditionalDamage:
-    - name: 衝鋒替代傷害
-      expression: 1d4
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 10
+initiative: 0
+hp: { average: 4, dice: 1d8 }
+speed: { walk: 40, climb: 30 }
+abilities: { str: 11, dex: 10, con: 11, int: 2, wis: 10, cha: 5 }
+saves: { str: 2 }
+skills: { 察覺: 2 }
+senses: { darkvision: 60 }
+passivePerception: 12
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 2, reach: 5 }
+    damage: [ { type: bludgeoning, fixed: 1 } ]
+    conditional: [ { when: charge-instead, type: bludgeoning, dice: 1d4 } ]
 site:
-  name: 山羊 (Goat) CR:0
-  size_type: 中型野獸
-  ac: 10
-  hp: 4 (1d8)
-  speed: 40呎, 攀爬30呎
-  ability: 力11(+0), 敏10(+0), 體11(+0), 智2(-4), 感10(+0), 魅5(-3)
-  senses: 黑暗視覺60呎, 被動察覺12
-  skills: 察覺+2
-  traits: —
-  attacks: 衝撞：近戰攻擊檢定+2, 觸及5呎；命中：鈍擊傷害1，若山羊先直線移動20呎以上再命中目標則改為鈍擊傷害2(1d4)。
+  summary: 攀爬
+  actions:
+    attack-0: { name: 衝撞, text: "先直線朝目標移動20呎以上再命中：改為受到{conditional}。" }

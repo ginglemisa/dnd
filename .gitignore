@@ -13,6 +13,7 @@ node_modules/
 /background-content.generated.js
 /race-content.generated.js
 /monster-content.generated.js
+/monster-srd.generated.js
 /spell-content.generated.js
 /spell-srd.generated.js
 /twD20-offline.html

@@ -2,39 +2,24 @@
 id: venomous_snake
 name: 毒蛇
 nameEn: Venomous Snake
-tabletop:
-  abilities:
-    str: 2
-    dex: 15
-    con: 11
-    int: 1
-    wis: 10
-    cha: 3
-  skills: {}
-  speeds:
-    步行: 30
-    游泳: 30
-  actions:
-    - name: 啃咬
-      hit: 4
-      damage:
-        - type: 刺傷
-          expression: 1d4+2
-          fixed: 4
-        - type: 毒傷
-          expression: 1d6
-          fixed: 3
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "1/8"
+xp: 25
+ac: 12
+initiative: 2
+hp: { average: 5, dice: 2d4 }
+speed: { walk: 30, swim: 30 }
+abilities: { str: 2, dex: 15, con: 11, int: 1, wis: 10, cha: 3 }
+senses: { blindsight: 10 }
+passivePerception: 10
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, dice: 1d4+2 }, { type: poison, dice: 1d6 } ]
 site:
-  name: 毒蛇 (Venomous Snake) CR:1/8
-  size_type: 微型野獸
-  ac: 12
-  hp: 5 (2d4)
-  speed: 30呎, 游泳30呎
-  ability: 力2(-4), 敏15(+2), 體11(+0), 智1(-5), 感10(+0), 魅3(-4)
-  senses: 盲視10呎, 被動察覺10
-  skills: —
-  traits: —
-  attacks: 啃咬：近戰攻擊檢定+4, 觸及5呎；命中：刺傷4(1d4+2)外加毒傷3(1d6)。
+  summary: 游泳、毒咬
+  actions:
+    attack-0: { name: 咬擊 }

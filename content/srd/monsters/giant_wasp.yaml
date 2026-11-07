@@ -2,39 +2,26 @@
 id: giant_wasp
 name: 巨蜂
 nameEn: Giant Wasp
-tabletop:
-  abilities:
-    str: 10
-    dex: 14
-    con: 10
-    int: 1
-    wis: 10
-    cha: 3
-  skills: {}
-  speeds:
-    步行: 10
-    飛行: 50
-  actions:
-    - name: 螫刺
-      hit: 4
-      damage:
-        - type: 刺傷
-          expression: 1d6+2
-          fixed: 5
-        - type: 毒傷
-          expression: 2d4
-          fixed: 5
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/2"
+xp: 100
+ac: 13
+initiative: 2
+hp: { average: 22, dice: 5d8 }
+speed: { walk: 10, fly: 50 }
+abilities: { str: 10, dex: 14, con: 10, int: 1, wis: 10, cha: 3 }
+passivePerception: 10
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: piercing, dice: 1d6+2 }, { type: poison, dice: 2d4 } ]
 site:
-  name: 巨蜂 (Giant Wasp) CR:1/2
-  size_type: 中型野獸
-  ac: 13
-  hp: 22 (5d8)
-  speed: 10呎, 飛行50呎
-  ability: 力10(+0), 敏14(+2), 體10(+0), 智1(-5), 感10(+0), 魅3(-4)
-  senses: 被動察覺10
-  skills: —
-  traits: 陣營：無陣營；語言：無；飛掠：巨蜂飛行離開敵人的觸及範圍時，不會引發藉機攻擊。
-  attacks: 螫刺：近戰攻擊檢定+4, 觸及5呎；命中：刺傷5(1d6+2)外加毒傷5(2d4)。
+  summary: 飛行、毒螫
+  traits:
+    - name: 飛掠
+      text: 飛行離開敵人的觸及範圍時，不會引發藉機攻擊。
+  actions:
+    attack-0: { name: 螫刺 }

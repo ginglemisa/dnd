@@ -2,14 +2,40 @@
 id: quasit
 name: 誇賽魔
 nameEn: Quasit
+source: srd
+size: tiny
+type: fiend
+subtype: demon
+alignment: chaotic-evil
+cr: "1"
+xp: 200
+ac: 13
+initiative: 3
+hp: { average: 25, dice: 10d4 }
+speed: { walk: 40 }
+abilities: { str: 5, dex: 17, con: 10, int: 7, wis: 10, cha: 10 }
+skills: { 隱匿: 5 }
+senses: { darkvision: 120 }
+passivePerception: 10
+damageResistances: [ cold, fire, lightning ]
+damageImmunities: [ poison ]
+conditionImmunities: [ poisoned ]
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: slashing, dice: 1d4+3 } ]
+  - id: invisibility
+  - id: scare
+    recovery: daily
+    save: { ability: wis, dc: 10 }
+  - id: shape-shift
 site:
-  name: 誇賽魔 (Quasit) CR:1
-  size_type: 微型邪魔（惡魔）
-  ac: 13
-  hp: 25 (10d4)
-  speed: 40呎
-  ability: 力5(-3), 敏17(+3), 體10(+0), 智7(-2), 感10(+0), 魅10(+0)
-  senses: 黑暗視覺120呎, 被動察覺10
-  skills: 隱匿+5
-  traits: 魔法抗性：對抗法術與其他魔法效應的豁免檢定具有優勢；抗性：寒冷、火焰、閃電；免疫：毒素、中毒
-  attacks: 撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害5(1d4+3)，目標中毒至誇賽魔下回合開始。隱形：對自身施展隱形術（無需法術成分，施法屬性為魅力）。驚駭（每天1次）：感知豁免DC10，20呎內一名生物；失敗則陷入恐懼，每回合結束可重複豁免，成功則結束，1分鐘後自動成功。變形：可變為蝙蝠（10呎，飛行40呎）、蜈蚣（40呎，攀爬40呎）或蟾蜍（40呎，游泳40呎），或恢復真實形態；除速度外數值不變，裝備不變。
+  traits:
+    - name: 魔法抗性
+      text: 對抗法術與其他魔法效應的豁免具有優勢。
+  actions:
+    attack-0: { name: 撕裂, text: 目標陷入中毒，直到誇賽魔的下個回合開始。 }
+    invisibility: { name: 隱形, text: 對自身施展隱形術，不需要法術成分，以魅力為施法屬性。 }
+    scare: { name: 驚嚇, text: "20呎內一名生物進行{save}；失敗：目標陷入恐慌，在自己每個回合結束時重複豁免，成功即結束；1分鐘後自動成功。" }
+    shape-shift: { name: 變形, text: 變成蝙蝠（速度10呎、飛行40呎）、蜈蚣（40呎、攀爬40呎）或蟾蜍（40呎、游泳40呎）的樣子，或恢復真實形態。除速度外，各形態的遊戲數值相同；穿戴或攜帶的裝備不會隨之變化。 }
+  languages: 深淵語、通用語

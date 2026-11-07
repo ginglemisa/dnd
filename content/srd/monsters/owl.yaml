@@ -2,38 +2,28 @@
 id: owl
 name: 貓頭鷹
 nameEn: Owl
-tabletop:
-  abilities:
-    str: 3
-    dex: 13
-    con: 8
-    int: 2
-    wis: 12
-    cha: 7
-  skills:
-    察覺: 5
-    隱匿: 5
-  speeds:
-    步行: 5
-    飛行: 60
-  actions:
-    - name: 爪擊
-      hit: 3
-      damage:
-        - type: 揮砍傷害
-          expression: ""
-          fixed: 1
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 11
+initiative: 1
+hp: { average: 1, dice: 1d4-1 }
+speed: { walk: 5, fly: 60 }
+abilities: { str: 3, dex: 13, con: 8, int: 2, wis: 12, cha: 7 }
+skills: { 察覺: 5, 隱匿: 5 }
+senses: { darkvision: 120 }
+passivePerception: 15
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 3, reach: 5 }
+    damage: [ { type: slashing, fixed: 1 } ]
 site:
-  name: 貓頭鷹 (Owl) CR:0
-  size_type: 微型野獸
-  ac: 11
-  hp: 1 (1d4-1)
-  speed: 5呎, 飛行60呎
-  ability: 力3(-4), 敏13(+1), 體8(-1), 智2(-4), 感12(+1), 魅7(-2)
-  senses: 黑暗視覺120呎, 被動察覺15
-  skills: 察覺+5, 隱匿+5
-  traits: 飛掠：飛行離開敵人威脅範圍不引發藉機攻擊
-  attacks: 爪擊：近戰攻擊檢定+3, 觸及5呎；命中：揮砍傷害1。
+  summary: 夜間飛行偵查
+  traits:
+    - name: 飛掠
+      text: 飛行離開敵人的觸及範圍時，不會引發藉機攻擊。
+  actions:
+    attack-0: { name: 爪擊 }

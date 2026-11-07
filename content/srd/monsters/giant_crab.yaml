@@ -2,37 +2,28 @@
 id: giant_crab
 name: 巨蟹
 nameEn: Giant Crab
-tabletop:
-  abilities:
-    str: 13
-    dex: 13
-    con: 11
-    int: 1
-    wis: 9
-    cha: 3
-  skills:
-    隱匿: 3
-  speeds:
-    步行: 30
-    游泳: 30
-  actions:
-    - name: 螯擊
-      hit: 3
-      damage:
-        - type: 鈍擊傷害
-          expression: 1d6+1
-          fixed: 4
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/8"
+xp: 25
+ac: 15
+initiative: 1
+hp: { average: 13, dice: 3d8 }
+speed: { walk: 30, swim: 30 }
+abilities: { str: 13, dex: 13, con: 11, int: 1, wis: 9, cha: 3 }
+skills: { 隱匿: 3 }
+senses: { blindsight: 30 }
+passivePerception: 9
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 3, reach: 5 }
+    damage: [ { type: bludgeoning, dice: 1d6+1 } ]
 site:
-  name: 巨蟹 (Giant Crab) CR:1/8
-  size_type: 中型野獸
-  ac: 15
-  hp: 13 (3d8)
-  speed: 30呎, 游泳30呎
-  ability: 力13(+1), 敏13(+1), 體11(+0), 智1(-5), 感9(-1), 魅3(-4)
-  senses: 盲視30呎, 被動察覺9
-  skills: 隱匿+3
-  traits: 兩棲：可在空氣和水中呼吸
-  attacks: 螯擊：近戰攻擊檢定+3, 觸及5呎；命中：鈍擊傷害4(1d6+1)。若目標為中型或更小，會被其中一隻螯擒抱（掙脫DC11）。
+  summary: 水陸兩棲、擒抱
+  traits:
+    - name: 兩棲
+      text: 可在空氣和水中呼吸。
+  actions:
+    attack-0: { name: 螯擊, text: 命中中型或更小的目標：目標被兩隻螯的其中一隻擒抱（掙脫DC11）。 }

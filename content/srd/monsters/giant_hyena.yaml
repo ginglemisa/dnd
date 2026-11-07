@@ -2,40 +2,29 @@
 id: giant_hyena
 name: 巨鬣狗
 nameEn: Giant Hyena
-tabletop:
-  abilities:
-    str: 16
-    dex: 14
-    con: 14
-    int: 2
-    wis: 12
-    cha: 7
-  skills:
-    察覺: 3
-  speeds:
-    步行: 50
-  actions:
-    - name: 咬擊
-      hit: 5
-      damage:
-        - type: 刺傷
-          expression: 2d6+3
-          fixed: 10
-      id: attack-0
-      mode: action
-    - id: rampage
-      name: 暴走
-      mode: bonus
-      recovery: daily
-  conditionalDamage: []
+source: srd
+size: large
+type: beast
+alignment: unaligned
+cr: "1"
+xp: 200
+ac: 12
+initiative: 2
+hp: { average: 45, dice: 6d10+12 }
+speed: { walk: 50 }
+abilities: { str: 16, dex: 14, con: 14, int: 2, wis: 12, cha: 7 }
+skills: { 察覺: 3 }
+senses: { darkvision: 60 }
+passivePerception: 13
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 5, reach: 5 }
+    damage: [ { type: piercing, dice: 2d6+3 } ]
+  - id: rampage
+    mode: bonus
+    recovery: daily
 site:
-  name: 巨鬣狗 (Giant Hyena) CR:1
-  size_type: 大型野獸
-  ac: 12
-  hp: 45 (6d10+12)
-  speed: 50呎
-  ability: 力16(+3), 敏14(+2), 體14(+2), 智2(-4), 感12(+1), 魅7(-2)
-  senses: 黑暗視覺60呎, 被動察覺13
-  skills: 察覺+3
-  traits: 陣營：無陣營；語言：無
-  attacks: 咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷10(2d6+3)。附贈─暴走（每天1次）：巨鬣狗對一名原本已處於受創的生物造成傷害後，可立即移動至多其一半速度，並進行一次咬擊。
+  summary: 追擊受創目標
+  actions:
+    attack-0: { name: 咬擊 }
+    rampage: { name: 暴走, text: 對一名原本已處於受創的生物造成傷害後，可立即移動至多一半速度，並進行一次咬擊。 }

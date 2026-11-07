@@ -2,14 +2,30 @@
 id: frog
 name: 青蛙
 nameEn: Frog
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 11
+initiative: 1
+hp: { average: 1, dice: 1d4-1 }
+speed: { walk: 20, swim: 20 }
+abilities: { str: 1, dex: 13, con: 8, int: 1, wis: 8, cha: 3 }
+skills: { 察覺: 1, 隱匿: 3 }
+senses: { darkvision: 30 }
+passivePerception: 11
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 3, reach: 5 }
+    damage: [ { type: piercing, fixed: 1 } ]
 site:
-  name: 青蛙 (Frog) CR:0
-  size_type: 微型野獸
-  ac: 11
-  hp: 1 (1d4-1)
-  speed: 20呎, 游泳20呎
-  ability: 力1(-5), 敏13(+1), 體8(-1), 智1(-5), 感8(-1), 魅3(-4)
-  senses: 黑暗視覺30呎, 被動察覺11
-  skills: 察覺+1, 隱匿+3
-  traits: 兩棲：可在空氣和水中呼吸；立定跳躍：助跑與否皆可跳遠10呎、跳高5呎
-  attacks: 咬擊：近戰攻擊檢定+3, 觸及5呎；命中：刺傷1。
+  summary: 水陸兩棲、跳躍
+  traits:
+    - name: 兩棲
+      text: 可在空氣和水中呼吸。
+    - name: 立定跳躍
+      text: 無論有無助跑，跳遠最遠10呎、跳高最高5呎。
+  actions:
+    attack-0: { name: 咬擊 }

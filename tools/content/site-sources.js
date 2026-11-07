@@ -67,6 +67,13 @@ function loadCharacterRules() {
   return characterRules;
 }
 
+// 狀態的顯示名稱（condition.js 的 DND_CONDITIONS：key → 中文名，例如 poisoned →「中毒」）。
+let conditionLabels = null;
+function loadConditionLabels() {
+  conditionLabels ||= Object.fromEntries(runSiteScript("condition.js").globals.DND_CONDITIONS.map(condition => [condition.key, condition.zh]));
+  return conditionLabels;
+}
+
 // 技能 ID（character-rules.js 的 CharacterSkillAbilities：中文名 → 屬性）。
 const loadSkillAbilities = () => loadCharacterRules().CharacterSkillAbilities;
 
@@ -123,4 +130,4 @@ function readIndexSelectOptions(id) {
   return select ? [...select[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => ({ value: match[1], label: match[2] })) : null;
 }
 
-module.exports = { ROOT, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };
+module.exports = { ROOT, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };

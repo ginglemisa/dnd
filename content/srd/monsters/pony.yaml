@@ -2,35 +2,24 @@
 id: pony
 name: 小馬
 nameEn: Pony
-tabletop:
-  abilities:
-    str: 15
-    dex: 10
-    con: 13
-    int: 2
-    wis: 11
-    cha: 7
-  skills: {}
-  speeds:
-    步行: 40
-  actions:
-    - name: 蹄擊
-      hit: 4
-      damage:
-        - type: 鈍擊傷害
-          expression: 1d4+2
-          fixed: 4
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: medium
+type: beast
+alignment: unaligned
+cr: "1/8"
+xp: 25
+ac: 10
+initiative: 0
+hp: { average: 11, dice: 2d8+2 }
+speed: { walk: 40 }
+abilities: { str: 15, dex: 10, con: 13, int: 2, wis: 11, cha: 7 }
+saves: { str: 4 }
+passivePerception: 10
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 4, reach: 5 }
+    damage: [ { type: bludgeoning, dice: 1d4+2 } ]
 site:
-  name: 小馬 (Pony) CR:1/8
-  size_type: 中型野獸
-  ac: 10
-  hp: 11 (2d8+2)
-  speed: 40呎
-  ability: 力15(+2), 敏10(+0), 體13(+1), 智2(-4), 感11(+0), 魅7(-2)
-  senses: 被動察覺10
-  skills: —
-  traits: —
-  attacks: 蹄擊：近戰攻擊檢定+4, 觸及5呎；命中：鈍擊傷害4(1d4+2)。
+  summary: 騎乘、負重
+  actions:
+    attack-0: { name: 蹄擊 }

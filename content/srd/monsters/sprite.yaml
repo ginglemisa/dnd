@@ -2,14 +2,33 @@
 id: sprite
 name: 小妖精
 nameEn: Sprite
+source: srd
+size: tiny
+type: fey
+alignment: neutral-good
+cr: "1/4"
+xp: 50
+ac: 15
+initiative: 4
+hp: { average: 10, dice: 4d4 }
+speed: { walk: 10, fly: 40 }
+abilities: { str: 3, dex: 18, con: 10, int: 14, wis: 13, cha: 11 }
+skills: { 察覺: 3, 隱匿: 8 }
+passivePerception: 13
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 6, reach: 5 }
+    damage: [ { type: piercing, dice: 1d4+4 } ]
+  - id: attack-1
+    attack: { kind: ranged, hit: 6, range: [ 40, 160 ] }
+    damage: [ { type: piercing, fixed: 1 } ]
+  - id: heart-sight
+    save: { ability: cha, dc: 10 }
+  - id: invisibility
 site:
-  name: 小妖精 (Sprite) CR:1/4
-  size_type: 微型妖精
-  ac: 15
-  hp: 10 (4d4)
-  speed: 10呎, 飛行40呎
-  ability: 力3(-4), 敏18(+4), 體10(+0), 智14(+2), 感13(+1), 魅11(+0)
-  senses: 被動察覺13
-  skills: 察覺+3, 隱匿+8
-  traits: —
-  attacks: 針劍：近戰攻擊檢定+6, 觸及5呎；命中：刺傷6(1d4+4)。附魔短弓：遠程攻擊檢定+6, 射程40/160呎；命中：刺傷1，目標魅惑至小妖精下回合開始。洞悉心靈：魅力豁免DC10，5呎內可見生物（天界/邪魔/不死生物自動失敗）；失敗則小妖精得知其情緒與陣營。隱形：對自身施展隱形術（無需法術成分，施法屬性為魅力）。
+  actions:
+    attack-0: { name: 針劍 }
+    attack-1: { name: 魅惑短弓, text: 目標陷入魅惑，直到小妖精的下個回合開始。 }
+    heart-sight: { name: 洞悉心靈, text: "5呎內一名可見生物進行{save}（天界生物、邪魔與不死生物自動失敗）；失敗：小妖精得知目標的情緒與陣營。" }
+    invisibility: { name: 隱形, text: 對自身施展隱形術，不需要法術成分，以魅力為施法屬性。 }
+  languages: 通用語、精靈語、木族語

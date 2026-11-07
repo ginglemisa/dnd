@@ -2,38 +2,24 @@
 id: scorpion
 name: 蠍子
 nameEn: Scorpion
-tabletop:
-  abilities:
-    str: 2
-    dex: 11
-    con: 8
-    int: 1
-    wis: 8
-    cha: 2
-  skills: {}
-  speeds:
-    步行: 10
-  actions:
-    - name: 螫刺
-      hit: 2
-      damage:
-        - type: 刺傷
-          expression: ""
-          fixed: 1
-        - type: 毒傷
-          expression: 1d6
-          fixed: 3
-      id: attack-0
-      mode: action
-  conditionalDamage: []
+source: srd
+size: tiny
+type: beast
+alignment: unaligned
+cr: "0"
+xp: 10
+ac: 11
+initiative: 0
+hp: { average: 1, dice: 1d4-1 }
+speed: { walk: 10 }
+abilities: { str: 2, dex: 11, con: 8, int: 1, wis: 8, cha: 2 }
+senses: { blindsight: 10 }
+passivePerception: 9
+actions:
+  - id: attack-0
+    attack: { kind: melee, hit: 2, reach: 5 }
+    damage: [ { type: piercing, fixed: 1 }, { type: poison, dice: 1d6 } ]
 site:
-  name: 蠍子 (Scorpion) CR:0
-  size_type: 微型野獸
-  ac: 11
-  hp: 1 (1d4-1)
-  speed: 10呎
-  ability: 力2(-4), 敏11(+0), 體8(-1), 智1(-5), 感8(-1), 魅2(-4)
-  senses: 盲視10呎, 被動察覺9
-  skills: —
-  traits: —
-  attacks: 螫刺：近戰攻擊檢定+2, 觸及5呎；命中：刺傷1外加毒傷3(1d6)。
+  summary: 盲視、毒螫
+  actions:
+    attack-0: { name: 螫刺 }

@@ -46,4 +46,5 @@ function renderSrdText(headerLines, text, where) {
   };
 }
 
-module.exports = { renderSrdText };
+// 怪物 SRD 版（tools/monster-content）共用同一套轉換。
+module.exports = { renderSrdText, inline, body, escapeHtml };
