@@ -25,7 +25,7 @@ actions:
     damage: [ { type: bludgeoning, dice: 2d10+6 } ]
 site:
   actions:
-    multi: { name: 多重攻擊, text: 進行兩次獠牙。 }
+    multi: { name: 多重攻擊, text: 進行兩次獠牙攻擊。 }
     attack-0: { name: 獠牙, text: 先直線朝目標移動20呎以上再命中巨型或更小的目標：目標倒地。 }
     trample: { name: 踐踏, text: "5呎內一名倒地的生物進行{save}；失敗：{damage}，成功：傷害減半。" }
 srd:

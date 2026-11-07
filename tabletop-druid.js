@@ -106,7 +106,12 @@
       anchor = trigger;
       anchor.setAttribute("aria-expanded", "true");
       anchor.setAttribute("aria-controls", popup.id);
-      copy.replaceChildren(globalScope.createBeastCard(key) || "");
+      // 切換到較長的 SRD 版時，提示框超出畫面底部就往上移。
+      const keepInView = () => {
+        const box = popup.getBoundingClientRect();
+        if (box.bottom > innerHeight - 10) popup.style.top = `${Math.max(10, innerHeight - box.height - 10)}px`;
+      };
+      copy.replaceChildren(globalScope.createBeastCard(key, { onChange: keepInView }) || "");
       popup.hidden = false;
       globalScope.addEventListener("keydown", onEscape, true);
       const rect = trigger.getBoundingClientRect();

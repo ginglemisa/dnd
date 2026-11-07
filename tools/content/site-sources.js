@@ -24,6 +24,7 @@ function loadRuleTipData() {
 }
 
 // 怪物內容（content/srd/monsters）：建置先載入怪物內容檔，再以 useMonsterContent 指定（key → 中文名），不讀舊的產生檔。
+// 建置以外的呼叫（例如回歸測試直接產生職業頁）沒有指定時，自行讀取內容檔。
 let monsterNames = null;
 let monsterForms = null;
 function useMonsterContent(monsters) {
@@ -32,7 +33,7 @@ function useMonsterContent(monsters) {
   tipTables = null;
 }
 function loadMonsterNames() {
-  if (!monsterNames) throw new Error("怪物內容尚未載入：先載入怪物內容檔（useMonsterContent）");
+  if (!monsterNames) useMonsterContent(require("../monster-content/load").loadMonsters());
   return monsterNames;
 }
 

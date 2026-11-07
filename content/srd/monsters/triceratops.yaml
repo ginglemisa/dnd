@@ -23,7 +23,7 @@ actions:
     conditional: [ { when: charge-extra, type: piercing, dice: 2d8 } ]
 site:
   actions:
-    multi: { name: 多重攻擊, text: 進行兩次獠角。 }
+    multi: { name: 多重攻擊, text: 進行兩次獠角攻擊。 }
     attack-0: { name: 獠角, text: "先直線朝目標移動20呎以上再命中巨型或更小的目標：目標額外受到{conditional}並倒地。" }
 srd:
   actions:
