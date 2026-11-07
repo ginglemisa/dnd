@@ -11444,7 +11444,7 @@ html.onboarding-app-bar-hidden .tabs-shell {
 }
 
 #tour-overlay[data-tour-kind="tabletop"].onboarding-spell-preview #tour-tooltip,
-#tour-overlay[data-tour-kind="tabletop"].onboarding-resource-preview #tour-tooltip {
+#tour-overlay[data-tour-kind="tabletop"].onboarding-resource-step #tour-tooltip {
   max-height: min(38dvh, calc(100dvh - 32px));
 }
 

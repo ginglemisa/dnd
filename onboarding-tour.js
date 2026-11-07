@@ -134,8 +134,6 @@
       this.tabletopViewSnapshot = null;
       this.tabletopMenuGuidePhase = null;
       this.tabletopSpellPreviewDialog = null;
-      this.tabletopResourcePreview = null;
-      this.tabletopResourceDisplaySnapshot = null;
       this.tabletopResourceSpacer = null;
       this.tabletopActionPreview = null;
       this.tabletopActionPanelDisplaySnapshot = null;
@@ -264,7 +262,7 @@
             document.querySelector(".tabletop-skills .tabletop-section-heading"),
             ...this.getFirstGridRows(document.querySelectorAll("#tabletop-skill-values > .tabletop-skill-value"), 2)
           ], 8)].filter(Boolean),
-          // Example values exist only in TabletopMode memory, like the key-stat preview.
+          // Unfinished characters get example values, which exist only in TabletopMode memory.
           beforePosition: () => window.TabletopMode.setOnboardingSkillPreview(true),
           afterLeave: () => window.TabletopMode.setOnboardingSkillPreview(false) },
         { ...step("overview", "戰鬥開始時，決定行動順序",
@@ -317,25 +315,23 @@
           beforePosition: () => this.openTabletopSpellPreview(),
           afterLeave: () => this.closeTabletopSpellPreview() },
         { ...step("resources", "記錄角色狀態",
-          "使用具有次數限制的能力或施放法術後，記得更新資源的數字，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或罹患狀態時，也應立即記錄。", "#tabletop-tour-resource-preview", ["法術"]),
-          // Narrow layouts stack the checkbox below the text; keep both visible.
+          "使用具有次數限制的能力或施放法術後，記得更新資源的數字，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或罹患狀態時，也應立即記錄。", "#tabletop-built-in-resources", ["法術"]),
           placement: "holes-bottom",
-          // On phones, put the highlighted card at the top to leave room for the guidance.
+          // On phones, put the highlighted rows at the top to leave room for the guidance.
           getScrollTarget: () => {
             if (!window.matchMedia("(max-width: 600px)").matches) return null;
-            const element = document.querySelector("#tabletop-tour-resource-preview > .tabletop-resource-row:last-child");
+            const element = document.querySelector("#tabletop-built-in-resources .tabletop-rest-row");
             return element ? { element, offset: 16 } : null;
           },
+          // Every character has 英雄激勵; 生命骰 appears once a class and level are chosen.
           getHoles: () => [
-            this.getTextHole(Array.from(document.querySelectorAll(
-              "#tabletop-tour-resource-preview > .tabletop-resource-row:last-child .tabletop-resource-row__copy > *"
-            ))),
-            this.getHoleForSelector("#tabletop-tour-resource-preview > .tabletop-resource-row:last-child .tabletop-resource-check", 6)
+            this.getHoleForSelector("#tabletop-built-in-resources .tabletop-rest-heading > .tabletop-resource-inline-checks", 6),
+            this.getHoleForSelector('#tabletop-built-in-resources [data-resource-key="hit-dice"]', 6)
           ].filter(Boolean),
-          beforePosition: () => this.openTabletopResourcePreview(),
-          afterLeave: () => this.closeTabletopResourcePreview() },
+          beforePosition: () => this.prepareTabletopResourceStep(),
+          afterLeave: () => this.cleanupTabletopResourceStep() },
         { tab: "overview", title: "基本遊戲流程",
-          text: "了解情況 → 描述行動 → 進行判定 → 記錄結果 → 開心遊戲！",
+          text: "1. DM 描述場景：你們在哪裡、看到什麼\n2. 你說出角色想做什麼，例如「我想撬開這扇門」\n3. DM 判斷需不需要擲骰；需要的話，擲出對應的檢定\n4. DM 依結果說明發生什麼事，你再更新 HP、法術位等狀態\n不斷重複這個循環，故事就會往前推進。準備好了嗎？",
           placement: "center", getHoles: () => [],
           beforePosition: () => this.animateScrollTo(0) }
       ];
@@ -444,22 +440,9 @@
       this.overlay.classList.remove("onboarding-spell-preview");
     }
 
-    openTabletopResourcePreview() {
-      const builtIn = document.getElementById("tabletop-built-in-resources");
-      const createPreview = window.TabletopResources?.createOnboardingResourcePreview;
-      if (!builtIn || !createPreview) throw new Error("找不到資源教學內容");
-      const preview = document.createElement("div");
-      preview.id = "tabletop-tour-resource-preview";
-      preview.className = "tabletop-resource-list";
-      const rows = [createPreview("hit-dice"), createPreview("bard-inspiration")];
-      if (rows.some(row => !row)) throw new Error("無法建立資源教學卡片");
-      preview.append(...rows);
-      this.tabletopResourceDisplaySnapshot = builtIn.style.display;
-      builtIn.style.display = "none";
-      builtIn.before(preview);
-      this.tabletopResourcePreview = preview;
-      this.overlay.classList.add("onboarding-resource-preview");
-      // Short pages cannot otherwise scroll the card to the top on phones.
+    prepareTabletopResourceStep() {
+      this.overlay.classList.add("onboarding-resource-step");
+      // Short pages cannot otherwise scroll the rows to the top on phones.
       if (window.matchMedia("(max-width: 600px)").matches) {
         const spacer = document.createElement("div");
         spacer.setAttribute("aria-hidden", "true");
@@ -469,15 +452,10 @@
       }
     }
 
-    closeTabletopResourcePreview() {
+    cleanupTabletopResourceStep() {
       this.tabletopResourceSpacer?.remove();
       this.tabletopResourceSpacer = null;
-      this.tabletopResourcePreview?.remove();
-      this.tabletopResourcePreview = null;
-      this.overlay.classList.remove("onboarding-resource-preview");
-      const builtIn = document.getElementById("tabletop-built-in-resources");
-      if (builtIn && this.tabletopResourceDisplaySnapshot !== null) builtIn.style.display = this.tabletopResourceDisplaySnapshot;
-      this.tabletopResourceDisplaySnapshot = null;
+      this.overlay.classList.remove("onboarding-resource-step");
     }
 
     // A display-only example replaces the character's own options for this step.
@@ -1044,7 +1022,7 @@
       this.restoreEquipmentPreview();
       this.restoreSpellPreviewState();
       this.closeTabletopSpellPreview();
-      this.closeTabletopResourcePreview();
+      this.cleanupTabletopResourceStep();
       this.closeTabletopActionPreview();
       this.setAppBarHidden(false);
       this.resetHighlightState();

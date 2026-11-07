@@ -15,7 +15,7 @@ const TABLETOP_COPY = [
   ["在你的回合中採取行動", "你的回合通常包含移動與一次動作；若能力或規則允許，也可以使用一次附贈。\n\n移動不一定要一次完成，也不需要固定在動作之前。\n例如，你可以先移動 2 格、進行攻擊，再移動剩下的 3 格。\n\n反應則需要符合特定的觸發條件才能使用，通常在其他角色的回合中發生。", ["移動", "動作", "附贈", "移動", "動作", "移動", "移動", "反應"]],
   ["如果你想施放魔法", "先告訴 DM 你要用什麼法術，閱讀文字確認條件滿足後，就可以選擇目標。\n\n部分法術需要維持專注。\n一般情況下，玩家無法同時維持兩個需要專注的法術。", []],
   ["記錄角色狀態", "使用具有次數限制的能力或施放法術後，記得更新資源的數字，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或罹患狀態時，也應立即記錄。", ["法術"]],
-  ["基本遊戲流程", "了解情況 → 描述行動 → 進行判定 → 記錄結果 → 開心遊戲！", []]
+  ["基本遊戲流程", "1. DM 描述場景：你們在哪裡、看到什麼\n2. 你說出角色想做什麼，例如「我想撬開這扇門」\n3. DM 判斷需不需要擲骰；需要的話，擲出對應的檢定\n4. DM 依結果說明發生什麼事，你再更新 HP、法術位等狀態\n不斷重複這個循環，故事就會往前推進。準備好了嗎？", []]
 ];
 
 const SHEET_COPY = [
@@ -127,7 +127,7 @@ async function closed(page) {
   await page.waitForTimeout(650);
   assert.equal(await page.locator("#tour-overlay").isVisible(), false);
   assert.equal(await page.locator('.app-dialog[data-tour-spell-preview]').count(), 0);
-  assert.equal(await page.locator('#tabletop-tour-resource-preview').count(), 0);
+  assert.equal(await page.locator("#tour-overlay.onboarding-resource-step").count(), 0);
   assert.equal(await page.locator("#main-content").evaluate(el => el.inert), false);
   assert.equal(await page.evaluate(() => document.body.style.touchAction), "");
   assert.equal(await page.locator(".tabs-shell").evaluate(el => getComputedStyle(el).visibility), "visible");
@@ -440,45 +440,46 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
       }
     }
     if (index === 6) {
-      const resourcePreview = await page.evaluate(() => {
-        const preview = document.getElementById('tabletop-tour-resource-preview');
-        const rows = [...(preview?.querySelectorAll(':scope > .tabletop-resource-row') || [])];
+      const resourceStep = await page.evaluate(() => {
+        const root = document.getElementById('tabletop-built-in-resources');
+        const inspiration = root.querySelector('.tabletop-rest-heading > .tabletop-resource-inline-checks');
+        const rest = [...root.querySelectorAll('[data-rest]')].map(button => button.getBoundingClientRect());
+        const hitDice = root.querySelector('[data-resource-key="hit-dice"]');
         const holes = onboardingTour.activeHoles;
         const tip = document.getElementById('tour-tooltip').getBoundingClientRect();
         const contains = (hole, rect) => Boolean(hole) && hole.left <= rect.left && hole.right >= rect.right
           && hole.top <= rect.top && hole.bottom >= rect.bottom;
-        const textRects = [...(rows[1]?.querySelectorAll('.tabletop-resource-row__copy > *') || [])].map(element => {
-          const range = document.createRange();
-          range.selectNodeContents(element);
-          return range.getBoundingClientRect();
-        });
-        const checks = [...(rows[1]?.querySelectorAll('.tabletop-resource-check') || [])].map(check => check.getBoundingClientRect());
+        const overlaps = (hole, rect) => hole.left < rect.right && hole.right > rect.left && hole.top < rect.bottom && hole.bottom > rect.top;
+        const labelAndCheckbox = [...inspiration.children].map(child => child.getBoundingClientRect());
         return {
-          rows: rows.map(row => ({ title: row.querySelector('h4')?.textContent, rect: row.getBoundingClientRect().toJSON() })),
+          label: inspiration.querySelector('.proficiency-use-checks__label')?.textContent,
+          hitDiceTitle: hitDice?.querySelector('h4 span')?.textContent,
           holes,
-          covers: textRects.length === 2 && textRects.every(rect => contains(holes[0], rect))
-            && checks.length > 0 && checks.every(rect => contains(holes[1], rect))
-            && !contains(holes[0], rows[1].getBoundingClientRect())
-            && !contains(holes[0], rows[0].getBoundingClientRect()),
+          covers: holes.length === 2 && labelAndCheckbox.every(rect => contains(holes[0], rect))
+            && contains(holes[1], hitDice.getBoundingClientRect()),
+          restCovered: rest.some(rect => holes.some(hole => overlaps(hole, rect))),
           tipTop: tip.top,
           tipHeight: tip.height,
           viewportHeight: innerHeight,
           dialog: Boolean(document.querySelector('.app-dialog[data-tour-spell-preview]'))
         };
       });
-      assert(resourcePreview.rows.length === 2 && resourcePreview.holes.length === 2
-        && resourcePreview.rows[0].title.includes('生命骰')
-        && resourcePreview.rows[1].title.includes('吟遊詩人激勵')
-        && resourcePreview.covers && !resourcePreview.dialog
-        && (resourcePreview.tipTop >= Math.max(resourcePreview.holes[0].bottom, resourcePreview.holes[1].bottom) - 1
-          || Math.max(resourcePreview.holes[0].bottom, resourcePreview.holes[1].bottom) + 10 + resourcePreview.tipHeight > resourcePreview.viewportHeight - 10),
-      `resource step previews both cards and highlights the Bardic Inspiration text and checkbox: ${JSON.stringify(resourcePreview)}`);
-      if (width <= 600) assert(resourcePreview.holes[0].top <= 40,
-        `phones scroll the Bardic Inspiration card to the top: ${JSON.stringify(resourcePreview.holes)}`);
+      assert(resourceStep.label === "英雄激勵" && resourceStep.hitDiceTitle === "生命骰"
+        && resourceStep.covers && !resourceStep.restCovered && !resourceStep.dialog
+        && (resourceStep.tipTop >= resourceStep.holes[1].bottom - 1
+          || resourceStep.holes[1].bottom + 10 + resourceStep.tipHeight > resourceStep.viewportHeight - 10),
+      `resource step highlights 英雄激勵 and 生命骰 on the character's real rows, not the rest buttons: ${JSON.stringify(resourceStep)}`);
+      if (width <= 600) assert(resourceStep.holes[0].top <= 40,
+        `phones scroll 英雄激勵 to the top: ${JSON.stringify(resourceStep.holes)}`);
       if (width === 1280 && !caster && mode === "sheet" && !complete) {
+        // The real row sits in the highlight, but the tour must not let it change.
+        const checkbox = page.locator('#tabletop-built-in-resources .tabletop-resource-inline-checks input[type="checkbox"]');
+        const box = await checkbox.boundingBox();
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        assert.equal(await page.locator("#heroic-inspiration").isChecked(), false, "the highlighted checkbox stays display-only during the tour");
         await page.locator("#tour-prev-btn").click();
         await ready(page, 5);
-        assert.equal(await page.locator('#tabletop-tour-resource-preview').count(), 0);
+        assert.equal(await page.locator("#tour-overlay.onboarding-resource-step").count(), 0);
         assert.equal(await page.locator('.app-dialog[data-tour-spell-preview]').count(), 1);
         await page.locator("#tour-next-btn").click();
         await ready(page, 6);
@@ -486,13 +487,13 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
       assert.equal(await page.locator("#tour-next-btn").textContent(), "下一步");
     }
     if (index === 7) {
-      assert.equal(await page.locator("#tabletop-tour-resource-preview").count(), 0, "the closing step removes the resource preview");
+      assert.equal(await page.locator("#tour-overlay.onboarding-resource-step").count(), 0, "the closing step clears the resource step");
       assert.equal(await page.locator("#tour-step-progress").textContent(), "8/8");
       assert.equal(await page.locator("#tour-next-btn").textContent(), "開始使用跑團模式");
       if (width === 1280 && !caster && mode === "sheet" && !complete) {
         await page.locator("#tour-prev-btn").click();
         await ready(page, 6);
-        assert.equal(await page.locator("#tabletop-tour-resource-preview").count(), 1);
+        assert.equal(await page.locator("#tour-overlay.onboarding-resource-step").count(), 1);
         await page.locator("#tour-next-btn").click();
         await ready(page, 7);
       }
@@ -568,7 +569,8 @@ async function main() {
         }
       }
     }
-    console.log("First-table tour: desktop/mobile, both modes, spell and resource previews for all classes, examples, back/next, completion/Escape and data/storage/focus/scroll preservation passed.");
+    console.log("First-table tour: desktop/mobile, both modes, spell preview and real resource rows for all classes, examples, back/next, completion/Escape and data/storage/focus/scroll preservation passed.");
+    await verifyFirstTableCharacterData(browser, url);
     await verifyTabletopDiceAndKeyStats(browser, url);
 
     const beforeSpellCancel = await snapshot(page);
@@ -846,6 +848,114 @@ async function verifyIdentityGuidance(browser, url) {
     }
   }
   console.log("Identity guidance: both 1/8 phases, animation, repeated activation, back/next, skip, dragging, keyboard, narrow touch layouts and reduced motion passed.");
+}
+
+// A finished character sees its own numbers in both normal and share mode; anything else sees the example.
+async function verifyFirstTableCharacterData(browser, url) {
+  const open = async pageUrl => {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+    await page.goto(pageUrl);
+    await page.waitForFunction(() => window.onboardingTour && window.TabletopMode && window.DiceRoller);
+    await page.locator("#legal-ack-btn").click();
+    return page;
+  };
+  const skill = (page, name) => page.evaluate(name => {
+    const item = [...document.querySelectorAll("#tabletop-skill-values > .tabletop-skill-value")]
+      .find(element => element.querySelector(".tabletop-skill-value__label").textContent === name);
+    return [item.querySelector(".tabletop-skill-value__value").textContent, item.dataset.skillRank];
+  }, name);
+  const initiative = page => page.locator("#tabletop-initiative").textContent();
+  const startAt = async (page, index) => {
+    await page.evaluate(index => onboardingTour.start(index, "tabletop"), index);
+    await ready(page, index);
+  };
+  const stop = async page => {
+    await page.keyboard.press("Escape");
+    await closed(page);
+  };
+  const finished = {
+    class: "fighter", level: "3", race: "dwarf",
+    str: "16", dex: "18", con: "14", int: "10", wis: "12", cha: "8",
+    "prof-運動": true, "prof-威嚇": true, "prof-洞悉": true, "prof-察覺": true
+  };
+  const page = await open(url);
+  let hash;
+  try {
+    // 18 numbers plus at least 4 proficient or expert skills: own values. str 16 + proficiency 2 is +5; the example would be +6.
+    await page.evaluate(state => applyStateObject(state), finished);
+    await page.waitForTimeout(200);
+    await startAt(page, 2);
+    assert.deepEqual(await skill(page, "運動"), ["+5", "proficient"], "a finished character shows its own skills");
+    await page.locator("#tour-next-btn").click();
+    await ready(page, 3);
+    assert.equal(await initiative(page), "+4", "a finished character shows its own initiative");
+    await stop(page);
+
+    // Every other state uses the example, and leaving the preview restores the sheet.
+    await page.evaluate(() => TabletopMode.setMode("tabletop", { restoreScroll: false }));
+    const previewed = () => page.evaluate(() => {
+      TabletopMode.setOnboardingSkillPreview(true);
+      const value = document.querySelector("#tabletop-skill-values .tabletop-skill-value__value").textContent;
+      TabletopMode.setOnboardingSkillPreview(false);
+      return value;
+    });
+    const setChecked = (id, checked) => page.evaluate(([id, checked]) => { document.getElementById(id).checked = checked; }, [id, checked]);
+    assert.equal(await previewed(), "+5", "four proficient skills count as finished");
+    await setChecked("prof-察覺", false);
+    assert.equal(await previewed(), "+6", "three proficient skills use the example");
+    await setChecked("exp-察覺", true);
+    assert.equal(await previewed(), "+5", "expertise counts toward the four skills");
+    await setChecked("exp-察覺", false);
+    for (const id of ["prof-運動", "prof-威嚇", "prof-洞悉"]) await setChecked(id, false);
+    assert.equal(await previewed(), "+6", "numbers without any proficiency use the example");
+    for (const id of ["prof-運動", "prof-威嚇", "prof-洞悉", "prof-察覺"]) await setChecked(id, true);
+    const blanked = await page.evaluate(() => {
+      const input = document.getElementById("skill-奧秘");
+      const value = input.value;
+      input.value = "";
+      return value;
+    });
+    assert.equal(await previewed(), "+6", "a missing skill number uses the example");
+    await page.evaluate(value => { document.getElementById("skill-奧秘").value = value; }, blanked);
+    hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+  } finally { await page.close(); }
+
+  const share = async (shareHash, verify) => {
+    const shareUrl = new URL(url); shareUrl.hash = shareHash;
+    const shared = await open(shareUrl.href);
+    try {
+      assert.equal(await shared.evaluate(() => window.SHARE_MODE), true);
+      await verify(shared);
+    } finally { await shared.close(); }
+  };
+  await share(hash, async shared => {
+    await startAt(shared, 2);
+    assert.deepEqual(await skill(shared, "運動"), ["+5", "proficient"], "a finished shared character shows its own skills");
+    await shared.locator("#tour-next-btn").click();
+    await ready(shared, 3);
+    assert.equal(await initiative(shared), "+4", "a finished shared character shows its own initiative");
+    await stop(shared);
+  });
+
+  const blank = await open(url);
+  let blankHash;
+  try {
+    // Before a class is chosen there is no 生命骰 row, so only 英雄激勵 is highlighted.
+    await startAt(blank, 6);
+    assert.equal(await blank.locator('#tabletop-built-in-resources [data-resource-key="hit-dice"]').count(), 0);
+    assert.equal(await blank.evaluate(() => onboardingTour.activeHoles.length), 1, "a blank character highlights only 英雄激勵");
+    await stop(blank);
+    blankHash = await blank.evaluate(() => encodeStateToHash(collectShareState()));
+  } finally { await blank.close(); }
+  await share(blankHash, async shared => {
+    await startAt(shared, 2);
+    assert.deepEqual(await skill(shared, "運動"), ["+6", "proficient"], "a blank shared character shows the example skills");
+    await shared.locator("#tour-next-btn").click();
+    await ready(shared, 3);
+    assert.equal(await initiative(shared), "+2", "a blank shared character shows the example initiative");
+    await stop(shared);
+  });
 }
 
 async function verifyTabletopDiceAndKeyStats(browser, url) {

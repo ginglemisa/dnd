@@ -2666,6 +2666,17 @@
     elements.skillValues.replaceChildren(...skills);
   }
 
+  // A finished character shows its own skills in the tour: every skill has a
+  // number and at least 4 are proficient or expert. Anything else gets the example.
+  function hasCompleteSkillData() {
+    const inputs = Array.from(document.querySelectorAll('#tab-skills .skill-grid .skill-cell input[id^="skill-"]'));
+    const ranked = inputs.filter(input => {
+      const skillKey = input.id.replace("skill-", "");
+      return document.getElementById(`prof-${skillKey}`)?.checked || document.getElementById(`exp-${skillKey}`)?.checked;
+    });
+    return inputs.length > 0 && ranked.length >= 4 && inputs.every(input => parseRollModifier(input.value) !== null);
+  }
+
   function renderSummary() {
     if (elements.characterName) {
       const name = combatState.characterName || "點我修改角色名稱";
@@ -5400,7 +5411,7 @@
       renderDisplay();
     },
     setOnboardingSkillPreview(active) {
-      onboardingSkillPreview = Boolean(active);
+      onboardingSkillPreview = Boolean(active) && !hasCompleteSkillData();
       renderDisplay();
     },
     isCharacterFieldEvent,
