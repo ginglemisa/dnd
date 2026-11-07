@@ -2134,6 +2134,13 @@ async function validateQuickBuildShop(page) {
   const bardDraft = await page.evaluate(() => dndStorage.getItem(quickBuild.storageKey));
   await wizard.locator(".quick-build-reset").click();
   await page.locator(".app-dialog").getByRole("button", { name: "重置快速創角", exact: true }).click();
+  assert.equal(await wizard.isVisible(), true, "resetting quick build keeps the wizard open");
+  assert.equal(await wizard.locator(".quick-build-progress").textContent(), "步驟 1 / 5：背景", "resetting quick build returns to step 1");
+  assert.deepEqual(await page.evaluate(() => ({
+    saved: dndStorage.getItem(quickBuild.storageKey),
+    background: quickBuild.getDraft().choices.background
+  })), { saved: null, background: null }, "resetting quick build clears the saved draft");
+  await wizard.locator(".quick-build-close").click();
   await wizard.waitFor({ state: "hidden" });
   await page.evaluate(saved => {
     const draft = JSON.parse(saved);

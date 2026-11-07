@@ -4571,7 +4571,9 @@
     syncShopCartFunding();
     expandedChoiceGroups.clear();
     pendingChoiceCardScrollGroup = null;
-    closeWizard(false);
+    // 重置後留在視窗內，從步驟 1（背景）重新開始；草稿等玩家再次選擇時才會存檔。
+    closeSpellDetail();
+    render();
   }
 
   function closeWizard(save = true) {
