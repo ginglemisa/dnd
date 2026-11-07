@@ -35,16 +35,54 @@ function beastTabletopView(key) {
   };
 }
 
+// SRD 版（資料卡的「SRD 版」，SRD 5.2.1 繁中直譯）：monster-srd.generated.js 在第一次需要時才載入，離線版已內嵌。
+function hasBeastSrdText(key) {
+  return Object.hasOwn(monsterRules, key) && monsterRules[key].source === "srd";
+}
+
+let beastSrdPromise = null;
+function loadBeastSrdData() {
+  if (globalThis.monsterSrdText) return Promise.resolve(globalThis.monsterSrdText);
+  beastSrdPromise ||= new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = typeof monsterSrdFile === "string" ? monsterSrdFile : "monster-srd.generated.js";
+    script.onload = () => globalThis.monsterSrdText ? resolve(globalThis.monsterSrdText) : reject(new Error("SRD 版資料格式不符"));
+    script.onerror = () => {
+      script.remove();
+      reject(new Error("SRD 版資料載入失敗"));
+    };
+    document.head.appendChild(script);
+  }).catch(error => {
+    beastSrdPromise = null;
+    throw error;
+  });
+  return beastSrdPromise;
+}
+
+// 回傳 { html }（建置產生的 HTML）；沒有 SRD 版時為 null，載入失敗時 reject（之後可再試）。
+async function loadBeastSrdText(key) {
+  if (!hasBeastSrdText(key)) return null;
+  const data = await loadBeastSrdData();
+  return Object.hasOwn(data, key) ? data[key] : null;
+}
+
 globalThis.BeastCatalog = Object.freeze({
   getStatBlock(key) { return BEAST_STATS[key] || null; },
   get: beastTabletopView,
   // 結構化數值（CR、體型、速度、感官等；荒野形態的篩選與之後的形態比較讀這裡）。
   getRules(key) { return monsterRules[key] || null; },
-  keys() { return Object.keys(monsterRules); }
+  keys() { return Object.keys(monsterRules); },
+  hasSrdText: hasBeastSrdText,
+  loadSrdText: loadBeastSrdText
 });
 
 // 野獸資料卡（職業頁 .beast-tip 浮層、法術頁召喚物、跑團已知形態共用）。
-function renderBeastPopupHtml(s) {
+// renderBeastPopupHtml(s) 是整張網站版資料卡（標題＋內容）；createBeastCard(key) 另加「網站版｜SRD 版」切換（sheet-spells.js 的 createContentVersionView）。
+function renderBeastPopupTitle(s) {
+  return `<div class="title">${escapeHtml(s.name)} <span class="muted">${escapeHtml(s.size_type)}</span></div>`;
+}
+
+function renderBeastPopupBody(s) {
   const renderDetailLine = (label, value, className = "") => {
     const text = String(value ?? "").trim();
     if (!text || text === "—") return "";
@@ -53,7 +91,6 @@ function renderBeastPopupHtml(s) {
   };
 
   return `
-    <div class="title">${escapeHtml(s.name)} <span class="muted">${escapeHtml(s.size_type)}</span></div>
     <div class="row">
       <div><strong>AC</strong> ${escapeHtml(String(s.ac))}</div>
       <div><strong>HP</strong> ${escapeHtml(String(s.hp))}</div>
@@ -66,4 +103,28 @@ ${renderDetailLine("技能", s.skills)}
 ${renderDetailLine("特性", s.traits)}
 ${renderDetailLine("攻擊", s.attacks)}
   `;
+}
+
+function renderBeastPopupHtml(s) {
+  return `
+    ${renderBeastPopupTitle(s)}${renderBeastPopupBody(s)}`;
+}
+
+// 野獸資料卡元素：標題、版本切換（網站版／SRD 版）與內容。沒有該 key 時回傳 null。onChange(version) 在切換版本後呼叫（浮層重新定位用）。
+function createBeastCard(key, { onChange = null } = {}) {
+  const stats = BEAST_STATS[key];
+  if (!stats) return null;
+  const card = document.createElement("div");
+  card.className = "beast-card";
+  card.dataset.beast = key;
+  card.innerHTML = renderBeastPopupTitle(stats);
+  const renderSite = container => { container.innerHTML = renderBeastPopupBody(stats); };
+  if (typeof createContentVersionView !== "function") {
+    const body = document.createElement("div");
+    renderSite(body);
+    card.appendChild(body);
+    return card;
+  }
+  card.appendChild(createContentVersionView({ renderSite, loadSrd: hasBeastSrdText(key) ? () => loadBeastSrdText(key) : null, onChange }));
+  return card;
 }

@@ -26,3 +26,17 @@ site:
       text: 計算負重能力時視為大一個體型。
   actions:
     attack-0: { name: 蹄擊 }
+srd:
+  traits:
+    - name: 負重獸
+      text: 計算負重能力時，騾子視為大一個體型。
+  actions:
+    - name: 蹄擊
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 4（1d4 + 2）鈍擊傷害。
+en:
+  traits:
+    - name: Beast of Burden
+      text: The mule counts as one size larger for the purpose of determining its carrying capacity.
+  actions:
+    - name: Hooves
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 4 (1d4 + 2) Bludgeoning damage.

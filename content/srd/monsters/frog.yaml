@@ -29,3 +29,21 @@ site:
       text: 無論有無助跑，跳遠最遠10呎、跳高最高5呎。
   actions:
     attack-0: { name: 咬擊 }
+srd:
+  traits:
+    - name: 兩棲
+      text: 青蛙能呼吸空氣和水。
+    - name: 立定跳躍
+      text: 無論有無助跑，青蛙的跳遠距離最遠10呎，跳高距離最高5呎。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +3，觸及5呎。_命中：_ 1點穿刺傷害。
+en:
+  traits:
+    - name: Amphibious
+      text: The frog can breathe air and water.
+    - name: Standing Leap
+      text: The frog's Long Jump is up to 10 feet and its High Jump is up to 5 feet with or without a running start.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +3, reach 5 ft. _Hit:_ 1 Piercing damage.

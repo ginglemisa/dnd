@@ -27,3 +27,17 @@ site:
       text: 可憋氣1小時。
   actions:
     attack-0: { name: 咬擊, text: 命中中型或更小的目標：目標陷入擒抱（掙脫DC12），擒抱期間同時陷入束縛。 }
+srd:
+  traits:
+    - name: 憋氣
+      text: 鱷魚能憋氣1小時。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 6（1d8 + 2）穿刺傷害。若目標是中型或更小的生物，目標陷入擒抱狀態（掙脫DC 12）。在擒抱期間，目標陷入束縛狀態。
+en:
+  traits:
+    - name: Hold Breath
+      text: The crocodile can hold its breath for 1 hour.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 6 (1d8 + 2) Piercing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12). While Grappled, the target has the Restrained condition.

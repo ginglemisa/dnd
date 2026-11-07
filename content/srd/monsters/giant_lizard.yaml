@@ -27,3 +27,17 @@ site:
       text: 可攀爬困難表面（包括沿著天花板移動），無需進行屬性檢定。
   actions:
     attack-0: { name: 咬擊 }
+srd:
+  traits:
+    - name: 蛛行
+      text: 蜥蜴能攀爬困難的表面，包括沿著天花板移動，無需進行屬性檢定。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 6（1d8 + 2）穿刺傷害。
+en:
+  traits:
+    - name: Spider Climb
+      text: The lizard can climb difficult surfaces, including along ceilings, without needing to make an ability check.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 6 (1d8 + 2) Piercing damage.

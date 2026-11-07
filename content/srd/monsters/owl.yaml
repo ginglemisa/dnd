@@ -27,3 +27,17 @@ site:
       text: 飛行離開敵人的觸及範圍時，不會引發藉機攻擊。
   actions:
     attack-0: { name: 爪擊 }
+srd:
+  traits:
+    - name: 飛掠
+      text: 貓頭鷹飛行離開敵人的觸及範圍時，不會引發藉機攻擊。
+  actions:
+    - name: 爪擊
+      text: _近戰攻擊檢定：_ +3，觸及5呎。_命中：_ 1點揮砍傷害。
+en:
+  traits:
+    - name: Flyby
+      text: The owl doesn't provoke an Opportunity Attack when it flies out of an enemy's reach.
+  actions:
+    - name: Talons
+      text: _Melee Attack Roll:_ +3, reach 5 ft. _Hit:_ 1 Slashing damage.

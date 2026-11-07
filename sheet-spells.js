@@ -585,16 +585,17 @@ function appendSpellDescContent(container, raw, appendText = (target, text) => t
   return container;
 }
 
-// 法術詳情的「網站版｜SRD 版」切換：法術頁、法術書、跑團與搜尋的法術詳情共用。
+// 「網站版｜SRD 版」切換：法術詳情（法術頁、法術書、跑團與搜尋）與野獸資料卡（monster.js 的 createBeastCard）共用。
 // renderSite(container) 畫出網站版（各處原本的內容），每次開啟都先顯示網站版；SRD 版唯讀、沒有擲骰按鈕，
-// 第一次切換時才載入譯文。法術沒有 SRD 版（例如自創法術）時只畫網站版；renderSite 為 null（只供查閱的法術）時只顯示 SRD 版。
-function createSpellVersionView(spellId, renderSite) {
+// 第一次切換時才以 loadSrd() 載入譯文（回傳 { header?, html }，沒有時為 null，載入失敗時 reject）。
+// loadSrd 為 null 時只畫網站版；renderSite 為 null（只供查閱的法術）時只顯示 SRD 版。onChange(version) 在切換後呼叫。
+function createContentVersionView({ renderSite, loadSrd, onChange = null }) {
   const view = document.createElement("div");
   view.className = "spell-version";
   const site = document.createElement("div");
   site.className = "spell-version__site";
   if (renderSite) renderSite(site);
-  if (!window.SpellCatalog?.hasSrdText?.(spellId)) {
+  if (!loadSrd) {
     view.appendChild(site);
     return view;
   }
@@ -605,21 +606,27 @@ function createSpellVersionView(spellId, renderSite) {
   const renderSrd = async () => {
     if (loaded) return;
     srd.replaceChildren(note("SRD 版載入中…"));
-    const text = await window.SpellCatalog.loadSrdText(spellId).catch(() => null);
+    const text = await loadSrd().catch(() => null);
     if (!text) {
       srd.replaceChildren(note("SRD 版載入失敗，請檢查網路連線後再切換一次。"));
+      onChange?.("srd");
       return;
     }
     loaded = true;
-    const header = document.createElement("div");
-    header.className = "spell-version__srd-header";
-    header.innerHTML = text.header;
+    const parts = [];
+    if (text.header) {
+      const header = document.createElement("div");
+      header.className = "spell-version__srd-header";
+      header.innerHTML = text.header;
+      parts.push(header);
+    }
     const body = document.createElement("div");
     body.className = "spell-version__srd-body";
     body.innerHTML = text.html;
-    srd.replaceChildren(header, body, Object.assign(document.createElement("p"), {
+    srd.replaceChildren(...parts, body, Object.assign(document.createElement("p"), {
       className: "spell-version__attribution", textContent: "譯自 SRD 5.2.1（CC BY 4.0）"
     }));
+    onChange?.("srd");
   };
   if (!renderSite) {
     view.appendChild(srd);
@@ -652,10 +659,19 @@ function createSpellVersionView(spellId, renderSite) {
     srd.hidden = version !== "srd";
     if (version === "srd") void renderSrd();
   };
-  buttons.forEach(button => button.addEventListener("click", () => show(button.dataset.spellVersion)));
+  buttons.forEach(button => button.addEventListener("click", () => {
+    show(button.dataset.spellVersion);
+    onChange?.(button.dataset.spellVersion);
+  }));
   show("site");
   view.append(tabs, site, srd);
   return view;
+}
+
+// 法術詳情的版本切換。法術沒有 SRD 版（例如自創法術）時只畫網站版。
+function createSpellVersionView(spellId, renderSite) {
+  const hasSrd = window.SpellCatalog?.hasSrdText?.(spellId);
+  return createContentVersionView({ renderSite, loadSrd: hasSrd ? () => window.SpellCatalog.loadSrdText(spellId) : null });
 }
 
 // 純 HTML 版的法術說明（目前只有苦痛魔爆的戲法設定使用）；需要可點的野獸資料時改用 appendSpellDescription。
@@ -697,11 +713,11 @@ const SPELL_BEAST_REFERENCES = Object.freeze({
 
 // 野獸資料以疊加的 AppDialog 顯示，在任何對話框或視窗裡都能操作，關閉後回到原本的畫面。
 function openBeastReference(beastKey, trigger, title = trigger?.textContent || "") {
-  const stats = window.BeastCatalog?.getStatBlock?.(beastKey);
-  if (!stats || typeof window.renderBeastPopupHtml !== "function" || !window.AppDialog) return null;
+  const card = window.BeastCatalog?.getStatBlock?.(beastKey) && typeof window.createBeastCard === "function" ? window.createBeastCard(beastKey) : null;
+  if (!card || !window.AppDialog) return null;
   const content = document.createElement("div");
   content.className = "spell-readonly-beast";
-  content.innerHTML = window.renderBeastPopupHtml(stats);
+  content.appendChild(card);
   return window.AppDialog.showContent({ title, content, variant: "spell-readonly",
     confirmLabel: "關閉", trigger, allowNested: true });
 }

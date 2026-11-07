@@ -27,3 +27,17 @@ site:
       text: 可在空氣和水中呼吸。
   actions:
     attack-0: { name: 螯擊, text: 命中中型或更小的目標：目標被兩隻螯的其中一隻擒抱（掙脫DC11）。 }
+srd:
+  traits:
+    - name: 兩棲
+      text: 螃蟹能呼吸空氣和水。
+  actions:
+    - name: 螯擊
+      text: _近戰攻擊檢定：_ +3，觸及5呎。_命中：_ 4（1d6 + 1）鈍擊傷害。若目標是中型或更小的生物，目標被兩隻螯的其中一隻擒抱，陷入擒抱狀態（掙脫DC 11）。
+en:
+  traits:
+    - name: Amphibious
+      text: The crab can breathe air and water.
+  actions:
+    - name: Claw
+      text: _Melee Attack Roll:_ +3, reach 5 ft. _Hit:_ 4 (1d6 + 1) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 11) from one of two claws.

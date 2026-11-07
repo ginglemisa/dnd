@@ -23,3 +23,11 @@ site:
   summary: 攀爬、使目標中毒
   actions:
     attack-0: { name: 咬擊, text: 目標陷入中毒，直到巨蜈蚣的下個回合開始。 }
+srd:
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 4（1d4 + 2）穿刺傷害，且目標陷入中毒狀態，直到巨蜈蚣的下個回合開始。
+en:
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 4 (1d4 + 2) Piercing damage, and the target has the Poisoned condition until the start of the centipede's next turn.

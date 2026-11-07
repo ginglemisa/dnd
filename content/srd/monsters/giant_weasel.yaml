@@ -24,3 +24,11 @@ site:
   summary: 攀爬、潛行
   actions:
     attack-0: { name: 咬擊 }
+srd:
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 5（1d4 + 3）穿刺傷害。
+en:
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 5 (1d4 + 3) Piercing damage.

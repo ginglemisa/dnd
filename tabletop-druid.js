@@ -106,7 +106,7 @@
       anchor = trigger;
       anchor.setAttribute("aria-expanded", "true");
       anchor.setAttribute("aria-controls", popup.id);
-      copy.innerHTML = globalScope.renderBeastPopupHtml(globalScope.BeastCatalog.getStatBlock(key));
+      copy.replaceChildren(globalScope.createBeastCard(key) || "");
       popup.hidden = false;
       globalScope.addEventListener("keydown", onEscape, true);
       const rect = trigger.getBoundingClientRect();

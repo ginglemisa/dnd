@@ -31,3 +31,28 @@ site:
   actions:
     attack-0: { name: 咬擊, text: 命中中型或更小的目標：目標陷入擒抱（掙脫DC12）。 }
     swallow: { name: 吞下, text: "吞下一名被巨蟾蜍擒抱的中型或更小目標。目標不再被擒抱，但陷入失明與束縛，且對巨蟾蜍外部的攻擊與效果具有全掩護；巨蟾蜍每個回合結束時，目標受到{damage}。巨蟾蜍一次只能吞下一個目標，吞著目標時不能咬擊。巨蟾蜍死亡時，被吞下的生物不再受束縛，可花費5呎移動力從屍體爬出並倒地。" }
+srd:
+  traits:
+    - name: 兩棲
+      text: 蟾蜍能呼吸空氣和水。
+    - name: 立定跳躍
+      text: 無論有無助跑，蟾蜍的跳遠距離最遠20呎，跳高距離最高10呎。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 5（1d6 + 2）穿刺傷害外加5（2d4）毒素傷害。若目標是中型或更小的生物，目標陷入擒抱狀態（掙脫DC 12）。
+    - name: 吞下
+      text: 蟾蜍吞下一個它正在擒抱的中型或更小的目標。被吞下期間，目標不再陷入擒抱狀態，但陷入失明與束縛狀態，並對蟾蜍外部的攻擊與其他效果具有全掩護。此外，在蟾蜍的每個回合結束時，目標受到10（3d6）強酸傷害。蟾蜍一次只能吞下一個目標，且吞著目標時不能使用咬擊。若蟾蜍死亡，被吞下的生物不再陷入束縛狀態，並能花費5呎移動力從屍體中逃出，離開時陷入倒地狀態。
+en:
+  traits:
+    - name: Amphibious
+      text: The toad can breathe air and water.
+    - name: Standing Leap
+      text: The toad's Long Jump is up to 20 feet and its High Jump is up to 10 feet with or without a running start.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 5 (1d6 + 2) Piercing damage plus 5 (2d4) Poison damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12).
+    - name: Swallow
+      text: |-
+        The toad swallows a Medium or smaller target it is grappling. While swallowed, the target isn't Grappled but has the Blinded and Restrained conditions, and it has Total Cover against attacks and other effects outside the toad. In addition, the target takes 10 (3d6) Acid damage at the end of each of the toad's turns. The
+
+        toad can have only one target swallowed at a time, and it can't use Bite while it has a swallowed target. If the toad dies, a swallowed creature is no longer Restrained and can escape from the corpse using 5 feet of movement, exiting with the Prone condition.

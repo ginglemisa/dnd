@@ -25,3 +25,11 @@ site:
   summary: 衝鋒撞倒
   actions:
     attack-0: { name: 衝撞, text: "先直線朝目標移動20呎以上再命中大型或更小的目標：目標額外受到{conditional}並倒地。" }
+srd:
+  actions:
+    - name: 衝撞
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 6（1d6 + 3）鈍擊傷害。若目標是大型或更小的生物，且麋鹿在命中前剛直線朝它移動了20呎以上，目標額外受到3（1d6）鈍擊傷害，並陷入倒地狀態。
+en:
+  actions:
+    - name: Ram
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 6 (1d6 + 3) Bludgeoning damage. If the target is a Large or smaller creature and the elk moved 20+ feet straight toward it immediately before the hit, the target takes an extra 3 (1d6) Bludgeoning damage and has the Prone condition.

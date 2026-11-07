@@ -27,3 +27,17 @@ site:
   actions:
     attack-0: { name: 撕裂 }
     escape: { name: 靈巧脫逃, text: 執行撤離或躲藏動作。 }
+srd:
+  actions:
+    - name: 撕裂
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 6（1d6 + 3）揮砍傷害。
+  bonusActions:
+    - name: 靈巧脫逃
+      text: 黑豹執行撤離或躲藏動作。
+en:
+  actions:
+    - name: Rend
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 6 (1d6 + 3) Slashing damage.
+  bonusActions:
+    - name: Nimble Escape
+      text: The panther takes the Disengage or Hide action.

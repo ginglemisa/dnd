@@ -27,3 +27,17 @@ site:
       text: 若目標5呎內至少有一名血鷹的盟友，且該盟友未陷入失能，血鷹對該目標的攻擊檢定具有優勢。
   actions:
     attack-0: { name: 喙擊, text: "目標處於受創時：改為受到{conditional}。" }
+srd:
+  traits:
+    - name: 群攻
+      text: 若血鷹至少有一名盟友位於某生物5呎內，且該盟友未陷入失能狀態，血鷹對該生物的攻擊檢定具有優勢。
+  actions:
+    - name: 喙擊
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 4（1d4 + 2）穿刺傷害，若目標處於受創，改為6（1d8 + 2）穿刺傷害。
+en:
+  traits:
+    - name: Pack Tactics
+      text: The hawk has Advantage on an attack roll against a creature if at least one of the hawk's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.
+  actions:
+    - name: Beak
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 4 (1d4 + 2) Piercing damage, or 6 (1d8 + 2) Piercing damage if the target is Bloodied.

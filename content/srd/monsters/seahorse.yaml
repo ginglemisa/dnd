@@ -24,3 +24,17 @@ site:
       text: 只能在水下呼吸。
   actions:
     dash: { name: 泡泡衝刺, text: 在水下時，移動至多其游泳速度，且不會引發藉機攻擊。 }
+srd:
+  traits:
+    - name: 水下呼吸
+      text: 海馬只能在水下呼吸。
+  actions:
+    - name: 泡泡衝刺
+      text: 在水下時，海馬移動至多其游泳速度，且不會引發藉機攻擊。
+en:
+  traits:
+    - name: Water Breathing
+      text: The seahorse can breathe only underwater.
+  actions:
+    - name: Bubble Dash
+      text: While underwater, the seahorse moves up to its Swim Speed without provoking Opportunity Attacks.

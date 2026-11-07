@@ -32,3 +32,31 @@ site:
   actions:
     attack-0: { name: 咬擊, text: 命中中型或更小的目標：目標陷入擒抱（掙脫DC11）。 }
     swallow: { name: 吞下, text: "吞下一名被巨蛙擒抱的小型或更小目標。目標不再被擒抱，但陷入失明與束縛，且對巨蛙外部的攻擊與效果具有全掩護；吞著目標時巨蛙不能咬擊。巨蛙的下個回合結束時，目標受到{damage}；若沒因此死亡，就被吐出並倒地。巨蛙死亡時，被吞下的目標不再受束縛，可花費5呎移動力從屍體爬出並倒地。" }
+srd:
+  traits:
+    - name: 兩棲
+      text: 巨蛙能呼吸空氣和水。
+    - name: 立定跳躍
+      text: 無論有無助跑，巨蛙的跳遠距離最遠20呎，跳高距離最高10呎。
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +3，觸及5呎。_命中：_ 5（1d6 + 2）穿刺傷害。若目標是中型或更小的生物，目標陷入擒抱狀態（掙脫DC 11）。
+    - name: 吞下
+      text: |-
+        巨蛙吞下一個它正在擒抱的小型或更小的目標。被吞下期間，目標不再陷入擒抱狀態，但陷入失明與束縛狀態，並對巨蛙外部的攻擊與其他效果具有全掩護。巨蛙吞著目標時不能使用咬擊；若巨蛙死亡，被吞下的目標不再陷入束縛狀態，並能花費5呎移動力從屍體中逃出，離開時陷入倒地狀態。
+
+        在巨蛙的下個回合結束時，被吞下的目標受到5（2d4）強酸傷害。若該傷害沒有殺死它，巨蛙會把它吐出，使它陷入倒地狀態離開。
+en:
+  traits:
+    - name: Amphibious
+      text: The frog can breathe air and water.
+    - name: Standing Leap
+      text: The frog's Long Jump is up to 20 feet and its High Jump is up to 10 feet with or without a running start.
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +3, reach 5 ft. _Hit:_ 5 (1d6 + 2) Piercing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 11).
+    - name: Swallow
+      text: |-
+        The frog swallows a Small or smaller target it is grappling. While swallowed, the target isn't Grappled but has the Blinded and Restrained conditions, and it has Total Cover against attacks and other effects outside the frog. While swallowing the target, the frog can't use Bite, and if the frog dies, the swallowed target is no longer Restrained and can escape from the corpse using 5 feet of movement, exiting with the Prone condition.
+
+        At the end of the frog's next turn, the swallowed target takes 5 (2d4) Acid damage. If that damage doesn't kill it, the frog disgorges it, causing it to exit Prone.

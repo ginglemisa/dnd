@@ -31,3 +31,19 @@ site:
     attack-1: { name: 短弓 }
   languages: 聽得懂通用語和另一種語言，但不會說
   gear: 短弓、短劍
+srd:
+  actions:
+    - name: 短劍
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 6（1d6 + 3）穿刺傷害。
+    - name: 短弓
+      text: _遠程攻擊檢定：_ +5，射程80/320呎。_命中：_ 6（1d6 + 3）穿刺傷害。
+  languages: 聽得懂通用語以及另一種語言，但不會說話
+  gear: 短弓、短劍
+en:
+  actions:
+    - name: Shortsword
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 6 (1d6 + 3) Piercing damage.
+    - name: Shortbow
+      text: _Ranged Attack Roll:_ +5, range 80/320 ft. _Hit:_ 6 (1d6 + 3) Piercing damage.
+  languages: Understands Common plus one other language but can't speak
+  gear: Shortbow, Shortsword

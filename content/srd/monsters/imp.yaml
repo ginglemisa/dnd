@@ -36,3 +36,29 @@ site:
     invisibility: { name: 隱形, text: 對自身施展隱形術，不需要法術成分，以魅力為施法屬性。 }
     shape-shift: { name: 變形, text: 變成老鼠（速度20呎）、渡鴉（20呎、飛行60呎）或蜘蛛（20呎、攀爬20呎）的樣子，或恢復真實形態。除速度外，各形態的遊戲數值相同；穿戴或攜帶的裝備不會隨之變化。 }
   languages: 通用語、煉獄語
+srd:
+  traits:
+    - name: 魔法抗性
+      text: 小魔鬼對抗法術與其他魔法效應的豁免具有優勢。
+  actions:
+    - name: 螫刺
+      text: _近戰攻擊檢定：_ +5，觸及5呎。_命中：_ 6（1d6 + 3）穿刺傷害外加7（2d6）毒素傷害。
+    - name: 隱形
+      text: 小魔鬼對自身施展_隱形術_，不需要法術成分，並以魅力作為施法屬性。
+    - name: 變形
+      text: 小魔鬼變形成老鼠（速度20呎）、渡鴉（20呎，飛行60呎）或蜘蛛（20呎，攀爬20呎）的樣子，或恢復為其真實形態。除了速度之外，它在各形態的遊戲數值都相同。它穿戴或攜帶的任何裝備都不會隨之變化。
+  languages: 通用語、煉獄語
+  senseNotes: { darkvision: 不受魔法黑暗阻礙 }
+en:
+  traits:
+    - name: Magic Resistance
+      text: The imp has Advantage on saving throws against spells and other magical effects.
+  actions:
+    - name: Sting
+      text: _Melee Attack Roll:_ +5, reach 5 ft. _Hit:_ 6 (1d6 + 3) Piercing damage plus 7 (2d6) Poison damage.
+    - name: Invisibility
+      text: The imp casts _Invisibility_ on itself, requiring no spell components and using Charisma as the spell-casting ability.
+    - name: Shape-Shift
+      text: The imp shape-shifts to resemble a rat (Speed 20 ft.), a raven (20 ft., Fly 60 ft.), or a spider (20 ft., Climb 20 ft.), or it returns to its true form. Its game statistics are the same in each form, except for its Speed. Any equipment it is wearing or carrying isn't transformed.
+  languages: Common, Infernal
+  senseNotes: { darkvision: unimpeded by magical Darkness }

@@ -25,3 +25,11 @@ site:
   summary: 看守、撞倒
   actions:
     attack-0: { name: 咬擊, text: 命中中型或更小的目標：目標倒地。 }
+srd:
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +3，觸及5呎。_命中：_ 4（1d6 + 1）穿刺傷害。若目標是中型或更小的生物，目標陷入倒地狀態。
+en:
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +3, reach 5 ft. _Hit:_ 4 (1d6 + 1) Piercing damage. If the target is a Medium or smaller creature, it has the Prone condition.

@@ -43,6 +43,7 @@ function checkMonster(monster, where, errors) {
     blocks.forEach(name => VARIABLE_FIELDS.filter(field => monster[name][field]).forEach(field => errors.push(`${where}：${name}.${field} 只用於 variable 的怪物`)));
     if (monster.hp && averageOf(monster.hp.dice) !== monster.hp.average) errors.push(`${where}：hp.average 應為 ${averageOf(monster.hp.dice)}（${monster.hp.dice} 的平均）`);
   }
+  if (monster.source === "srd" && (!monster.srd || !monster.en)) errors.push(`${where}：SRD 怪物須有 srd 與 en 區塊`);
   const skills = loadSkillAbilities();
   Object.keys(monster.skills || {}).filter(skill => !skills[skill]).forEach(skill => errors.push(`${where}：skills 的「${skill}」不是網站的技能名稱`));
   const conditions = loadConditionLabels();

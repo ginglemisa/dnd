@@ -1,6 +1,6 @@
 // rule-tips.js
 // 規則說明提示框：技能／規則說明詞表（skills_example_uses）、提示標記（skillTip、createFeatureRuleTip、highlightFeatureRuleTerms），
-// 以及技能／狀態說明浮層（#skillPopup）與野獸資料卡浮層（#beastPopup，內容由 monster.js 的 renderBeastPopupHtml 產生）。
+// 以及技能／狀態說明浮層（#skillPopup）與野獸資料卡浮層（#beastPopup，內容由 monster.js 的 createBeastCard 產生，含網站版／SRD 版切換）。
 // 同步載入，位置緊接 sheet-spells.js（原本 index.html 行內浮層程式所在處）：浮層在解析到這裡時建立，事件監聽的註冊順序與原本相同。
 // 浮層與事件只在有 document 時建立；建置工具（tools/content/site-sources.js）在沒有 document 的 vm 沙箱讀取詞表時略過。
 
@@ -143,12 +143,17 @@ if (typeof document !== "undefined") (function setupBeastPopup() {
 })();
 
 function showBeastPopup(beastKey, anchorEl) {
-  const s = BEAST_STATS[beastKey];
-  if (!s) return;
-
   const popup = document.getElementById("beastPopup");
+  // 切換到較長的 SRD 版時，浮層超出畫面底部就往上移。
+  const keepInView = () => {
+    const rect = popup.getBoundingClientRect();
+    if (rect.bottom > window.innerHeight - 10) popup.style.top = `${Math.max(10, window.innerHeight - rect.height - 10)}px`;
+  };
+  const card = createBeastCard(beastKey, { onChange: keepInView });
+  if (!card) return;
+
   const content = popup.querySelector(".content");
-  content.innerHTML = renderBeastPopupHtml(s);
+  content.replaceChildren(card);
 
   // 定位：貼近點擊文字右下角
   const r = anchorEl.getBoundingClientRect();
@@ -281,7 +286,7 @@ if (typeof document !== "undefined") (function setupDraggableContextPopups() {
     if (
       !popup ||
       event.button !== 0 ||
-      event.target.closest("button, a, input, select, textarea, .close")
+      event.target.closest("button, a, input, select, textarea, .close, .spell-version__srd")
       || (popup.classList.contains("condition-reference-popup") && !event.target.closest(".title"))
     ) {
       return;

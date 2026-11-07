@@ -28,3 +28,15 @@ site:
   actions:
     attack-0: { name: 咬擊 }
     constrict: { name: 絞纏, text: "5呎內一名可見的中型或更小生物進行{save}；失敗：{damage}，並陷入擒抱（掙脫DC12）。" }
+srd:
+  actions:
+    - name: 咬擊
+      text: _近戰攻擊檢定：_ +4，觸及5呎。_命中：_ 6（1d8 + 2）穿刺傷害。
+    - name: 絞纏
+      text: _力量豁免：_ DC 12，目標為蛇看得見、5呎內的一個中型或更小的生物。_失敗：_ 7（3d4）鈍擊傷害，且目標陷入擒抱狀態（掙脫DC 12）。
+en:
+  actions:
+    - name: Bite
+      text: _Melee Attack Roll:_ +4, reach 5 ft. _Hit:_ 6 (1d8 + 2) Piercing damage.
+    - name: Constrict
+      text: _Strength Saving Throw:_ DC 12, one Medium or smaller creature the snake can see within 5 feet. _Failure:_ 7 (3d4) Bludgeoning damage, and the target has the Grappled condition (escape DC 12).

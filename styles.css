@@ -17168,6 +17168,34 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .app-dialog__button--dange
   font-size: var(--fs-xs);
 }
 
+/* 野獸資料卡的「網站版｜SRD 版」（monster.js 的 createBeastCard）：SRD 版是數據塊直譯（tools/monster-content/format.js 產生）。 */
+.beast-card .spell-version__tabs {
+  margin: 0.2em 0 0.45em;
+}
+
+.spell-version__srd-body .monster-srd__type {
+  margin-bottom: 0.5em;
+  color: var(--text-muted);
+}
+
+.spell-version__srd-body .monster-srd__abilities {
+  display: table;
+  width: auto;
+}
+
+.spell-version__srd-body .monster-srd__abilities td {
+  text-align: right;
+}
+
+/* 職業頁的浮層可拖移：SRD 版較長，在浮層內捲動（捲動區不觸發拖移，見 rule-tips.js）。 */
+#beastPopup .spell-version__srd {
+  max-height: min(55vh, 26rem);
+  overflow-y: auto;
+  cursor: auto;
+  touch-action: pan-y;
+  user-select: text;
+}
+
 .tabletop-warning-text {
   color: var(--warning) !important;
   font-weight: 750;
