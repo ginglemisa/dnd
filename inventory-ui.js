@@ -5,7 +5,7 @@
  * - 標籤：[匕首 ×2]；容器標籤可展開，內容物排在下一層。點標籤開啟 `inventory-item` 視窗：目錄物品先顯示與商店相同的說明
  *   （search.js 的 renderEquipmentDetailInto()），下方「持有」區調整數量、位置或刪除。
  *   持有區標題行下方是互動列（buildItemActions()，資料取自 equipment-data.js 的 EQUIPMENT_ITEM_ACTIONS）：武器／護甲／盾牌的裝備與卸除
- *   （寫回裝備頁下拉）、工具與撬棍的檢定、醫療包的使用次數、治療藥水飲用回復生命值、投擲物與毒藥；檢定與傷害骰只在擲骰功能開啟時顯示。
+ *   （寫回裝備頁下拉，按下後視窗立即關閉）、工具與撬棍的檢定、醫療包的使用次數、治療藥水飲用回復生命值、投擲物與毒藥；檢定與傷害骰只在擲骰功能開啟時顯示。
  *   至少 2 件的物品在互動列最後一行多一顆「拆分」（沒有互動列時自成一行），開 `inventory-split` 視窗輸入兩堆的數量；拆開後是兩個獨立標籤。
  * - 裝備：物品經 Inventory.syncEquipped() 從物品欄拿 1 件出來，成為固定 ×1、排在「裝備中」的標籤（entry.slot）；角色卡的裝備選擇是唯一依據，
  *   index.html 在選擇改變與還原存檔後呼叫 syncEquippedSlots()。從標籤的「裝備」按鈕拿那個標籤，從下拉則由 Inventory 依規則找。卸除後在身上成為獨立的 ×1 標籤。
@@ -268,7 +268,9 @@
     return setSlot(handId, name);
   }
 
-  async function openEquipWeaponDialog(entry, trigger) {
+  // closeItem：關閉物品視窗。玩家選定、確定要寫入時才呼叫，取消或被規則擋下時視窗留著；
+  // 先關再寫入，裝備頁流程要再確認（卸下盾牌？）時，確認視窗不會疊在已關閉的視窗上。
+  async function openEquipWeaponDialog(entry, trigger, closeItem) {
     const name = api().getCatalogItem(entry.itemId)?.wieldedAs;
     if (!name) return;
     const offLabel = document.getElementById("offHandLabel")?.textContent.trim() || "副手";
@@ -320,12 +322,13 @@
       ]
     });
     if (result !== "mainHand" && result !== "offHand") return;
+    closeItem();
     if (!equipWeapon(name, result, entry.uid)) {
       globalScope.AppDialog.notify(`無法把${name}裝備在${result === "mainHand" ? "主手" : offLabel}，請到裝備頁調整。`, { tone: "warning" });
     }
   }
 
-  async function equipArmor(name, trigger, uid) {
+  async function equipArmor(name, trigger, uid, closeItem) {
     const current = fieldValue("armor");
     if (current && current !== name) {
       const confirmed = await globalScope.AppDialog.requestDecision({
@@ -337,17 +340,19 @@
       });
       if (!confirmed) return;
     }
+    closeItem();
     preferUid = uid;
     if (!setSlot("armor", name)) globalScope.AppDialog.notify(`無法穿上${name}，請到裝備頁調整。`, { tone: "warning" });
   }
 
-  async function equipShield(trigger, uid) {
+  async function equipShield(trigger, uid, closeItem) {
     if (globalScope.isOffHandAlternateMain?.()) {
       const toggle = document.getElementById("main2Shield");
       if (!toggle || !globalScope.isMain2ShieldEligible?.()) {
         globalScope.AppDialog.notify("副手設為另一把主手武器時，需要盾牌熟練且兩手都不是雙手武器，才能裝備盾牌。", { tone: "warning" });
         return;
       }
+      closeItem();
       toggle.checked = true;
       preferUid = uid;
       toggle.dispatchEvent(new Event("change", { bubbles: true }));
@@ -368,6 +373,7 @@
       });
       if (!confirmed) return;
     }
+    closeItem();
     preferUid = uid;
     if (!setSlot("offHand", "盾牌")) globalScope.AppDialog.notify("無法裝備盾牌，請到裝備頁調整。", { tone: "warning" });
   }
@@ -430,7 +436,7 @@
   }
 
   /**
-   * 持有區的互動列：裝備／卸除、檢定、使用次數、飲用、投擲與塗抹。ctx.afterUse(result) 在數量或次數改變後同步視窗。
+   * 持有區的互動列：裝備／卸除、檢定、使用次數、飲用、投擲與塗抹。ctx.afterUse(result) 在數量或次數改變後同步視窗，ctx.close() 在裝備或卸除時關閉視窗。
    * 檢定與傷害骰只在擲骰功能開啟時顯示。回傳 null 表示這件物品沒有互動。
    */
   function buildItemActions(entry, ctx) {
@@ -442,13 +448,16 @@
     const key = usageKey(entry);
     if (key) {
       const equip = actionButton("裝備", (control) => {
-        if (key === "shield") equipShield(control, entry.uid);
-        else if (key.startsWith("armor:")) equipArmor(item.id, control, entry.uid);
-        else openEquipWeaponDialog(entry, control);
+        if (key === "shield") equipShield(control, entry.uid, ctx.close);
+        else if (key.startsWith("armor:")) equipArmor(item.id, control, entry.uid, ctx.close);
+        else openEquipWeaponDialog(entry, control, ctx.close);
       }, `裝備${label}`);
       // 武器已裝備時仍可換手或拿第二把；同一件護甲或盾牌已穿戴時不再裝備。
       const showEquip = key.startsWith("weapon:") || !equippedUsage().get(key);
-      const remove = entry.slot ? actionButton("卸除", () => unequipSlot(entry.slot), `卸除${label}`) : null;
+      const remove = entry.slot ? actionButton("卸除", () => {
+        ctx.close();
+        unequipSlot(entry.slot);
+      }, `卸除${label}`) : null;
       if (showEquip || remove) rows.push(actionRow("", showEquip ? equip : null, remove));
     }
     if (actions.check && diceEnabled()) {
@@ -767,7 +776,7 @@
         };
         syncWeight(entry);
         let shownQuantity = entry.quantity;
-        // 互動列：裝備變動（含疊在上面的確認視窗之後）或用掉物品時重建；數量同步到下方的數量欄，用完時關閉視窗。
+        // 互動列：用掉物品或刪除前卸下裝備時重建；數量同步到下方的數量欄，用完時關閉視窗。裝備與卸除直接關閉視窗（ctx.close）。
         let actionsSection = null;
         const refreshActions = () => {
           const current = api().getEntry(uid);
@@ -785,7 +794,8 @@
                 return;
               }
               refreshActions();
-            }
+            },
+            close: () => dialog.close("equipment")
           }), current, () => dialog.close("split"));
           // 重建前焦點在互動列時，改到新互動列的同一顆按鈕（不在了就是第一顆）。
           const focused = actionsSection?.contains(document.activeElement) ? document.activeElement.getAttribute("aria-label") : null;
