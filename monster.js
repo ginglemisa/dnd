@@ -5,8 +5,10 @@
 // 網站版資料卡的顯示文字（name、size_type、ac、hp、speed、ability、savingThrows、senses、skills、traits、attacks），建置由數值產生。
 const BEAST_STATS = Object.freeze(Object.fromEntries(Object.entries(monsterText).map(([key, text]) => [key, Object.freeze({ ...text.statBlock })])));
 
-// 跑團讀取的野獸數值：資料卡文字加上 abilities、saves、skills（技能名 → 加值）、speeds（中文速度名 → 呎）、
-// actions（name、hit、damage[{ type, expression, fixed }]、id、mode、recovery、save{ ability, dc }）與 conditionalDamage。
+// 跑團讀取的野獸數值：資料卡文字加上 cr、abilities、saves、skills（技能名 → 加值）、speeds（中文速度名 → 呎）、
+// senseList（[{ label, feet }]）、actions（name、text（網站版的動作說明，攻擊只有額外效果）、hit、attack{ kind, reach, range }、
+// damage[{ type, expression, fixed }]、conditional[{ name, expression }]、id、mode、recovery、uses、save{ ability, dc }）、
+// conditionalDamage（各動作的 conditional 攤平）、summary（用途短說明）與 traitList（特性 [{ name, text }]）。
 // 數值隨施法變化的召喚物（異界坐騎）沒有跑團數值，回傳 null。
 function beastTabletopView(key) {
   if (!Object.hasOwn(monsterRules, key) || !Object.hasOwn(monsterText, key)) return null;
@@ -14,22 +16,29 @@ function beastTabletopView(key) {
   if (rules.variable) return null;
   const damageType = item => `${monsterLabels.damage[item.type]}${item.timing ? `（${monsterLabels.timing[item.timing]}）` : ""}`;
   const damage = item => ({ type: damageType(item), expression: item.dice || "", fixed: item.dice ? item.average : item.fixed });
+  const conditional = action => (action.conditional || []).map(item => ({ name: monsterLabels.conditional[item.when], expression: item.dice }));
+  const attack = item => ({ kind: monsterLabels.attack[item.kind], ...(item.reach ? { reach: item.reach } : {}), ...(item.range ? { range: [...item.range] } : {}) });
   return {
     ...text.statBlock,
+    cr: rules.cr,
     abilities: { ...rules.abilities },
     ...(rules.saves ? { saves: { ...rules.saves } } : {}),
     skills: { ...(rules.skills || {}) },
     speeds: Object.fromEntries(Object.entries(rules.speed).filter(([type]) => type !== "hover").map(([type, feet]) => [monsterLabels.speed[type], feet])),
+    senseList: Object.entries(rules.senses || {}).map(([type, feet]) => ({ label: monsterLabels.sense[type], feet })),
     actions: rules.actions.map(action => ({
       name: text.actions[action.id].name,
-      ...(action.attack ? { hit: action.attack.hit } : {}),
+      ...(text.actions[action.id].text ? { text: text.actions[action.id].text } : {}),
+      ...(action.attack ? { hit: action.attack.hit, attack: attack(action.attack) } : {}),
       ...(action.damage ? { damage: action.damage.map(damage) } : {}),
+      ...(action.conditional ? { conditional: conditional(action) } : {}),
       id: action.id,
       mode: action.mode || "action",
       ...(action.recovery ? { recovery: action.recovery } : {}),
+      ...(action.uses ? { uses: action.uses } : {}),
       ...(action.save ? { save: { ability: monsterLabels.ability[action.save.ability], dc: action.save.dc } } : {})
     })),
-    conditionalDamage: rules.actions.flatMap(action => (action.conditional || []).map(item => ({ name: monsterLabels.conditional[item.when], expression: item.dice }))),
+    conditionalDamage: rules.actions.flatMap(conditional),
     ...(text.summary ? { summary: text.summary } : {}),
     traitList: text.traits.map(trait => ({ ...trait })),
     key

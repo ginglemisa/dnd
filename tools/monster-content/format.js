@@ -143,6 +143,6 @@ function srdHtml(monster, labels, { inline, body, escapeHtml }) {
 }
 
 module.exports = {
-  SIZE_LABELS, SPEED_LABELS, ABILITY_LABELS, CONDITIONAL_LABELS, TIMING_LABELS,
+  SIZE_LABELS, SPEED_LABELS, SENSE_LABELS, ATTACK_LABELS, ABILITY_LABELS, CONDITIONAL_LABELS, TIMING_LABELS,
   averageOf, damageText, fillActionText, statBlock, srdHtml
 };
