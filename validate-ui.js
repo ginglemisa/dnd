@@ -4602,11 +4602,11 @@ async function verifyShareReadonlyMode(browser, url) {
     await openShare(character("ranger", 8, { race: "elf", "elf-lineage": "wood_elf", language1: "elvish", "ranger-weapon-mastery-pick-1": "輕錘" }));
     await page.evaluate(() => { const box = document.getElementById("spell-prepare"); box?.scrollIntoView(); });
     for (const id of ["str", "cha", "hp-display", "speed-input", "speed-display", "initiative-input", "passive-perception", "save-str", "skill-運動",
-      "spell-save-dc", "spell-attack-bonus", "alignment", "prof-str", "prof-運動", "exp-運動", "language1", "elf-lineage", "character-size-select",
+      "spell-save-dc", "spell-attack-bonus", "spellcasting-ability", "spell-adjustment", "prof-str", "prof-運動", "exp-運動", "language1", "elf-lineage", "character-size-select",
       "manual-feat-management", "ranger-fighting-style", "derived-feat-background", "class", "level", "race", "background"]) {
       assert.equal(await isLocked(id), true, `${id} is locked in share mode`);
     }
-    for (const id of ["hp", "lifedicen", "spellcasting-ability", "spell-adjustment", "spellslot1-1", "mainHand", "armor", "offHandAsMain",
+    for (const id of ["hp", "lifedicen", "alignment", "spellslot1-1", "mainHand", "armor", "offHandAsMain",
       "weapon-attack-automation", "atk-main-note", "class-extra", "skill-extra", "gear-notes", "gear-extra", "spell-notes",
       "ranger-hunters-prey-colossus-slayer", "ranger-defensive-tactics-escape-the-horde", "ranger-weapon-mastery-pick-1"]) {
       assert.equal(await isLocked(id), false, `${id} stays editable in share mode`);
@@ -4617,10 +4617,13 @@ async function verifyShareReadonlyMode(browser, url) {
       document.querySelector(`label[for="prof-int"]`).click();
       document.getElementById("prof-int").click();
       document.querySelector('label.skill-rank-target input[id="prof-運動"]').closest("label").click();
-      document.getElementById("alignment").focus();
-      return [document.getElementById("prof-int").checked, document.getElementById("prof-運動").checked, document.activeElement?.id === "alignment"];
+      document.getElementById("character-size-select").focus();
+      return [document.getElementById("prof-int").checked, document.getElementById("prof-運動").checked, document.activeElement?.id === "character-size-select"];
     }), [false, false, false], "locked controls ignore label clicks and focus");
-    assert.equal((await page.evaluate(() => JSON.parse(collectJsonExportText().text))).alignment, "LG", "locked values stay in the export");
+    assert.equal((await page.evaluate(() => JSON.parse(collectJsonExportText().text)))["spellcasting-ability"], "int", "locked values stay in the export");
+    // 陣營開放：實際從畫面改得動，也會進匯出。
+    await page.locator("#alignment").selectOption("CG");
+    assert.equal((await page.evaluate(() => JSON.parse(collectJsonExportText().text))).alignment, "CG", "the viewer's alignment reaches the export");
     // 動態新增的列也會鎖；白名單勾選仍可操作。
     assert.equal(await page.evaluate(async () => {
       const row = createToolProficiencyRow();
@@ -4652,7 +4655,7 @@ async function verifyShareReadonlyMode(browser, url) {
       await page.waitForTimeout(100);
       await page.locator("#utility-menu-toggle").click();
       await page.locator("#tabletop-mode-toggle").waitFor();
-      for (const selector of ["#help-quick-build-btn", "#set-default-abilities", "#restart-onboarding-btn", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn", "#open-qr-btn"]) {
+      for (const selector of ["#help-quick-build-btn", "#set-default-abilities", "#restart-onboarding-btn", "#clear-storage-btn", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn", "#open-qr-btn", ".utility-menu__row--icon"]) {
         assert.equal(await page.locator(selector).isVisible(), false, `${selector} is hidden at ${width}`);
       }
       for (const selector of ["#tabletop-mode-toggle", "#adventure-journal-btn", "#export-json-btn", "#export-pdf-btn", "#open-sheet-download-btn", "#first-table-tour-btn"]) {
@@ -4661,16 +4664,18 @@ async function verifyShareReadonlyMode(browser, url) {
       assert.equal(await page.locator("#first-table-tour-btn").isDisabled(), false, "the tabletop tour stays available");
       assert.equal(await page.evaluate(() => {
         const help = document.querySelector(".utility-menu__help").getBoundingClientRect();
-        const buttons = ["first-table-tour-btn", "reference-deities-btn", "clear-storage-btn"].map(id => document.getElementById(id).getBoundingClientRect());
-        return Math.abs(buttons[0].left - help.left) < 1 && Math.abs(buttons[2].right - help.right) < 1 && buttons.every(button => Math.abs(button.top - buttons[0].top) < 1);
+        const buttons = ["first-table-tour-btn", "reference-deities-btn"].map(id => document.getElementById(id).getBoundingClientRect());
+        return Math.abs(buttons[0].left - help.left) < 1 && Math.abs(buttons[1].right - help.right) < 1 && buttons.every(button => Math.abs(button.top - buttons[0].top) < 1);
       }), true, `help row leaves no holes at ${width}`);
+      // 匯出 JSON 在角色紙圖示右邊，同一列填滿，鍵盤焦點也照這個順序。
       assert.equal(await page.evaluate(() => {
-        const button = document.getElementById("export-json-btn").getBoundingClientRect();
-        const row = document.querySelector(".utility-menu__row--icon").getBoundingClientRect();
         const pdf = document.getElementById("export-pdf-btn").getBoundingClientRect();
         const sheet = document.getElementById("open-sheet-download-btn").getBoundingClientRect();
+        const json = document.getElementById("export-json-btn").getBoundingClientRect();
         const footer = document.querySelector(".utility-menu__row--footer").getBoundingClientRect();
-        return Math.abs(button.width - row.width) < 1 && Math.abs(pdf.left - footer.left) < 1 && Math.abs(sheet.right - footer.right) < 1;
+        return Math.abs(pdf.left - footer.left) < 1 && sheet.left > pdf.right && json.left > sheet.right && Math.abs(json.right - footer.right) < 1
+          && Math.abs((json.top + json.bottom) - (sheet.top + sheet.bottom)) < 2 && Math.abs(pdf.width - json.width) < 1
+          && document.querySelector(".utility-menu__row--footer").lastElementChild?.id === "export-json-btn";
       }), true, `menu rows leave no holes at ${width}`);
       await page.locator("#utility-menu-toggle").click();
     }
@@ -4809,6 +4814,7 @@ async function verifyShareReadonlyMode(browser, url) {
     await page.evaluate(() => {
       TabletopMode.setTabletopActionNotes("看的人改的筆記");
       TabletopMode.addCustomTabletopAction({ label: "看的人新增", mode: "action", description: "當頁" });
+      TabletopMode.setCharacterName("看的人改的名字");
       document.getElementById("dice-system-toggle").click();
       document.getElementById("scroll-buttons-toggle").click();
       document.getElementById("hp").value = "3";
