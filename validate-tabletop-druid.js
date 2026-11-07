@@ -300,6 +300,10 @@ async function main() {
     assert.equal(await page.evaluate(() => TabletopMode.getDruidContext().remaining), 3, "cancel does not spend");
     await page.evaluate(() => { TabletopMode.setPanel("actions"); });
     assert.equal(await page.locator("#tabletop-druid-actions").isHidden(), true, "no repeated status card on other tabs in the original form");
+    // 兇蠻打手的「受訓善戰」：原形時顯示，荒野形態中隱藏，解除後恢復。
+    const weaponRules = page.locator("#tabletop-weapon-rule-summary");
+    assert.equal(await page.evaluate(() => hasSelectedFeat("兇蠻打手")), true, "fixture has Savage Attacker");
+    await weaponRules.getByText("受訓善戰").waitFor();
     await page.click("#tabletop-action-tab-bonus");
     await page.locator('[data-action-option-key="dynamic-bonus-class-3u4zp1"]').click();
     const shapeDescription = page.locator("#tabletop-action-panel-bonus .tabletop-action-description");
@@ -318,6 +322,7 @@ async function main() {
     await actionStrip.waitFor();
     assert.match(await actionStrip.innerText(), /狼形態[\s\S]*荒野形態 2／3/u, "other tabs show a one-line status strip");
     assert.deepEqual(await actionStrip.getByRole("button").allInnerTexts(), ["解除"]);
+    await weaponRules.getByText("受訓善戰").waitFor({ state: "detached" });
     const beastAttacks = page.locator("#tabletop-weapon-summary .druid-beast-attacks");
     await beastAttacks.getByText("狼的攻擊", { exact: true }).waitFor({ timeout: 3000 });
     const bite = beastAttacks.locator('.druid-beast-attack-card[data-beast-action="attack-0"]');
@@ -366,6 +371,7 @@ async function main() {
     await page.locator("#tabletop-weapon-summary .druid-beast-attacks").waitFor({ state: "detached", timeout: 3000 });
     await page.locator('#tabletop-action-panel-bonus [data-action-option-key="druid-end-wild-shape"]').waitFor({ state: "detached", timeout: 3000 });
     assert.equal(await shapeDescription.getByRole("button", { name: "變形", exact: true }).count(), 1, "state refresh preserves the selected action");
+    await weaponRules.getByText("受訓善戰").waitFor();
     // 充能能力（巨蜘蛛的蛛網）：可用選項裡只有一個「已使用」勾選與「擲充能」。
     await page.evaluate(() => {
       const run = (op, data) => TabletopMode.commitDruidOperation(op, data, TabletopMode.getDruidContext().token);
