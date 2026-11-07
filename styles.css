@@ -7648,7 +7648,7 @@ button.inventory-arrange-done {
 }
 
 .equipment-shop__item--scroll .equipment-shop__scroll-options {
-  grid-column: 2 / 5;
+  grid-column: 2 / 4;
 }
 
 .equipment-shop__detail {
@@ -7853,6 +7853,7 @@ button.inventory-arrange-done {
     grid-row: 2;
   }
 
+  .equipment-shop__item--scroll .equipment-shop__in-cart,
   .equipment-shop__item--scroll .equipment-shop__add {
     grid-row: 1;
   }
