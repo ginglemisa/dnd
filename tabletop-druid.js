@@ -192,8 +192,8 @@
     );
     copy.append(el("h4", "野性復甦"), el("p", "無需動作。荒野形態用完時，可消耗 1 個法術位恢復 1 次（每回合 1 次）；也可消耗 1 次荒野形態恢復 1 個 1 環法術位（每次長休 1 次）。"), actions);
     const controls = el("div", "", "tabletop-resource-row__controls druid-resource-row__checks");
-    const checkbox = checkField(controls, "恢復法術位：已使用", used);
-    checkbox.setAttribute("aria-label", "野性復甦：恢復 1 環法術位已使用");
+    const checkbox = checkField(controls, "荒野形態 → 1 環法術位：已使用", used);
+    checkbox.setAttribute("aria-label", "野性復甦：荒野形態 → 1 環法術位已使用");
     checkbox.addEventListener("change", () => api().setBuiltInResourceSpent(key, checkbox.checked ? 1 : 0, 1));
     row.append(copy, controls);
     return row;

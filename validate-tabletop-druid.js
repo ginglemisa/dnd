@@ -437,6 +437,10 @@ async function main() {
     const resurgenceRow = page.locator('[data-resource-key="druid-wild-resurgence-spell-slot"]');
     assert.equal(await page.locator("#tabletop-panel-resources").getByRole("button", { name: /野性復甦/u }).count(), 0, "wild resurgence has one entry");
     assert.equal(await resurgenceRow.getByRole("checkbox").count(), 1);
+    assert.equal(await resurgenceRow.getByRole("checkbox", { name: "野性復甦：荒野形態 → 1 環法術位已使用", exact: true }).count(), 1, "the resurgence checkbox names the conversion it records");
+    assert.match(await resurgenceRow.locator(".druid-check").innerText(), /^荒野形態 → 1 環法術位：已使用$/u);
+    const resourceCheckLabels = await page.locator("#tabletop-panel-resources .druid-resource-row .druid-check").allInnerTexts();
+    assert.equal(new Set(resourceCheckLabels).size, resourceCheckLabels.length, "druid resource checkboxes have distinct labels");
     const freeCast = recoveryRow.getByRole("checkbox", { name: "自然恢復：免費施法已使用" });
     const freeBefore = await page.evaluate(() => document.getElementById("druid-natural-recovery-used").checked);
     await freeCast.setChecked(!freeBefore);
