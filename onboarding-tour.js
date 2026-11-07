@@ -708,8 +708,8 @@
     }
 
     async start(initialIndex = 0, kind = "sheet") {
-      // Tour previews re-enable the share-locked identity selects.
-      if (window.SHARE_MODE === true) return;
+      // The sheet tour's previews re-enable the share-locked identity selects; the tabletop tour leaves them alone.
+      if (window.SHARE_MODE === true && kind === "sheet") return;
       if (this.active) this.stop({ resetView: false });
       this.kind = kind;
       this.transitionId++;

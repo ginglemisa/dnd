@@ -100,7 +100,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261107-share-readonly">
+  <link rel="stylesheet" href="styles.css?v=20261107-share-tour">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261105-quick-build-guidance" defer></script>
@@ -123,11 +123,11 @@
   <script src="tabletop-mode.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-druid.js?v=20261103-known-count" defer></script>
   <script src="tabletop-resources.js?v=20261102-race-content" defer></script>
-  <script src="tabletop-actions.js?v=20261104-weapon-switch" defer></script>
+  <script src="tabletop-actions.js?v=20261107-share-copy" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261104-weapon-damage-type" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
-  <script src="onboarding-tour.js?v=20261104-inventory" defer></script>
+  <script src="onboarding-tour.js?v=20261107-share-tour" defer></script>
   <script src="quick-build.js?v=20261106-skills-auto" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
   <script src="spell-management.js?v=20261107-share-readonly" defer></script>
@@ -5888,10 +5888,11 @@ function applyStateObjectNow(data) {
   }
 }
 
-// Quick build and guided tours rewrite the identity selects, so share mode
+// Quick build and the sheet tour rewrite the identity selects, so share mode
 // closes their entries instead of relying on the locked controls.
-function closeShareModeGuideEntries() {
-  ["help-quick-build-btn", "legal-onboarding-btn", "restart-onboarding-btn", "first-table-tour-btn"].forEach(id => {
+// The tabletop tour only needs a character to show, so only a failed share closes it too.
+function closeShareModeGuideEntries({ includeTabletopTour = false } = {}) {
+  ["help-quick-build-btn", "legal-onboarding-btn", "restart-onboarding-btn", ...(includeTabletopTour ? ["first-table-tour-btn"] : [])].forEach(id => {
     const control = document.getElementById(id);
     if (!control) return;
     control.disabled = true;
@@ -6951,7 +6952,7 @@ window.addEventListener("DOMContentLoaded", async function() {
     SHARE_MODE = true;
     window.SHARE_MODE = true;
     document.documentElement.classList.add("is-share-mode");
-    closeShareModeGuideEntries();
+    closeShareModeGuideEntries({ includeTabletopTour: true });
     await window.AppDialog.showMessage({
       title: "分享連結讀取失敗",
       message: "網址可能過長、遭到截斷、瀏覽器不支援壓縮分享，或資料已損壞。為避免顯示錯誤角色，本頁不會讀取本機角色紀錄。",
@@ -7323,9 +7324,10 @@ window.addEventListener("DOMContentLoaded", async function() {
     <div class="legal-share-copy" hidden>
       <h3 class="legal-modal-title">你正在查看分享的角色卡</h3>
       <p>你原本的角色存檔仍然保留，<strong>不會被這份分享角色卡覆蓋</strong>。</p>
-      <p>你可以操作 HP、法術位、物品裝備與跑團模式，也可以將目前內容輸出為 PDF；<strong>屬性、技能、職業選項等角色能力不可更改</strong>。</p>
-      <p><strong>修改不會自動儲存，關閉或重新整理頁面後就會消失。</strong><br>若要保存修改後的角色資料，供日後匯入並繼續編輯，請使用<strong>「匯出 JSON」</strong>。</p>
-      <p>注意：分享模式下，<strong>「分享角卡」、「匯入 JSON」、快速創角與導覽將停用</strong>。</p>
+      <p>你可以操作 HP、法術位、物品裝備與跑團模式，也可以將目前內容輸出為 PDF；<strong>職業、種族、等級、屬性、技能等欄位不可更改</strong>。</p>
+      <p><strong>修改不會自動儲存，重新整理或離開頁面後就會消失。</strong></p>
+      <p>若要保存這份角色卡，請使用<strong>「匯出 JSON」</strong>。</p>
+      <p>注意：分享模式不提供 <strong>[分享角卡]、[匯入 JSON]、[快速創角]、[決定屬性]</strong>。</p>
       <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>
     </div>
     <div class="legal-modal-copy">

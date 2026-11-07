@@ -1584,7 +1584,7 @@ async function verifyQuickBuildRaceCards(browser, url) {
 }
 
 async function verifyShareModeEntries(browser, url) {
-  const entries = ["#help-quick-build-btn", "#restart-onboarding-btn", "#first-table-tour-btn"];
+  const entries = ["#help-quick-build-btn", "#restart-onboarding-btn"];
   const identity = page => page.evaluate(() => ["class", "level", "race", "background"].map(id => {
     const select = document.getElementById(id);
     return [select.value, select.disabled];
@@ -1622,18 +1622,37 @@ async function verifyShareModeEntries(browser, url) {
       assert.equal(await shared.locator(selector).isDisabled(), true, `${selector} is closed in share mode`);
       assert.equal(await shared.locator(selector).getAttribute("title"), "分享模式不提供此功能");
     }
+    assert.equal(await shared.locator("#first-table-tour-btn").isDisabled(), false, "the tabletop tour stays open in share mode");
     await shared.locator("#utility-menu-toggle").click();
     // Programmatic entries are refused as well, so nothing can re-enable the selects.
     await shared.evaluate(async () => {
       quickBuild.open();
       await onboardingTour.start();
-      await onboardingTour.startTabletop();
     });
     assert.equal(await shared.locator("#quick-build-wizard.open").count(), 0, "quick build never opens in share mode");
-    assert.equal(await shared.evaluate(() => onboardingTour.active), false, "tours never start in share mode");
+    assert.equal(await shared.evaluate(() => onboardingTour.active), false, "the sheet tour never starts in share mode");
     assert.equal(await shared.locator("#tour-overlay").getAttribute("aria-hidden"), "true");
     assert.equal(await shared.evaluate(() => window.SHARE_MODE), true, "share mode is never dropped");
     assert.deepEqual(await identity(shared), locked, "identity stays locked after refused entries");
+
+    // 初次遊玩可以走完，走完後角色、鎖定與看的人的本機資料都不變。
+    const lockState = () => shared.evaluate(() => JSON.stringify({
+      data: collectShareState(),
+      locked: [...document.querySelectorAll('[data-share-locked="true"]')].map(control => [control.id, control.inert, control.readOnly, control.disabled])
+    }));
+    const localBefore = await shared.evaluate(() => JSON.stringify(Object.entries(localStorage).sort()));
+    const lockBefore = await lockState();
+    await enter(shared);
+    for (let index = 1; index < 8; index += 1) {
+      await shared.locator("#tour-next-btn").click();
+      await ready(shared, index);
+    }
+    await shared.locator("#tour-next-btn").click();
+    await closed(shared);
+    assert.equal(await lockState(), lockBefore, "the tabletop tour leaves the character and its locks unchanged");
+    assert.equal(await shared.evaluate(() => JSON.stringify(Object.entries(localStorage).sort())), localBefore, "the tabletop tour writes nothing to the viewer's device");
+    assert.deepEqual(await identity(shared), locked, "identity stays locked after the tabletop tour");
+    assert.equal(await shared.evaluate(() => window.SHARE_MODE), true, "share mode survives the tabletop tour");
   } finally { await shared.close(); }
 
   const failed = await openPage();
@@ -1642,12 +1661,12 @@ async function verifyShareModeEntries(browser, url) {
     await failed.goto(failedUrl.href);
     await failed.getByRole("dialog", { name: "分享連結讀取失敗", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
     assert.equal((await identity(failed)).some(([, disabled]) => disabled), false, "a failed share leaves the blank card unlocked");
-    for (const selector of entries) assert.equal(await failed.locator(selector).isDisabled(), true, `${selector} stays closed after a failed share`);
+    for (const selector of [...entries, "#first-table-tour-btn"]) assert.equal(await failed.locator(selector).isDisabled(), true, `${selector} stays closed after a failed share`);
     await failed.evaluate(() => quickBuild.open());
     assert.equal(await failed.locator("#quick-build-wizard.open").count(), 0);
   } finally { await failed.close(); }
   assert.deepEqual(errors, [], "share mode entry browser errors");
-  console.log("Share mode: identity selects locked, quick-build and both tour entries closed (buttons and APIs), failed share left unlocked.");
+  console.log("Share mode: identity selects locked, quick-build and sheet tour closed (buttons and APIs), tabletop tour runs without changing anything, failed share left unlocked.");
 }
 
 async function verifyImports(browser, url, viewport = { width: 1280, height: 800 }) {

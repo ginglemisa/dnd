@@ -9946,9 +9946,18 @@ button.share-mode-tip__toggle:focus-visible {
   font-weight: 400;
 }
 
+/* 跑團模式的選單按鈕固定在頁面右上角，箭頭要讓開才按得到。 */
+html[data-view-mode="tabletop"] .share-mode-tip__heading {
+  padding-inline-end: 52px;
+}
+
 /* 分享模式少掉的選單項目；其他列維持原本的欄位比例。 */
-html.is-share-mode :is(#help-quick-build-btn, #set-default-abilities, #import-json-btn, #open-qr-btn, .share-url-btn, .utility-menu__setting--auto-calc) {
+html.is-share-mode :is(#help-quick-build-btn, #set-default-abilities, #restart-onboarding-btn, #import-json-btn, #open-qr-btn, .share-url-btn, .utility-menu__setting--auto-calc) {
   display: none;
+}
+
+html.is-share-mode .utility-menu__help {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 html.is-share-mode .utility-menu__row--icon {
