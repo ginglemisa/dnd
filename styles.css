@@ -11786,8 +11786,7 @@ html.onboarding-app-bar-hidden .tabs-shell {
 /* ===== Modals / Popups ===== */
 :where(html:not([data-ui-theme="warm"])) #beastPopup,
 :where(html:not([data-ui-theme="warm"])) #skillPopup,
-:where(html:not([data-ui-theme="warm"])) #weaponRulePopup,
-:where(html:not([data-ui-theme="warm"])) .druid-beast-tooltip {
+:where(html:not([data-ui-theme="warm"])) #weaponRulePopup {
   position: fixed;
   z-index: 9999;
   box-sizing: border-box;
@@ -11810,8 +11809,7 @@ html.onboarding-app-bar-hidden .tabs-shell {
 /* ===== Modals / Popups ===== */
 :where(html[data-ui-theme="warm"]) #beastPopup,
 :where(html[data-ui-theme="warm"]) #skillPopup,
-:where(html[data-ui-theme="warm"]) #weaponRulePopup,
-:where(html[data-ui-theme="warm"]) .druid-beast-tooltip {
+:where(html[data-ui-theme="warm"]) #weaponRulePopup {
   position: fixed;
   z-index: 9999;
   box-sizing: border-box;
@@ -20650,42 +20648,136 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabs-shell.utility-
   box-shadow: inset 0 0 0 1px var(--accent-soft);
 }
 
-/* The utility menu is an overlay, so its surface must remain opaque. */
-.druid-operation, .druid-beast-detail { display: grid; gap: .75rem; min-width: 0; }
-.druid-operation p, .druid-beast-detail p, .druid-status p { margin: .35rem 0; line-height: 1.65; overflow-wrap: anywhere; }
+/* 跑團荒野形態（tabletop-druid.js）：總覽狀態卡、其他分頁的細狀態列、變形與已知形態視窗、行動頁野獸攻擊卡、資源頁德魯伊列。 */
+.druid-operation { display: grid; gap: .75rem; min-width: 0; }
+.druid-operation p { margin: .35rem 0; line-height: 1.65; overflow-wrap: anywhere; }
 .druid-field { display: grid; gap: .4rem; font-weight: 600; }
 .druid-field select, .druid-field input { width: 100%; min-width: 0; min-height: 42px; box-sizing: border-box; }
-.druid-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .65rem; }
 .druid-dialog-title-group { display: grid; flex: 1 1 auto; min-width: 0; gap: 4px; }
 .druid-known-count { margin: 0; color: var(--text-body); font-size: var(--fs-sm); font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.5; }
 .druid-known-count.is-over-limit { color: var(--danger); }
-.druid-known-form { display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; column-gap: .5rem; }
-.druid-known-form > .druid-check { width: auto; margin: 0; }
-.druid-known-form > small { grid-column: 2; }
-.druid-beast-name { justify-self: start; width: auto; min-width: 0; min-height: 40px; margin: 0; padding: .35rem 0; color: inherit; font: inherit; background: none; border: 0; border-radius: 0; box-shadow: none; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.druid-beast-tooltip:not([hidden]) { display: block; }
-.druid-beast-tooltip { max-height: min(65vh, 32rem); overflow-y: auto; cursor: auto; touch-action: auto; user-select: text; }
-.druid-beast-tooltip > button { float: right; margin: 0 0 .4rem .4rem; }
+.druid-check { display: flex; align-items: center; gap: .5rem; min-height: 40px; }
+.druid-check input { flex: 0 0 auto; width: 18px; height: 18px; }
+.druid-button-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0; }
 .druid-shape-description { white-space: normal; }
 .druid-shape-description p, .druid-shape-description ul { margin: .85rem 0; }
 .druid-shape-description ul { padding-left: 1.4rem; }
 .druid-shape-description li { margin: .4rem 0; }
 .druid-companion-spell { margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--border); color: var(--text-body); font-size: var(--fs-sm); line-height: 1.5; }
 .druid-companion-spell__title { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .5rem; margin: 0 0 .35rem; color: var(--text); }
-.druid-check { display: flex; align-items: center; gap: .5rem; min-height: 40px; }
-.druid-check input { flex: 0 0 auto; width: 18px; height: 18px; }
-.druid-button-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0; }
-.druid-status .tabletop-compact-button, .tabletop-action-description > .tabletop-compact-button { margin: .2rem .35rem .2rem 0; }
-:where(html:not([data-ui-theme="warm"])) .druid-resource-note { color: var(--text-muted, #64748b); }
-:where(html[data-ui-theme="warm"]) .druid-resource-note { color: var(--text-muted, var(--text-muted)); }
-:where(html:not([data-ui-theme="warm"])) .druid-error { color: var(--danger, #b42318); font-weight: 600; }
-:where(html[data-ui-theme="warm"]) .druid-error { color: var(--danger, var(--warning)); font-weight: 600; }
-.druid-beast-attacks { grid-column: 1 / -1; min-width: 0; }
-.druid-beast-attacks > p { line-height: 1.7; }
-.druid-beast-attack-text > span { display: block; }
-.druid-beast-attack-text > span + span { margin-top: .2em; }
-#tabletop-druid-resources { margin-top: 1rem; }
+.druid-resource-note { color: var(--text-muted); }
+.druid-error { color: var(--danger); font-weight: 600; }
+.druid-text-button { width: auto; min-width: 0; min-height: 32px; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; color: var(--accent-strong); font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
+/* 小標籤：感官、特性、移動方式、臨時 HP。 */
+.druid-tags { display: flex; flex-wrap: wrap; gap: .3rem; min-width: 0; }
+.druid-tag { display: inline-flex; align-items: center; padding: .05rem .5rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-soft); color: var(--text-body); font-size: var(--fs-xs); font-weight: 750; line-height: 1.55; white-space: nowrap; }
+:where(html[data-ui-theme="warm"]) .druid-tag { border-radius: var(--radius-sm); }
+.druid-tag--hp, .druid-tag--current { border-color: var(--accent-strong); color: var(--accent-strong); }
+.druid-tag--locked { color: var(--text-muted); }
+
+/* 總覽的形態狀態卡：一個主按鈕；變形中改成強調外框。 */
+.druid-card { display: grid; gap: .55rem; margin: .75rem .75rem .85rem; padding: .75rem .85rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); }
+.druid-card[hidden] { display: none; }
+.druid-card.is-shaped { border: 2px solid var(--accent-strong); }
+.druid-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+.druid-card__title { min-width: 0; }
+.druid-card__title .tabletop-eyebrow { display: block; }
+.druid-card__title h3 { margin: .1rem 0 0; color: var(--text); font-size: var(--fs-lg); line-height: 1.3; overflow-wrap: anywhere; }
+.druid-card__type { margin-left: .45rem; color: var(--text-muted); font-size: var(--fs-sm); font-weight: 750; }
+.druid-pips { display: inline-flex; flex: 0 0 auto; align-items: baseline; gap: .35rem; color: var(--accent-strong); font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.druid-pips__dots { font-size: var(--fs-base); letter-spacing: .08em; }
+.druid-card__note { margin: 0; color: var(--text-body); font-size: var(--fs-sm); line-height: 1.5; }
+.druid-card__warning { margin: 0; color: var(--warning); font-size: var(--fs-sm); font-weight: 750; line-height: 1.5; }
+.druid-card__actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.druid-card__companion { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem .75rem; padding-top: .5rem; border-top: 1px solid var(--border); color: var(--text-body); font-size: var(--fs-sm); }
+
+/* 其他分頁的細狀態列；法術頁變形時是警示列。 */
+.druid-strip { display: flex; align-items: center; justify-content: space-between; gap: .35rem .75rem; margin: .6rem .75rem; padding: .4rem .6rem; border: 1px solid var(--border-strong); border-left: 4px solid var(--accent-strong); border-radius: var(--radius-sm); background: var(--surface); }
+.druid-strip[hidden] { display: none; }
+.druid-strip__copy { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: baseline; gap: .1rem .6rem; min-width: 0; margin: 0; color: var(--text); font-size: var(--fs-sm); line-height: 1.45; }
+.druid-strip__copy span { color: var(--text-body); }
+.druid-strip__actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: .4rem; margin-left: auto; }
+.druid-strip--warning { border-color: var(--warning-border); border-left-color: var(--warning); background: var(--warning-soft); }
+.druid-strip--warning .druid-strip__copy strong { color: var(--warning); }
+.druid-strip--warning .druid-strip__copy span { color: var(--text); }
+
+/* 變形視窗：已知形態卡片，選中的加強調外框。 */
+.druid-shape__known { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .75rem; color: var(--text-muted); font-size: var(--fs-sm); font-weight: 750; }
+.druid-form-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: .55rem; }
+.druid-form-card { position: relative; display: grid; align-content: start; gap: .35rem; min-width: 0; padding: .65rem .75rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); cursor: pointer; }
+.druid-form-card:hover { border-color: var(--accent); }
+.druid-form-card.is-selected { border-color: var(--accent-strong); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-strong); }
+.druid-form-card:has(.druid-form-card__input:focus-visible) { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.druid-form-card__input { position: absolute; top: .5rem; right: .5rem; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
+.druid-form-card > span { display: block; min-width: 0; }
+.druid-form-card > .druid-form-card__head, .druid-form-card > .druid-tags { display: flex; }
+.druid-form-card__head { flex-wrap: wrap; align-items: baseline; gap: .2rem .5rem; }
+.druid-form-card__name { color: var(--text); font-size: var(--fs-base); }
+.druid-form-card__meta { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 750; }
+.druid-form-card__attack { color: var(--text); font-size: var(--fs-sm); font-weight: 750; line-height: 1.45; }
+.druid-form-card__summary { color: var(--text-muted); font-size: var(--fs-xs); line-height: 1.45; }
+.druid-shape__effects { margin: 0; padding: .45rem .6rem; border-radius: var(--radius-sm); background: var(--surface-soft); color: var(--text-body); font-size: var(--fs-sm); font-weight: 750; line-height: 1.5; }
+.druid-operation .druid-shape__effects { margin: 0; }
+.druid-advanced { border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.druid-advanced > summary { padding: .65rem .7rem; color: var(--text-body); font-size: var(--fs-sm); font-weight: 750; line-height: 1.45; cursor: pointer; }
+.druid-advanced__body { display: grid; gap: .6rem; padding: 0 .7rem .7rem; }
+
+/* 管理已知形態：CR 分組、移動方式篩選、原地展開資料卡。 */
+.druid-operation .druid-known__intro { margin: 0; color: var(--text-body); font-size: var(--fs-sm); line-height: 1.5; }
+.druid-known-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem .75rem; }
+.druid-filters { display: flex; flex-wrap: wrap; gap: .35rem; }
+.druid-chip { width: auto; min-width: 0; min-height: 36px; margin: 0; padding: .3rem .8rem; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); color: var(--text-body); box-shadow: none; font-size: var(--fs-sm); font-weight: 800; line-height: 1.3; cursor: pointer; }
+:where(html[data-ui-theme="warm"]) .druid-chip { border-radius: var(--radius-sm); }
+.druid-chip[aria-pressed="true"] { border-color: var(--action-fill); background: var(--action-fill); color: var(--on-accent); }
+.druid-chip--recommend { border-style: dashed; color: var(--accent-strong); }
+.druid-known-group { display: grid; gap: .25rem; }
+.druid-known-group[hidden] { display: none; }
+.druid-known-group__title { margin: .35rem 0 0; padding-bottom: .2rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: var(--fs-sm); font-weight: 900; }
+.druid-known-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); align-items: start; gap: 0 .75rem; }
+.druid-known-form { display: grid; grid-template-columns: 20px auto minmax(0, 1fr); align-items: center; column-gap: .5rem; min-width: 0; }
+.druid-known-form[hidden] { display: none; }
+.druid-known-form > .druid-check { width: auto; margin: 0; }
+.druid-known-form.is-locked .druid-beast-name { color: var(--text-muted); }
+.druid-beast-name { justify-self: start; width: auto; min-width: 0; min-height: 40px; margin: 0; padding: .35rem 0; color: inherit; font: inherit; background: none; border: 0; border-radius: 0; box-shadow: none; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.druid-tag__icon { margin-right: .1rem; }
+.druid-known-detail { grid-column: 1 / -1; margin: .1rem 0 .5rem; padding: .6rem .7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-soft); color: var(--text); font-size: var(--fs-sm); line-height: 1.5; }
+.druid-known-detail[hidden] { display: none; }
+:is(.druid-known-detail, .druid-beast-card) .beast-card .title { margin-bottom: .35rem; font-size: var(--fs-base); font-weight: 800; }
+:is(.druid-known-detail, .druid-beast-card) .beast-card .muted { margin-left: .3rem; color: var(--text-muted); font-size: var(--fs-sm); font-weight: 650; }
+:is(.druid-known-detail, .druid-beast-card) .beast-card .row { display: flex; flex-wrap: wrap; gap: .25rem .9rem; }
+.druid-beast-card { font-size: var(--fs-sm); line-height: 1.55; }
+
+/* 行動頁的野獸攻擊卡：武器卡的骨架，名稱不是按鈕；備註是攻擊方式與效果句。 */
+.druid-beast-attacks { display: grid; gap: .65rem; min-width: 0; }
+.druid-beast-attacks__title { margin: 0; color: var(--text); font-size: var(--fs-base); }
+.druid-dice-note { margin: 0; color: var(--warning); font-size: var(--fs-sm); font-weight: 750; line-height: 1.5; }
+#tabletop-panel-actions .druid-beast-attack-card__name { display: flex; align-items: center; min-height: 2.65rem; padding: 0 .2rem; color: var(--text); font-size: var(--fs-sm); font-weight: 900; line-height: 1.35; overflow-wrap: anywhere; }
+#tabletop-panel-actions .druid-beast-attack-card__fixed { display: flex; align-items: center; justify-content: center; min-height: 2.65rem; color: var(--text); font-size: var(--fs-sm); font-weight: 800; }
+#tabletop-panel-actions .tabletop-weapon-field.druid-beast-attack-card__note-field dd { justify-content: stretch; gap: .4rem; text-align: left; }
+.druid-beast-attack-card__note { display: grid; gap: .15rem; }
+.druid-beast-attack-card__reach { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 800; }
+.druid-beast-attack-card__effect { font-weight: 600; line-height: 1.5; }
+.druid-beast-attack-card .druid-button-row { margin: 0; }
+.druid-beast-traits { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: .5rem; }
+.druid-beast-trait { padding: .55rem .7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-soft); color: var(--text-body); font-size: var(--fs-sm); line-height: 1.5; }
+.druid-beast-trait strong { display: block; color: var(--text); }
+.druid-beast-trait p { margin: .15rem 0 0; }
+.druid-beast-recovery { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; }
+.druid-beast-recovery .druid-check { width: auto; min-height: 36px; font-size: var(--fs-sm); font-weight: 800; }
+/* 攻擊卡裡的勾選不套用武器欄位的 label／input 外框。 */
+#tabletop-panel-actions .druid-beast-attack-card .druid-check { display: flex; gap: .5rem; color: var(--text); white-space: normal; }
+#tabletop-panel-actions .druid-beast-attack-card .druid-check input { width: 18px; min-height: 0; height: 18px; margin: 0; padding: 0; }
+.druid-beast-recovery__hint { flex-basis: 100%; margin: 0; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; }
+.druid-beast-action-controls { display: grid; gap: .35rem; margin-top: .5rem; }
+.druid-beast-action-controls .druid-button-row { margin: 0; }
+
+/* 資源頁的自然恢復、野性復甦：按鈕與已使用勾選同一列。 */
+.druid-resource-row__actions { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .45rem; }
+.druid-resource-row__checks { display: grid; justify-items: start; gap: 0; }
+.druid-resource-row__checks .druid-check { width: auto; font-size: var(--fs-sm); font-weight: 750; }
+
+/* The utility menu is an overlay, so its surface must remain opaque. */
 :where(html:not([data-ui-theme="warm"])) .utility-menu {
   background: #fff;
 }

@@ -1,6 +1,6 @@
 // 網站讀取的怪物資料：npm run build 由 content/srd/monsters 產生根目錄的兩個檔案（衍生產物，不提交）。
 // - monster-content.generated.js：monsterRules（結構化數值）、monsterText（網站版：資料卡文字 statBlock、用途短說明、特性與動作說明）、
-//   monsterLabels（跑團顯示用的傷害類型、速度、屬性等名稱）、monsterSrdFile（SRD 版產物的檔名與快取版本）。網站經 monster.js 的 BeastCatalog 讀取。
+//   monsterLabels（跑團顯示用的傷害類型、速度、感官、屬性等名稱）、monsterSrdFile（SRD 版產物的檔名與快取版本）。網站經 monster.js 的 BeastCatalog 讀取。
 // - monster-srd.generated.js：monsterSrdText（SRD 版資料卡的 HTML），野獸資料卡切到「SRD 版」時才載入；離線版內嵌。
 // 英文原文（en 區塊）只供校對，不寫進任何產物。
 // index.html 載入 monster-content.generated.js 的快取版本（?v=）是檔案內容的雜湊，只在上線建置（--stamp-version）時改寫。
@@ -12,7 +12,7 @@ const { ROOT, loadSpellCatalog, loadConditionLabels } = require("../content/site
 const { ContentError } = require("../content/errors");
 const { writeIfChanged, contentVersion, stampScriptVersion } = require("../content/output");
 const { inline, body, escapeHtml } = require("../spell-content/srd-text");
-const { SPEED_LABELS, ABILITY_LABELS, CONDITIONAL_LABELS, TIMING_LABELS, averageOf, fillActionText, statBlock, srdHtml } = require("./format");
+const { SPEED_LABELS, SENSE_LABELS, ATTACK_LABELS, ABILITY_LABELS, CONDITIONAL_LABELS, TIMING_LABELS, averageOf, fillActionText, statBlock, srdHtml } = require("./format");
 
 const OUTPUT_NAME = "monster-content.generated.js";
 const SRD_OUTPUT_NAME = "monster-srd.generated.js";
@@ -73,13 +73,13 @@ function renderMonsterData(monsters, labels, srdSource) {
   const text = Object.fromEntries(ids.map(id => [id, monsterText(monsters.get(id), labels)]));
   const runtimeLabels = {
     damage: Object.fromEntries(Object.entries(labels.damage).map(([type, label]) => [type, `${label}傷害`])),
-    speed: SPEED_LABELS, ability: ABILITY_LABELS, conditional: CONDITIONAL_LABELS, timing: TIMING_LABELS
+    speed: SPEED_LABELS, sense: SENSE_LABELS, attack: ATTACK_LABELS, ability: ABILITY_LABELS, conditional: CONDITIONAL_LABELS, timing: TIMING_LABELS
   };
   const srdFile = `${SRD_OUTPUT_NAME}?v=${contentVersion(srdSource)}`;
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd/monsters 的怪物內容檔產生，請勿手動修改。
 // monsterRules：結構化數值（體型、類型、CR、AC、HP、速度、屬性、豁免、技能、感官、抗性免疫、動作的攻擊／豁免／傷害／使用限制）。
 // monsterText：網站版文字（statBlock 資料卡各行、summary 用途短說明、traits 特性、actions 動作說明、languages、gear）。
-// monsterLabels：跑團顯示用的名稱（傷害類型、速度、屬性、條件傷害、傷害時機）。monsterSrdFile：SRD 版產物（${SRD_OUTPUT_NAME}）的網址與快取版本。
+// monsterLabels：跑團顯示用的名稱（傷害類型、速度、感官、攻擊方式、屬性、條件傷害、傷害時機）。monsterSrdFile：SRD 版產物（${SRD_OUTPUT_NAME}）的網址與快取版本。
 // 網站經 monster.js 的 BeastCatalog 讀取。
 const monsterRules = {
 ${entries(ids, rules)}

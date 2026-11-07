@@ -364,7 +364,8 @@
     const form = globalScope.TabletopMode?.getDruidForm?.();
     const equipment = globalScope.TabletopMode?.getDruidContext?.().druid.equipment;
     const equippedWeapons = ["main", "off"].filter(hand => !form || equipment?.[hand] === "wear").map(getEquippedWeapon).filter(Boolean);
-    if (hasSelectedFeat("兇蠻打手")) {
+    // 荒野形態中暫時不顯示受訓善戰（使用者決定，只影響顯示，不論是否持用武器）。
+    if (hasSelectedFeat("兇蠻打手") && !form) {
       entries.push(["受訓善戰", "每回合 1 次，武器命中時傷害骰擲 2 次，取其一。"]);
     }
     if (hasSelectedFeat("擒抱者")) {
