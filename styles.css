@@ -18780,21 +18780,19 @@ button.tabletop-custom-spell-gear[aria-expanded="true"] svg {
   --resource-rule: var(--border);
 }
 
-html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tabletop-panel-resources {
+html[data-theme="dark"] #tabletop-panel-resources {
   --resource-paper: var(--surface-strong);
   --resource-ink: var(--text);
   --resource-caption: var(--text-muted);
   --resource-active: var(--accent);
   --resource-track: var(--surface-muted);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tabletop-panel-resources {
   --resource-rule: var(--border-strong);
 }
 
 html:where([data-ui-theme="warm"])[data-theme="dark"] #tabletop-panel-resources {
-  --resource-paper: var(--surface-strong);
-  --resource-ink: var(--text);
-  --resource-caption: var(--text-muted);
-  --resource-active: var(--accent);
-  --resource-track: var(--surface-muted);
   --resource-rule: var(--border);
 }
 
@@ -19483,14 +19481,22 @@ html[data-theme="dark"] .feat-desc-subtitle {
   color: var(--text-body);
 }
 
+html[data-theme="dark"] #tab-basic #hp-display,
+html[data-theme="dark"] #tab-basic #ac-display,
+html[data-theme="dark"] #tab-basic .speed-current-display,
+html[data-theme="dark"] #tab-basic .basic-display-checkbox,
+html[data-theme="dark"] #tab-basic .tight-input,
+html[data-theme="dark"] #tab-basic .hp-card input[type="number"] {
+  border-color: var(--border-strong);
+  background: var(--input-bg);
+}
+
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic #hp-display,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic #ac-display,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .speed-current-display,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .basic-display-checkbox,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .tight-input,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .hp-card input[type="number"] {
-  border-color: var(--border-strong);
-  background: var(--input-bg);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -19500,8 +19506,6 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .speed-current-
 html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-checkbox,
 html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .tight-input,
 html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .hp-card input[type="number"] {
-  border-color: var(--border-strong);
-  background: var(--input-bg);
   box-shadow: none;
 }
 
@@ -19521,39 +19525,37 @@ html[data-theme="dark"] #tab-basic .basic-display-checkbox:checked {
   background: var(--accent-soft);
 }
 
-html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .basic-display-checkbox:checked::after {
+html[data-theme="dark"] #tab-basic .basic-display-checkbox:checked::after {
   content: "✓";
   display: grid;
   place-items: center;
   border-color: var(--accent);
+  font-size: 1rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .basic-display-checkbox:checked::after {
   background: var(--accent);
   color: #071521;
   box-shadow: 0 0 0 3px var(--accent-soft);
-  font-size: 1rem;
-  font-weight: 950;
-  line-height: 1;
 }
 
 html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-checkbox:checked::after {
-  content: "✓";
-  display: grid;
-  place-items: center;
-  border-color: var(--accent);
   background: var(--action-fill);
   color: var(--on-accent);
   box-shadow: none;
-  font-size: 1rem;
-  font-weight: 950;
-  line-height: 1;
+}
+
+html[data-theme="dark"] #tab-basic .basic-display-checkbox:focus-visible {
+  border-color: var(--accent);
 }
 
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .basic-display-checkbox:focus-visible {
-  border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
 html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-checkbox:focus-visible {
-  border-color: var(--accent);
   box-shadow: none; outline: 2px solid var(--focus-ring); outline-offset: 2px;
 }
 
@@ -19575,18 +19577,20 @@ html[data-theme="dark"] #legal-onboarding-btn {
   color: var(--on-accent);
 }
 
+html[data-theme="dark"] .utility-menu__button--danger,
+html[data-theme="dark"] .utility-menu__button--danger:hover {
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .utility-menu__button--danger,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .utility-menu__button--danger:hover {
-  border-color: var(--danger-border);
   background: linear-gradient(180deg, var(--surface-strong) 0%, var(--danger-soft) 100%);
-  color: var(--danger);
 }
 
 html:where([data-ui-theme="warm"])[data-theme="dark"] .utility-menu__button--danger,
 html:where([data-ui-theme="warm"])[data-theme="dark"] .utility-menu__button--danger:hover {
-  border-color: var(--danger-border);
   background: var(--danger-soft);
-  color: var(--danger);
 }
 
 html[data-theme="dark"] #equipment-notes-section details,
@@ -19760,16 +19764,24 @@ html[data-theme="dark"] .pdf-export-flow-modal {
   background: var(--overlay-strong);
 }
 
+html[data-theme="dark"] .point-buy-modal-card,
+html[data-theme="dark"] .ability-choice-card,
+html[data-theme="dark"] .default-ability-class-card,
+html[data-theme="dark"] .point-buy-exit-card,
+html[data-theme="dark"] .legal-modal-card,
+html[data-theme="dark"] .pdf-export-flow-modal__card {
+  border-color: var(--border-strong);
+  color: var(--text-body);
+  box-shadow: var(--shadow-strong);
+}
+
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .point-buy-modal-card,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .ability-choice-card,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .default-ability-class-card,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .point-buy-exit-card,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .legal-modal-card,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .pdf-export-flow-modal__card {
-  border-color: var(--border-strong);
   background: linear-gradient(180deg, var(--surface-strong) 0%, var(--surface) 100%);
-  color: var(--text-body);
-  box-shadow: var(--shadow-strong);
 }
 
 html:where([data-ui-theme="warm"])[data-theme="dark"] .point-buy-modal-card,
@@ -19778,10 +19790,7 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .default-ability-class-car
 html:where([data-ui-theme="warm"])[data-theme="dark"] .point-buy-exit-card,
 html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-card,
 html:where([data-ui-theme="warm"])[data-theme="dark"] .pdf-export-flow-modal__card {
-  border-color: var(--border-strong);
   background: var(--surface-soft);
-  color: var(--text-body);
-  box-shadow: var(--shadow-strong);
 }
 
 html[data-theme="dark"] .ability-choice-card h3,
@@ -19867,16 +19876,17 @@ html[data-theme="dark"] .point-buy-exit-card h3 {
   color: var(--danger);
 }
 
-html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #point-buy-exit-confirm {
-  border-color: rgba(248, 113, 113, 0.45);
+html[data-theme="dark"] #point-buy-exit-confirm {
   background: var(--danger-soft);
   color: var(--danger);
 }
 
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #point-buy-exit-confirm {
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
 html:where([data-ui-theme="warm"])[data-theme="dark"] #point-buy-exit-confirm {
   border-color: var(--danger-border);
-  background: var(--danger-soft);
-  color: var(--danger);
 }
 
 html[data-theme="dark"] .legal-modal-meta,
@@ -19906,15 +19916,17 @@ html[data-theme="dark"] #tour-tooltip {
   box-shadow: var(--shadow-strong);
 }
 
+html[data-theme="dark"] #tour-step-progress {
+  background: var(--accent-soft);
+}
+
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tour-step-progress {
   border-color: var(--border-strong);
-  background: var(--accent-soft);
   color: var(--accent-strong);
 }
 
 html:where([data-ui-theme="warm"])[data-theme="dark"] #tour-step-progress {
   border-color: var(--border);
-  background: var(--accent-soft);
   color: var(--accent);
 }
 
