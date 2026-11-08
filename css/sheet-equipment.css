@@ -3605,6 +3605,7 @@ button.inventory-arrange-done {
   overflow-y: auto;
 }
 
+.magic-item-detail__subtitle,
 .app-dialog__body .magic-item-detail__subtitle {
   margin: 0 0 0.6rem;
   color: var(--text-muted);
@@ -3612,6 +3613,7 @@ button.inventory-arrange-done {
   font-weight: 700;
 }
 
+.magic-item-detail__manual,
 .app-dialog__body .magic-item-detail__manual {
   margin: 0.25rem 0 0;
   color: var(--warning);
@@ -3619,6 +3621,7 @@ button.inventory-arrange-done {
   font-weight: 700;
 }
 
+.magic-item-detail__status,
 .app-dialog__body .magic-item-detail__status {
   margin: 0 0 0.5rem;
   color: var(--text-muted);

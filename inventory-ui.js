@@ -6,6 +6,8 @@
  *   （search.js 的 renderEquipmentDetailInto()），下方「持有」區調整數量、位置或刪除。
  *   持有區標題行下方是互動列（buildItemActions()，資料取自 equipment-data.js 的 EQUIPMENT_ITEM_ACTIONS）：武器／護甲／盾牌的裝備與卸除
  *   （寫回裝備頁下拉，按下後視窗立即關閉）、工具與撬棍的檢定、醫療包的使用次數、治療藥水飲用回復生命值、投擲物與毒藥；檢定與傷害骰只在擲骰功能開啟時顯示。
+ *   魔法物品：視窗上方是與魔法商店相同的副標與說明（magic-item-shop.js 的 renderDetail()）；consumable 物品有「使用」（數量 −1），藥水有 getHeal() 時是「飲用」。
+ *   目錄找不到的魔法物品保留這一筆，顯示「未知魔法物品」。
  *   至少 2 件的物品在互動列最後一行多一顆「拆分」（沒有互動列時自成一行），開 `inventory-split` 視窗輸入兩堆的數量；拆開後是兩個獨立標籤。
  * - 裝備：物品經 Inventory.syncEquipped() 從物品欄拿 1 件出來，成為固定 ×1、排在「裝備中」的標籤（entry.slot）；角色卡的裝備選擇是唯一依據，
  *   index.html 在選擇改變與還原存檔後呼叫 syncEquippedSlots()。從標籤的「裝備」按鈕拿那個標籤，從下拉則由 Inventory 依規則找。卸除後在身上成為獨立的 ×1 標籤。
@@ -183,6 +185,13 @@
     });
     if (confirmed) unequipSlot(entry.slot);
     return Boolean(confirmed);
+  }
+
+  // 這筆物品對應的魔法物品規則：有 magic 的魔法物品，或沿用裝備品名的法術卷軸、治療藥水。
+  function magicRuleOf(entry) {
+    const catalog = globalScope.MagicItemCatalog;
+    if (!catalog) return null;
+    return entry?.magic ? catalog.get(entry.magic.id) : catalog.getByEquipmentName(entry?.itemId);
   }
 
   // ===== 物品互動（持有區的按鈕；資料取自 equipment-data.js 的 EQUIPMENT_ITEM_ACTIONS）=====
@@ -441,7 +450,8 @@
    */
   function buildItemActions(entry, ctx) {
     const item = api().getCatalogItem(entry.itemId);
-    if (!item) return null;
+    const magicRule = magicRuleOf(entry);
+    if (!item && !magicRule) return null;
     const actions = itemActions(entry) || {};
     const label = api().getLabel(entry);
     const rows = [];
@@ -511,6 +521,23 @@
         }, `擲${label}的${actions.coating.damageType}傷害`)
         : null;
       rows.push(actionRow(`命中時額外 ${actions.coating.damage} ${actions.coating.damageType}傷害。`, coat, damage));
+    }
+    // 魔法物品的消耗品；既有的治療藥水在上面已經有「飲用」。
+    if (magicRule?.consumable && !actions.heal) {
+      const heal = entry.magic ? globalScope.MagicItemCatalog.getHeal(entry.magic.id, api().getMagicSelection(entry)) : null;
+      if (heal) {
+        rows.push(actionRow(`飲用後回復 ${heal} 生命值。`, actionButton("飲用", () => {
+          const used = drinkPotion(entry, heal.replace(/\s+/gu, ""));
+          if (used) ctx.afterUse(used);
+        }, `飲用${label}`)));
+      } else {
+        rows.push(actionRow("", actionButton("使用", () => {
+          const used = api().consume(entry.uid);
+          if (!used) return;
+          globalScope.AppDialog.notify(`已使用${label}，${used.removed ? `${label}已用完` : quantityText(entry, used.quantity)}。`, { tone: "info" });
+          ctx.afterUse(used);
+        }, `使用${label}`)));
+      }
     }
     if (!rows.length) return null;
     const section = el("div", "inventory-item-actions");
@@ -745,7 +772,7 @@
   function openItemDialog(uid, trigger) {
     const entry = api().getEntry(uid);
     if (!entry || !globalScope.AppDialog) return;
-    const custom = !entry.itemId;
+    const custom = api().isCustom(entry);
     const item = api().getCatalogItem(entry.itemId);
     let controls = null;
     let stopWatching = () => {};
@@ -756,8 +783,11 @@
       // 刪除或卸下的確認視窗、說明內的規則連結、裝備的選手視窗疊在這個視窗上。
       allowNested: true,
       renderContent(body, dialog) {
-        // 目錄物品先顯示與商店相同的說明（search.js），下方「持有」區調整數量與位置；自訂與通稱物品只有持有區。
-        const hasDetail = Boolean(item && !item.generic && globalScope.renderEquipmentDetailInto?.(body, entry.itemId));
+        // 魔法物品顯示與魔法商店相同的說明，目錄物品顯示與商店相同的說明（search.js），下方「持有」區調整數量與位置；自訂與通稱物品只有持有區。
+        const hasDetail = entry.magic
+          ? Boolean(globalScope.MagicItemShop?.renderDetail(body, entry.magic.id))
+          : Boolean(item && !item.generic && globalScope.renderEquipmentDetailInto?.(body, entry.itemId));
+        if (entry.magic && !hasDetail) body.appendChild(el("p", "inventory-item-note", "網站找不到這件魔法物品的資料，可能來自較新的版本或內容已移除；這一筆會保留在物品欄。"));
         const holding = el("section", "inventory-holding");
         holding.classList.toggle("has-detail", hasDetail);
         holding.setAttribute("aria-label", "持有");
@@ -1007,7 +1037,7 @@
       tag.classList.add("is-equipped");
       item.classList.add("is-fixed");
     }
-    if (!entry.itemId) tag.classList.add("is-custom");
+    if (api().isCustom(entry)) tag.classList.add("is-custom");
     tag.addEventListener("click", () => { if (!arranging) openItemDialog(entry.uid, tag); });
     item.appendChild(tag);
     if (api().isContainer(entry)) {
@@ -1431,7 +1461,7 @@
     if (turningOn && api().entries().length) {
       const confirmed = await globalScope.AppDialog?.requestDecision({
         title: "只以文字管理物品？",
-        message: "物品標籤會轉成一行文字放進攜帶物品；自訂物品的磅數、描述與容器設定不會保留。之後可以再按一次，用「整理成標籤」轉回。",
+        message: `物品標籤會轉成一行文字放進攜帶物品；自訂物品的磅數、描述與容器設定不會保留${api().entries().some(entry => entry.magic) ? "，魔法物品只留下名稱" : ""}。之後可以再按一次，用「整理成標籤」轉回。`,
         cancelLabel: "取消",
         confirmLabel: "轉成文字",
         trigger
