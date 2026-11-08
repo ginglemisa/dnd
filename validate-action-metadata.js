@@ -1258,11 +1258,11 @@ async function verifyEquipmentLoadout(browser, url) {
       const greatsword = { uid: "great", itemId: "巨劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } };
       const mail = { uid: "mail", itemId: "鎖子甲", quantity: 1, magic: { id: "armor-plus", bonus: 1 } };
       held({ class: "wizard", mainHand: "長劍+2" }, sword);
-      const wizard = [document.getElementById("atk-main-hit").value, document.getElementById("atk-main-name").value, document.getElementById("equipment-loadout-summary-content").textContent.includes("武器未熟練")];
+      const wizard = [document.getElementById("atk-main-hit").value, document.getElementById("atk-main-name").value, document.getElementById("equipment-loadout-summary-content").textContent.includes("警告：未熟練")];
       held({ class: "fighter", mainHand: "巨劍+1" }, greatsword);
       const twoHanded = [document.getElementById("offHand").disabled, hasTwoHandedProperty(getWeaponByName("巨劍+1"))];
       held({ class: "wizard", armor: "鎖子甲+1" }, mail);
-      const armor = [document.getElementById("equipment-loadout-summary-content").textContent.includes("護甲未熟練"), isArmorProficient(getArmorByName("鎖子甲+1"))];
+      const armor = [document.getElementById("equipment-loadout-summary-content").textContent.includes("警告：未熟練"), isArmorProficient(getArmorByName("鎖子甲+1"))];
       held({ class: "fighter", armor: "鎖子甲+1" }, mail);
       const armorSummary = document.getElementById("equipment-loadout-summary-content").textContent;
       return { wizard, twoHanded, armor, heavy: armorSummary.includes("力量需求"), stealth: armorSummary.includes("懲罰") };

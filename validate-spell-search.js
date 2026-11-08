@@ -707,7 +707,7 @@ async function validateMagicItemShop(page) {
   await grant.locator(".magic-item-segmented__button", { hasText: "高等" }).click();
   await finishGrant();
   await openGrant("spell-scroll");
-  assert.deepEqual(await grant.locator("select").first().locator("option").allTextContents(), ["戲法", "1環", "2環", "3環", "4環"], "scrolls offer cantrips to 4th level");
+  assert.deepEqual(await grant.locator("select").first().locator("option").allTextContents(), ["戲法", "1環", "2環", "3環", "4環", "5環"], "scrolls offer cantrips to 5th level");
   await get().click();
   assert.deepEqual(await grant.locator(".starting-equipment-error").allTextContents(), ["", "請先選擇法術。"], "a missing spell keeps the dialog open");
   await grant.locator("select").first().selectOption({ label: "1環" });
@@ -824,7 +824,9 @@ async function validateMagicItemShop(page) {
   assert.equal(await page.evaluate(() => Inventory.getEntry("climbing").quantity), 1, "using a consumable takes one");
   await closeItem();
   await openItem("scroll");
-  assert.match(await item.locator(".magic-item-detail__text").innerText(), /卷軸上寫有單一法術的文字/u, "spell scrolls show the new translation");
+  assert.match(await item.locator(".spell-version__site").innerText(), /記載一個戲法或 1 環法術/u, "spell scrolls open on the website version");
+  await item.locator('[data-spell-version="srd"]').click();
+  assert.match(await item.locator(".spell-version__srd-body").innerText(), /卷軸上寫有單一法術的文字/u, "the SRD version shows the translation");
   await item.getByRole("button", { name: "使用命令術法術卷軸" }).click();
   await item.waitFor({ state: "detached" });
   assert.equal(await page.evaluate(() => Inventory.getEntry("scroll")), null, "the last scroll closes the dialog");
@@ -833,7 +835,7 @@ async function validateMagicItemShop(page) {
   assert.match(await item.locator(".inventory-item-note").first().textContent(), /網站找不到這件魔法物品的資料/u);
   await closeItem();
 
-  // 治療藥水與法術卷軸的詳情：裝備清單與商店名稱連結都顯示新譯文，一般商店的價格與重量不變。
+  // 治療藥水與法術卷軸的詳情：裝備清單與商店名稱連結都先顯示網站版，切換後是譯文，一般商店的價格與重量不變。
   assert.deepEqual(await page.evaluate(() => {
     const pick = name => EQUIPMENT_SHOP_ITEMS.filter(entry => entry.name === name).map(entry => [entry.variant, entry.amount, entry.currency, entry.spellLevel ?? null, entry.weight]);
     return [pick("治療藥水"), pick("法術卷軸")];
@@ -841,12 +843,16 @@ async function validateMagicItemShop(page) {
   await page.locator("#equipment-notes-section details").evaluateAll(nodes => nodes.forEach(node => { node.open = true; }));
   await page.locator("#equipment-notes-section .equipment-item-link", { hasText: /^治療藥水$/u }).click();
   const detail = page.locator("#equipment-detail-modal");
-  await detail.locator(".magic-item-detail__text").getByText("恢復的生命值", { exact: true }).first().waitFor();
+  await detail.locator(".spell-version__site").getByText("飲用者恢復 2d4 + 2 生命值").waitFor();
+  await detail.locator('[data-spell-version="srd"]').click();
+  await detail.locator(".spell-version__srd-body").getByText("恢復的生命值", { exact: true }).first().waitFor();
   await page.keyboard.press("Escape");
   await page.evaluate(() => { EquipmentShop.open({ focusName: "治療藥水" }); });
   await shop.locator(".equipment-shop__detail", { hasText: /^治療藥水$/u }).first().click();
   const shopDetail = page.locator('.app-dialog[data-variant="equipment-detail"]');
-  await shopDetail.locator(".magic-item-detail__text").getByText("恢復的生命值", { exact: true }).first().waitFor();
+  await shopDetail.locator(".spell-version__site").getByText("飲用者恢復 2d4 + 2 生命值").waitFor();
+  await shopDetail.locator('[data-spell-version="srd"]').click();
+  await shopDetail.locator(".spell-version__srd-body").getByText("恢復的生命值", { exact: true }).first().waitFor();
   await shopDetail.getByRole("button", { name: "關閉", exact: true }).click();
   await page.keyboard.press("Escape");
   await shop.waitFor({ state: "detached" });
