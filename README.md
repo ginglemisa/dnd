@@ -37,7 +37,7 @@ twD20 是 Reggie Tsai / 瑞基製作的手機角卡網站，協助新手快速�
 
 本專案有權授權的原始程式碼採 [MIT License](LICENSE.txt)，使用與散布時須保留其著作權及授權聲明；第三方內容仍依各自原始條件處理。
 
-規則內容改編自 [SRD 5.2.1](https://www.dndbeyond.com/srd)，採 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/legalcode)，經翻譯、縮寫、改寫整理；法術詳情的「SRD 版」則是逐句直譯。
+規則內容改編自 [SRD 5.2.1](https://www.dndbeyond.com/srd)，採 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/legalcode)，經翻譯、縮寫、改寫整理；法術詳情的「SRD 版」與魔法物品的說明則是逐句直譯。
 
 使用素材：
 

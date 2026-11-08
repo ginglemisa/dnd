@@ -1,6 +1,6 @@
 # 內容檔
 
-網站的職業、子職、專長、背景、種族、法術與怪物資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、專長、背景、種族、法術、怪物各一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；專長、背景、種族、法術與怪物見下方「專長」「背景」「種族」「法術」「怪物」。
+網站的職業、子職、專長、背景、種族、法術、怪物與魔法物品資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、專長、背景、種族、法術、怪物各一個檔，魔法物品全部在同一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；專長、背景、種族、法術、怪物與魔法物品見下方「專長」「背景」「種族」「法術」「怪物」「魔法物品」。
 
 職業與子職的說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
 
@@ -17,6 +17,7 @@
 | 公開種族 | `content/srd/races/<種族 ID>.yaml` |
 | 公開法術 | `content/srd/spells/<法術 ID>.yaml` |
 | 公開怪物（野獸、召喚物） | `content/srd/monsters/<key>.yaml` |
+| 公開魔法物品（單一檔） | `content/srd/magic-items.yaml` |
 | 私人內容包（不進公開 repo） | `content/private/classes/`、`content/private/subclasses/` |
 | 私人法術（格式已訂、尚未啟用） | `content/private/spells/<法術 ID>.yaml` |
 | 私人內容包補充既有職業（例如兼職） | `content/private/class-extensions/<職業 ID>.yaml` |
@@ -250,7 +251,7 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 
 選項的 `id`、起始裝備組合的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註；子職法術的來源識別碼（見「能力給予的法術」）會寫進角色的法術清單。改顯示文字沒關係，這些 ID 不可改。
 
-這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；專長、背景、種族、法術與怪物各有 `feat-id-baseline.json`、`background-id-baseline.json`、`race-id-baseline.json`、`spell-id-baseline.json`、`monster-id-baseline.json`（見各節）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
+這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；專長、背景、種族、法術、怪物與魔法物品各有 `feat-id-baseline.json`、`background-id-baseline.json`、`race-id-baseline.json`、`spell-id-baseline.json`、`monster-id-baseline.json`、`magic-item-id-baseline.json`（見各節）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
 
 ```bash
 npm run build -- --update-id-baseline
@@ -669,14 +670,51 @@ en:
 - 異界坐騎不在 SRD 的怪物章節，是尋獲坐騎法術內附的數據塊；`srd`、`en` 取自該法術的 SRD 譯文與原文。
 - 用語同法術譯文（見 [tools/spell-reference/glossary.md](../tools/spell-reference/glossary.md)）：傷害類型用 `SpellCatalog.damageTypeLabels`、狀態用 `condition.js` 的名稱，數字與單位之間不留空格。
 
+## 魔法物品
+
+SRD 5.2.1「魔法物品 A–Z」共 258 件，全部寫在單一檔 `content/srd/magic-items.yaml`（`items` 陣列，依英文名順序），格式定義是 `content/schema/magic-item.schema.json`。魔法物品獨立於 `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；基本款只引用裝備的中文品名。說明文字逐字取自繁中譯文，只放中文和 `nameEn`，英文內文不進內容檔與產物。
+
+```yaml
+- id: dagger-of-venom
+  name: 淬毒匕首
+  nameEn: "Dagger of Venom"
+  source: srd
+  category: weapon
+  rarity: rare
+  attunement: false
+  base: { fixed: 匕首 }
+  effects: { attack: 1, damage: 1 }
+  text: |-
+    使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
+```
+
+| 欄位 | 說明 |
+| --- | --- |
+| `id` | 穩定 key，由 `nameEn` 轉成 kebab-case（括弧內別名不算，「X, +1, +2, or +3」為 `x-plus`）。會寫進物品欄存檔，不可改名（列在 `magic-item-id-baseline.json`）。 |
+| `name`、`nameEn`、`source` | 中文譯名（以譯名表定稿為準）、SRD 英文名、內容來源（目前只有 `srd`）。全部物品的 `name`、`nameEn` 不可重複。 |
+| `category`、`group` | 類別：`weapon` 武器、`armor` 護甲、`potion` 藥水、`ring` 戒指、`scroll` 卷軸、`rod` 權杖、`staff` 法杖、`wand` 魔杖、`wondrous` 奇物。奇物必寫小標 `group`：`wearable` 穿戴、`container` 容器、`consumable` 消耗品、`tool` 工具與載具、`book` 書籍、`curio` 奇珍。 |
+| `rarity`、`rarityText` | `common`、`uncommon`、`rare`、`very-rare`、`legendary`、`artifact`。隨選項變動時寫 `varies`，並在剛好一組選項的每個 choice 寫 `rarity`；副標不是「稀有度不定」時另寫 `rarityText`（例如「非常見（+1）、稀有（+2）或極稀有（+3）」）。 |
+| `attunement` | `false`、`true`，或限定條件文字（以「由」開頭，例如「由法師」，顯示為「需由法師同調」）。 |
+| `base` | 基本款，擇一：`{ fixed: 長劍 }`（固定一種）、`{ from: [長弓, 短弓] }`（列出品名）、`{ any: [melee-weapon], label: 任意近戰武器 }`（裝備分類：`simple-weapon`、`martial-weapon`、`melee-weapon`、`light-armor`、`medium-armor`、`heavy-armor`、`ammunition`；可加 `except` 排除品名）。品名須對得上 `equipment-data.js`。武器與護甲必寫，法杖、權杖可寫（可當作長棍或硬頭錘揮舞時），其他類別不寫。 |
+| `options` | 取得時要選的項目：`[{ id, label, choices: [{ value, label, ... }] }]`。`id` 與 `value` 會寫進物品欄存檔的 `magic` 物件，不可改名（列在基準檔），`id` 不可用 `id`、`base`。`id: bonus` 是 +N 加值，`id: damageType` 的值須是法術的傷害類型 ID。`choices` 可寫 `rarity`、`effects`（選了才有的固定數值，不可寫 `condition`）、`heal`（治療藥水骰式，例如 `4d4 + 4`）、`score`（巨人之力的力量值）、`saveDc`／`attackBonus`（法術卷軸）、`omitInName: true`（顯示名稱不加這個選項）。 |
+| `effects` | 只放角色卡會自動計算的恆定固定數值：`attack`、`damage`（武器攻擊與傷害）、`ac`、`saves`；值是正整數，或 `bonus`（取自 `bonus` 選項）。`condition` 是 `ac`／`saves` 的生效條件：`unarmored`（未穿戴護甲且未使用盾牌）、`held`（手持這件物品）。對特定目標才有的加值、只對遠程的 AC、可轉移的加值等條件式效果不寫，留在說明文字。 |
+| `displayName` | 選定後的顯示名稱樣板，`{base}` 為基本款、`{選項 id}` 為該選項的 `label`，例如 `"{base}{bonus}"`。省略時為「名稱（可選的基本款、選項）」，例如「治療藥水（高等）」「焰舌（長劍）」；固定基本款不列入。 |
+| `consumable` | `true`：用掉就減 1（藥水、卷軸、彈藥、粉、珠等）。 |
+| `weight` | 每件磅數，只有譯文明寫時才填。 |
+| `text` | 說明本文，不含類別與稀有度的副標（副標由上面的欄位組成）。段落之間空一行，支援 `_斜體_`、`**粗體**`、「- 」清單、`####` 小標與 GFM 表格；不可有 HTML。註腳的星號寫成 `*`。 |
+
+- 建置檢查：格式、`id` 與 `nameEn` 對應、中英文名不重複、奇物的 `group`、`base` 的品名與分類、選項與稀有度的對應、`bonus` 與傷害類型、`effects`、`displayName` 的代入標記、說明沒有英文內文，以及 `magic-item-id-baseline.json`（`items` 為物品 id，`options` 為「物品 id:選項 id:選項值」）。
+- `npm run build` 產生根目錄的 `magic-item-content.generated.js`（規則與名稱，網頁一開始就載入）與 `magic-item-text.generated.js`（說明本文的 HTML，第一次需要時才載入，離線版內嵌）。Markdown 在建置時轉成 HTML，執行時不解析。
+- 網站經 `magic-items.js` 的 `MagicItemCatalog` 讀取，不從顯示文字反推規則：`getAll()`、`get(id)`、`getCategories()`、`getBaseChoices(id)`、`getDisplayName(id, selection)`、`getEffects(id, selection)`、`getRarity(id, selection)`、`getRarityLabel(rarity)`、`getSubtitle(id)`、`getHeal(id, selection)`、`loadText()`、`getText(id)`（回傳 `{ html }` 的 Promise）。`selection` 是 `{ base: 基本款品名, <選項 id>: 選項值 }`。
+
 ## 檢查與預覽
 
 | 指令 | 用途 |
 | --- | --- |
 | `npm run dev` | 開本機預覽，存檔後自動重新建置，重新整理瀏覽器即可看到；畫面網址會顯示在終端機 |
-| `npm run build` | 檢查全部內容檔並產生 `monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`class-content.private.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
+| `npm run build` | 檢查全部內容檔並產生 `magic-item-content.generated.js`、`magic-item-text.generated.js`、`monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`class-content.private.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
 | `npm run build -- --public-only` | 同上，但私人資料檔為空檔（只看公開內容） |
 | `npm run build -- --update-id-baseline` | 確定是刻意新增 ID 時更新各基準檔（見「不可改名的 ID」） |
 | `node tools/spell-reference/validate.js` | 檢查法術的 SRD 譯文（見 [tools/spell-reference/README.md](../tools/spell-reference/README.md)） |
 
-改完內容檔只要提交內容檔本身。`monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。這些檔案只含公開內容包；私人內容只寫進 `class-content.private.generated.js`（同樣不提交），上線建置與離線角色卡的這個檔一律是空檔。
+改完內容檔只要提交內容檔本身。`magic-item-content.generated.js`、`magic-item-text.generated.js`、`monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。這些檔案只含公開內容包；私人內容只寫進 `class-content.private.generated.js`（同樣不提交），上線建置與離線角色卡的這個檔一律是空檔。

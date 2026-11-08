@@ -605,6 +605,91 @@ async function validateEquipmentSearch(page) {
   assert.equal(await results.isVisible(), false);
   await validateEquipmentShop(page);
   await validateInventory(page);
+  await validateMagicItemCatalog(page);
+}
+
+// 魔法物品目錄：件數與基準檔、基本款對得上裝備資料、顯示名稱與固定數值、說明延遲載入。UI 由之後的階段接上。
+async function validateMagicItemCatalog(page) {
+  const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, "magic-item-id-baseline.json"), "utf8"));
+  const result = await page.evaluate(async () => {
+    const catalog = window.MagicItemCatalog;
+    const all = catalog.getAll();
+    const equipment = [...weapons_simple_melee, ...weapons_simple_ranged, ...weapons_martial_melee, ...weapons_martial_ranged, ...armors, ...shield].map(item => item["名稱"]);
+    const known = new Set([...equipment, ...Object.keys(EQUIPMENT_ENGLISH_NAMES)]);
+    const textBefore = typeof globalThis.magicItemText;
+    const text = await catalog.loadText();
+    return {
+      ids: all.map(item => item.id).sort(),
+      categories: catalog.getCategories().map(category => [category.id, category.count, category.groups.map(group => [group.id, group.count])]),
+      badBases: all.flatMap(item => catalog.getBaseChoices(item.id).filter(name => !known.has(name)).map(name => `${item.id}:${name}`)),
+      missingBases: all.filter(item => ["weapon", "armor", "staff"].includes(item.category) && !catalog.getBaseChoices(item.id).length).map(item => item.id),
+      textBefore,
+      missingText: all.filter(item => !text[item.id]?.html).map(item => item.id),
+      rawMarkup: Object.keys(text).filter(id => /\*\*|<script|&lt;/.test(text[id].html)),
+      english: Object.keys(text).filter(id => /[A-Za-z]{4,}/.test(text[id].html.replace(/<[^>]*>/g, "").replace(/&[a-z]+;/g, ""))),
+      unknownText: await catalog.getText("no-such-item"),
+      sunBlade: (await catalog.getText("sun-blade")).html.includes("<em>光輝之刃。</em>"),
+      names: [
+        catalog.getDisplayName("weapon-plus", { base: "長劍", bonus: 1 }),
+        catalog.getDisplayName("armor-plus", { base: "全身板甲", bonus: 3 }),
+        catalog.getDisplayName("shield-plus", { base: "盾牌", bonus: 2 }),
+        catalog.getDisplayName("wand-of-the-war-mage-plus", { bonus: 2 }),
+        catalog.getDisplayName("potions-of-healing", { potency: "normal" }),
+        catalog.getDisplayName("potions-of-healing", { potency: "greater" }),
+        catalog.getDisplayName("flame-tongue", { base: "長劍" }),
+        catalog.getDisplayName("sun-blade", { base: "長劍" }),
+        catalog.getDisplayName("ring-of-resistance", { damageType: "fire" }),
+        catalog.getDisplayName("weapon-plus", { bonus: 9 }),
+        catalog.getDisplayName("no-such-item", {})
+      ],
+      effects: [
+        catalog.getEffects("weapon-plus", { base: "長劍", bonus: 2 }),
+        catalog.getEffects("weapon-plus", {}),
+        catalog.getEffects("armor-plus", { base: "皮甲", bonus: 1 }),
+        catalog.getEffects("mace-of-smiting", { base: "硬頭錘" }),
+        catalog.getEffects("luck-blade", { base: "長劍" }),
+        catalog.getEffects("bracers-of-defense"),
+        catalog.getEffects("staff-of-power"),
+        catalog.getEffects("ioun-stone", { kind: "protection" }),
+        catalog.getEffects("ioun-stone", { kind: "agility" }),
+        catalog.getEffects("arrow-catching-shield", { base: "盾牌" })
+      ],
+      bases: [
+        catalog.getBaseChoices("sun-blade"),
+        catalog.getBaseChoices("staff-of-power"),
+        catalog.getBaseChoices("rod-of-lordly-might"),
+        catalog.getBaseChoices("cloak-of-protection"),
+        catalog.getBaseChoices("mithral-armor").includes("獸皮甲"),
+        catalog.getBaseChoices("defender").includes("長弓")
+      ],
+      rarity: [catalog.getRarity("armor-plus", { bonus: 3 }), catalog.getRarity("potions-of-healing", {}), catalog.getRarity("sun-blade"), catalog.getRarityLabel("very-rare")],
+      heal: [catalog.getHeal("potions-of-healing", { potency: "supreme" }), catalog.getHeal("potions-of-healing", {})],
+      subtitles: [catalog.getSubtitle("defender"), catalog.getSubtitle("dwarven-plate"), catalog.getSubtitle("weapon-plus"), catalog.getSubtitle("staff-of-power"), catalog.getSubtitle("hat-of-many-spells")]
+    };
+  });
+  assert.deepEqual(result.ids, baseline.items, "magic item ids match the baseline");
+  assert.equal(result.ids.length, 258, "all SRD magic items are present");
+  assert.deepEqual(result.categories, [
+    ["weapon", 33, []], ["armor", 19, []], ["potion", 24, []], ["ring", 22, []], ["scroll", 1, []], ["rod", 7, []], ["staff", 12, []], ["wand", 13, []],
+    ["wondrous", 127, [["wearable", 57], ["container", 11], ["consumable", 11], ["tool", 27], ["book", 7], ["curio", 14]]]
+  ], "magic item categories and wondrous groups");
+  assert.deepEqual(result.badBases, [], "magic item base names exist in equipment data");
+  assert.deepEqual(result.missingBases, [], "weapons, armor and staves have a base item");
+  assert.equal(result.textBefore, "undefined", "magic item text is loaded on demand");
+  assert.deepEqual(result.missingText, [], "every magic item has text");
+  assert.deepEqual(result.rawMarkup, [], "magic item text is rendered to HTML at build time");
+  assert.deepEqual(result.english, [], "magic item text has no English body text");
+  assert.equal(result.unknownText, null);
+  assert.equal(result.sunBlade, true, "markdown emphasis becomes HTML");
+  assert.deepEqual(result.names, ["長劍+1", "全身板甲+3", "盾牌+2", "戰法魔杖+2", "治療藥水", "治療藥水（高等）", "焰舌（長劍）", "陽炎劍", "抗性戒指（火焰）", "武器+1／+2／+3", ""], "magic item display names");
+  assert.deepEqual(result.effects, [
+    { attack: 2, damage: 2 }, {}, { ac: 1 }, { attack: 1, damage: 1 }, { attack: 1, damage: 1, saves: 1 }, { ac: 2, condition: "unarmored" },
+    { attack: 2, damage: 2, ac: 2, saves: 2, condition: "held" }, { ac: 1 }, {}, {}
+  ], "magic item fixed effects; conditional bonuses stay in the text");
+  assert.deepEqual(result.bases, [["長劍"], ["長棍"], ["硬頭錘"], [], false, false], "magic item base choices");
+  assert.deepEqual(result.rarity, ["legendary", null, "rare", "極稀有"]);
+  assert.deepEqual(result.heal, ["10d4 + 20", null]);
+  assert.deepEqual(result.subtitles, ["武器（任意近戰武器），傳說（需同調）", "護甲（半身板甲或全身板甲），極稀有", "武器（任意簡易或軍用武器），非常見（+1）、稀有（+2）或極稀有（+3）", "法杖，極稀有（需由術士、契術師或法師同調）", "奇物，極稀有（需由法師同調）"], "magic item subtitles");
 }
 
 // 物品欄：目錄 ID 與套組資料、舊文字整理、標籤與容器、新增／調整／刪除、負重，以及只列物品欄的裝備下拉。
