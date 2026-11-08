@@ -1,3 +1,5 @@
+/* 快速創角精靈、法術詳情與契約之書視窗（元素由 quick-build.js 建立）。在 styles.css 之後載入。 */
+
 #quick-build-wizard {
   position: fixed;
   inset: 0;
@@ -36,7 +38,7 @@
   display: flex;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-pact-tome .quick-build-pact-tome-shell {
+#quick-build-pact-tome .quick-build-pact-tome-shell {
   display: flex;
   flex-direction: column;
   width: 680px;
@@ -44,24 +46,17 @@
   max-height: calc(100dvh - 32px);
   overflow: hidden;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 16px;
   background: var(--qb-surface);
   color: var(--qb-text);
   box-shadow: var(--qb-shadow);
 }
 
+:where(html:not([data-ui-theme="warm"])) #quick-build-pact-tome .quick-build-pact-tome-shell {
+  border-radius: 16px;
+}
+
 :where(html[data-ui-theme="warm"]) #quick-build-pact-tome .quick-build-pact-tome-shell {
-  display: flex;
-  flex-direction: column;
-  width: 680px;
-  max-width: 100%;
-  max-height: calc(100dvh - 32px);
-  overflow: hidden;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-surface);
-  color: var(--qb-text);
-  box-shadow: var(--qb-shadow);
 }
 
 #quick-build-pact-tome .quick-build-header {
@@ -80,7 +75,7 @@
   font-size: 1.35rem;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-pact-tome .quick-build-close {
+#quick-build-pact-tome .quick-build-close {
   display: grid;
   flex: 0 0 40px;
   place-items: center;
@@ -91,29 +86,18 @@
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 8px;
   background: transparent;
   color: var(--qb-text);
   font-size: 1.25rem;
   cursor: pointer;
 }
 
+:where(html:not([data-ui-theme="warm"])) #quick-build-pact-tome .quick-build-close {
+  border-radius: 8px;
+}
+
 :where(html[data-ui-theme="warm"]) #quick-build-pact-tome .quick-build-close {
-  display: grid;
-  flex: 0 0 40px;
-  place-items: center;
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  min-height: 40px;
-  margin: 0;
-  padding: 0;
-  border: 0;
   border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--qb-text);
-  font-size: 1.25rem;
-  cursor: pointer;
 }
 
 #quick-build-pact-tome .quick-build-pact-tome-body {
@@ -135,33 +119,24 @@
   border-top: 1px solid var(--qb-border);
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-pact-tome .quick-build-pact-tome-actions button {
+#quick-build-pact-tome .quick-build-pact-tome-actions button {
   min-height: 42px;
   padding: 8px 16px;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 8px;
   background: var(--qb-surface-elevated);
   color: var(--qb-text);
   cursor: pointer;
+}
+
+:where(html:not([data-ui-theme="warm"])) #quick-build-pact-tome .quick-build-pact-tome-actions button {
+  border-radius: 8px;
 }
 
 :where(html[data-ui-theme="warm"]) #quick-build-pact-tome .quick-build-pact-tome-actions button {
-  min-height: 42px;
-  padding: 8px 16px;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-elevated);
-  color: var(--qb-text);
-  cursor: pointer;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-pact-tome .quick-build-pact-tome-actions button.primary {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-hover);
-  color: var(--on-accent);
-}
-
-:where(html[data-ui-theme="warm"]) #quick-build-pact-tome .quick-build-pact-tome-actions button.primary {
+#quick-build-pact-tome .quick-build-pact-tome-actions button.primary {
   border-color: var(--qb-accent);
   background: var(--qb-accent-hover);
   color: var(--on-accent);
@@ -172,7 +147,7 @@
   opacity: .55;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-shell {
+#quick-build-wizard .quick-build-shell {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -181,25 +156,17 @@
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 16px;
   background: var(--qb-surface);
   color: var(--qb-text);
   box-shadow: var(--qb-shadow);
 }
 
+:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-shell {
+  border-radius: 16px;
+}
+
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-shell {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 700px;
-  height: min(900px,100%);
-  min-height: 0;
-  overflow: hidden;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-surface);
-  color: var(--qb-text);
-  box-shadow: var(--qb-shadow);
 }
 
 #quick-build-wizard .quick-build-header {
@@ -232,7 +199,7 @@
   line-height: 1.3;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-reset {
+#quick-build-wizard .quick-build-reset {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -243,7 +210,6 @@
   margin: 0;
   padding: 3px 8px;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 999px;
   background: var(--qb-surface-soft);
   color: var(--qb-text-muted);
   font-size: .72rem;
@@ -253,38 +219,27 @@
   cursor: pointer;
 }
 
+:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-reset {
+  border-radius: 999px;
+}
+
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-reset {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: auto;
-  min-width: 0;
-  min-height: 24px;
-  margin: 0;
-  padding: 3px 8px;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-soft);
-  color: var(--qb-text-muted);
-  font-size: .72rem;
-  font-weight: 700;
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
+}
+
+#quick-build-wizard .quick-build-reset:hover,
+#quick-build-wizard .quick-build-reset:focus-visible {
+  border-color: var(--qb-danger);
+  color: var(--qb-danger-text);
 }
 
 :where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-reset:hover,
 :where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-reset:focus-visible {
-  border-color: var(--qb-danger);
-  color: var(--qb-danger-text);
   outline: 2px solid transparent;
 }
 
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-reset:hover,
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-reset:focus-visible {
-  border-color: var(--qb-danger);
-  color: var(--qb-danger-text);
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
@@ -296,7 +251,7 @@
   line-height: 1.45;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-wizard button.quick-build-close {
+#quick-build-wizard button.quick-build-close {
   display: grid;
   flex: 0 0 40px;
   place-items: center;
@@ -307,7 +262,6 @@
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 8px;
   background: transparent;
   color: var(--qb-text);
   font-size: 1.25rem;
@@ -316,24 +270,12 @@
   cursor: pointer;
 }
 
+:where(html:not([data-ui-theme="warm"])) #quick-build-wizard button.quick-build-close {
+  border-radius: 8px;
+}
+
 :where(html[data-ui-theme="warm"]) #quick-build-wizard button.quick-build-close {
-  display: grid;
-  flex: 0 0 40px;
-  place-items: center;
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  min-height: 40px;
-  margin: 0;
-  padding: 0;
-  border: 0;
   border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--qb-text);
-  font-size: 1.25rem;
-  line-height: 1;
-  box-shadow: none;
-  cursor: pointer;
 }
 
 #quick-build-wizard .quick-build-body {
@@ -373,43 +315,40 @@
   grid-template-columns: 1fr;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-card {
+#quick-build-wizard .quick-build-card {
   width: 100%;
   min-height: 0;
   padding: 16px;
   border: 1px solid var(--qb-border);
-  border-radius: 12px;
   background: var(--qb-surface-elevated);
   color: var(--qb-text);
   text-align: left;
   cursor: pointer;
+}
+
+:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-card {
+  border-radius: 12px;
   transition: border-color .18s ease,background-color .18s ease,box-shadow .18s ease,opacity .18s ease;
 }
 
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-card {
-  width: 100%;
-  min-height: 0;
-  padding: 16px;
-  border: 1px solid var(--qb-border);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-elevated);
-  color: var(--qb-text);
-  text-align: left;
-  cursor: pointer;
   transition: border-color 120ms ease,background-color 120ms ease,box-shadow 120ms ease,opacity 120ms ease;
+}
+
+#quick-build-wizard .quick-build-card:hover,
+#quick-build-wizard .quick-build-card:focus-visible {
+  border-color: var(--qb-accent);
+  background: var(--qb-accent-soft);
 }
 
 :where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-card:hover,
 :where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-card:focus-visible {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-soft);
   outline: 2px solid transparent;
 }
 
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-card:hover,
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-card:focus-visible {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-soft);
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
@@ -438,30 +377,24 @@
   color: var(--qb-text-body);
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-expansion-tag {
+.quick-build-expansion-tag {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
   margin-left: 8px;
   padding: 2px 8px;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 999px;
   color: var(--qb-text-muted);
   font-size: .7rem;
   vertical-align: middle;
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-expansion-tag {
+  border-radius: 999px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-expansion-tag {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  margin-left: 8px;
-  padding: 2px 8px;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  color: var(--qb-text-muted);
-  font-size: .7rem;
-  vertical-align: middle;
 }
 
 .quick-build-card-toggle-hint {
@@ -472,18 +405,18 @@
   font-weight: 700;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-choice-panel {
+.quick-build-choice-panel {
   padding: 18px;
   border: 1px solid var(--qb-border);
-  border-radius: 12px;
   background: var(--qb-surface-soft);
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-choice-panel {
+  border-radius: 12px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-choice-panel {
-  padding: 18px;
-  border: 1px solid var(--qb-border);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-soft);
 }
 
 .quick-build-review-panel+ .quick-build-review-panel {
@@ -495,22 +428,20 @@
   color: var(--qb-text);
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-equipment-list {
+.quick-build-equipment-list {
   margin: 12px 0 20px;
   padding: 14px;
-  border-radius: 8px;
   background: var(--qb-surface-muted);
   line-height: 1.7;
   color: var(--qb-text-body);
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-equipment-list {
+  border-radius: 8px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-equipment-list {
-  margin: 12px 0 20px;
-  padding: 14px;
   border-radius: var(--radius-md);
-  background: var(--qb-surface-muted);
-  line-height: 1.7;
-  color: var(--qb-text-body);
 }
 
 .quick-build-equipment-help {
@@ -530,15 +461,16 @@
   text-decoration-thickness: 2px;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-equipment-help .skill-tip:focus-visible {
+.quick-build-equipment-help .skill-tip:focus-visible {
   outline: 2px solid var(--qb-accent);
   outline-offset: 3px;
+}
+
+:where(html:not([data-ui-theme="warm"])) .quick-build-equipment-help .skill-tip:focus-visible {
   border-radius: 3px;
 }
 
 :where(html[data-ui-theme="warm"]) .quick-build-equipment-help .skill-tip:focus-visible {
-  outline: 2px solid var(--qb-accent);
-  outline-offset: 3px;
   border-radius: var(--radius-md);
 }
 
@@ -553,24 +485,21 @@
   font-size: .9rem;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-ancestry-detail {
+.quick-build-ancestry-detail {
   margin: 0;
   padding: 14px;
   border: 1px solid var(--qb-border);
-  border-radius: 9px;
   background: var(--qb-surface-muted);
   color: var(--qb-text-body);
   line-height: 1.65;
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-ancestry-detail {
+  border-radius: 9px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-ancestry-detail {
-  margin: 0;
-  padding: 14px;
-  border: 1px solid var(--qb-border);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-muted);
-  color: var(--qb-text-body);
-  line-height: 1.65;
 }
 
 .quick-build-ancestry-detail strong {
@@ -579,38 +508,35 @@
   color: var(--qb-accent-text);
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-warning {
+.quick-build-warning {
   margin: 14px 0;
   padding: 12px;
   border-left: 4px solid var(--qb-warning-border);
-  border-radius: 7px;
   background: var(--qb-warning-bg);
   color: var(--qb-warning-text);
+}
+
+:where(html:not([data-ui-theme="warm"])) .quick-build-warning {
+  border-radius: 7px;
 }
 
 :where(html[data-ui-theme="warm"]) .quick-build-warning {
-  margin: 14px 0;
-  padding: 12px;
-  border-left: 4px solid var(--qb-warning-border);
   border-radius: var(--radius-md);
-  background: var(--qb-warning-bg);
-  color: var(--qb-warning-text);
+}
+
+.quick-build-pending {
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--qb-pending-bg);
+  color: var(--qb-pending-text);
 }
 
 :where(html:not([data-ui-theme="warm"])) .quick-build-pending {
-  margin-top: 14px;
-  padding: 12px;
   border-radius: 7px;
-  background: var(--qb-pending-bg);
-  color: var(--qb-pending-text);
 }
 
 :where(html[data-ui-theme="warm"]) .quick-build-pending {
-  margin-top: 14px;
-  padding: 12px;
   border-radius: var(--radius-md);
-  background: var(--qb-pending-bg);
-  color: var(--qb-pending-text);
 }
 
 .quick-build-choice-actions {
@@ -619,33 +545,24 @@
   gap: 12px;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-choice-actions button {
+.quick-build-choice-actions button {
   min-height: 48px;
   padding: 10px;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 8px;
   background: var(--qb-surface-elevated);
   color: var(--qb-text);
   cursor: pointer;
+}
+
+:where(html:not([data-ui-theme="warm"])) .quick-build-choice-actions button {
+  border-radius: 8px;
 }
 
 :where(html[data-ui-theme="warm"]) .quick-build-choice-actions button {
-  min-height: 48px;
-  padding: 10px;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-elevated);
-  color: var(--qb-text);
-  cursor: pointer;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-choice-actions button.primary {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-hover);
-  color: var(--on-accent);
-}
-
-:where(html[data-ui-theme="warm"]) .quick-build-choice-actions button.primary {
+.quick-build-choice-actions button.primary {
   border-color: var(--qb-accent);
   background: var(--qb-accent-hover);
   color: var(--on-accent);
@@ -694,48 +611,42 @@
   gap: 8px;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-field select {
+.quick-build-field select {
   width: 100%;
   min-height: 44px;
   padding: 8px;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 7px;
   background: var(--qb-input);
   color: var(--qb-text);
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-field select {
+  border-radius: 7px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-field select {
-  width: 100%;
-  min-height: 44px;
-  padding: 8px;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-input);
+}
+
+.quick-build-spell-view,
+.quick-build-skill-info {
+  min-width: 64px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--qb-border-strong);
+  background: var(--qb-surface-elevated);
   color: var(--qb-text);
+  cursor: pointer;
 }
 
 :where(html:not([data-ui-theme="warm"])) .quick-build-spell-view,
 :where(html:not([data-ui-theme="warm"])) .quick-build-skill-info {
-  min-width: 64px;
-  margin: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--qb-border-strong);
   border-radius: 7px;
-  background: var(--qb-surface-elevated);
-  color: var(--qb-text);
-  cursor: pointer;
 }
 
 :where(html[data-ui-theme="warm"]) .quick-build-spell-view,
 :where(html[data-ui-theme="warm"]) .quick-build-skill-info {
-  min-width: 64px;
-  margin: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-elevated);
-  color: var(--qb-text);
-  cursor: pointer;
 }
 
 .quick-build-skill-info {
@@ -744,17 +655,19 @@
   text-decoration: none;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-skill-info:hover,
-:where(html:not([data-ui-theme="warm"])) .quick-build-skill-info:focus-visible {
+.quick-build-skill-info:hover,
+.quick-build-skill-info:focus-visible {
   border-color: var(--qb-accent);
   background: var(--qb-accent-soft);
+}
+
+:where(html:not([data-ui-theme="warm"])) .quick-build-skill-info:hover,
+:where(html:not([data-ui-theme="warm"])) .quick-build-skill-info:focus-visible {
   outline: 2px solid transparent;
 }
 
 :where(html[data-ui-theme="warm"]) .quick-build-skill-info:hover,
 :where(html[data-ui-theme="warm"]) .quick-build-skill-info:focus-visible {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-soft);
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
@@ -789,7 +702,7 @@
   display: flex;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-spell-detail .quick-build-spell-detail-shell {
+#quick-build-spell-detail .quick-build-spell-detail-shell {
   display: flex;
   flex-direction: column;
   width: 680px;
@@ -797,24 +710,17 @@
   max-height: calc(100dvh - 80px);
   overflow: hidden;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 14px;
   background: var(--qb-surface);
   color: var(--qb-text);
   box-shadow: var(--qb-shadow);
 }
 
+:where(html:not([data-ui-theme="warm"])) #quick-build-spell-detail .quick-build-spell-detail-shell {
+  border-radius: 14px;
+}
+
 :where(html[data-ui-theme="warm"]) #quick-build-spell-detail .quick-build-spell-detail-shell {
-  display: flex;
-  flex-direction: column;
-  width: 680px;
-  max-width: calc(100% - 32px);
-  max-height: calc(100dvh - 80px);
-  overflow: hidden;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-surface);
-  color: var(--qb-text);
-  box-shadow: var(--qb-shadow);
 }
 
 #quick-build-spell-detail .quick-build-spell-detail-header {
@@ -833,7 +739,7 @@
   font-size: 1.2rem;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-spell-detail .quick-build-spell-detail-close {
+#quick-build-spell-detail .quick-build-spell-detail-close {
   display: grid;
   flex: 0 0 44px;
   place-items: center;
@@ -844,7 +750,6 @@
   margin: 0;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 9px;
   background: var(--qb-surface-elevated);
   color: var(--qb-text);
   font-size: 1.5rem;
@@ -853,37 +758,27 @@
   touch-action: manipulation;
 }
 
+:where(html:not([data-ui-theme="warm"])) #quick-build-spell-detail .quick-build-spell-detail-close {
+  border-radius: 9px;
+}
+
 :where(html[data-ui-theme="warm"]) #quick-build-spell-detail .quick-build-spell-detail-close {
-  display: grid;
-  flex: 0 0 44px;
-  place-items: center;
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  min-height: 44px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background: var(--qb-surface-elevated);
-  color: var(--qb-text);
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-  touch-action: manipulation;
+}
+
+#quick-build-spell-detail .quick-build-spell-detail-close:hover,
+#quick-build-spell-detail .quick-build-spell-detail-close:focus-visible {
+  border-color: var(--qb-accent);
+  background: var(--qb-accent-soft);
 }
 
 :where(html:not([data-ui-theme="warm"])) #quick-build-spell-detail .quick-build-spell-detail-close:hover,
 :where(html:not([data-ui-theme="warm"])) #quick-build-spell-detail .quick-build-spell-detail-close:focus-visible {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-soft);
   outline: 2px solid transparent;
 }
 
 :where(html[data-ui-theme="warm"]) #quick-build-spell-detail .quick-build-spell-detail-close:hover,
 :where(html[data-ui-theme="warm"]) #quick-build-spell-detail .quick-build-spell-detail-close:focus-visible {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-soft);
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
@@ -935,41 +830,38 @@
   gap: 10px;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions button {
+.quick-build-spell-prepare-actions button {
   min-height: 44px;
   margin: 0;
   padding: 8px 14px;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 8px;
   background: var(--qb-surface-elevated);
   color: var(--qb-text);
   font-weight: 700;
   cursor: pointer;
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions button {
+  border-radius: 8px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions button {
-  min-height: 44px;
-  margin: 0;
-  padding: 8px 14px;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-elevated);
-  color: var(--qb-text);
-  font-weight: 700;
-  cursor: pointer;
+}
+
+.quick-build-spell-prepare-actions button:hover,
+.quick-build-spell-prepare-actions button:focus-visible {
+  border-color: var(--qb-accent);
+  background: var(--qb-accent-soft);
 }
 
 :where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions button:hover,
 :where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions button:focus-visible {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-soft);
   outline: 2px solid transparent;
 }
 
 :where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions button:hover,
 :where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions button:focus-visible {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-soft);
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
@@ -983,28 +875,25 @@
   translate: 1px 1px;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm {
+.quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm {
   border-color: var(--qb-accent);
   background: var(--qb-accent-hover);
   color: var(--on-accent);
 }
 
-:where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-hover);
+.quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm:hover,
+.quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm:focus-visible {
   color: var(--on-accent);
 }
 
 :where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm:hover,
 :where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm:focus-visible {
   background: var(--qb-accent);
-  color: var(--on-accent);
 }
 
 :where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm:hover,
 :where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm:focus-visible {
   background: var(--action-hover);
-  color: var(--on-accent);
 }
 
 #quick-build-spell-detail .quick-build-spell-prepare.has-spellbook-action {
@@ -1059,24 +948,21 @@
   gap: 8px;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-status-pill {
+.quick-build-status-pill {
   padding: 6px 10px;
   border: 1px solid var(--qb-border);
-  border-radius: 999px;
   background: var(--qb-surface-soft);
   color: var(--qb-text-muted);
   font-size: .82rem;
   line-height: 1.2;
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-status-pill {
+  border-radius: 999px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-status-pill {
-  padding: 6px 10px;
-  border: 1px solid var(--qb-border);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-soft);
-  color: var(--qb-text-muted);
-  font-size: .82rem;
-  line-height: 1.2;
 }
 
 .quick-build-status-pill strong {
@@ -1091,30 +977,25 @@
 
 .quick-build-ability-grid {
   display: grid;
-  gap: 12px;
   padding: 14px;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-ability-row {
+.quick-build-ability-row {
   display: grid;
   grid-template-columns: minmax(92px,.7fr) minmax(0,2fr) minmax(74px,.55fr);
   gap: 16px;
   align-items: center;
   padding: 14px 16px;
   border: 1px solid var(--qb-border);
-  border-radius: 10px;
   background: var(--qb-surface-muted);
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-ability-row {
+  border-radius: 10px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-ability-row {
-  display: grid;
-  grid-template-columns: minmax(92px,.7fr) minmax(0,2fr) minmax(74px,.55fr);
-  gap: 16px;
-  align-items: center;
-  padding: 14px 16px;
-  border: 1px solid var(--qb-border);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-muted);
 }
 
 .quick-build-ability-name {
@@ -1147,32 +1028,25 @@
   font-size: .82rem;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-ability-field select {
+.quick-build-ability-field select {
   width: 100%;
   min-width: 0;
   min-height: 44px;
   margin: 0;
   padding: 8px 34px 8px 12px;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 8px;
   background: var(--qb-input);
   color: var(--qb-text);
   font: inherit;
   font-size: 1rem;
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-ability-field select {
+  border-radius: 8px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-ability-field select {
-  width: 100%;
-  min-width: 0;
-  min-height: 44px;
-  margin: 0;
-  padding: 8px 34px 8px 12px;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-input);
-  color: var(--qb-text);
-  font: inherit;
-  font-size: 1rem;
 }
 
 .quick-build-ability-field select:focus-visible {
@@ -1189,7 +1063,6 @@
 }
 
 .quick-build-ability-total {
-  display: grid;
   gap: 2px;
   justify-items: end;
 }
@@ -1201,7 +1074,6 @@
 
 .quick-build-ability-total strong {
   color: var(--qb-accent-text);
-  font-size: 1.45rem;
   line-height: 1;
 }
 
@@ -1218,20 +1090,19 @@
   color: var(--qb-text-body);
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-complete {
+.quick-build-complete {
   padding: 18px;
   border-left: 4px solid var(--qb-success-border);
-  border-radius: 8px;
   background: var(--qb-success-bg);
   color: var(--qb-success-text);
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-complete {
+  border-radius: 8px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-complete {
-  padding: 18px;
-  border-left: 4px solid var(--qb-success-border);
   border-radius: var(--radius-md);
-  background: var(--qb-success-bg);
-  color: var(--qb-success-text);
 }
 
 .quick-build-plan {
@@ -1425,7 +1296,7 @@
   gap: 6px;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-ability-step {
+.quick-build-ability-step {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1436,7 +1307,6 @@
   margin: 0;
   padding: 0;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 999px;
   background: var(--qb-surface-elevated);
   color: var(--qb-text);
   font-size: 1rem;
@@ -1445,24 +1315,12 @@
   cursor: pointer;
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-ability-step {
+  border-radius: 999px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-ability-step {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
-  min-height: 34px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-elevated);
-  color: var(--qb-text);
-  font-size: 1rem;
-  font-weight: 900;
-  line-height: 1;
-  cursor: pointer;
 }
 
 .quick-build-ability-step:disabled {
@@ -1507,33 +1365,24 @@
   margin-top: 18px;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-substep-actions button {
+.quick-build-substep-actions button {
   min-height: 46px;
   padding: 9px 16px;
   border: 1px solid var(--qb-border-strong);
-  border-radius: 8px;
   background: var(--qb-surface-elevated);
   color: var(--qb-text);
   cursor: pointer;
+}
+
+:where(html:not([data-ui-theme="warm"])) .quick-build-substep-actions button {
+  border-radius: 8px;
 }
 
 :where(html[data-ui-theme="warm"]) .quick-build-substep-actions button {
-  min-height: 46px;
-  padding: 9px 16px;
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-elevated);
-  color: var(--qb-text);
-  cursor: pointer;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-substep-actions button.primary {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-hover);
-  color: var(--on-accent);
-}
-
-:where(html[data-ui-theme="warm"]) .quick-build-substep-actions button.primary {
+.quick-build-substep-actions button.primary {
   border-color: var(--qb-accent);
   background: var(--qb-accent-hover);
   color: var(--on-accent);
@@ -1549,22 +1398,20 @@
   gap: 14px;
 }
 
-:where(html:not([data-ui-theme="warm"])) .quick-build-fixed-list {
+.quick-build-fixed-list {
   margin: 12px 0 0;
   padding: 12px;
-  border-radius: 8px;
   background: var(--qb-surface-muted);
   color: var(--qb-text-body);
   line-height: 1.6;
 }
 
+:where(html:not([data-ui-theme="warm"])) .quick-build-fixed-list {
+  border-radius: 8px;
+}
+
 :where(html[data-ui-theme="warm"]) .quick-build-fixed-list {
-  margin: 12px 0 0;
-  padding: 12px;
   border-radius: var(--radius-md);
-  background: var(--qb-surface-muted);
-  color: var(--qb-text-body);
-  line-height: 1.6;
 }
 
 .quick-build-summary-list {
@@ -1650,62 +1497,47 @@
   border-top: 1px solid var(--qb-border);
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-validation-message {
+#quick-build-wizard .quick-build-validation-message {
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 0 0 12px;
   padding: 10px 12px;
   border-left: 3px solid var(--qb-warning-border);
-  border-radius: 7px;
   background: var(--qb-warning-bg);
   color: var(--qb-warning-text);
   font-size: .9rem;
   font-weight: 700;
   line-height: 1.45;
+}
+
+:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-validation-message {
+  border-radius: 7px;
 }
 
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-validation-message {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  border-left: 3px solid var(--qb-warning-border);
   border-radius: var(--radius-md);
-  background: var(--qb-warning-bg);
+}
+
+#quick-build-wizard .quick-build-validation-message::before {
+  content: "!";
+  display: grid;
+  flex: 0 0 22px;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--qb-warning-border);
   color: var(--qb-warning-text);
-  font-size: .9rem;
-  font-weight: 700;
-  line-height: 1.45;
+  font-size: .8rem;
+  font-weight: 900;
 }
 
 :where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-validation-message::before {
-  content: "!";
-  display: grid;
-  flex: 0 0 22px;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--qb-warning-border);
   border-radius: 999px;
-  color: var(--qb-warning-text);
-  font-size: .8rem;
-  font-weight: 900;
 }
 
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-validation-message::before {
-  content: "!";
-  display: grid;
-  flex: 0 0 22px;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--qb-warning-border);
   border-radius: var(--radius-md);
-  color: var(--qb-warning-text);
-  font-size: .8rem;
-  font-weight: 900;
 }
 
 #quick-build-wizard .quick-build-needs-attention {
@@ -1716,15 +1548,16 @@
   animation: quick-build-attention .48s cubic-bezier(.22,1,.36,1);
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-card.is-selected {
+#quick-build-wizard .quick-build-card.is-selected {
   border-color: var(--qb-accent);
   background: var(--qb-accent-soft);
+}
+
+:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-card.is-selected {
   box-shadow: inset 0 0 0 2px var(--qb-accent),0 2px 6px color-mix(in srgb,var(--qb-accent) 16%,transparent);
 }
 
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-card.is-selected {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-soft);
   box-shadow: inset 3px 0 0 var(--qb-accent);
 }
 
@@ -1752,47 +1585,40 @@
   display: none;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-footer button {
+#quick-build-wizard .quick-build-footer button {
   width: 100%;
   min-width: 0;
   min-height: 50px;
   padding: 10px clamp(10px,2vw,20px);
   border: 1px solid var(--qb-border-strong);
-  border-radius: 8px;
   background: var(--qb-surface-elevated);
   color: var(--qb-text);
   font-size: clamp(.95rem,2.4vw,1.05rem);
   font-weight: 700;
   cursor: pointer;
+}
+
+:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-footer button {
+  border-radius: 8px;
   transition: border-color .18s ease,background-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease;
 }
 
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-footer button {
-  width: 100%;
-  min-width: 0;
-  min-height: 50px;
-  padding: 10px clamp(10px,2vw,20px);
-  border: 1px solid var(--qb-border-strong);
   border-radius: var(--radius-md);
-  background: var(--qb-surface-elevated);
-  color: var(--qb-text);
-  font-size: clamp(.95rem,2.4vw,1.05rem);
-  font-weight: 700;
-  cursor: pointer;
   transition: border-color 120ms ease,background-color 120ms ease,color 120ms ease,box-shadow 120ms ease,transform 120ms ease;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-footer button.primary {
+#quick-build-wizard .quick-build-footer button.primary {
   border-color: var(--qb-accent);
   background: var(--qb-accent-hover);
   color: var(--on-accent);
+}
+
+:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-footer button.primary {
   box-shadow: 0 0 0 3px var(--qb-accent-soft);
 }
 
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-footer button.primary {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-hover);
-  color: var(--on-accent);
   box-shadow: var(--shadow-control);
 }
 
@@ -1862,14 +1688,7 @@
   white-space: pre-line;
 }
 
-:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-equipment-actions button.is-selected {
-  border-color: var(--qb-accent);
-  background: var(--qb-accent-hover);
-  color: var(--on-accent);
-  box-shadow: inset 0 0 0 1px var(--qb-accent);
-}
-
-:where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-equipment-actions button.is-selected {
+#quick-build-wizard .quick-build-equipment-actions button.is-selected {
   border-color: var(--qb-accent);
   background: var(--qb-accent-hover);
   color: var(--on-accent);
