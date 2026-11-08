@@ -148,4 +148,11 @@ function readIndexSelectOptions(id) {
   return select ? [...select[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => ({ value: match[1], label: match[2] })) : null;
 }
 
-module.exports = { ROOT, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadReferenceOnlyBeasts, loadSkillAbilities, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };
+// equipment-data.js 的裝備清單（魔法物品檢查基本款用）；只讀不複製。
+let equipmentData = null;
+function loadEquipmentData() {
+  equipmentData ||= runSiteScript("equipment-data.js").globals;
+  return equipmentData;
+}
+
+module.exports = { ROOT, loadEquipmentData, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadReferenceOnlyBeasts, loadSkillAbilities, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };
