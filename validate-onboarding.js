@@ -510,6 +510,51 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
   assert.equal(after.focus, complete ? "tabletop-tab-overview" : before.focus);
 }
 
+// Sections open their own isolated pages, so they run side by side and their
+// animation waits overlap. DND_ONBOARDING_WORKERS=1 runs them one at a time.
+const BACKGROUND_WORKERS = Math.max(1, Number(process.env.DND_ONBOARDING_WORKERS) || 4);
+
+// The 24 first-table tour combinations, grouped into lanes that each keep the original order.
+const TOUR_LANES = [{ width: 1280, height: 800 }, { width: 390, height: 844 }, { width: 320, height: 568 }]
+  .flatMap(viewport => [false, true].map(caster => ({ viewport, caster })));
+
+async function verifyTourLane(page, { viewport, caster }) {
+  for (const mode of ["sheet", "tabletop"]) {
+    for (const complete of [false, true]) await verifyTour(page, { ...viewport, caster, mode, complete });
+  }
+}
+
+async function verifySeparateTourLane(browser, url, lane) {
+  const page = await browser.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  await page.goto(url);
+  await page.waitForFunction(() => window.onboardingTour && window.quickBuild && window.TabletopMode);
+  await page.locator("#legal-ack-btn").click();
+  await verifyTourLane(page, lane);
+  assert.deepEqual(errors, []);
+  await page.close();
+}
+
+// Starts the tasks at once, at most `limit` at a time. After a failure no new task
+// starts; `done` rejects with the first error once the running ones have finished.
+function startTasks(tasks, limit) {
+  const queue = [...tasks];
+  let failed = false;
+  let firstError;
+  const worker = async () => {
+    while (queue.length && !failed) {
+      try { await queue.shift()(); }
+      catch (error) { if (!failed) firstError = error; failed = true; }
+    }
+  };
+  const done = Promise.all(Array.from({ length: limit }, worker)).then(() => { if (failed) throw firstError; });
+  // Reported when `done` is awaited; this only avoids an early unhandled rejection.
+  done.catch(() => {});
+  return { done, stop: () => { queue.length = 0; } };
+}
+
 async function main() {
   const server = http.createServer((req, res) => {
     const pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
@@ -523,6 +568,7 @@ async function main() {
   });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
   let browser;
+  let background = null;
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const page = await browser.newPage();
@@ -550,8 +596,23 @@ async function main() {
       await verifyTouch(browser, url);
       return;
     }
-    await verifyIdentityGuidance(browser, url);
-    await verifySheetExitSafety(browser, url);
+    background = startTasks([
+      ...TOUR_LANES.slice(0, -1).map(lane => () => verifySeparateTourLane(browser, url, lane)),
+      () => verifySheetExitSafety(browser, url),
+      () => verifyIdentityGuidance(browser, url),
+      () => verifyImports(browser, url),
+      () => verifyImports(browser, url, { width: 390, height: 844 }),
+      () => verifyTabletopDiceAndKeyStats(browser, url),
+      () => verifyAbilityGuidance(browser, url),
+      () => verifyPointBuyGuidance(browser, url),
+      () => verifyFirstTableCharacterData(browser, url),
+      () => verifyShareModeEntries(browser, url),
+      () => verifyTouch(browser, url),
+      () => verifyPdfLifecycle(browser, url),
+      () => verifyQuickBuildBackgroundCards(browser, url),
+      () => verifyQuickBuildRaceCards(browser, url),
+      () => verifyQuickBuildGuidanceCopy(browser, url)
+    ], BACKGROUND_WORKERS);
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.evaluate(() => onboardingTour.start());
     await ready(page, 0);
@@ -562,16 +623,8 @@ async function main() {
     }), true, "sheet introduction aligns below the origin row on desktop");
     await page.locator("#tour-skip-btn").click();
     await closed(page);
-    for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }, { width: 320, height: 568 }]) {
-      for (const caster of [false, true]) {
-        for (const mode of ["sheet", "tabletop"]) {
-          for (const complete of [false, true]) await verifyTour(page, { ...viewport, caster, mode, complete });
-        }
-      }
-    }
-    console.log("First-table tour: desktop/mobile, both modes, spell preview and real resource rows for all classes, examples, back/next, completion/Escape and data/storage/focus/scroll preservation passed.");
-    await verifyFirstTableCharacterData(browser, url);
-    await verifyTabletopDiceAndKeyStats(browser, url);
+    // The main page keeps the last lane, so the steps below start from the same state as before.
+    await verifyTourLane(page, TOUR_LANES.at(-1));
 
     const beforeSpellCancel = await snapshot(page);
     await page.evaluate(() => onboardingTour.start(5, "tabletop"));
@@ -735,19 +788,13 @@ async function main() {
     await page.evaluate(() => quickBuild.open());
     assert.deepEqual(await page.evaluate(() => quickBuild.getDraft()), draft);
     await page.evaluate(() => quickBuild.close());
-    await verifyQuickBuildBackgroundCards(browser, url);
-    await verifyQuickBuildRaceCards(browser, url);
-    await verifyQuickBuildGuidanceCopy(browser, url);
-    await verifyShareModeEntries(browser, url);
-    await verifyImports(browser, url);
-    await verifyImports(browser, url, { width: 390, height: 844 });
-    await verifyPdfLifecycle(browser, url);
-    await verifyAbilityGuidance(browser, url);
-    await verifyPointBuyGuidance(browser, url);
-    await verifyTouch(browser, url);
     assert.deepEqual(errors, []);
+    await background.done;
+    console.log("First-table tour: desktop/mobile, both modes, spell preview and real resource rows for all classes, examples, back/next, completion/Escape and data/storage/focus/scroll preservation passed.");
     console.log("Cancellation races, failed positioning, turn dialog, legacy ability/point-buy branches, target jump and quick-build draft reopen passed.");
   } finally {
+    // Let sections still running finish, so closing the browser cannot mask the real failure.
+    if (background) { background.stop(); await background.done.catch(() => {}); }
     await browser?.close();
     await new Promise(resolve => server.close(resolve));
   }
