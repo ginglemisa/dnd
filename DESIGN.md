@@ -135,7 +135,7 @@
 
 ### AppDialog
 
-- 新 dialog／toast 一律使用 `app-dialog.js`，依用途建立變體（如 `class-feature-choices`、`spell-readonly`、`spell-browser`、`spell-primer`、`custom-background`、`legal-about`、`equipment-shop`、`equipment-shop-cart`、`equipment-detail`）。背景隔離、Escape、焦點還原與內容獨立捲動沿用共用行為。
+- 新 dialog／toast 一律使用 `app-dialog.js`，依用途建立變體（如 `class-feature-choices`、`spell-readonly`、`spell-browser`、`spell-primer`、`custom-background`、`legal-about`、`equipment-shop`、`equipment-shop-cart`、`equipment-detail`、`magic-item-grant`）。背景隔離、Escape、焦點還原與內容獨立捲動沿用共用行為。
 - 內容本身就是選項的視窗寫法（`renderContent(body, dialog)` 以 `dialog.close(value)` 結束），以分享角色卡為例，見 [BEHAVIOR.md：分享角色卡](BEHAVIOR.md#分享角色卡)。
 - 從視窗內開啟另一個視窗時（例如準備法術視窗開啟「職業特性表」），背景視窗暫用 `--z-character-features`，讓後開的角色能力視窗在上方，並保留技能／野獸及法術詳情浮層；關閉後恢復原層級，背景視窗的草稿與篩選不變。
 

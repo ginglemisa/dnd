@@ -37,7 +37,7 @@
 * **儲存**：LocalStorage 一律經 `window.dndStorage`。變更持久化欄位或意義時，須確認 LocalStorage／autosave、JSON 匯入匯出與分享網址都能還原舊資料。
 * **匯入**：安全預檢與上限集中在 `index.html`，須完整驗證後才套用；拒絕或損壞的資料不得覆寫原存檔。清理範圍以 `APP_STORAGE_KEYS` 為準，不得清掉日誌、主題與擲骰歷史。匯入的暫存、套用與失敗復原流程照現有實作，修改時一併核對。
 * **匯出**：內容為目前角色（含物品欄 `__inventory`）、兩份法術書、跑團動作偏好與頭像，不是完整備份。動作偏好與頭像不進 autosave；動作偏好隨分享連結帶（全空時省略），頭像不分享，分享模式匯出也不帶頭像。
-* **物品欄**：`__inventory` 經 `window.Inventory` 讀寫，autosave、JSON 與分享都帶（空物品欄也帶）。載入存檔或匯入時，已裝備但不在物品欄的武器、護甲、盾牌只補上缺的數量（標記 `source: "equipped"`，沒有這個欄位的舊資料從空的開始補）；舊的攜帶物品文字只在玩家按「整理成標籤」後才轉換，轉換時先抵掉這些補上的物品。裝備下拉只列物品欄有的物品，仍對不上的選擇保留並標示，不自動清掉。已裝備的物品是獨立一筆（固定 1 件、在最外層），執行時以 `slot` 標記，由 `Inventory.syncEquipped()` 依裝備欄位維護；`slot` 不進存檔，載入後依下拉規則重新對應，舊資料也是這樣拿出已裝備的物品，總數不變。同名物品可以有多筆，只有拖曳合併（`Inventory.merge()`）才合成一筆，有使用次數的物品合併時總次數不變，自訂物品不合併。`textOnly: true`（「只以文字管理物品」）時物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
+* **物品欄**：`__inventory` 經 `window.Inventory` 讀寫，autosave、JSON 與分享都帶（空物品欄也帶）。載入存檔或匯入時，已裝備但不在物品欄的武器、護甲、盾牌只補上缺的數量（標記 `source: "equipped"`，沒有這個欄位的舊資料從空的開始補）；舊的攜帶物品文字只在玩家按「整理成標籤」後才轉換，轉換時先抵掉這些補上的物品。裝備下拉只列物品欄有的物品，仍對不上的選擇保留並標示，不自動清掉。已裝備的物品是獨立一筆（固定 1 件、在最外層），執行時以 `slot` 標記，由 `Inventory.syncEquipped()` 依裝備欄位維護；`slot` 不進存檔，載入後依下拉規則重新對應，舊資料也是這樣拿出已裝備的物品，總數不變。同名物品可以有多筆，只有拖曳合併（`Inventory.merge()`）才合成一筆，有使用次數的物品合併時總次數不變，自訂物品不合併。`textOnly: true`（「只以文字管理物品」）時物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。魔法物品在物品欄項目多一個 `magic`（`{ id, <選項 id>: 值 }`，基本款就是 `itemId`），顯示名稱由 `MagicItemCatalog` 算，不存名稱與說明；目錄找不到 id 時保留這一筆。
 * **分享**：入口為 `copyShareUrl()`，保留 `#s=`／`#s2=` 格式與永久網址的複製 fallback。分享模式不 autosave、不可再分享或匯入；它是唯讀角色卡，鎖定規則在 `share-readonly.js`（預設全鎖加白名單，新增角色欄位預設就會被鎖，要開放才加進白名單）。身分下拉維持 `disabled`，其他項目用 `readOnly`／`inert`，不用 `disabled`。分享頁的 `dndStorage` 依網址只讀寫頁面記憶體，看的人的本機資料不讀不寫，只有主題、亮暗、GA 角色與日誌舊資料例外。分享資料不得被本機記憶覆蓋。
 * **短網址**：只在使用者明確選擇後建立，送出當次編碼的區域變數 `hash`。僅限 `https://twd20.com`、`#s2=` 且長度 ≤10000；離線頁不呼叫。建立失敗時明確提示，不自動重試，也不悄悄改成複製長網址。Worker 程式在 `cloudflare/twd20-url/`（見其 [README](cloudflare/twd20-url/README.md)），與網站分開部署，不自行部署；不寫入 secret 值、不猜測資源 ID、不更換 `HMAC_SECRET`。
 * **日誌**：`adventure-journal.js` 獨立使用 IndexedDB `twd20-adventure-journal`，對外 JSON 維持版本 1。寫入時核對 revision，失敗保留原資料。日誌不進角色 JSON、分享或 autosave。
@@ -57,7 +57,7 @@
 | 法術 | `content/srd/spells/`（建置產物見上），`spell-list.js`（`SpellCatalog`）建立索引與 API；SRD 譯文檢查 `tools/spell-reference/` |
 | 狀態、神祇 | `condition.js`、`deity-info.js` |
 | 規則說明提示框（技能／規則詞表、技能／狀態／野獸浮層） | `rule-tips.js`；野獸資料卡 `monster.js` 的 `createBeastCard`（網站版／SRD 版切換共用 `sheet-spells.js` 的 `createContentVersionView`） |
-| 魔法物品 | `content/srd/magic-items.yaml`（建置產物見上），`magic-items.js`（`MagicItemCatalog`） |
+| 魔法物品 | `content/srd/magic-items.yaml`（建置產物見上），`magic-items.js`（`MagicItemCatalog`）；魔法商店模式與取得視窗 `magic-item-shop.js`（`MagicItemShop`） |
 | 裝備與商店 | `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；物品欄資料 `inventory.js`（`Inventory`）、標籤介面 `inventory-ui.js` |
 | 角色卡 DOM、初始化、持久化、分享 | `index.html` |
 | 分享模式的鎖定、換法術職業表、AC 提示 | `share-readonly.js` |
@@ -100,7 +100,7 @@
 | `validate-action-metadata.js` | 動作定義與摘要、跑團操作與偏好、專長來源與資格、武器／AC、自創法術與自訂骰式 |
 | `validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源；持續法術對 AC／速度的影響 |
 | `validate-spellbook.js` | 法術書、準備與來源、職業／手動記憶、舊資料遷移、法術頁版面 |
-| `validate-spell-search.js` | 法術／裝備搜尋、商店、工具、物品欄與裝備下拉（`--equipment-only`）、魔法物品目錄與 `MagicItemCatalog` |
+| `validate-spell-search.js` | 法術／裝備搜尋、商店、工具、物品欄與裝備下拉（`--equipment-only`）、魔法物品目錄與 `MagicItemCatalog`、魔法商店與魔法物品的物品欄行為 |
 | `validate-ability-roll.js` | 屬性產生、購點、擲骰（`--point-buy-only`／`--dice-only`） |
 | `validate-onboarding.js` | 導覽、創角匯入、PDF 載入取消（`--touch-only`／`--imports-only`） |
 | `validate-tabletop-rest.js` | 短休／長休、資源恢復、休息後選項 |
