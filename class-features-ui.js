@@ -391,7 +391,7 @@ function isApplicableWeaponAttack(hand) {
   }
   const selectionId = hand === "main" ? "mainHand" : "offHand";
   const weaponName = document.getElementById(selectionId)?.value || "";
-  return Boolean(weaponName) && weaponName !== "盾牌";
+  return Boolean(weaponName) && !window.isShieldItem?.(weaponName);
 }
 
 // 選項的攻擊備註（內容檔 options[].attackNote，例如神聖打擊的「+1d8光/黯傷害」）：勾選且可用時加進武器攻擊備註。

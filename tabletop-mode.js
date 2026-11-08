@@ -1620,9 +1620,9 @@
       const state = combatState.druid;
       if (state.acOverride !== null) return String(state.acOverride);
       const armorName = read("armor");
-      const armor = state.equipment.armor === "wear" ? globalScope.armors?.find(item => item.名稱 === armorName) : null;
+      const armor = state.equipment.armor === "wear" ? globalScope.getArmorByName?.(armorName) || null : null;
       const shield = ((state.equipment.off === "wear" && globalScope.isEffectiveEquippedShield?.())
-        || (state.equipment.armor === "wear" && armorName === "盾牌"))
+        || (state.equipment.armor === "wear" && globalScope.isShieldItem?.(armorName)))
         && globalScope.isShieldProficient?.() !== false;
       // 只有穿戴中的魔法護甲與盾牌加值保留，其他持有物不算。
       const magicAc = globalScope.getActiveMagicEffects?.().ac;
@@ -2331,8 +2331,7 @@
   function isWearingHeavyArmor() {
     if (getDruidForm() && combatState.druid.equipment.armor !== "wear") return false;
     const armorName = document.getElementById("armor")?.value || "";
-    return Array.from(globalScope.armors || [])
-      .some(armor => armor?.名稱 === armorName && armor?.分類 === "重甲");
+    return globalScope.getArmorByName?.(armorName)?.分類 === "重甲";
   }
 
   function getCharacterProficiencyBonus() {

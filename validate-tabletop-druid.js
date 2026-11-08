@@ -111,10 +111,10 @@ async function checkMagicItemsInWildShape(page) {
   const results = await page.evaluate(() => {
     TabletopMode.setMode("sheet");
     TabletopMode.applyState({});
-    applyStateObject({ __autoCalculatedChecks: true, class: "druid", level: "8", str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40", armor: "皮甲", mainHand: "", offHand: "盾牌", offHandAsMain: false, "prof-wis": true,
+    applyStateObject({ __autoCalculatedChecks: true, class: "druid", level: "8", str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40", armor: "皮甲+1", mainHand: "", offHand: "盾牌+2", offHandAsMain: false, "prof-wis": true,
       __inventory: { version: 1, items: [
-        { uid: "hide", itemId: "皮甲", quantity: 1, equippedAs: "armor", magic: { id: "armor-plus", bonus: 1 } },
-        { uid: "shield", itemId: "盾牌", quantity: 1, equippedAs: "offHand", magic: { id: "shield-plus", bonus: 2 } },
+        { uid: "hide", itemId: "皮甲", quantity: 1, magic: { id: "armor-plus", bonus: 1 } },
+        { uid: "shield", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 2 } },
         { uid: "ring", quantity: 1, attuned: true, magic: { id: "ring-of-protection" } }
       ] } });
     TabletopMode.setMode("tabletop");

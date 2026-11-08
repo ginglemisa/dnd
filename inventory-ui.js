@@ -114,17 +114,22 @@
     return select.value;
   }
 
-  // 目前裝備用到的物品：weapon:<武器名稱>、armor:<護甲名稱>、shield。
+  // 魔法款的裝備欄位值是自己的名稱，這裡換回基本款品名。
+  function baseName(name) {
+    return globalScope.getEquipmentBaseName?.(name) ?? name;
+  }
+
+  // 目前裝備用到的物品：weapon:<武器名稱>、armor:<護甲名稱>、shield（魔法款算在基本款）。
   function equippedUsage() {
     const usage = new Map();
     const bump = key => usage.set(key, (usage.get(key) || 0) + 1);
     const mainHand = handFromInventory("main");
     const offHand = handFromInventory("off");
-    if (mainHand && mainHand !== "武藝") bump(`weapon:${mainHand}`);
-    if (offHand === "盾牌") bump("shield");
-    else if (offHand && offHand !== "武藝") bump(`weapon:${offHand}`);
+    if (mainHand && mainHand !== "武藝") bump(`weapon:${baseName(mainHand)}`);
+    if (globalScope.isShieldItem?.(offHand)) bump("shield");
+    else if (offHand && offHand !== "武藝") bump(`weapon:${baseName(offHand)}`);
     if (document.getElementById("main2Shield")?.checked && document.getElementById("offHandAsMain")?.checked) bump("shield");
-    if (fieldValue("armor")) bump(`armor:${fieldValue("armor")}`);
+    if (fieldValue("armor")) bump(`armor:${baseName(fieldValue("armor"))}`);
     return usage;
   }
 
@@ -136,21 +141,12 @@
     return item.wieldedAs ? `weapon:${item.wieldedAs}` : "";
   }
 
-  // 下拉選的是哪一件（魔法款的 uid，普通款是空字串）；沒有從物品欄拿的那一手不看。
-  function selectedUid(id, name) {
-    return name ? globalScope.readEquipmentSelection?.(document.getElementById(id))?.uid || "" : "";
-  }
-
   function currentEquipment() {
-    const mainHand = handFromInventory("main");
-    const offHand = handFromInventory("off");
-    const armor = fieldValue("armor");
     return {
-      mainHand,
-      offHand,
-      armor,
-      shield: document.getElementById("offHandAsMain")?.checked === true && document.getElementById("main2Shield")?.checked === true,
-      picks: { mainHand: selectedUid("mainHand", mainHand), offHand: selectedUid("offHand", offHand), armor: selectedUid("armor", armor) }
+      mainHand: handFromInventory("main"),
+      offHand: handFromInventory("off"),
+      armor: fieldValue("armor"),
+      shield: document.getElementById("offHandAsMain")?.checked === true && document.getElementById("main2Shield")?.checked === true
     };
   }
 
@@ -160,14 +156,14 @@
     const prefer = preferUid;
     preferUid = "";
     const equipment = currentEquipment();
-    const full = api().syncEquipped(equipment, { prefer, picks: equipment.picks });
+    const full = api().syncEquipped(equipment, { prefer });
     if (!full.length || restoring) {
       lastEquipment = equipment;
       return;
     }
     full.forEach((slot) => {
       if (slot === "shield") unequipSlot(slot);
-      else if (!setSlot(slot, lastEquipment?.[slot] || "", lastEquipment?.picks?.[slot] || "")) setSlot(slot, "");
+      else if (!setSlot(slot, lastEquipment?.[slot] || "")) setSlot(slot, "");
     });
     globalScope.AppDialog?.notify(`物品欄最多 ${api().LIMITS.items} 筆，無法裝備，請先整理物品欄。`, { tone: "warning" });
   }
@@ -261,12 +257,13 @@
   }
 
   // 寫回裝備頁下拉並觸發 change，雙手武器卸下盾牌等確認與重算照裝備頁的流程；選項不存在時還原並回傳 false。
-  function setSlot(id, value, uid = "") {
+  function setSlot(id, value) {
     const select = document.getElementById(id);
     if (!select || select.disabled) return false;
-    const previous = globalScope.readEquipmentSelection(select);
-    if (!globalScope.writeEquipmentSelection(select, value, uid)) {
-      globalScope.writeEquipmentSelection(select, previous.value, previous.uid);
+    const previous = select.value;
+    select.value = value;
+    if (select.value !== value) {
+      select.value = previous;
       return false;
     }
     select.dispatchEvent(new Event("change", { bubbles: true }));
@@ -277,28 +274,20 @@
     return Boolean(globalScope.hasTwoHandedProperty?.(globalScope.getWeaponByName?.(name)));
   }
 
-  // 下拉目前選的就是這件嗎：魔法款比 uid，普通款要同名且不是魔法款。
-  function isSelectedHere(id, name, entry) {
-    const select = document.getElementById(id);
-    if (!select || select.value !== name) return false;
-    const { uid } = globalScope.readEquipmentSelection(select);
-    return entry.magic ? uid === entry.uid : !uid;
-  }
-
-  // 武器只有一件且在另一手時先從另一手卸下（換手）；勾選「契約」的那一手不從物品欄拿，不算。魔法款是另一件物品，各自計算。
+  // 武器只有一件且在另一手時先從另一手卸下（換手）；勾選「契約」的那一手不從物品欄拿，不算。魔法款的名稱不同，各自計算。
   function equipWeapon(entry, name, handId) {
     const otherId = handId === "mainHand" ? "offHand" : "mainHand";
     const otherHand = otherId === "mainHand" ? "main" : "off";
-    const owned = entry.magic ? entry.quantity : api().getEquippableCounts().weapons.get(name) || 0;
-    if (isSelectedHere(otherId, name, entry) && !globalScope.isPactWeaponListHand?.(otherHand) && owned < 2) setSlot(otherId, "");
+    const owned = api().getEquippableCounts().weapons.get(name) || 0;
+    if (fieldValue(otherId) === name && !globalScope.isPactWeaponListHand?.(otherHand) && owned < 2) setSlot(otherId, "");
     preferUid = entry.uid;
-    return setSlot(handId, name, entry.magic ? entry.uid : "");
+    return setSlot(handId, name);
   }
 
   // closeItem：關閉物品視窗。玩家選定、確定要寫入時才呼叫，取消或被規則擋下時視窗留著；
   // 先關再寫入，裝備頁流程要再確認（卸下盾牌？）時，確認視窗不會疊在已關閉的視窗上。
   async function openEquipWeaponDialog(entry, trigger, closeItem) {
-    const name = api().getCatalogItem(entry.itemId)?.wieldedAs;
+    const name = api().getEquipmentValue(entry);
     if (!name) return;
     const offLabel = document.getElementById("offHandLabel")?.textContent.trim() || "副手";
     const alternateMain = globalScope.isOffHandAlternateMain?.() === true;
@@ -307,7 +296,7 @@
     const blocked = (id, hand, label) => {
       const select = document.getElementById(id);
       if (!select) return true;
-      if (isSelectedHere(id, name, entry) && !select.disabled) {
+      if (select.value === name && !select.disabled) {
         notes.push(`已裝備在${label}。`);
         return true;
       }
@@ -322,7 +311,7 @@
     if (!offBlocked && twoHanded && !alternateMain) {
       notes.push(`雙手武器只能裝備在主手${fieldValue("offHand") ? `，${offLabel}的${handState("offHand")}會一併卸下` : ""}。`);
       offBlocked = true;
-    } else if (!offBlocked && document.getElementById("offHand")?.disabled && !isSelectedHere("mainHand", name, entry)) {
+    } else if (!offBlocked && document.getElementById("offHand")?.disabled && fieldValue("mainHand") !== name) {
       notes.push(`主手的${handState("mainHand")}佔用雙手，裝備在${offLabel}前請先更換主手。`);
       offBlocked = true;
     }
@@ -356,7 +345,7 @@
   }
 
   async function equipArmor(entry, trigger, closeItem) {
-    const name = entry.itemId;
+    const name = api().getEquipmentValue(entry);
     const label = api().getLabel(entry);
     const current = fieldValue("armor");
     if (current && current !== name) {
@@ -371,7 +360,7 @@
     }
     closeItem();
     preferUid = entry.uid;
-    if (!setSlot("armor", name, entry.magic ? entry.uid : "")) globalScope.AppDialog.notify(`無法穿上${label}，請到裝備頁調整。`, { tone: "warning" });
+    if (!setSlot("armor", name)) globalScope.AppDialog.notify(`無法穿上${label}，請到裝備頁調整。`, { tone: "warning" });
   }
 
   async function equipShield(trigger, entry, closeItem) {
@@ -392,7 +381,8 @@
       globalScope.AppDialog.notify(`主手的${handState("mainHand")}佔用雙手，無法裝備盾牌。`, { tone: "warning" });
       return;
     }
-    if (offHand.value && offHand.value !== "盾牌") {
+    const name = api().getEquipmentValue(entry);
+    if (offHand.value && offHand.value !== name && !globalScope.isShieldItem?.(offHand.value)) {
       const confirmed = await globalScope.AppDialog.requestDecision({
         title: "更換副手？",
         message: `副手目前是${handState("offHand")}，要換成盾牌嗎？`,
@@ -404,7 +394,7 @@
     }
     closeItem();
     preferUid = entry.uid;
-    if (!setSlot("offHand", "盾牌", entry.magic ? entry.uid : "")) globalScope.AppDialog.notify("無法裝備盾牌，請到裝備頁調整。", { tone: "warning" });
+    if (!setSlot("offHand", name)) globalScope.AppDialog.notify("無法裝備盾牌，請到裝備頁調整。", { tone: "warning" });
   }
 
   // 治療藥水：生命值未填寫或已滿時不擲骰、不減數量；否則擲骰（擲骰功能關閉時照樣擲）、回復生命值，數量減 1。

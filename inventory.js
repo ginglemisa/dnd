@@ -11,8 +11,8 @@
  *   例外：一般的治療藥水與法術卷軸沿用既有寫法（{ itemId: "治療藥水" }、{ itemId: "法術卷軸", name: "X法術卷軸" }），沒有 magic。
  * - 執行時的 slot 是這件物品正裝備在哪個位置（mainHand、offHand、armor、shield）：固定 1 件、在最外層，由 syncEquipped() 依角色卡的裝備選擇維護。
  *   裝備選擇已經存在角色欄位，slot 不寫進存檔（getState() 拿掉、restore() 不讀），載入後重新對應：裝備中那件存檔時是身上的 1 件，下拉規則會再拿回同樣的物品。
- * - 魔法物品的基本款和普通物品同名，光看裝備欄位分不出是哪一件，所以只有帶 magic 的筆另存 equippedAs（mainHand、offHand、armor、shield），載入時依它選回同一件；普通物品的存檔格式不變。
- *   裝備下拉的普通選項只算普通款（getEquippableCounts()），每件魔法款各有一個選項（getMagicEquipment()），沒指定時一律拿普通款。
+ * - 魔法武器、護甲與盾牌裝備時，角色卡的裝備欄位存魔法款自己的名稱（MagicItemCatalog.getDisplayName()，例如「長劍+2」），載入時依名稱到物品欄拿同名的那一件，沒有就補上一筆（source "equipped"）。
+ *   普通款只配普通款，魔法款只配同名魔法款；名稱彼此唯一由建置檢查。
  * - attuned 是魔法物品的同調狀態（只有 magic 的筆、固定 1 件才有），由玩家以 setAttuned() 開關：同時最多 LIMITS.attunement 件，同一種魔法物品（同 magic.id）不能同調第二件。同調中的物品不能合併或拆分，移除後同調自然消失。
  *   同名物品可以有很多筆（拆分、商店購買、卸除都會新增一筆），各自獨立；只有玩家拖曳合併（merge()）才合成一筆，自訂物品不能合併。
  *   textOnly 為 true 時玩家選擇只以文字管理物品：物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
@@ -194,23 +194,15 @@
     if (SOURCES.has(raw.source)) entry.source = raw.source;
     const uses = cleanUses(itemId, raw.uses);
     if (uses) entry.uses = uses;
-    // 裝備位置與同調都是單一件物品的狀態，只有魔法物品才有（repairMagicState 再檢查彼此衝突）。
-    if (magic && entry.quantity === 1) {
-      if (SLOTS.includes(raw.equippedAs)) entry.equippedAs = raw.equippedAs;
-      if (raw.attuned === true) entry.attuned = true;
-    }
+    // 同調是單一件物品的狀態，只有魔法物品才有（repairMagicState 再檢查彼此衝突）。
+    if (magic && entry.quantity === 1 && raw.attuned === true) entry.attuned = true;
     return entry;
   }
 
-  // 同一個位置只留第一筆；同調要是需要同調的物品、同一種只算第一件、總數不超過上限。
+  // 同調要是需要同調的物品、同一種只算第一件、總數不超過上限。
   function repairMagicState(list) {
-    const slots = new Set();
     const attuned = new Set();
     list.forEach((entry) => {
-      if (entry.equippedAs) {
-        if (slots.has(entry.equippedAs)) delete entry.equippedAs;
-        else slots.add(entry.equippedAs);
-      }
       if (!entry.attuned) return;
       const rule = magicRule(entry);
       if ((rule && !rule.attunement) || attuned.has(entry.magic.id) || attuned.size >= LIMITS.attunement) delete entry.attuned;
@@ -266,10 +258,9 @@
     return entry.magic ? { ...entry, magic: { ...entry.magic } } : { ...entry };
   }
 
-  // 存檔的寫法：slot 只在執行時使用；魔法物品的裝備位置另存 equippedAs，載入時才選得回同一件。
+  // 存檔的寫法：slot 只在執行時使用，載入後由裝備欄位的名稱重新對應。
   function savedEntry(entry) {
-    const { slot, equippedAs, ...saved } = copyEntry(entry);
-    if (entry.magic && (slot || equippedAs)) saved.equippedAs = slot || equippedAs;
+    const { slot, ...saved } = copyEntry(entry);
     return saved;
   }
 
@@ -738,26 +729,44 @@
     return textOnly ? { version: VERSION, textOnly: true, items: [] } : { version: VERSION, items: entries.map(savedEntry) };
   }
 
-  /** 物品欄可供裝備的普通款數量：weapons／armors 以武器或護甲名稱計數，shields 為盾牌數量；魔法款各有自己的選項（getMagicEquipment()）。 */
+  // 可裝備的魔法物品對應的目錄資料 { name, id, selection, base }；name 是裝備欄位的值。不能裝備（彈藥、戒指、目錄找不到）時為 null。
+  function magicEquipmentOf(entry) {
+    if (!entry?.magic || !entry.itemId || !magicRule(entry)) return null;
+    const resolved = globalScope.MagicItemCatalog.resolveEquipmentName(getLabel(entry));
+    return resolved && resolved.id === entry.magic.id ? resolved : null;
+  }
+
+  /** 物品欄可供裝備的數量：weapons／armors 以裝備欄位的值計數（普通款是品名，魔法款是自己的名稱），shields 為普通盾牌數量，magicShields 以名稱計數魔法盾牌。 */
   function getEquippableCounts() {
     const kinds = staticKinds();
     const weapons = new Map();
     const armors = new Map();
+    const magicShields = new Map();
     let shields = 0;
     entries.forEach((entry) => {
-      if (!entry.itemId || entry.magic) return;
+      if (entry.magic) {
+        const equipment = magicEquipmentOf(entry);
+        if (!equipment) return;
+        const kind = kindOf(equipment.base, kinds);
+        const counts = kind === "shield" ? magicShields : kind === "armor" ? armors : weapons;
+        counts.set(equipment.name, (counts.get(equipment.name) || 0) + entry.quantity);
+        return;
+      }
+      if (!entry.itemId) return;
       const kind = kindOf(entry.itemId, kinds);
       const wieldedAs = kind === "weapon" ? entry.itemId : kinds.wieldedAs[entry.itemId];
       if (wieldedAs) weapons.set(wieldedAs, (weapons.get(wieldedAs) || 0) + entry.quantity);
       if (kind === "armor") armors.set(entry.itemId, (armors.get(entry.itemId) || 0) + entry.quantity);
       if (kind === "shield") shields += entry.quantity;
     });
-    return { weapons, armors, shields };
+    return { weapons, armors, shields, magicShields };
   }
 
-  // 這件魔法物品裝備後對應的欄位值：武器或法器是武器名稱，護甲、盾牌是自己的品名；不能裝備時為空字串。
-  function magicEquipmentName(entry, kinds) {
-    return kindOf(entry.itemId, kinds) ? entry.itemId : kinds.wieldedAs[entry.itemId] || "";
+  /** 這筆物品裝備時裝備欄位要寫的值：魔法款是自己的名稱，武器、護甲、盾牌是品名，法器是對應的武器名稱；不能裝備時為空字串。 */
+  function getEquipmentValue(entry) {
+    if (entry?.magic) return magicEquipmentOf(entry)?.name || "";
+    const kinds = staticKinds();
+    return kindOf(entry?.itemId, kinds) ? entry.itemId : kinds.wieldedAs[entry?.itemId] || "";
   }
 
   function fitsSlot(name, slot, kinds) {
@@ -766,31 +775,34 @@
     return !kinds.armors.has(name);
   }
 
-  function heldSlot(entry) {
-    return entry.slot || entry.equippedAs || "";
-  }
-
-  /**
-   * 可以放進這個位置的魔法物品：[{ uid, name（基本款名稱，下拉的 value）, label }]。
-   * 已經在另一個位置的那一件不列；有多件的一筆只列一次（裝備時才拿出 1 件）。
-   */
+  /** 物品欄裡可以放進這個位置的魔法款：[{ name（裝備欄位的值）, base（基本款品名）}]，同名只列一次。 */
   function getMagicEquipment(slot) {
     const kinds = staticKinds();
-    return entries.filter(entry => entry.magic && entry.itemId && !isContainerEntry(entry, kinds) && (!heldSlot(entry) || heldSlot(entry) === slot))
-      .map(entry => ({ uid: entry.uid, name: magicEquipmentName(entry, kinds), label: getLabel(entry) }))
-      .filter(item => item.name && fitsSlot(item.name, slot, kinds));
+    const names = new Map();
+    entries.forEach((entry) => {
+      const equipment = magicEquipmentOf(entry);
+      if (equipment && !isContainerEntry(entry, kinds) && fitsSlot(equipment.base, slot, kinds)) names.set(equipment.name, equipment.base);
+    });
+    return [...names].map(([name, base]) => ({ name, base }));
   }
 
-  /** 正在這個位置的魔法物品 uid（還沒重新對應的存檔以 equippedAs 為準）；name 是這個位置目前的基本款名稱，對不上或是普通款時為空字串。 */
-  function getSlotMagicUid(slot, name) {
-    const kinds = staticKinds();
-    const entry = entries.find(item => item.magic && heldSlot(item) === slot);
-    return entry && matchesEquipment(entry, name, kinds) ? entry.uid : "";
+  // 由裝備欄位的值查魔法款；普通品名為 null。
+  function magicEquipmentByName(name) {
+    return name ? globalScope.MagicItemCatalog?.resolveEquipmentName(name) || null : null;
+  }
+
+  // 副手當主手時盾牌位置要拿哪一面（沒有下拉時）：玩家點的那面、已經拿著的、普通盾牌，最後才是魔法盾牌。
+  function chooseShieldName(list, kinds, preferred) {
+    const shieldValue = entry => entry.magic ? magicEquipmentOf(entry)?.name || "" : (kinds.shields.has(entry.itemId) ? entry.itemId : "");
+    const held = list.find(entry => entry.slot === "shield");
+    const plain = list.find(entry => !entry.magic && kinds.shields.has(entry.itemId));
+    const magic = list.find(entry => entry.magic && kinds.shields.has(entry.itemId) && magicEquipmentOf(entry));
+    return [preferred, held, plain, magic].filter(Boolean).map(shieldValue).find(Boolean) || "";
   }
 
   /**
    * 已裝備的武器、護甲與盾牌不在物品欄（或件數不夠，例如主副手同名要 2 件）時，補上缺的數量並標記 "equipped"。
-   * 魔法款不算有這件普通物品，只有存檔記著裝備在那個位置的魔法款才算補齊。
+   * 魔法款的名稱對得上目錄時比照辦理，補上的是那件魔法物品。
    * reset 時先清空（舊資料沒有物品欄）；只以文字管理物品時不動。
    */
   function ensureEquipped({ mainHand = "", offHand = "", armor = "", shield = false } = {}, { reset = false } = {}) {
@@ -798,20 +810,33 @@
     if (reset) entries = [];
     const kinds = staticKinds();
     const needed = new Map();
-    const bump = (name, slot) => { if (name && !getSlotMagicUid(slot, name)) needed.set(name, (needed.get(name) || 0) + 1); };
-    [["mainHand", mainHand], ["offHand", offHand]].forEach(([slot, name]) => {
-      if (kinds.weapons.has(name) || kinds.shields.has(name)) bump(name, slot);
+    const bump = (name) => { if (name) needed.set(name, (needed.get(name) || 0) + 1); };
+    const baseOf = name => magicEquipmentByName(name)?.base || name;
+    [mainHand, offHand].forEach((name) => {
+      if (kinds.weapons.has(baseOf(name)) || kinds.shields.has(baseOf(name))) bump(name);
     });
-    if (kinds.armors.has(armor)) bump(armor, "armor");
-    if (shield && !needed.has("盾牌") && kinds.shields.has("盾牌")) bump("盾牌", "shield");
+    if (kinds.armors.has(baseOf(armor))) bump(armor);
+    // 副手當主手的盾牌：物品欄有任何一面就夠了，沒有時補普通盾牌。
+    if (shield && !chooseShieldName(entries, kinds) && kinds.shields.has("盾牌")) bump("盾牌");
     const counts = getEquippableCounts();
-    const owned = name => kinds.shields.has(name) ? counts.shields : kinds.armors.has(name) ? counts.armors.get(name) || 0 : counts.weapons.get(name) || 0;
-    const requests = [...needed].map(([itemId, quantity]) => ({ itemId, quantity: quantity - owned(itemId) })).filter(request => request.quantity > 0);
+    const owned = (name) => {
+      if (kinds.shields.has(baseOf(name))) return magicEquipmentByName(name) ? counts.magicShields.get(name) || 0 : counts.shields;
+      return kinds.armors.has(baseOf(name)) ? counts.armors.get(name) || 0 : counts.weapons.get(name) || 0;
+    };
+    const requests = [...needed].map(([name, quantity]) => {
+      const magic = magicEquipmentByName(name);
+      return magic
+        ? { itemId: magic.base, magic: { ...magic.selection, id: magic.id }, quantity: quantity - owned(name) }
+        : { itemId: name, quantity: quantity - owned(name) };
+    }).filter(request => request.quantity > 0);
     if (!requests.length || !add(requests, { source: "equipped" })) emit("restore");
   }
 
+  // 魔法款只配同名魔法款，普通款只配普通款。
   function matchesEquipment(entry, name, kinds) {
-    if (!entry.itemId || !name) return false;
+    if (!name) return false;
+    if (entry.magic || magicEquipmentByName(name)) return Boolean(entry.magic) && magicEquipmentOf(entry)?.name === name;
+    if (!entry.itemId) return false;
     if (kinds.shields.has(name)) return kinds.shields.has(entry.itemId);
     if (kinds.armors.has(name)) return entry.itemId === name;
     return kindOf(entry.itemId, kinds) === "weapon" ? entry.itemId === name : kinds.wieldedAs[entry.itemId] === name;
@@ -836,37 +861,29 @@
     return container ? pickFrom(candidates.filter(entry => entry.in === container)) : null;
   }
 
-  // 裝備時拿哪一筆：有指定 uid（魔法款的下拉選項、存檔記的 equippedAs）就拿那一筆；否則是玩家點的那筆，再來是普通款。
-  // 魔法款只有被指定時才會拿到，唯一例外是沒有下拉、只有勾選的盾牌位置（allowMagic）：普通款都沒有時拿物品欄裡的魔法盾牌。
-  function pickEquipmentSource(list, name, kinds, { prefer = "", uid = "", allowMagic = false } = {}) {
+  // 裝備時拿哪一筆：玩家點的那筆優先；同名的魔法物品有多筆時先拿已同調的，重新載入後加值才不會不見。
+  function pickEquipmentSource(list, name, kinds, { prefer = "" } = {}) {
     const candidates = list.filter(entry => !entry.slot && !isContainerEntry(entry, kinds) && matchesEquipment(entry, name, kinds));
-    if (uid) return candidates.find(entry => entry.uid === uid) || null;
     const preferred = candidates.find(entry => entry.uid === prefer);
-    if (preferred && (!preferred.magic || allowMagic)) return preferred;
-    return pickNearest(list, candidates.filter(entry => !entry.magic), kinds) || (allowMagic ? pickNearest(list, candidates, kinds) : null);
+    if (preferred) return preferred;
+    const attuned = candidates.filter(entry => entry.attuned);
+    return pickNearest(list, attuned.length ? attuned : candidates, kinds);
   }
 
   /**
    * 讓物品的裝備位置符合角色卡的選擇（{ mainHand, offHand, armor, shield }；shield 是副手當主手時的盾牌勾選）。
    * 選擇變了的位置先放回身上（成為獨立的一筆），新的選擇再從物品欄拿 1 件（options.prefer 是玩家點的那筆 uid）。
-   * options.picks 是下拉目前選的是哪一件（{ mainHand, offHand, armor }：魔法款的 uid，普通款是空字串）；沒有下拉的盾牌位置不給，換盾牌靠 prefer。
    * 物品欄沒有這件物品時留空；物品欄已滿、又要從多件的標籤多開一筆時放不下，回傳這些位置，其餘位置照常更新。
    */
-  function syncEquipped({ mainHand = "", offHand = "", armor = "", shield = false } = {}, { prefer = "", picks = {} } = {}) {
+  function syncEquipped({ mainHand = "", offHand = "", armor = "", shield = false } = {}, { prefer = "" } = {}) {
     if (textOnly) return [];
     const kinds = staticKinds();
-    const wanted = { mainHand, offHand, armor, shield: shield ? [...kinds.shields][0] || "" : "" };
     const next = entries.map(copyEntry);
+    const preferred = next.find(entry => entry.uid === prefer && kinds.shields.has(entry.itemId));
+    const wanted = { mainHand, offHand, armor, shield: shield ? chooseShieldName(next, kinds, preferred) : "" };
     let changed = false;
-    const preferred = next.find(entry => entry.uid === prefer);
-    // 下拉選的和手上的是同一件嗎：有選項資訊的位置要對得上，勾選的盾牌位置只有玩家點了另一面盾牌才換。
-    const stillChosen = (entry) => {
-      const pick = picks[entry.slot];
-      if (pick !== undefined) return pick ? entry.uid === pick : !entry.magic;
-      return !(entry.slot === "shield" && preferred && preferred !== entry && kinds.shields.has(preferred.itemId));
-    };
     next.forEach((entry) => {
-      if (entry.slot && (!matchesEquipment(entry, wanted[entry.slot], kinds) || !stillChosen(entry))) {
+      if (entry.slot && !matchesEquipment(entry, wanted[entry.slot], kinds)) {
         delete entry.slot;
         changed = true;
       }
@@ -876,8 +893,7 @@
     SLOTS.forEach((slot) => {
       const name = wanted[slot];
       if (!name || next.some(entry => entry.slot === slot)) return;
-      const saved = picks[slot] === undefined ? next.find(entry => entry.equippedAs === slot && matchesEquipment(entry, name, kinds)) : null;
-      const source = pickEquipmentSource(next, name, kinds, { prefer, uid: picks[slot] || saved?.uid || "", allowMagic: slot === "shield" });
+      const source = pickEquipmentSource(next, name, kinds, { prefer });
       if (!source) return;
       if (source.quantity === 1) {
         source.slot = slot;
@@ -892,12 +908,6 @@
         delete unit.uses;
         next.splice(next.indexOf(source) + 1, 0, unit);
       }
-      changed = true;
-    });
-    // 存檔記的位置只用來對應這一次，之後以 slot 為準。
-    next.forEach((entry) => {
-      if (!entry.equippedAs) return;
-      delete entry.equippedAs;
       changed = true;
     });
     if (changed) commit(next, "equip");
@@ -984,7 +994,7 @@
     getMergeTargets,
     syncEquipped,
     getMagicEquipment,
-    getSlotMagicUid,
+    getEquipmentValue,
     setAttuned,
     getAttunement,
     remove,

@@ -448,7 +448,8 @@
       ...(globalScope.weapons_martial_ranged || [])
     ];
     const isTwoHandedWeapon = name => {
-      const weapon = weaponList.find(item => item?.名稱 === name);
+      const base = globalScope.getEquipmentBaseName?.(name) ?? name;
+      const weapon = weaponList.find(item => item?.名稱 === base);
       return [weapon?.屬性1, weapon?.屬性2, weapon?.屬性3, weapon?.屬性4]
         .some(property => String(property || '').includes('雙手'));
     };
@@ -458,7 +459,7 @@
         isTwoHandedWeapon
       });
     }
-    return state.offHandAsMain !== true && normalizeText(state.offHand) === '盾牌';
+    return state.offHandAsMain !== true && (globalScope.isShieldItem?.(normalizeText(state.offHand)) ?? normalizeText(state.offHand) === '盾牌');
   }
 
   function collectToolProficiencyNames(state) {
@@ -1150,7 +1151,8 @@ function isWeaponRowEmpty(payload, slot) {
     }
     const armorName = normalizeText(state.armor);
     const armorList = typeof armors !== 'undefined' ? armors : (globalScope.armors || []);
-    const armor = armorList.find((item) => item.名稱 === armorName);
+    const armorBaseName = globalScope.getEquipmentBaseName?.(armorName) ?? armorName;
+    const armor = armorList.find((item) => item.名稱 === armorBaseName);
     const isShield = typeof globalScope.isShieldItem === 'function'
       ? globalScope.isShieldItem
       : () => false;

@@ -1211,8 +1211,7 @@
         selects: selects.map((element) => ({
           element,
           html: element.innerHTML,
-          // 普通款和魔法款的 value 相同，還原時要靠位置選回同一個選項。
-          index: element.selectedIndex,
+          value: element.value,
           disabled: element.disabled
         })),
         alternateMainToggle: document.getElementById("offHandAsMain"),
@@ -1249,9 +1248,9 @@
     restoreEquipmentPreview() {
       const snapshot = this.equipmentPreviewSnapshot;
       if (!snapshot) return;
-      snapshot.selects.forEach(({ element, html, index, disabled }) => {
+      snapshot.selects.forEach(({ element, html, value, disabled }) => {
         element.innerHTML = html;
-        element.selectedIndex = index;
+        element.value = value;
         element.disabled = disabled;
       });
       if (snapshot.alternateMainToggle) {

@@ -117,7 +117,7 @@
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="magic-item-content.generated.js?v=0" defer></script>
-  <script src="magic-items.js?v=20261108-magic-shop" defer></script>
+  <script src="magic-items.js?v=20261109-magic-names" defer></script>
   <script src="monster-content.generated.js?v=0" defer></script>
   <script src="monster.js?v=20261108-wild-shape-ux" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261108-new-forms" defer></script>
@@ -136,14 +136,14 @@
   <script src="app-dialog.js?v=20261107-share-link" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261108-magic-equip" defer></script>
-  <script src="tabletop-druid.js?v=20261108-wild-shape-ux" defer></script>
+  <script src="tabletop-mode.js?v=20261109-magic-names" defer></script>
+  <script src="tabletop-druid.js?v=20261109-magic-names" defer></script>
   <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
-  <script src="tabletop-actions.js?v=20261108-magic-equip" defer></script>
+  <script src="tabletop-actions.js?v=20261109-magic-names" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261108-companion-timing" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
-  <script src="onboarding-tour.js?v=20261108-magic-equip" defer></script>
+  <script src="onboarding-tour.js?v=20261109-magic-names" defer></script>
   <script src="quick-build.js?v=20261108-css-refactor-b7" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
   <script src="spell-management.js?v=20261107-share-readonly" defer></script>
@@ -1436,7 +1436,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261105-feat-categories"></script>
   <script src="spell-sources.js?v=20261105-feat-categories"></script>
-  <script src="class-features-ui.js?v=20261106-background-skills"></script>
+  <script src="class-features-ui.js?v=20261109-magic-names"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -1789,7 +1789,7 @@ function updateSpeedDisplay() {
   if (!speedDisplay || !isAutomaticKeyStatsEnabled() || typeof window.calculateCharacterSpeed !== "function") return;
 
   const armorName = document.getElementById("armor")?.value || "";
-  const armor = armors.find(item => item.名稱 === armorName);
+  const armor = getArmorByName(armorName);
   const hasShield = isShieldItem(armorName) || isEffectiveEquippedShield();
   speedDisplay.value = window.calculateCharacterSpeed({
     baseSpeed: document.getElementById("speed-input")?.value,
@@ -2217,7 +2217,7 @@ function updateACDisplay() {
   const hasArmor = Boolean(armorName) && !isShieldItem(armorName);
   const hasArmorShield = isShieldItem(armorName);
   const className = document.getElementById("class")?.value;
-  const armor = hasArmor ? armors.find(item => item.名稱 === armorName) : null;
+  const armor = hasArmor ? getArmorByName(armorName) : null;
   const hasOffHandShield = isEffectiveEquippedShield();
   // 未受盾牌訓練仍算持盾（影響無甲防禦），但不獲得盾牌的 AC 加值。
   const hasShield = (hasOffHandShield || hasArmorShield)
@@ -3117,8 +3117,8 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="equipment-data.js?v=20261105-starting-equipment" defer></script>
 <script src="search.js?v=20261108-magic-shop" defer></script>
 <script src="equipment-shop.js?v=20261108-magic-shop" defer></script>
-<script src="inventory.js?v=20261108-magic-equip" defer></script>
-<script src="inventory-ui.js?v=20261108-magic-verify" defer></script>
+<script src="inventory.js?v=20261109-magic-names" defer></script>
+<script src="inventory-ui.js?v=20261109-magic-names" defer></script>
 <script src="magic-item-shop.js?v=20261108-magic-note" defer></script>
 
 <script>
@@ -3465,7 +3465,7 @@ function finishDerivedChecksLoad(data) {
   syncAutomaticKeyStatsMode({ refresh: false });
 }
 </script>
-<script src="pdf-launcher.js?v=20261106-skills-auto"></script>
+<script src="pdf-launcher.js?v=20261109-magic-names"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -3510,6 +3510,20 @@ function getMonkMartialArtsWeapon() {
     屬性4: null
   };
 }
+// 裝備欄位的值對應的基本款品名：魔法款（例如「長劍+2」）回基本款，其他名稱原樣回傳。
+function getEquipmentBaseName(name) {
+  return window.MagicItemCatalog?.resolveEquipmentName(name)?.base || name;
+}
+
+// 由裝備欄位的值查定義：魔法款是基本款的定義換上自己的名稱，多一個「基本款」，傷害、屬性、精通、AC、分類都繼承基本款。判斷規則時用 getEquipmentRuleName()。
+function withMagicEquipmentName(definition, name) {
+  return definition && definition.名稱 !== name ? { ...definition, 名稱: name, 基本款: definition.名稱 } : definition;
+}
+
+function getEquipmentRuleName(item) {
+  return item?.基本款 || item?.名稱;
+}
+
 function hasTwoHandedProperty(weapon) {
   return [weapon?.屬性1, weapon?.屬性2, weapon?.屬性3, weapon?.屬性4].some(p => p?.includes("雙手"));
 }
@@ -3530,66 +3544,59 @@ function populateSelect(selectEl, items) {
 // 同名武器主手、副手都拿時物品欄要有 2 件。目前選取或存檔中的值（keepValue）不在物品欄時保留並標示，不替玩家清掉。
 // 勾選「契約」的那一手（isPactWeaponListHand）改列全部近戰武器、不看物品欄（filterPactWeaponSections）。
 let pendingEquipmentValues = null;
-const EQUIPMENT_SELECT_IDS = new Set(["mainHand", "offHand", "armor"]);
 function filterEquipmentSectionsByInventory(sections, slot, keepValue) {
   const pactHand = slot === "mainHand" ? "main" : (slot === "offHand" ? "off" : "");
   if (pactHand && isPactWeaponListHand(pactHand)) return filterPactWeaponSections(sections, keepValue);
-  // 只以文字管理物品時列出全部裝備。
-  if (window.Inventory?.isTextOnly()) return sections;
+  // 只以文字管理物品時列出全部裝備；魔法款沒有對應的物品，目前的選擇保留。
+  if (window.Inventory?.isTextOnly()) return withKeptMagicOption(sections, keepValue, "");
   const counts = window.Inventory?.getEquippableCounts();
   if (!counts) return sections;
-  const mainSelect = document.getElementById("mainHand");
-  const mainHand = mainSelect?.value || "";
-  const owned = name => isShieldItem(name) ? counts.shields
+  const mainHand = document.getElementById("mainHand")?.value || "";
+  const owned = name => isShieldItem(name) ? (name === "盾牌" ? counts.shields : counts.magicShields.get(name) || 0)
     : slot === "armor" ? counts.armors.get(name) || 0 : counts.weapons.get(name) || 0;
-  // 主手的契約武器不從物品欄拿、主手拿的是魔法款時也不佔普通款，副手同名只要 1 件。
-  const needed = name => slot === "offHand" && !isShieldItem(name) && name === mainHand
-    && !isPactWeaponListHand("main") && !readEquipmentSelection(mainSelect).uid ? 2 : 1;
-  const magicItems = window.Inventory.getMagicEquipment(slot);
+  // 主手的契約武器不從物品欄拿，副手同名只要 1 件。
+  const needed = name => slot === "offHand" && !isShieldItem(name) && name === mainHand && !isPactWeaponListHand("main") ? 2 : 1;
+  const notOwnedText = name => `${name}（${owned(name) ? `物品欄只有 ${owned(name)} 件` : "不在物品欄"}）`;
+  const magicEquipment = window.Inventory.getMagicEquipment(slot);
+  const keptMagic = keepValue ? window.MagicItemCatalog?.resolveEquipmentName(keepValue) : null;
   return sections.map(section => ({
     ...section,
     items: section.items.flatMap((item) => {
       const name = item.名稱;
-      // 每件魔法款一個選項，緊接在同名普通款後面；value 同樣是基本款名稱，靠 data-magic-uid 分辨。
-      const magic = magicItems.filter(entry => entry.name === name).map(entry => ({ ...item, 選項文字: entry.label, magicUid: entry.uid }));
+      // 魔法款是獨立的選項，緊接在同名基本款後面，value 是魔法款自己的名稱。
+      const magicNames = magicEquipment.filter(entry => entry.base === name).map(entry => entry.name);
+      if (keptMagic?.base === name && !magicNames.includes(keepValue)) magicNames.push(keepValue);
+      const magic = magicNames.flatMap((magicName) => {
+        const option = { ...item, 名稱: magicName, 基本款: name };
+        if (owned(magicName) >= needed(magicName)) return [option];
+        return magicName === keepValue ? [{ ...option, 選項文字: notOwnedText(magicName) }] : [];
+      });
       if (name === "武藝" || owned(name) >= needed(name)) return [item, ...magic];
       if (!keepValue || name !== keepValue) return magic;
-      return [{ ...item, 選項文字: `${name}（${owned(name) ? `物品欄只有 ${owned(name)} 件` : "不在物品欄"}）` }, ...magic];
+      return [{ ...item, 選項文字: notOwnedText(name) }, ...magic];
     })
   })).filter(section => section.items.length > 0);
 }
 
-// 裝備下拉目前選的是哪一件：value 是基本款名稱，uid 是魔法款的物品 uid（普通款為空字串）。
-function readEquipmentSelection(select) {
-  return { value: select?.value || "", uid: select?.selectedOptions?.[0]?.dataset.magicUid || "" };
-}
-
-// 選回指定的一件；不用 select.value 指定，同名時它只會選到第一個。沒有這個選項時回傳 false，比照 value 對不上時變成未選取。
-function writeEquipmentSelection(select, value, uid = "") {
-  const option = Array.from(select.options).find(candidate => candidate.value === value && (candidate.dataset.magicUid || "") === uid);
-  if (!option) {
-    select.value = "";
-    return false;
-  }
-  select.selectedIndex = option.index;
-  return true;
-}
-
-// 重建下拉後選回原本那一件：這個位置實際裝備的魔法款優先（一筆多件時裝備的是拆出來的新一筆），其次是原本的選項，最後是普通款。
-function restoreEquipmentSelection(select, slot, previous) {
-  const held = window.Inventory?.getSlotMagicUid?.(slot, previous.value) || "";
-  if (held && writeEquipmentSelection(select, previous.value, held)) return;
-  if (previous.uid && writeEquipmentSelection(select, previous.value, previous.uid)) return;
-  writeEquipmentSelection(select, previous.value, "");
+// 清單沒有對應物品（只以文字管理、契約武器）時，目前選的魔法款仍留一個選項，不替玩家清掉；suffix 是標示文字。
+function withKeptMagicOption(sections, keepValue, suffix) {
+  const kept = keepValue ? window.MagicItemCatalog?.resolveEquipmentName(keepValue) : null;
+  if (!kept) return sections;
+  return sections.map(section => ({
+    ...section,
+    items: section.items.flatMap(item => item.名稱 === kept.base
+      ? [item, { ...item, 名稱: keepValue, 基本款: kept.base, 選項文字: `${keepValue}${suffix}` }]
+      : [item])
+  }));
 }
 
 // 契約武器由玩家召喚：只留近戰武器（武藝跟著職業顯示）。目前選取的遠程武器或盾牌保留並標示，不替玩家清掉。
 function filterPactWeaponSections(sections, keepValue) {
   const isMelee = name => name === "武藝" || (Boolean(getWeaponByName(name)) && !isRangedWeapon(getWeaponByName(name)));
-  return sections.map(section => ({
+  return withKeptMagicOption(sections, keepValue, isMelee(keepValue) ? "（契約武器，沒有魔法加值）" : "（不是近戰武器）").map(section => ({
     ...section,
     items: section.items.flatMap(item => {
-      if (isMelee(item.名稱)) return [item];
+      if (item.基本款 || isMelee(item.名稱)) return [item];
       return keepValue && item.名稱 === keepValue ? [{ ...item, 選項文字: `${item.名稱}（不是近戰武器）` }] : [];
     })
   })).filter(section => section.items.length > 0);
@@ -3623,28 +3630,23 @@ function populateSelectWithSections(selectEl, sections, { slot = "", keepValue =
       const option = document.createElement("option");
       option.value = item.名稱;
       option.textContent = item.選項文字 || item.名稱;
-      if (item.magicUid) option.dataset.magicUid = item.magicUid;
       selectEl.appendChild(option);
     });
   });
 }
 
-// 要保留並標示的普通選項：目前（或存檔）選的是還在清單上的魔法款時不用保留，只有魔法款就不顯示普通選項。
+// 要保留並標示的選項。載入期間只看存檔的值：下拉這時還是上一個角色的選擇，存檔沒有裝備時不能退回它。
 function getEquipmentKeepValue(select, slot) {
-  // 載入期間只看存檔的值：下拉這時還是上一個角色的選擇，存檔沒有裝備時不能退回它。
-  const pending = pendingEquipmentValues?.[slot] || "";
-  const value = pendingEquipmentValues ? pending : select?.value || "";
-  if (!value || !window.Inventory) return value;
-  const uid = window.Inventory.getSlotMagicUid(slot, value) || (pending ? "" : readEquipmentSelection(select).uid);
-  return uid && window.Inventory.getMagicEquipment(slot).some(entry => entry.uid === uid && entry.name === value) ? "" : value;
+  return pendingEquipmentValues ? pendingEquipmentValues[slot] || "" : select?.value || "";
 }
 
 function refreshArmorSelection() {
   const armorSelect = document.getElementById("armor");
   if (!armorSelect) return;
-  const previous = readEquipmentSelection(armorSelect);
+  const previous = armorSelect.value;
   populateSelectWithSections(armorSelect, getArmorSections(false), { slot: "armor", keepValue: getEquipmentKeepValue(armorSelect, "armor") });
-  restoreEquipmentSelection(armorSelect, "armor", previous);
+  armorSelect.value = previous;
+  if (armorSelect.value !== previous) armorSelect.value = "";
 }
 
 function getWeaponSections(includeShield = false, excludeTwoHanded = false) {
@@ -3686,7 +3688,7 @@ function getArmorSections(includeShield = false) {
 }
 
 function isShieldItem(name) {
-  return name === "盾牌";
+  return getEquipmentBaseName(name) === "盾牌";
 }
 
 function isOffHandAlternateMain() {
@@ -3694,12 +3696,23 @@ function isOffHandAlternateMain() {
 }
 
 function getWeaponByName(name) {
-  return getAllWeaponsWithoutShield().find(weapon => weapon.名稱 === name);
+  const base = getEquipmentBaseName(name);
+  return withMagicEquipmentName(getAllWeaponsWithoutShield().find(weapon => weapon.名稱 === base), name);
+}
+
+function getWeaponOrShieldByName(name) {
+  const base = getEquipmentBaseName(name);
+  return withMagicEquipmentName(getAllWeaponsWithShield().find(weapon => weapon.名稱 === base), name);
+}
+
+function getArmorByName(name) {
+  const base = getEquipmentBaseName(name);
+  return withMagicEquipmentName(armors.find(armor => armor.名稱 === base), name);
 }
 
 function isEffectiveShieldEquippedForState(state, options = {}) {
   const alternateMain = state?.offHandAsMain === true;
-  if (!alternateMain) return String(state?.offHand || "") === "盾牌";
+  if (!alternateMain) return isShieldItem(String(state?.offHand || ""));
   const proficient = typeof options.isShieldProficient === "function"
     ? options.isShieldProficient(state)
     : false;
@@ -3715,7 +3728,7 @@ function isMain2ShieldEligible() {
   if (!isOffHandAlternateMain() || !isShieldProficient()) return false;
   // 需要物品欄有盾牌；已勾選的舊資料保留，取消後要有盾牌才能再勾。
   const shieldOwned = !window.Inventory || window.Inventory.isTextOnly() || window.Inventory.getEquippableCounts().shields > 0
-    || window.Inventory.getMagicEquipment("shield").length > 0 || document.getElementById("main2Shield")?.checked === true;
+    || window.Inventory.getEquippableCounts().magicShields.size > 0 || document.getElementById("main2Shield")?.checked === true;
   if (!shieldOwned) return false;
   return ["mainHand", "offHand"].every(id => {
     const name = document.getElementById(id)?.value || "";
@@ -3760,7 +3773,7 @@ function updateOffHandRolePresentation() {
 }
 
 function updateOffHandOptions(mainHandValue) {
-  const mainWeapon = getAllWeaponsWithoutShield().find(w => w.名稱 === mainHandValue);
+  const mainWeapon = getWeaponByName(mainHandValue);
   const offHandSelect = document.getElementById("offHand");
   const offHandPopulateOptions = { slot: "offHand", keepValue: getEquipmentKeepValue(offHandSelect, "offHand") };
   if (isOffHandAlternateMain()) {
@@ -3811,7 +3824,7 @@ function isRangedWeapon(weapon) {
   return !!weapon && new Set([
     ...weapons_simple_ranged.map(w => w.名稱),
     ...weapons_martial_ranged.map(w => w.名稱),
-  ]).has(weapon.名稱);
+  ]).has(getEquipmentRuleName(weapon));
 }
 
 function weaponHasProp(weapon, keyword) {
@@ -3876,7 +3889,7 @@ function hasPreparedSpell(spellId) {
 function getPreparedShillelaghEffect(weaponName, strengthModifier, damageType) {
   const spellcastingAbility = document.getElementById("spellcasting-ability")?.value || "";
   return getShillelaghWeaponEffect({
-    weaponName,
+    weaponName: getEquipmentBaseName(weaponName),
     isPrepared: true,
     level: document.getElementById("level")?.value || "1",
     strengthModifier,
@@ -3886,10 +3899,11 @@ function getPreparedShillelaghEffect(weaponName, strengthModifier, damageType) {
 }
 
 function isMonkWeapon(weapon) {
-  if (!weapon || weapon.名稱 === "盾牌") return false;
-  if (weapon.名稱 === "武藝") return true;
-  const isSimpleMelee = weapons_simple_melee.some(w => w.名稱 === weapon.名稱);
-  const isLightMartialMelee = weapons_martial_melee.some(w => w.名稱 === weapon.名稱) && weaponHasProp(weapon, "輕型");
+  const name = getEquipmentRuleName(weapon);
+  if (!weapon || name === "盾牌") return false;
+  if (name === "武藝") return true;
+  const isSimpleMelee = weapons_simple_melee.some(w => w.名稱 === name);
+  const isLightMartialMelee = weapons_martial_melee.some(w => w.名稱 === name) && weaponHasProp(weapon, "輕型");
   return isSimpleMelee || isLightMartialMelee;
 }
 
@@ -3902,16 +3916,16 @@ function isMonkMartialArtsActive(weaponName = "") {
   const offHandName = document.getElementById("offHand")?.value || "";
 
   const hasArmor = Boolean(armorName);
-  const hasShield = mainHandName === "盾牌" || isEffectiveEquippedShield();
+  const hasShield = isShieldItem(mainHandName) || isEffectiveEquippedShield();
   if (hasArmor || hasShield) return false;
 
   if (isOffHandAlternateMain()) {
-    const currentWeapon = getAllWeaponsWithShield().find(w => w.名稱 === weaponName);
+    const currentWeapon = getWeaponOrShieldByName(weaponName);
     return !weaponName || isMonkWeapon(currentWeapon);
   }
 
-  const mainWeapon = getAllWeaponsWithShield().find(w => w.名稱 === mainHandName);
-  const offWeapon = getAllWeaponsWithShield().find(w => w.名稱 === offHandName);
+  const mainWeapon = getWeaponOrShieldByName(mainHandName);
+  const offWeapon = getWeaponOrShieldByName(offHandName);
   const mainIsValid = !mainHandName || isMonkWeapon(mainWeapon);
   const offIsValid = !offHandName || isMonkWeapon(offWeapon);
   return mainIsValid && offIsValid;
@@ -3946,23 +3960,24 @@ function isShieldProficient() {
 }
 
 function isWeaponProficient(weapon) {
-  if (!weapon || weapon.名稱 === "盾牌") return false;
+  const weaponName = getEquipmentRuleName(weapon);
+  if (!weapon || weaponName === "盾牌") return false;
 
   const cls = document.getElementById("class")?.value || "";
   const isSimple = new Set([
     ...weapons_simple_melee.map(w => w.名稱),
     ...weapons_simple_ranged.map(w => w.名稱),
-  ]).has(weapon.名稱);
+  ]).has(weaponName);
   const isMartial = new Set([
     ...weapons_martial_melee.map(w => w.名稱),
     ...weapons_martial_ranged.map(w => w.名稱),
-  ]).has(weapon.名稱);
+  ]).has(weaponName);
 
   // 武器熟練讀職業內容檔的 proficiencies.weapons 與選項 grants（守護者、哨衛的軍用武器）；
   // 武僧的武藝不在內容檔的熟練欄位，由此處補上。契術師刃之魔契只熟練標記為契約武器的那一把（isPactWeaponHand）。
   const proficiencies = window.getClassProficiencies?.(cls)?.weapons;
   if (!proficiencies) return false;
-  if (cls === "monk" && weapon.名稱 === "武藝") return true;
+  if (cls === "monk" && weaponName === "武藝") return true;
   // 職業本身熟練全部武器類別（野蠻人、戰士等）時對任何武器都熟練。
   if (["simple", "martial"].every(category => (proficiencies.categories || []).includes(category))) return true;
   const categories = new Set([...(proficiencies.categories || []), ...getActiveClassGrants().flatMap(item => item.grants.weapons || [])]);
@@ -4022,8 +4037,9 @@ function normalizeLegacyPactWeaponDamage(data) {
 // 跑團模式另以持續效果（TabletopMode 的 shillelaghActive）決定是否生效，不看這個欄位的開關。
 const SHILLELAGH_HAND_TOGGLES = Object.freeze({ main: "mainHandShillelagh", off: "offHandShillelagh" });
 
+// 判斷規則用（橡棍術、武藝）：魔法款回基本款品名。
 function getHandWeaponName(hand) {
-  return document.getElementById(PACT_WEAPON_HANDS[hand]?.selectId)?.value || "";
+  return getEquipmentBaseName(document.getElementById(PACT_WEAPON_HANDS[hand]?.selectId)?.value || "");
 }
 
 // 指定一手時只看那一手是否拿著短棒或長棍；不指定時依 getShillelaghTargetHand 主手優先。
@@ -4261,9 +4277,9 @@ function updateWeaponMasteryBadges() {
     const weaponName = isWeaponAttackAutomationEnabled()
       ? document.getElementById(selectId)?.value || ""
       : document.getElementById(attackNameId)?.value.trim() || "";
-    const weapon = getAllWeaponsWithShield().find(item => item.名稱 === weaponName);
-    const mastery = canUseMastery && weapon?.名稱 !== "盾牌" && hasMeaningfulEquipmentValue(weapon?.精通)
-      && (!selectedMasteries.size || selectedMasteries.has(weapon.名稱))
+    const weapon = getWeaponOrShieldByName(weaponName);
+    const mastery = canUseMastery && getEquipmentRuleName(weapon) !== "盾牌" && hasMeaningfulEquipmentValue(weapon?.精通)
+      && (!selectedMasteries.size || selectedMasteries.has(getEquipmentRuleName(weapon)))
       ? String(weapon.精通).trim()
       : "";
     badge.hidden = !mastery;
@@ -4286,7 +4302,7 @@ function getSummaryWeaponType(weapon) {
     ...getEquipmentList("weapons_simple_ranged").map(item => item.名稱),
     ...getEquipmentList("weapons_martial_ranged").map(item => item.名稱)
   ]);
-  return rangedWeaponNames.has(weapon?.名稱) ? "遠程" : "近戰";
+  return rangedWeaponNames.has(getEquipmentRuleName(weapon)) ? "遠程" : "近戰";
 }
 
 function hasMeaningfulEquipmentValue(value) {
@@ -4346,16 +4362,11 @@ function updateEquipmentLoadoutSummary() {
   const mainName = document.getElementById("mainHand")?.value || "";
   const offName = document.getElementById("offHand")?.value || "";
   const armorName = document.getElementById("armor")?.value || "";
-  const mainWeapon = getAllWeaponsWithShield().find(item => item.名稱 === mainName);
-  const offWeapon = getAllWeaponsWithShield().find(item => item.名稱 === offName);
-  const armor = armors.find(item => item.名稱 === armorName);
+  const mainWeapon = getWeaponOrShieldByName(mainName);
+  const offWeapon = getWeaponOrShieldByName(offName);
+  const armor = getArmorByName(armorName);
   const canUseMastery = hasWeaponMasteryFeature();
   const magic = getActiveMagicEffects();
-  // 魔法款顯示自己的名稱（例如長劍+2）；欄位的值仍是基本款名稱。
-  const displayName = (id, name) => {
-    const select = document.getElementById(id);
-    return readEquipmentSelection(select).uid ? select.selectedOptions[0].textContent : name;
-  };
   const handMagicDetail = (hand) => {
     const { attack, damage } = magic.hands[hand === "main" ? "mainHand" : "offHand"];
     if (!attack && !damage) return "";
@@ -4383,7 +4394,7 @@ function updateEquipmentLoadoutSummary() {
   };
   const weaponDetails = (weapon, hand) => {
     if (!weapon) return [];
-    if (weapon.名稱 === "盾牌") return shieldDetails();
+    if (getEquipmentRuleName(weapon) === "盾牌") return shieldDetails();
     const details = [
       getSummaryWeaponType(weapon),
       weaponDamageDetail(weapon, hand),
@@ -4412,7 +4423,7 @@ function updateEquipmentLoadoutSummary() {
   ].filter(Boolean) : [];
   const weaponWarning = (weapon, hand) => {
     if (!weapon) return "";
-    if (weapon.名稱 === "盾牌") return isShieldProficient() ? "" : "盾牌未熟練";
+    if (getEquipmentRuleName(weapon) === "盾牌") return isShieldProficient() ? "" : "盾牌未熟練";
     return isWeaponProficient(weapon) || isPactWeaponHand(hand) ? "" : "武器未熟練";
   };
   const mainWeaponWarning = weaponWarning(mainWeapon, "main");
@@ -4420,10 +4431,10 @@ function updateEquipmentLoadoutSummary() {
   const armorWarning = armor && !isArmorProficient(armor) ? "護甲未熟練" : "";
 
   const summaryRows = [
-    mainName && buildEquipmentSummaryRow("主手", displayName("mainHand", mainName), weaponDetails(mainWeapon, "main"), { warningKey: mainWeaponWarning }),
-    offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", displayName("offHand", offName), weaponDetails(offWeapon, "off"), { warningKey: offWeaponWarning }),
+    mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon, "main"), { warningKey: mainWeaponWarning }),
+    offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", offName, weaponDetails(offWeapon, "off"), { warningKey: offWeaponWarning }),
     isOffHandAlternateMain() && isEffectiveEquippedShield() && buildEquipmentSummaryRow("盾牌", "盾牌", shieldDetails()),
-    armorName && buildEquipmentSummaryRow("護甲", displayName("armor", armorName), armorDetails, { warningKey: armorWarning }),
+    armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warningKey: armorWarning }),
     magic.sources.length && buildEquipmentSummaryRow("魔法物品", "魔法物品", magic.sources.map(source => [
       source.label, source.ac ? `AC${formatSigned(source.ac)}` : "", source.saves ? `豁免${formatSigned(source.saves)}` : ""
     ].filter(Boolean).join(" ")))
@@ -4453,13 +4464,13 @@ function calculateHandAttacks(options = {}) {
   ];
   return hands.map(hand => {
     const weaponName = document.getElementById(hand.selectId).value;
-    const weapon = getAllWeaponsWithShield().find(w => w.名稱 === weaponName);
-    if (!weapon || weapon.名稱 === "盾牌") {
+    const weapon = getWeaponOrShieldByName(weaponName);
+    if (!weapon || getEquipmentRuleName(weapon) === "盾牌") {
       return { ...hand, name: weaponName || "", hit: "", damage: "", details: null };
     }
     const strMod = options.strModifier ?? getModifier("str");
     const dexMod = options.dexModifier ?? getModifier("dex");
-    const isMonkMartialArts = weapon.名稱 === "武藝";
+    const isMonkMartialArts = getEquipmentRuleName(weapon) === "武藝";
     const cls = document.getElementById("class")?.value || "";
     const isRanged = isRangedWeapon(weapon);
     const isDexEligible = weaponHasProp(weapon, "靈巧");
@@ -4726,14 +4737,18 @@ function refreshWeaponSelections() {
   const offHandSelect = document.getElementById("offHand");
   if (!mainHandSelect || !offHandSelect) return;
 
-  const previousMain = readEquipmentSelection(mainHandSelect);
-  const previousOff = readEquipmentSelection(offHandSelect);
+  const previousMain = mainHandSelect.value;
+  const previousOff = offHandSelect.value;
   pactWeaponListKey = getPactWeaponListKey();
   populateSelectWithSections(mainHandSelect, getWeaponSections(false, false), { slot: "mainHand", keepValue: getEquipmentKeepValue(mainHandSelect, "mainHand") });
-  restoreEquipmentSelection(mainHandSelect, "mainHand", previousMain);
+  mainHandSelect.value = previousMain;
+  if (mainHandSelect.value !== previousMain) mainHandSelect.value = "";
 
   updateOffHandOptions(mainHandSelect.value);
-  if (!offHandSelect.disabled) restoreEquipmentSelection(offHandSelect, "offHand", previousOff);
+  if (!offHandSelect.disabled) {
+    offHandSelect.value = previousOff;
+    if (offHandSelect.value !== previousOff) offHandSelect.value = "";
+  }
 
   updateOffHandRolePresentation();
   updateEquipmentLoadoutSummary();
@@ -4976,8 +4991,7 @@ function assertCharacterDataCount(value, maximum) {
 
 // 物品欄（inventory.js）的匯入預檢：版本 1、至多 300 筆，每筆只有約定欄位且型別正確；細部清理由 Inventory.restore() 負責。
 const INVENTORY_KEYS = new Set(["version", "textOnly", "items"]);
-const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses", "magic", "equippedAs", "attuned"]);
-const INVENTORY_EQUIP_SLOTS = new Set(["mainHand", "offHand", "armor", "shield"]);
+const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses", "magic", "attuned"]);
 // 魔法物品：{ id, <選項 id>: 字串或數字 }。
 function isValidInventoryMagic(magic) {
   if (!magic || typeof magic !== "object" || Array.isArray(magic) || typeof magic.id !== "string" || !magic.id || magic.id.length > 64) return false;
@@ -4998,7 +5012,6 @@ function isValidInventoryState(value) {
     && (entry.uses === undefined || (Number.isInteger(entry.uses) && entry.uses >= 1 && entry.uses <= 9999))
     && (entry.desc === undefined || (typeof entry.desc === "string" && entry.desc.length <= 400))
     && (entry.magic === undefined || isValidInventoryMagic(entry.magic))
-    && (entry.equippedAs === undefined || INVENTORY_EQUIP_SLOTS.has(entry.equippedAs))
     && (entry.attuned === undefined || typeof entry.attuned === "boolean")
     && (typeof entry.itemId === "string" || typeof entry.name === "string" || entry.magic !== undefined));
 }
@@ -5601,7 +5614,6 @@ function applyStateObjectNow(data) {
         el.checked = !!data[id];
       } else {
         if (el.tagName === "SELECT" && el.closest("#feats-area")) restoreFeatSelectValue(el, data[id]);
-        else if (EQUIPMENT_SELECT_IDS.has(id)) restoreEquipmentSelection(el, id, { value: String(data[id] ?? ""), uid: "" });
         else el.value = data[id];
       }
       el.dispatchEvent(new Event('change'));
@@ -6722,15 +6734,15 @@ window.addEventListener("DOMContentLoaded", async function() {
   const armorSelect = document.getElementById("armor");
   refreshWeaponSelections();
   refreshArmorSelection();
-  let previousMainHand = readEquipmentSelection(mainHandSelect);
-  let previousOffHand = readEquipmentSelection(offHandSelect);
+  let previousMainHand = mainHandSelect.value;
+  let previousOffHand = offHandSelect.value;
   let activeMagicEffectsKey = JSON.stringify(getActiveMagicEffects());
   // 物品欄變動時重建裝備下拉（保留目前選取），並排入自動儲存。
   document.addEventListener("inventory:change", () => {
     refreshWeaponSelections();
     refreshArmorSelection();
-    previousMainHand = readEquipmentSelection(mainHandSelect);
-    previousOffHand = readEquipmentSelection(offHandSelect);
+    previousMainHand = mainHandSelect.value;
+    previousOffHand = offHandSelect.value;
     syncMain2ShieldControl({ legalize: false });
     scheduleSaveAllFields();
     // 物品欄變動、同調切換、裝備變更只要改到魔法加值就重算；加值沒變時不動既有流程。
@@ -6753,16 +6765,16 @@ window.addEventListener("DOMContentLoaded", async function() {
     if (typeof populateHandAttacks === "function") populateHandAttacks();
     syncInventorySlots();
   };
-  const confirmTwoHandedSelection = (select, previous, accept) => {
-    const requested = readEquipmentSelection(select);
+  const confirmTwoHandedSelection = (select, previousValue, accept) => {
+    const requestedValue = select.value;
     const needsConfirmation = isOffHandAlternateMain()
       && main2ShieldToggle?.checked
-      && hasTwoHandedProperty(getWeaponByName(requested.value));
+      && hasTwoHandedProperty(getWeaponByName(requestedValue));
     if (!needsConfirmation) {
       accept();
       return;
     }
-    writeEquipmentSelection(select, previous.value, previous.uid);
+    select.value = previousValue;
     refreshEquipmentEffects();
     window.AppDialog.requestDecision({
       title: "卸下盾牌？",
@@ -6771,7 +6783,7 @@ window.addEventListener("DOMContentLoaded", async function() {
       confirmLabel: "繼續"
     }).then(confirmed => {
       if (confirmed) {
-        writeEquipmentSelection(select, requested.value, requested.uid);
+        select.value = requestedValue;
         main2ShieldToggle.checked = false;
         accept();
       } else {
@@ -6781,27 +6793,31 @@ window.addEventListener("DOMContentLoaded", async function() {
   };
   mainHandSelect.addEventListener("change", () => {
     confirmTwoHandedSelection(mainHandSelect, previousMainHand, () => {
-      previousMainHand = readEquipmentSelection(mainHandSelect);
-      const previousOff = readEquipmentSelection(offHandSelect);
+      previousMainHand = mainHandSelect.value;
+      const previousOff = offHandSelect.value;
       updateOffHandOptions(mainHandSelect.value);
-      if (!offHandSelect.disabled) restoreEquipmentSelection(offHandSelect, "offHand", previousOff);
-      previousOffHand = readEquipmentSelection(offHandSelect);
+      if (!offHandSelect.disabled) {
+        offHandSelect.value = previousOff;
+        if (offHandSelect.value !== previousOff) offHandSelect.value = "";
+      }
+      previousOffHand = offHandSelect.value;
       refreshEquipmentEffects();
     });
   });
   offHandSelect.addEventListener("change", () => {
     confirmTwoHandedSelection(offHandSelect, previousOffHand, () => {
-      previousOffHand = readEquipmentSelection(offHandSelect);
+      previousOffHand = offHandSelect.value;
       refreshEquipmentEffects();
     });
   });
   offHandAsMainToggle?.addEventListener("change", () => {
     if (!autosaveSuspended && main2ShieldToggle) main2ShieldToggle.checked = false;
-    const previousOff = readEquipmentSelection(offHandSelect);
+    const previousOff = offHandSelect.value;
     updateOffHandOptions(mainHandSelect.value);
-    restoreEquipmentSelection(offHandSelect, "offHand", previousOff);
+    offHandSelect.value = previousOff;
+    if (offHandSelect.value !== previousOff) offHandSelect.value = "";
     updateOffHandRolePresentation();
-    previousOffHand = readEquipmentSelection(offHandSelect);
+    previousOffHand = offHandSelect.value;
     refreshEquipmentEffects();
   });
   main2ShieldToggle?.addEventListener("change", refreshEquipmentEffects);

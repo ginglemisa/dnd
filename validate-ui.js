@@ -4363,10 +4363,10 @@ async function verifyInventoryPersistence(browser, url) {
       assert.deepEqual(await magicSnapshot(magicShared), magicExpected, "share restores magic items");
       assert.equal(await magicShared.evaluate(() => { EquipmentShop.open(); return Boolean(document.querySelector(".equipment-shop__magic-toggle")); }), false, "share mode cannot switch to the magic shop");
     } finally { await magicShared.close(); }
-    // 裝備中的魔法款（equippedAs）與同調（attuned）經 autosave、JSON、分享都還原，普通與魔法同名時不互換；普通物品的存檔不多欄位。
-    const equippedState = { class: "fighter", level: "5", str: "16", mainHand: "長劍", offHand: "", armor: "", __inventory: { version: 1, items: [
+    // 裝備欄位寫魔法款的名稱，經 autosave、JSON、分享都還原，普通與魔法同名時不互換；同調（attuned）一起還原，普通物品的存檔不多欄位。
+    const equippedState = { class: "fighter", level: "5", str: "16", mainHand: "長劍+2", offHand: "", armor: "", __inventory: { version: 1, items: [
       { uid: "plain", itemId: "長劍", quantity: 1 },
-      { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 }, equippedAs: "mainHand" },
+      { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } },
       { uid: "ring", quantity: 1, magic: { id: "ring-of-protection" }, attuned: true }
     ] } };
     const equippedSnapshot = target => target.evaluate(() => {
@@ -4392,14 +4392,14 @@ async function verifyInventoryPersistence(browser, url) {
       await sharedRing.waitFor();
       assert.equal(await sharedRing.getByRole("button", { name: /同調/u }).count(), 0, "share mode cannot toggle attunement");
     } finally { await equippedShared.close(); }
-    // 舊資料沒有這兩個欄位：普通物品照舊，魔法款不被當成已裝備。
+    // 舊資料的裝備欄位是普通品名：普通物品照舊，魔法款不被當成已裝備。
     assert.deepEqual(await page.evaluate(() => {
       applyStateObject({ class: "fighter", level: "1", mainHand: "長劍", __inventory: { version: 1, items: [{ uid: "own", itemId: "長劍", quantity: 1 }, { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } }] } });
       return { option: document.getElementById("mainHand").selectedOptions[0].textContent, state: Inventory.getState().items };
-    }), { option: "長劍", state: [{ uid: "own", itemId: "長劍", quantity: 1 }, { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } }] }, "saves without equippedAs always wield the plain item");
+    }), { option: "長劍", state: [{ uid: "own", itemId: "長劍", quantity: 1 }, { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } }] }, "saves naming the plain item always wield the plain item");
     assert.deepEqual(await page.evaluate(() => [
-      { uid: "a", quantity: 1, magic: { id: "x" }, equippedAs: "mainHand", attuned: true },
-      { uid: "a", quantity: 1, magic: { id: "x" }, equippedAs: "hat" },
+      { uid: "a", quantity: 1, magic: { id: "x" }, attuned: true },
+      { uid: "a", quantity: 1, magic: { id: "x" }, equippedAs: "mainHand" },
       { uid: "a", quantity: 1, magic: { id: "x" }, attuned: "yes" }
     ].map(entry => isValidInventoryState({ version: 1, items: [entry] }))), [true, false, false], "the import preflight checks the new fields");
     assert.deepEqual(await page.evaluate(() => {

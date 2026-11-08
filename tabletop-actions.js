@@ -117,19 +117,10 @@
       .some(select => select.value === featName);
   }
 
-  function getAllWeaponDefinitions() {
-    return [
-      ...(globalScope.weapons_simple_melee || []),
-      ...(globalScope.weapons_simple_ranged || []),
-      ...(globalScope.weapons_martial_melee || []),
-      ...(globalScope.weapons_martial_ranged || [])
-    ];
-  }
-
   function getEquippedWeapon(hand) {
     const selectId = hand === "main" ? "mainHand" : "offHand";
     const weaponName = document.getElementById(selectId)?.value || "";
-    return getAllWeaponDefinitions().find(weapon => weapon?.名稱 === weaponName) || null;
+    return globalScope.getWeaponByName?.(weaponName) || null;
   }
 
   function weaponHasProperty(weapon, keyword) {
@@ -173,7 +164,7 @@
   function canShowSecondaryWeapon() {
     if (globalScope.isWeaponAttackAutomationEnabled?.() === false) return true;
     const offHandName = document.getElementById("offHand")?.value || "";
-    if (!offHandName || offHandName === "盾牌") return false;
+    if (!offHandName || globalScope.isShieldItem?.(offHandName)) return false;
 
     const mainWeapon = getEquippedWeapon("main");
     const isAlternateMain = document.getElementById("offHandAsMain")?.checked === true;

@@ -1,7 +1,7 @@
 // 讀取 content/srd/magic-items 的魔法物品內容檔（一件一檔），做 schema 驗證與跨資料檢查。任何錯誤都丟出 ContentError。
 "use strict";
 const path = require("path");
-const { ROOT, loadEquipmentData, loadSpellCatalog } = require("../content/site-sources");
+const { ROOT, loadEquipmentData, loadSpellCatalog, loadMagicItemCatalog } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile, listYaml } = require("../content/yaml");
 
@@ -111,6 +111,21 @@ function checkUnique(items, field, errors) {
   });
 }
 
+// 裝備欄位直接存魔法款的名稱，所以所有魔法武器、護甲、盾牌的可能名稱要彼此唯一，也不能與普通品名相撞。
+function checkEquipmentNames(items, lists, equipmentNames) {
+  const rules = Object.fromEntries(items.map(({ id, file, text, ...rule }) => [id, rule]));
+  const owners = new Map();
+  const errors = [];
+  for (const { name, id, base } of loadMagicItemCatalog(rules, lists).getEquipmentVariants()) {
+    if (equipmentNames.has(name)) errors.push(`${id}（${base}）：裝備名稱「${name}」與普通品名相撞`);
+    const owner = `${id}（${base}）`;
+    if (owners.has(name) && owners.get(name) !== owner) errors.push(`${owner}：裝備名稱「${name}」與 ${owners.get(name)} 重複`);
+    else if (owners.has(name)) errors.push(`${owner}：不同選項的裝備名稱都是「${name}」`);
+    owners.set(name, owner);
+  }
+  if (errors.length) throw new ContentError(`魔法物品內容檢查失敗（${errors.length} 項）：\n- ${errors.slice(0, 40).join("\n- ")}`);
+}
+
 // 物品的固定順序依 SRD「魔法物品 A–Z」：英文名去掉「, +1, +2, or +3」，複數的 Potions 視為 Potion，只比字母與數字。
 function orderKey(nameEn) {
   return nameEn.replace(/, \+1, \+2, or \+3$/, "").replace(/^Potions of/, "Potion of").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -135,6 +150,7 @@ function loadMagicItems() {
   ["id", "name", "nameEn"].forEach(field => checkUnique(items, field, errors));
   if (errors.length) throw new ContentError(`魔法物品內容檢查失敗（${errors.length} 項）：\n- ${errors.join("\n- ")}`);
   items.sort((a, b) => { const [x, y] = [orderKey(a.nameEn), orderKey(b.nameEn)]; return x < y ? -1 : x > y ? 1 : 0; });
+  checkEquipmentNames(items, lists, context.equipmentNames);
   return { items: new Map(items.map(item => [item.id, item])), baseLists: lists };
 }
 

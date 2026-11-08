@@ -155,4 +155,12 @@ function loadEquipmentData() {
   return equipmentData;
 }
 
-module.exports = { ROOT, loadEquipmentData, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadReferenceOnlyBeasts, loadSkillAbilities, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };
+// 魔法物品目錄（magic-items.js 的 MagicItemCatalog）：檢查裝備欄位的魔法款名稱用，規則來自建置中的內容檔。
+function loadMagicItemCatalog(rules, baseLists) {
+  const globals = { magicItemRules: rules, magicItemBaseLists: baseLists, magicItemLabels: { category: {}, group: {}, rarity: {} }, magicItemTextFile: "" };
+  globals.window = globals;
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT, "magic-items.js"), "utf8"), globals, { filename: "magic-items.js" });
+  return globals.MagicItemCatalog;
+}
+
+module.exports = { ROOT, loadMagicItemCatalog, loadEquipmentData, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadReferenceOnlyBeasts, loadSkillAbilities, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };
