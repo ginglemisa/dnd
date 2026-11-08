@@ -654,6 +654,17 @@ async function validateMagicItemShop(page) {
   await toggle.click();
   assert.deepEqual(await chrome(), { title: "魔法物品", balance: "點物品查看效果後獲得，不花費金幣", pressed: "true", cartDisabled: true, badge: normal.badge, footer: false }, "magic mode swaps the header and hides checkout, keeping the cart");
   assert.deepEqual(await shop.locator(".equipment-shop__category").allTextContents(), ["全部", "武器", "護甲", "藥水", "戒指", "卷軸", "權杖", "法杖", "魔杖", "奇物"]);
+  // 按下後滑鼠還停在按鈕上：底色要維持按下狀態，否則淺色主題的圖示看不見。
+  const toggleColors = () => toggle.evaluate((element) => {
+    element.style.transition = "none";
+    const { backgroundColor, color } = getComputedStyle(element);
+    return [backgroundColor, color];
+  });
+  await toggle.hover();
+  const hoveredColors = await toggleColors();
+  await page.mouse.move(0, 0);
+  assert.deepEqual(await toggleColors(), hoveredColors, "the pressed magic toggle keeps its colours while hovered");
+  await toggle.evaluate((element) => { element.style.transition = ""; });
   assert.equal(await shop.locator(".equipment-shop__item--magic").count(), 258, "all magic items are listed");
   assert.equal(await shop.locator(".equipment-shop__price, .equipment-shop__add").count(), 0, "magic rows have no price or add button");
   assert.deepEqual(await shop.locator(".equipment-shop__group").allTextContents(), ["可選基本款", "固定基本款", "可選基本款", "固定基本款", "穿戴", "容器", "消耗品", "工具與載具", "書籍", "奇珍"]);

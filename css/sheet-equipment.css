@@ -3272,7 +3272,9 @@ button.inventory-arrange-done {
 :where(html:not([data-ui-theme="warm"])) .equipment-shop .equipment-shop__category[aria-pressed="true"],
 :where(html:not([data-ui-theme="warm"])) .equipment-shop .equipment-shop__category-toggle.is-filtered,
 :where(html:not([data-ui-theme="warm"])) .equipment-shop__magic-toggle[aria-pressed="true"],
+:where(html:not([data-ui-theme="warm"])) .equipment-shop__magic-toggle[aria-pressed="true"]:not(:disabled):hover,
 :where(html:not([data-ui-theme="warm"])) .magic-item-segmented__button[aria-pressed="true"],
+:where(html:not([data-ui-theme="warm"])) .magic-item-segmented__button[aria-pressed="true"]:not(:disabled):hover,
 :where(html:not([data-ui-theme="warm"])) .equipment-shop__badge {
   border-color: var(--accent-strong);
   background: var(--accent-strong);
@@ -3281,7 +3283,9 @@ button.inventory-arrange-done {
 :where(html[data-ui-theme="warm"]) .equipment-shop .equipment-shop__category[aria-pressed="true"],
 :where(html[data-ui-theme="warm"]) .equipment-shop .equipment-shop__category-toggle.is-filtered,
 :where(html[data-ui-theme="warm"]) .equipment-shop__magic-toggle[aria-pressed="true"],
+:where(html[data-ui-theme="warm"]) .equipment-shop__magic-toggle[aria-pressed="true"]:not(:disabled):hover,
 :where(html[data-ui-theme="warm"]) .magic-item-segmented__button[aria-pressed="true"],
+:where(html[data-ui-theme="warm"]) .magic-item-segmented__button[aria-pressed="true"]:not(:disabled):hover,
 :where(html[data-ui-theme="warm"]) .equipment-shop__badge {
   border-color: var(--border-strong);
   background: var(--action-fill);
