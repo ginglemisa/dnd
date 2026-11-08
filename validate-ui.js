@@ -4337,7 +4337,33 @@ async function verifyInventoryPersistence(browser, url) {
       await textShared.waitForFunction(() => window.SHARE_MODE === true);
       assert.deepEqual(await textSnapshot(textShared), [true, 0, "巨劍", "true", true], "share restores text mode");
     } finally { await textShared.close(); }
-    console.log("Inventory persistence: autosave, JSON export, share (including empty inventories and text mode), legacy seeding, missing equipped items, descriptions and safe custom names passed.");
+    // Magic items keep their id and options through autosave, JSON and share; old saves without magic are unaffected.
+    const magicState = { class: "fighter", level: "1", __inventory: { version: 1, items: [
+      { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } },
+      { uid: "bag", quantity: 1, magic: { id: "bag-of-holding" } },
+      { uid: "lost", quantity: 2, magic: { id: "no-such-item", foo: "bar" } },
+      { uid: "potion", itemId: "治療藥水", quantity: 1 },
+      { uid: "scroll", itemId: "法術卷軸", name: "命令術法術卷軸", quantity: 1 }
+    ] } };
+    const magicSnapshot = target => target.evaluate(() => ({ state: Inventory.getState().items, text: Inventory.formatText() }));
+    const magicExpected = { state: magicState.__inventory.items, text: "長劍+2、次元袋、未知魔法物品 ×2、治療藥水、命令術法術卷軸" };
+    await page.evaluate(magicState => { applyStateObject(magicState); saveAllFields(); }, magicState);
+    assert.deepEqual(await magicSnapshot(page), magicExpected, "magic items load with the agreed shape");
+    await page.goto(url);
+    assert.deepEqual(await magicSnapshot(page), magicExpected, "autosave restores magic items");
+    assert.deepEqual(await page.evaluate(() => collectStateObject().__inventory.items), magicState.__inventory.items, "JSON export carries magic items");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await magicSnapshot(page), magicExpected, "JSON import restores magic items");
+    const magicHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const magicShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = magicHash;
+      await magicShared.goto(sharedUrl.href);
+      await magicShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await magicSnapshot(magicShared), magicExpected, "share restores magic items");
+      assert.equal(await magicShared.evaluate(() => { EquipmentShop.open(); return Boolean(document.querySelector(".equipment-shop__magic-toggle")); }), false, "share mode cannot switch to the magic shop");
+    } finally { await magicShared.close(); }
+    console.log("Inventory persistence: autosave, JSON export, share (including empty inventories and text mode), legacy seeding, missing equipped items, descriptions, safe custom names and magic items passed.");
   } finally { await page.close(); }
 }
 

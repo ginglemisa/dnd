@@ -19,6 +19,7 @@ async function main() {
   assert.match(searchScripts[0][0], /\bdefer\b/, "search uses the existing deferred loading strategy");
   new vm.Script(fs.readFileSync(path.join(__dirname, "search.js"), "utf8"), { filename: "search.js" });
   new vm.Script(fs.readFileSync(path.join(__dirname, "equipment-shop.js"), "utf8"), { filename: "equipment-shop.js" });
+  new vm.Script(fs.readFileSync(path.join(__dirname, "magic-item-shop.js"), "utf8"), { filename: "magic-item-shop.js" });
   for (const [index, match] of [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].entries()) {
     if (!/\bsrc\s*=|application\/ld\+json/i.test(match[1])) {
       new vm.Script(match[2], { filename: `index.html:inline-${index}` });
@@ -603,9 +604,271 @@ async function validateEquipmentSearch(page) {
   await page.locator("#equipment-search-fab").click();
   assert.equal(await input.inputValue(), "", "switching tabs clears equipment search");
   assert.equal(await results.isVisible(), false);
+  // 目錄測試要在說明第一次載入之前：治療藥水與法術卷軸的詳情也會載入魔法物品說明。
+  await validateMagicItemCatalog(page);
   await validateEquipmentShop(page);
   await validateInventory(page);
-  await validateMagicItemCatalog(page);
+  await validateMagicItemShop(page);
+}
+
+// 魔法商店：切換按鈕與模式、分類與清單、取得視窗的基本款與選項、寫入物品欄的形狀，以及物品視窗的說明與使用。
+async function validateMagicItemShop(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await page.evaluate(() => { TabletopMode.setMode("sheet"); });
+  await page.locator('[aria-controls="tab-equipment"]').click();
+  await page.evaluate(() => {
+    document.getElementById("gear-notes").value = "";
+    Inventory.restore({ version: 1, items: [] });
+  });
+  const shop = page.locator('.app-dialog[data-variant="equipment-shop"]');
+  const grant = page.locator('.app-dialog[data-variant="magic-item-grant"]');
+  const toggle = shop.locator(".equipment-shop__magic-toggle");
+  const chrome = () => shop.evaluate(root => ({
+    title: root.querySelector("h2").textContent,
+    balance: root.querySelector(".equipment-shop__balance").textContent,
+    pressed: root.querySelector(".equipment-shop__magic-toggle").getAttribute("aria-pressed"),
+    cartDisabled: root.querySelector(".equipment-shop__cart-button").disabled,
+    badge: root.querySelector(".equipment-shop__badge").textContent,
+    footer: getComputedStyle(root.querySelector(".app-dialog__actions")).display !== "none"
+  }));
+  const row = id => shop.locator(`[data-magic-item-id="${id}"] button`);
+  const openGrant = async (id) => {
+    await row(id).click();
+    await grant.locator(".magic-item-detail__text").getByText("載入說明中").waitFor({ state: "detached" });
+  };
+  const get = () => grant.getByRole("button", { name: "獲得", exact: true });
+  const finishGrant = async () => {
+    await get().click();
+    await grant.waitFor({ state: "detached" });
+  };
+
+  // 從明確的品項開啟，上一段測試留下的分類與搜尋不影響這裡。
+  await page.evaluate(() => { EquipmentShop.open({ focusName: "繩索" }); });
+  assert.deepEqual(await shop.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.classList[button.classList.length - 1])),
+    ["equipment-shop__magic-toggle", "equipment-shop__cart-button", "app-dialog__close"], "the magic toggle sits left of the cart");
+  assert.equal(await toggle.locator("svg").getAttribute("viewBox"), "0 0 24 24", "the toggle is an inline SVG icon");
+  await shop.locator(".equipment-shop__add").first().click();
+  const normal = await chrome();
+  assert.deepEqual([normal.title, normal.pressed, normal.cartDisabled, normal.footer], ["商店", "false", false, true], "shop starts in normal mode");
+
+  await toggle.click();
+  assert.deepEqual(await chrome(), { title: "魔法物品", balance: "點物品查看效果後獲得，不花費金幣", pressed: "true", cartDisabled: true, badge: normal.badge, footer: false }, "magic mode swaps the header and hides checkout, keeping the cart");
+  assert.deepEqual(await shop.locator(".equipment-shop__category").allTextContents(), ["全部", "武器", "護甲", "藥水", "戒指", "卷軸", "權杖", "法杖", "魔杖", "奇物"]);
+  assert.equal(await shop.locator(".equipment-shop__item--magic").count(), 258, "all magic items are listed");
+  assert.equal(await shop.locator(".equipment-shop__price, .equipment-shop__add").count(), 0, "magic rows have no price or add button");
+  assert.deepEqual(await shop.locator(".equipment-shop__group").allTextContents(), ["可選基本款", "固定基本款", "可選基本款", "固定基本款", "穿戴", "容器", "消耗品", "工具與載具", "書籍", "奇珍"]);
+  assert.match(await row("flame-tongue").innerText(), /焰舌[\s\S]*稀有[\s\S]*需同調/u, "rows show rarity and attunement");
+  await shop.locator(".equipment-shop__search").fill("flame tongue");
+  assert.deepEqual(await shop.locator(".magic-shop__name").allTextContents(), ["焰舌"], "search matches English names");
+  await shop.locator(".equipment-shop__search").fill("焰舌");
+  assert.deepEqual(await shop.locator(".magic-shop__name").allTextContents(), ["焰舌"], "search matches Chinese names");
+  await shop.locator(".equipment-shop__search").fill("");
+
+  // 基本款沒選時提示且不關視窗；分段按鈕預設第一項。
+  await openGrant("weapon-plus");
+  assert.equal(await grant.locator("h2").textContent(), "武器+1／+2／+3");
+  assert.equal(await grant.locator(".magic-item-detail__subtitle").textContent(), "武器（任意簡易或軍用武器），非常見（+1）、稀有（+2）或極稀有（+3）");
+  assert.equal(await grant.locator(".magic-item-detail__manual").count(), 0, "items the sheet applies have no manual note");
+  await get().click();
+  assert.equal(await grant.locator(".starting-equipment-error").first().textContent(), "請先選擇基本款。");
+  assert.equal(await grant.count(), 1, "a missing base keeps the dialog open");
+  assert.deepEqual(await page.evaluate(() => Inventory.entries()), [], "a missing base writes nothing");
+  await grant.locator("select").first().selectOption("長劍");
+  assert.deepEqual(await grant.locator(".magic-item-segmented__button").evaluateAll(buttons => buttons.map(button => [button.textContent, button.getAttribute("aria-pressed")])),
+    [["+1", "true"], ["+2", "false"], ["+3", "false"]], "up to four options use segmented buttons");
+  await grant.locator(".magic-item-segmented__button", { hasText: "+2" }).click();
+  await finishGrant();
+  assert.equal(await shop.locator("h2").textContent(), "魔法物品", "getting an item keeps the magic shop open");
+  assert.match(await page.locator(".app-toast__message").last().textContent(), /長劍\+2/u);
+
+  // 沒有自訂項的物品只有效果與取消／獲得；需要手動處理的物品多一行提示。
+  await openGrant("bag-of-holding");
+  assert.equal(await grant.locator("select, .magic-item-segmented, .inventory-stepper").count(), 0, "no options means no controls");
+  await finishGrant();
+  await openGrant("amulet-of-health");
+  assert.equal(await grant.locator(".magic-item-detail__manual").textContent(), "角色卡不會自動套用這項效果，請依說明處理");
+  await finishGrant();
+
+  // 治療藥水一般款與法術卷軸沿用既有寫法；高等是魔法物品。
+  await openGrant("potions-of-healing");
+  await finishGrant();
+  await openGrant("potions-of-healing");
+  await grant.locator(".magic-item-segmented__button", { hasText: "高等" }).click();
+  await finishGrant();
+  await openGrant("spell-scroll");
+  assert.deepEqual(await grant.locator("select").first().locator("option").allTextContents(), ["戲法", "1環", "2環", "3環", "4環"], "scrolls offer cantrips to 4th level");
+  await get().click();
+  assert.deepEqual(await grant.locator(".starting-equipment-error").allTextContents(), ["", "請先選擇法術。"], "a missing spell keeps the dialog open");
+  await grant.locator("select").first().selectOption({ label: "1環" });
+  await grant.locator("select").nth(1).selectOption({ label: "命令術" });
+  await finishGrant();
+
+  // 魔法彈藥多一個數量欄；超過 4 項的選項用下拉，沒選時提示。
+  await openGrant("ammunition-plus");
+  assert.equal(await grant.locator(".inventory-stepper__input").inputValue(), "20", "magic ammunition defaults to 20");
+  await grant.locator("select").first().selectOption("箭矢");
+  await finishGrant();
+  await openGrant("ring-of-resistance");
+  await get().click();
+  assert.equal(await grant.locator(".starting-equipment-error").first().textContent(), "請先選擇傷害類型。", "long option lists use a select with a prompt");
+  await page.keyboard.press("Escape");
+  await grant.waitFor({ state: "detached" });
+
+  const saved = await page.evaluate(() => Inventory.getState().items.map(({ uid, ...entry }) => entry));
+  assert.deepEqual(saved, [
+    { quantity: 1, itemId: "長劍", magic: { id: "weapon-plus", bonus: 2 } },
+    { quantity: 1, magic: { id: "bag-of-holding" } },
+    { quantity: 1, magic: { id: "amulet-of-health" } },
+    { quantity: 1, itemId: "治療藥水" },
+    { quantity: 1, magic: { id: "potions-of-healing", potency: "greater" } },
+    { quantity: 1, itemId: "法術卷軸", name: "命令術法術卷軸" },
+    { quantity: 20, itemId: "箭矢", magic: { id: "ammunition-plus", bonus: 1 } }
+  ], "granted items use the agreed inventory shape");
+
+  // 切回一般商店時購物清單還在，關閉後恢復一般模式。
+  await toggle.click();
+  const back = await chrome();
+  assert.deepEqual([back.title, back.pressed, back.cartDisabled, back.badge, back.footer], ["商店", "false", false, normal.badge, true], "returning to the shop keeps the cart");
+  await toggle.click();
+  await page.keyboard.press("Escape");
+  await shop.waitFor({ state: "detached" });
+  await page.locator("#equipment-shop-open").click();
+  assert.equal((await chrome()).pressed, "false", "closing the shop leaves magic mode");
+  await emptyCartAndCloseShop(page);
+  await page.evaluate(() => { EquipmentShop.open({ wallet: { id: "validate:magic", readTotal: () => 100, purchaseItems: async () => false } }); });
+  assert.equal(await toggle.count(), 0, "the temporary wallet has no magic mode");
+  await page.keyboard.press("Escape");
+  await shop.waitFor({ state: "detached" });
+
+  // 物品欄的資料規則：標籤不是自訂物品，同 id 同選項同基本款才能合併，重量來自基本款或內容檔。
+  assert.deepEqual(await page.evaluate(() => {
+    const entries = Inventory.entries();
+    const find = label => entries.find(entry => Inventory.getLabel(entry) === label);
+    return {
+      tags: [...document.querySelectorAll("button.inventory-tag")].map(tag => tag.textContent),
+      custom: document.querySelectorAll("button.inventory-tag.is-custom").length,
+      weights: ["長劍+2", "次元袋", "健康護符", "治療藥水（高等）", "箭矢+1"].map(label => Inventory.getUnitWeight(find(label)))
+    };
+  }), {
+    tags: ["長劍+2", "次元袋", "健康護符", "治療藥水", "治療藥水（高等）", "命令術法術卷軸", "箭矢+1 ×20"],
+    custom: 0,
+    weights: [3, 5, null, 0.5, 0.05]
+  }, "magic items are labelled by the catalog and are not custom items");
+  assert.deepEqual(await page.evaluate(() => {
+    Inventory.restore({ version: 1, items: [
+      { uid: "a", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } },
+      { uid: "b", itemId: "長劍", quantity: 2, magic: { bonus: 1, id: "weapon-plus", base: "長劍" } },
+      { uid: "c", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } },
+      { uid: "d", itemId: "短劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } },
+      { uid: "e", itemId: "長劍", quantity: 1 },
+      { uid: "f", quantity: 1, magic: { id: "no-such-item", foo: "bar" } }
+    ] });
+    Inventory.update("f", { name: "改名", weight: 9, desc: "x" });
+    return {
+      targets: ["a", "c", "d", "e"].map(uid => Inventory.getMergeTargets(uid).map(entry => entry.uid)),
+      unknown: [Inventory.getLabel(Inventory.getEntry("f")), Inventory.getEntry("f")],
+      merged: Inventory.merge("a", "b") && Inventory.getEntry("b").quantity
+    };
+  }), { targets: [["b"], [], [], []], unknown: ["未知魔法物品", { uid: "f", quantity: 1, magic: { id: "no-such-item", foo: "bar" } }], merged: 3 }, "stacking needs the same id, options and base; unknown items are kept");
+  assert.deepEqual(await page.evaluate(() => [
+    { quantity: 1, magic: { id: "weapon-plus", bonus: 1 } },
+    { quantity: 1, magic: "weapon-plus" },
+    { quantity: 1, magic: { id: "" } },
+    { quantity: 1, magic: { id: "x".repeat(65) } },
+    { quantity: 1, magic: { id: "weapon-plus", bonus: { value: 1 } } },
+    { quantity: 1, magic: { id: "weapon-plus", note: "x".repeat(65) } }
+  ].map(entry => isValidInventoryState({ version: 1, items: [entry] }))), [true, false, false, false, false, false], "the import preflight checks magic types and lengths");
+
+  // 物品視窗：副標、說明、提示與使用；治療藥水有 getHeal() 時是飲用。
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [
+    { uid: "scroll", itemId: "法術卷軸", name: "命令術法術卷軸", quantity: 1 },
+    { uid: "greater", quantity: 2, magic: { id: "potions-of-healing", potency: "greater" } },
+    { uid: "climbing", quantity: 2, magic: { id: "potion-of-climbing" } },
+    { uid: "amulet", quantity: 1, magic: { id: "amulet-of-health" } },
+    { uid: "lost", quantity: 1, magic: { id: "no-such-item" } }
+  ] }));
+  const item = page.locator('.app-dialog[data-variant="inventory-item"]');
+  const openItem = async (uid) => {
+    await page.locator(`[data-inventory-uid="${uid}"]`).click();
+    await item.waitFor();
+  };
+  const closeItem = async () => {
+    await page.keyboard.press("Escape");
+    await item.waitFor({ state: "detached" });
+  };
+  await openItem("amulet");
+  assert.equal(await item.locator(".magic-item-detail__subtitle").textContent(), "奇物，稀有（需同調）");
+  assert.equal(await item.locator(".magic-item-detail__manual").textContent(), "角色卡不會自動套用這項效果，請依說明處理");
+  assert.equal(await item.locator(".inventory-action-button").count(), 0, "non-consumable items have no use button");
+  await closeItem();
+  await openItem("greater");
+  assert.equal(await item.getByRole("button", { name: "飲用治療藥水（高等）" }).count(), 1, "potions with a heal roll use the drink flow");
+  await closeItem();
+  await openItem("climbing");
+  await item.getByRole("button", { name: "使用攀爬藥水" }).click();
+  assert.equal(await page.evaluate(() => Inventory.getEntry("climbing").quantity), 1, "using a consumable takes one");
+  await closeItem();
+  await openItem("scroll");
+  assert.match(await item.locator(".magic-item-detail__text").innerText(), /卷軸上寫有單一法術的文字/u, "spell scrolls show the new translation");
+  await item.getByRole("button", { name: "使用命令術法術卷軸" }).click();
+  await item.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(() => Inventory.getEntry("scroll")), null, "the last scroll closes the dialog");
+  await openItem("lost");
+  assert.equal(await item.locator("h2").textContent(), "未知魔法物品");
+  assert.match(await item.locator(".inventory-item-note").first().textContent(), /網站找不到這件魔法物品的資料/u);
+  await closeItem();
+
+  // 治療藥水與法術卷軸的詳情：裝備清單與商店名稱連結都顯示新譯文，一般商店的價格與重量不變。
+  assert.deepEqual(await page.evaluate(() => {
+    const pick = name => EQUIPMENT_SHOP_ITEMS.filter(entry => entry.name === name).map(entry => [entry.variant, entry.amount, entry.currency, entry.spellLevel ?? null, entry.weight]);
+    return [pick("治療藥水"), pick("法術卷軸")];
+  }), [[["", 50, "金幣", null, 0.5]], [["戲法", 30, "金幣", 0, 0], ["1 環", 50, "金幣", 1, 0]]], "shop prices, weights and scroll levels are unchanged");
+  await page.locator("#equipment-notes-section details").evaluateAll(nodes => nodes.forEach(node => { node.open = true; }));
+  await page.locator("#equipment-notes-section .equipment-item-link", { hasText: /^治療藥水$/u }).click();
+  const detail = page.locator("#equipment-detail-modal");
+  await detail.locator(".magic-item-detail__text").getByText("恢復的生命值", { exact: true }).first().waitFor();
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => { EquipmentShop.open({ focusName: "治療藥水" }); });
+  await shop.locator(".equipment-shop__detail", { hasText: /^治療藥水$/u }).first().click();
+  const shopDetail = page.locator('.app-dialog[data-variant="equipment-detail"]');
+  await shopDetail.locator(".magic-item-detail__text").getByText("恢復的生命值", { exact: true }).first().waitFor();
+  await shopDetail.getByRole("button", { name: "關閉", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await shop.waitFor({ state: "detached" });
+
+  // 只以文字管理物品：寫進攜帶物品文字，物品欄仍是空的；物品欄滿時提示且不寫入。
+  await page.evaluate(() => {
+    document.getElementById("gear-notes").value = "";
+    Inventory.restore({ version: 1, textOnly: true, items: [] });
+  });
+  await page.locator("#equipment-shop-open").click();
+  await toggle.click();
+  await openGrant("bag-of-holding");
+  await finishGrant();
+  assert.deepEqual(await page.evaluate(() => [document.getElementById("gear-notes").value.trim(), Inventory.entries().length]), ["購買物品：次元袋", 0], "text-only mode writes the name into the notes");
+  await page.keyboard.press("Escape");
+  await shop.waitFor({ state: "detached" });
+  await page.evaluate(() => Inventory.restore({ version: 1, items: Array.from({ length: 300 }, (_, index) => ({ uid: `full${index}`, name: `物品${index}`, quantity: 1 })) }));
+  await page.locator("#equipment-shop-open").click();
+  await toggle.click();
+  await openGrant("bag-of-holding");
+  await get().click();
+  await page.locator(".app-toast__message", { hasText: "物品欄最多 300 筆" }).waitFor();
+  assert.deepEqual([await grant.count(), await page.evaluate(() => Inventory.entries().length)], [1, 300], "a full inventory warns and writes nothing");
+  await page.keyboard.press("Escape");
+  await grant.waitFor({ state: "detached" });
+
+  // 窄螢幕：商店與取得視窗不超出畫面。
+  await page.setViewportSize({ width: 375, height: 760 });
+  assert.equal(await shop.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, "narrow magic shop fits");
+  await openGrant("weapon-plus");
+  assert.equal(await grant.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, "narrow grant dialog fits");
+  await page.keyboard.press("Escape");
+  await grant.waitFor({ state: "detached" });
+  await page.keyboard.press("Escape");
+  await shop.waitFor({ state: "detached" });
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
 }
 
 // 魔法物品目錄：件數與基準檔、基本款對得上裝備資料、顯示名稱與固定數值、說明延遲載入。UI 由之後的階段接上。
@@ -1704,7 +1967,7 @@ async function validateEquipmentShop(page) {
   assert.equal(await shop.locator(".equipment-shop__balance").textContent(), "目前財產：1 白金幣", "balance sits under the title");
   assert.equal(await shop.getByRole("button", { name: "關閉", exact: true }).count(), 0, "the corner close button replaces the footer close");
   assert.deepEqual(await shop.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.classList[button.classList.length - 1])),
-    ["equipment-shop__cart-button", "app-dialog__close"], "cart button sits left of the close button");
+    ["equipment-shop__magic-toggle", "equipment-shop__cart-button", "app-dialog__close"], "cart button sits left of the close button");
   assert.equal(await badge.isHidden(), true, "empty cart hides the badge");
 
   // The category button keeps the chosen filter after collapsing.
