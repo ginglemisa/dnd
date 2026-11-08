@@ -99,11 +99,41 @@
     return !isAmmunition(item) && Object.keys(item.effects || {}).some(key => key !== "condition");
   }
 
-  /** 把副標、說明（延遲載入，失敗可重試）與提示畫進 container；沒有這件物品時回傳 false。 */
-  function renderDetail(container, id) {
+  // 網站版的價格與說明，寫法同一般裝備的詳情。showPrice 為 false 時外層已經顯示價格。
+  function renderSiteText(target, item, showPrice) {
+    if (showPrice) {
+      const tags = el("div", "equipment-detail-tags");
+      tags.appendChild(el("span", "", item.sitePrice));
+      target.appendChild(tags);
+    }
+    target.appendChild(el("div", "equipment-detail-description", item.siteText));
+  }
+
+  // 網站版｜SRD 版：SRD 版是譯文，副標放在譯文上方。
+  function createVersionView(item, showPrice) {
+    return globalScope.createContentVersionView({
+      renderSite: target => renderSiteText(target, item, showPrice),
+      loadSrd: async () => {
+        const result = await catalog().getText(item.id);
+        return result ? { header: el("p", "magic-item-detail__subtitle", catalog().getSubtitle(item.id)).outerHTML, html: result.html } : null;
+      }
+    });
+  }
+
+  /**
+   * 把副標、說明（延遲載入，失敗可重試）與提示畫進 container；沒有這件物品時回傳 false。
+   * 有網站版的物品（治療藥水、法術卷軸）改畫「網站版｜SRD 版」；外層已經顯示價格時傳 { hideSitePrice: true }。
+   */
+  function renderDetail(container, id, { hideSitePrice = false } = {}) {
     const item = catalog()?.get(id);
     if (!item) return false;
     const wrap = el("div", "magic-item-detail");
+    if (item.siteText) {
+      wrap.appendChild(createVersionView(item, !hideSitePrice));
+      if (item.manualEffect) wrap.appendChild(el("p", "magic-item-detail__manual", hasAutomaticBonus(item) ? PARTIAL_MANUAL_NOTE : MANUAL_NOTE));
+      container.appendChild(wrap);
+      return true;
+    }
     wrap.appendChild(el("p", "magic-item-detail__subtitle", catalog().getSubtitle(id)));
     const text = el("div", "magic-item-detail__text spell-version__srd-body");
     wrap.appendChild(text);

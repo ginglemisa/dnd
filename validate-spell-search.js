@@ -1624,6 +1624,36 @@ async function validateInventoryStacks(page) {
   }, [blank]);
   assert.deepEqual(leftover, [], "loading a save without equipment does not keep the previous character's item as a not-in-inventory option");
 
+  // 治療藥水與法術卷軸的詳情是「網站版｜SRD 版」：網站版是舊說明，SRD 版是譯文；裝備清單、物品欄與魔法模式視窗一致。一般商店的價格與重量不變。
+  const versions = await page.evaluate(async () => {
+    const read = async (box) => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+      const tabs = [...box.querySelectorAll(".spell-version__tab")].map(tab => tab.textContent);
+      const site = box.querySelector(".spell-version__site")?.textContent || "";
+      box.querySelector('[data-spell-version="srd"]')?.click();
+      await MagicItemCatalog.loadText();
+      await new Promise(resolve => setTimeout(resolve, 20));
+      return { tabs, site, srd: box.querySelector(".spell-version__srd")?.textContent || "", siteHidden: box.querySelector(".spell-version__site")?.hidden };
+    };
+    const box = () => document.createElement("div");
+    const potion = box();
+    MagicItemShop.renderDetail(potion, "potions-of-healing");
+    const scroll = box();
+    MagicItemShop.renderDetail(scroll, "spell-scroll", { hideSitePrice: true });
+    const detail = box();
+    renderEquipmentDetailInto(detail, "治療藥水");
+    const shopItems = EQUIPMENT_SHOP_ITEMS.filter(item => item.name === "治療藥水" || item.name === "法術卷軸").map(item => [item.name, item.amount, item.currency, item.weight ?? null, item.spellLevel ?? null]);
+    return { potion: await read(potion), scroll: await read(scroll), detail: await read(detail), detailTags: detail.querySelector(".equipment-detail-tags")?.textContent, shopItems };
+  });
+  assert.deepEqual(versions.potion.tabs, ["網站版", "SRD 版"]);
+  assert.match(versions.potion.site, /50 金幣.*重量：1\/2 磅.*飲用者恢復 2d4 \+ 2 生命值/su, "the website version of the potion is the old description with its price");
+  assert.match(versions.potion.srd, /恢復的生命值/u, "the SRD version is the translation");
+  assert.match(versions.scroll.site, /記載一個戲法或 1 環法術.*法術豁免 DC 13.*卷軸會消失/su, "the scroll keeps its old description");
+  assert.equal(versions.scroll.site.includes("金幣"), false, "the price stays outside when the caller shows it");
+  assert.equal(versions.detail.siteHidden, true, "switching hides the website version");
+  assert.equal(versions.detailTags, "50 金幣", "the equipment detail keeps its price line");
+  assert.deepEqual(versions.shopItems, [["治療藥水", 50, "金幣", 0.5, null], ["法術卷軸", 30, "金幣", 0, 0], ["法術卷軸", 50, "金幣", 0, 1]], "the normal shop still reads price and weight from the equipment notes");
+
   // 魔法款和同名普通款是不同的選項，value 是魔法款自己的名稱；只有魔法款時不列普通選項。重新載入不互換，存檔寫魔法款但物品欄沒有時補上那一件。
   const magicEquip = await page.evaluate(([base]) => {
     const sword = { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } };

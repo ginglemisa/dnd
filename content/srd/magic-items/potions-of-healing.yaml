@@ -16,6 +16,10 @@ options:
       - { value: supreme, label: 極效, rarity: very-rare, heal: "10d4 + 20" }
 consumable: true
 equipmentName: 治療藥水
+sitePrice: 50 金幣
+siteText: |-
+  重量：1/2 磅
+  這是一件魔法物品。你可以用附贈喝下藥水，或讓 5 呎內另一生物服用。飲用者恢復 2d4 + 2 生命值。
 text: |-
   你喝下這瓶藥水時會恢復生命值。恢復的生命值多寡取決於藥水的稀有度，如下表所示。
 

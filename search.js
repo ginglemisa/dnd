@@ -684,7 +684,7 @@
     const magicItem = globalScope.MagicItemShop && globalScope.MagicItemCatalog?.getByEquipmentName(entry.name);
     if (magicItem) {
       content.innerHTML = renderEquipmentTextDetail({ ...entry, text: String(entry.text || "").split("\n")[0] });
-      globalScope.MagicItemShop.renderDetail(content, magicItem.id);
+      globalScope.MagicItemShop.renderDetail(content, magicItem.id, { hideSitePrice: true });
       return;
     }
     content.innerHTML = entry.data ? renderEquipmentDataDetail(entry) : renderEquipmentTextDetail(entry);

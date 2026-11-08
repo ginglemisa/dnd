@@ -90,6 +90,8 @@
         "consumable": { "const": true, "description": "用掉就減 1。" },
         "manualEffect": { "const": true, "description": "角色卡不會自動套用這件物品的效果，商店與物品欄的說明下方會提示玩家依說明處理。" },
         "equipmentName": { "type": "string", "minLength": 1, "description": "一般商店也賣的同一件物品的裝備品名（須是 equipment-data.js 的品名）：裝備詳情改顯示這件的說明。" },
+        "sitePrice": { "type": "string", "minLength": 1, "description": "網站版的價格文字（只有寫 siteText 的物品才寫），放在網站版內文上方。" },
+        "siteText": { "type": "string", "minLength": 1, "description": "網站版說明（純文字，保留換行）。有寫時詳情顯示「網站版｜SRD 版」頁籤，text 是 SRD 版。只用於寫了 equipmentName 的物品。" },
         "weight": { "type": "number", "exclusiveMinimum": 0, "description": "每件磅數，只在譯文明寫時填。" },
         "text": { "type": "string", "minLength": 1, "description": "說明本文（逐字取自譯文，不含副標）。支援 _斜體_、**粗體**、「- 」清單、#### 小標與 GFM 表格，建置時轉成 HTML。" }
       }
