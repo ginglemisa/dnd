@@ -474,6 +474,20 @@
     return actionRow(text, control);
   }
 
+  // 可變形的物品（王者權杖）：目前形態下拉，裝備中切換時主手的傷害、屬性與精通跟著改。分享模式只顯示目前形態。
+  function buildFormRow(entry, rule) {
+    const current = globalScope.MagicItemCatalog.getForm(entry.magic.id, api().getMagicSelection(entry));
+    if (globalScope.SHARE_MODE) return actionRow(`目前形態：${current.label}`);
+    const select = el("select", "inventory-form-select");
+    select.dataset.stateTransient = "true";
+    select.setAttribute("aria-label", "目前形態");
+    select.append(...rule.forms.map(form => new Option(form.label, form.id)));
+    select.value = current.id;
+    select.addEventListener("change", () => api().setMagicForm(entry.uid, select.value));
+    const row = actionRow("目前形態（只改變武器的傷害、屬性與精通，其他效果依說明處理）：", select);
+    return row;
+  }
+
   // 防禦者的加值分配（物品視窗與跑團武器卡）：0 到全部加值轉到 AC，攻擊與傷害減少、AC 增加相同數值；不能轉移時回傳 null。不存檔。
   function buildBonusTransferControl(entry) {
     const transfer = api().getBonusTransfer(entry.uid);
@@ -587,6 +601,7 @@
     }
     if (entry.magic && magicRule?.attunement) rows.push(buildAttunementRow(entry, magicRule, label));
     const transfer = entry.magic ? buildBonusTransferControl(entry) : null;
+    if (entry.magic && magicRule?.forms) rows.push(buildFormRow(entry, magicRule));
     if (transfer) rows.push(actionRow("可把部分或全部加值轉到 AC，攻擊與傷害會減少相同數值；重新整理後回到 0。", transfer));
     if (!rows.length) return null;
     const section = el("div", "inventory-item-actions");

@@ -69,6 +69,17 @@
         "choices": { "type": "array", "minItems": 2, "items": { "$ref": "#/definitions/choice" } }
       }
     },
+    "form": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "形態 ID，寫進物品欄存檔的 magic.form：不可改名（列在基準檔）。第一個是原本形態（不寫進存檔）。" },
+        "label": { "type": "string", "minLength": 1, "description": "「目前形態」下拉的文字。" },
+        "base": { "type": "string", "minLength": 1, "description": "這個形態當作哪一件武器（品名），傷害、屬性、精通跟著它。省略時沿用物品的基本款。" },
+        "noEffects": { "const": true, "description": "這個形態沒有物品的固定加值。" }
+      }
+    },
     "item": {
       "type": "object",
       "additionalProperties": false,
@@ -88,6 +99,7 @@
         "effects": { "$ref": "#/definitions/effects" },
         "displayName": { "type": "string", "minLength": 1, "description": "選定後的顯示名稱樣板：{base} 為基本款，{選項 ID} 為該選項的 label。省略時為「名稱（基本款、選項）」。" },
         "consumable": { "const": true, "description": "用掉就減 1。" },
+        "forms": { "type": "array", "minItems": 2, "items": { "$ref": "#/definitions/form" }, "description": "可切換的形態（王者權杖）：物品視窗的「目前形態」下拉，存在這一筆的 magic.form。裝備欄位的值不變。" },
         "bonusTransfer": { "const": true, "description": "武器的攻擊與傷害加值可以部分或全部轉移到 AC（防禦者）。物品視窗與跑團武器卡有步進器，不存檔；要有 effects.attack。" },
         "manualEffect": { "const": true, "description": "角色卡不會自動套用這件物品的效果，商店與物品欄的說明下方會提示玩家依說明處理。" },
         "equipmentName": { "type": "string", "minLength": 1, "description": "一般商店也賣的同一件物品的裝備品名（須是 equipment-data.js 的品名）：裝備詳情改顯示這件的說明。" },

@@ -103,6 +103,12 @@
     return equipmentIndex.get(name) || null;
   }
 
+  // 目前的形態：selection.form 對得上就是那個形態，否則是原本形態（第一個）；沒有形態的物品為 null。
+  function getForm(id, selection) {
+    const forms = rule(id)?.forms;
+    return forms ? forms.find(form => form.id === selection?.form) || forms[0] : null;
+  }
+
   // 第一批自動計算的固定數值：{ attack?, damage?, ac?, saves?, condition? }，數值已代入 bonus 選項；沒有時為空物件。
   function getEffects(id, selection) {
     const item = rule(id);
@@ -110,7 +116,8 @@
     if (!item) return result;
     const options = item.options || [];
     const bonus = selectedChoice(options.find(option => option.id === "bonus") || { choices: [] }, selection)?.value;
-    for (const [key, value] of Object.entries(item.effects || {})) {
+    const itemEffects = getForm(id, selection)?.noEffects ? {} : item.effects || {};
+    for (const [key, value] of Object.entries(itemEffects)) {
       if (key === "condition") result.condition = value;
       else if (value !== "bonus") result[key] = value;
       else if (bonus !== undefined) result[key] = bonus;
@@ -192,6 +199,7 @@
     getEquipmentVariants,
     resolveEquipmentName,
     getEffects,
+    getForm,
     getRarity,
     getRarityLabel,
     getSubtitle,

@@ -103,7 +103,7 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-magic-defender">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-magic-rod">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/utility.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/dice.css?v=20261108-css-split">
@@ -117,7 +117,7 @@
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="magic-item-content.generated.js?v=0" defer></script>
-  <script src="magic-items.js?v=20261109-magic-names" defer></script>
+  <script src="magic-items.js?v=20261109-magic-rod" defer></script>
   <script src="monster-content.generated.js?v=0" defer></script>
   <script src="monster.js?v=20261108-wild-shape-ux" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261108-new-forms" defer></script>
@@ -3117,8 +3117,8 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="equipment-data.js?v=20261105-starting-equipment" defer></script>
 <script src="search.js?v=20261109-magic-version" defer></script>
 <script src="equipment-shop.js?v=20261108-magic-shop" defer></script>
-<script src="inventory.js?v=20261109-magic-defender" defer></script>
-<script src="inventory-ui.js?v=20261109-magic-defender" defer></script>
+<script src="inventory.js?v=20261109-magic-rod" defer></script>
+<script src="inventory-ui.js?v=20261109-magic-rod" defer></script>
 <script src="magic-item-shop.js?v=20261109-magic-scroll" defer></script>
 
 <script>
@@ -3510,9 +3510,11 @@ function getMonkMartialArtsWeapon() {
     屬性4: null
   };
 }
-// 裝備欄位的值對應的基本款品名：魔法款（例如「長劍+2」）回基本款，其他名稱原樣回傳。
+// 裝備欄位的值對應的基本款品名：魔法款（例如「長劍+2」）回基本款，其他名稱原樣回傳。可變形的物品（王者權杖）回目前形態的武器。
 function getEquipmentBaseName(name) {
-  return window.MagicItemCatalog?.resolveEquipmentName(name)?.base || name;
+  const magic = window.MagicItemCatalog?.resolveEquipmentName(name);
+  if (!magic) return name;
+  return window.Inventory?.getMagicFormBase(magic.id) || magic.base;
 }
 
 // 由裝備欄位的值查定義：魔法款是基本款的定義換上自己的名稱，多一個「基本款」，傷害、屬性、精通、AC、分類都繼承基本款。判斷規則時用 getEquipmentRuleName()。
@@ -6739,16 +6741,16 @@ window.addEventListener("DOMContentLoaded", async function() {
   let previousOffHand = offHandSelect.value;
   let activeMagicEffectsKey = JSON.stringify(getActiveMagicEffects());
   // 物品欄變動時重建裝備下拉（保留目前選取），並排入自動儲存。
-  document.addEventListener("inventory:change", () => {
+  document.addEventListener("inventory:change", (event) => {
     refreshWeaponSelections();
     refreshArmorSelection();
     previousMainHand = mainHandSelect.value;
     previousOffHand = offHandSelect.value;
     syncMain2ShieldControl({ legalize: false });
     scheduleSaveAllFields();
-    // 物品欄變動、同調切換、裝備變更只要改到魔法加值就重算；加值沒變時不動既有流程。
+    // 物品欄變動、同調切換、裝備變更只要改到魔法加值就重算；加值沒變時不動既有流程。切換形態時武器資料也會變。
     const magicKey = JSON.stringify(getActiveMagicEffects());
-    if (magicKey === activeMagicEffectsKey) return;
+    if (magicKey === activeMagicEffectsKey && event.detail?.reason !== "form") return;
     activeMagicEffectsKey = magicKey;
     updateACDisplay();
     populateHandAttacks();

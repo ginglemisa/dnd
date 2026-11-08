@@ -14,6 +14,7 @@
  * - 魔法武器、護甲與盾牌裝備時，角色卡的裝備欄位存魔法款自己的名稱（MagicItemCatalog.getDisplayName()，例如「長劍+2」），載入時依名稱到物品欄拿同名的那一件，沒有就補上一筆（source "equipped"）。
  *   普通款只配普通款，魔法款只配同名魔法款；名稱彼此唯一由建置檢查。
  * - attuned 是魔法物品的同調狀態（只有 magic 的筆、固定 1 件才有），由玩家以 setAttuned() 開關：同時最多 LIMITS.attunement 件，同一種魔法物品（同 magic.id）不能同調第二件。同調中的物品不能合併或拆分，移除後同調自然消失。
+ * - magic.form 是可切換形態的物品（王者權杖）目前的形態（MagicItemCatalog.getForm），原本形態不寫；裝備欄位的值不隨形態改變，傷害、屬性、精通看 getMagicFormBase()。
  *   同名物品可以有很多筆（拆分、商店購買、卸除都會新增一筆），各自獨立；只有玩家拖曳合併（merge()）才合成一筆，自訂物品不能合併。
  *   textOnly 為 true 時玩家選擇只以文字管理物品：物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
  * - 目錄：重量與分類取自 equipment-notes.js 整理的 EQUIPMENT_SHOP_ITEMS，武器／護甲取自 equipment-data.js，
@@ -922,6 +923,25 @@
     return Boolean(magicRule(entry)?.attunement);
   }
 
+  /** 切換可變形物品的目前形態（formId 對不上時回傳 false）；存在這一筆的 magic.form，原本形態不寫。 */
+  function setMagicForm(uid, formId) {
+    const next = entries.map(copyEntry);
+    const entry = next.find(item => item.uid === uid);
+    const forms = magicRule(entry)?.forms;
+    if (!forms?.some(form => form.id === formId)) return false;
+    if (formId === forms[0].id) delete entry.magic.form;
+    else entry.magic.form = formId;
+    commit(next, "form");
+    return true;
+  }
+
+  /** 這種魔法物品目前形態對應的基本款（裝備中的那件優先）；沒有形態或形態沒有基本款時為空字串。 */
+  function getMagicFormBase(id) {
+    const list = entries.filter(entry => entry.magic?.id === id);
+    const entry = list.find(item => item.slot) || list[0];
+    return entry ? globalScope.MagicItemCatalog?.getForm(id, getMagicSelection(entry))?.base || "" : "";
+  }
+
   /** 同調的現況：count 是同調中的件數，max 是上限，needed 表示物品欄有需要同調的物品。 */
   function getAttunement() {
     return { count: entries.filter(entry => entry.attuned).length, max: LIMITS.attunement, needed: entries.some(needsAttunement) };
@@ -1026,6 +1046,8 @@
     getAttunement,
     getBonusTransfer,
     setBonusTransfer,
+    setMagicForm,
+    getMagicFormBase,
     remove,
     consume,
     restore,

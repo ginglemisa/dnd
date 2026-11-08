@@ -100,6 +100,10 @@ function checkItem(item, { lists, known, damageLabels, equipmentNames }, errors)
   const tokens = (item.displayName || "").match(/\{[^}]*\}/g) || [];
   const allowed = new Set([...(item.base ? ["{base}"] : []), ...(item.options || []).map(option => `{${option.id}}`)]);
   tokens.filter(token => !allowed.has(token)).forEach(token => errors.push(`${at}：displayName 的 ${token} 不是基本款或選項`));
+  const formIds = (item.forms || []).map(form => form.id);
+  if (new Set(formIds).size !== formIds.length) errors.push(`${at}：forms 的 id 重複`);
+  if (item.forms && item.base?.fixed === undefined) errors.push(`${at}：forms 只用於固定基本款的物品`);
+  (item.forms || []).filter(form => form.base && !known.has(form.base)).forEach(form => errors.push(`${at}：形態 ${form.id} 的基本款「${form.base}」不是 equipment-data.js 的武器、護甲或盾牌`));
   if (item.bonusTransfer && !item.effects?.attack) errors.push(`${at}：bonusTransfer 要有 effects.attack`);
   if ((item.siteText || item.sitePrice) && !item.equipmentName) errors.push(`${at}：siteText、sitePrice 只用於寫了 equipmentName 的物品`);
   if (Boolean(item.siteText) !== Boolean(item.sitePrice)) errors.push(`${at}：siteText 與 sitePrice 要一起寫`);

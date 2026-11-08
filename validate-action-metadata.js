@@ -1219,6 +1219,38 @@ async function verifyEquipmentLoadout(browser, url) {
       saved: "attuned,itemId,magic,quantity,uid",
       reloaded: [0, ["+9", "1d8+6揮砍", "12"]]
     }, "the Defender moves its bonus to AC only while attuned and held, and the split is not saved");
+    // 王者權杖：形態存在這一筆的 magic.form，裝備欄位不變；傷害、屬性跟著新形態，火焰之刃沒有 +3。
+    assert.deepEqual(await page.evaluate(([base]) => {
+      const rod = { uid: "rod", itemId: "硬頭錘", quantity: 1, attuned: true, magic: { id: "rod-of-lordly-might" } };
+      applyStateObject({ ...base, mainHand: "王者權杖", __inventory: { version: 1, items: [rod] } });
+      const numbers = () => [document.getElementById("mainHand").value, document.getElementById("atk-main-name").value, document.getElementById("atk-main-hit").value, document.getElementById("atk-main-dmg").value];
+      const steps = { mace: numbers() };
+      for (const form of ["battleaxe", "spear", "flame-longsword", "flame-shortsword", "other"]) {
+        Inventory.setMagicForm("rod", form);
+        steps[form] = numbers();
+      }
+      Inventory.setMagicForm("rod", "flame-longsword");
+      const saved = Inventory.getState().items[0].magic;
+      const data = collectStateObject();
+      applyStateObject(data);
+      const reloaded = numbers();
+      Inventory.setMagicForm("rod", "mace");
+      return { steps, saved, field: data.mainHand, reloaded, back: Inventory.getState().items[0].magic, bad: Inventory.setMagicForm("rod", "nope") };
+    }, [magicBase]), {
+      steps: {
+        mace: ["王者權杖", "王者權杖", "+9", "1d6+6鈍擊"],
+        battleaxe: ["王者權杖", "王者權杖", "+9", "1d8+6揮砍"],
+        spear: ["王者權杖", "王者權杖", "+9", "1d6+6穿刺"],
+        "flame-longsword": ["王者權杖", "王者權杖", "+6", "1d8+3揮砍"],
+        "flame-shortsword": ["王者權杖", "王者權杖", "+6", "1d6+3穿刺"],
+        other: ["王者權杖", "王者權杖", "+9", "1d6+6鈍擊"]
+      },
+      saved: { id: "rod-of-lordly-might", form: "flame-longsword" },
+      field: "王者權杖",
+      reloaded: ["王者權杖", "王者權杖", "+6", "1d8+3揮砍"],
+      back: { id: "rod-of-lordly-might" },
+      bad: false
+    }, "the Rod of Lordly Might changes weapon data with its form while the equipment field keeps its name");
     // 魔法款沿用基本款的規則：熟練、護甲訓練、力量需求、重甲、雙手與攻擊列名稱。
     assert.deepEqual(await page.evaluate(([base]) => {
       const held = (extra, ...items) => applyStateObject({ ...base, ...extra, __inventory: { version: 1, items } });
