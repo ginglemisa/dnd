@@ -1723,7 +1723,7 @@ async function validateInventoryStacks(page) {
     result.split = [Inventory.entries().map(entry => [entry.quantity, entry.slot || ""]), selection("mainHand")];
     choose("offHand", "短劍+1");
     result.bothHands = slots().map(([, slot]) => slot).sort();
-    // 盾牌的兩個位置：副手是下拉，主手 2 是勾選；勾選預設拿普通款，只有魔法盾牌時拿魔法盾牌，存檔後拿回同一面。
+    // 盾牌的兩個位置：副手是下拉，主手 2 是勾選；只有一種時直接用那一面，兩種以上時勾選下方多一個只列盾牌的下拉，選擇會存檔。
     const plainShield = { uid: "ps", itemId: "盾牌", quantity: 1 };
     const magicShield = { uid: "ms", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 1 } };
     load(plainShield, magicShield);
@@ -1742,6 +1742,31 @@ async function validateInventoryStacks(page) {
     result.checkboxMagic = slots();
     applyStateObject(collectStateObject());
     result.checkboxReload = [slots(), Inventory.entries().length];
+    const pickShield = document.getElementById("main2ShieldItem");
+    const shieldSelect = () => [pickShield.hidden, [...pickShield.options].map(option => option.value), pickShield.value];
+    applyStateObject({ ...alternate, ...inv(magicShield) });
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    result.oneKind = shieldSelect()[0];
+    const otherShield = { uid: "os", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 2 } };
+    applyStateObject({ ...alternate, main2Shield: true, ...inv(plainShield, magicShield) });
+    result.twoKinds = [shieldSelect(), slots()];
+    pickShield.value = "盾牌+1";
+    pickShield.dispatchEvent(new Event("change", { bubbles: true }));
+    result.picked = slots();
+    const savedShield = collectStateObject();
+    result.savedShield = savedShield.main2ShieldItem;
+    applyStateObject({ ...base, __inventory: { version: 1, items: [] } });
+    applyStateObject(savedShield);
+    result.shieldReload = [shieldSelect(), slots()];
+    applyStateObject({ ...alternate, main2Shield: true, ...inv(magicShield, otherShield) });
+    result.twoMagic = [shieldSelect(), slots()];
+    applyStateObject({ ...alternate, main2Shield: true, main2ShieldItem: "盾牌+1", ...inv(plainShield) });
+    result.addsNamedShield = [slots().length, Inventory.entries().find(entry => entry.slot === "shield").magic];
+    const noField = { ...alternate, main2Shield: true, ...inv(plainShield) };
+    delete noField.main2ShieldItem;
+    applyStateObject(noField);
+    result.legacyShield = [shieldSelect()[0], slots()];
     // 同調：上限、同種第二件、一筆多件；同調中不能合併或拆分，移除後自然消失。
     load({ uid: "r1", quantity: 1, magic: { id: "ring-of-protection" } }, { uid: "r2", quantity: 1, magic: { id: "ring-of-protection" } },
       { uid: "c", quantity: 1, magic: { id: "cloak-of-protection" } }, { uid: "b", quantity: 1, magic: { id: "bracers-of-defense" } },
@@ -1790,6 +1815,14 @@ async function validateInventoryStacks(page) {
     checkboxPlain: [["ps", "shield"]],
     checkboxMagic: [["ms", "shield"]],
     checkboxReload: [[["ms", "shield"]], 1],
+    oneKind: true,
+    twoKinds: [[false, ["盾牌", "盾牌+1"], "盾牌"], [["ps", "shield"]]],
+    picked: [["ms", "shield"]],
+    savedShield: "盾牌+1",
+    shieldReload: [[false, ["盾牌", "盾牌+1"], "盾牌+1"], [["ms", "shield"]]],
+    twoMagic: [[false, ["盾牌+1", "盾牌+2"], "盾牌+1"], [["ms", "shield"]]],
+    addsNamedShield: [1, { id: "shield-plus", bonus: 1 }],
+    legacyShield: [true, [["ps", "shield"]]],
     attune: ["ok", "duplicate", "stack", "unavailable", "ok", "ok", "limit", { count: 3, max: 3, needed: true }],
     attunedStack: [false, 0],
     afterRemove: 2,

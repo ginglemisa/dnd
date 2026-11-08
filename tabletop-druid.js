@@ -384,7 +384,7 @@
     const main2Shield = globalScope.isEffectiveEquippedShield?.() && document.getElementById("offHandAsMain")?.checked;
     const equipment = {};
     for (const [key, label, field] of [["armor", "護甲", "armor"], ["main", "主手", "mainHand"], ["off", "副手", "offHand"], ["other", "其他裝備", ""]]) {
-      const equipped = key === "off" && main2Shield ? "盾牌" : (field ? document.getElementById(field)?.value || "" : "");
+      const equipped = key === "off" && main2Shield ? globalScope.getMain2ShieldLabel?.() || "盾牌" : (field ? document.getElementById(field)?.value || "" : "");
       // 沒裝備的欄位不列出，送出「融入」（沒有東西可穿戴或掉落）。
       if (field && !equipped) { equipment[key] = { value: "merge" }; continue; }
       equipment[key] = selectField(advancedBody, `${label}${equipped ? `：${equipped}` : ""}`, [

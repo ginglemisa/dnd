@@ -1489,6 +1489,11 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-mastery-badg
   gap: 0.4rem 1.25rem;
 }
 
+.equipment-main2-shield-select {
+  width: 100%;
+  margin-top: 0.35rem;
+}
+
 .equipment-alternate-main-option input {
   flex: 0 0 auto;
 }

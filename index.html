@@ -103,7 +103,7 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-magic-rod">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-magic-shield">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/utility.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/dice.css?v=20261108-css-split">
@@ -137,7 +137,7 @@
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261109-magic-names" defer></script>
-  <script src="tabletop-druid.js?v=20261109-magic-names" defer></script>
+  <script src="tabletop-druid.js?v=20261109-magic-shield" defer></script>
   <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
   <script src="tabletop-actions.js?v=20261109-magic-defender" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
@@ -1192,6 +1192,7 @@
         <input type="checkbox" id="main2Shield">
         <span>裝備盾牌</span>
       </label>
+      <select id="main2ShieldItem" class="equipment-main2-shield-select" aria-label="主手 2 的盾牌" hidden></select>
     </div>
     <!-- 武器傷害類型選擇與角色卡的橡棍術開關（WEAPON_DAMAGE_TYPE_CHOICES、shillelaghWeaponHand）：各處下拉與勾選框都寫回這裡。 -->
     <input type="text" id="pactWeaponDamageType" value="" hidden>
@@ -3117,8 +3118,8 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="equipment-data.js?v=20261105-starting-equipment" defer></script>
 <script src="search.js?v=20261109-magic-version" defer></script>
 <script src="equipment-shop.js?v=20261108-magic-shop" defer></script>
-<script src="inventory.js?v=20261109-magic-rod" defer></script>
-<script src="inventory-ui.js?v=20261109-magic-rod" defer></script>
+<script src="inventory.js?v=20261109-magic-shield" defer></script>
+<script src="inventory-ui.js?v=20261109-magic-shield" defer></script>
 <script src="magic-item-shop.js?v=20261109-magic-scroll" defer></script>
 
 <script>
@@ -3738,6 +3739,12 @@ function isMain2ShieldEligible() {
   });
 }
 
+// 主手 2 拿著的盾牌名稱（裝備摘要、荒野形態顯示用）。
+function getMain2ShieldLabel() {
+  const held = window.Inventory?.entries().find(entry => entry.slot === "shield");
+  return held ? window.Inventory.getEquipmentValue(held) || "盾牌" : "盾牌";
+}
+
 function isEffectiveEquippedShield() {
   return isEffectiveShieldEquippedForState({
     offHandAsMain: isOffHandAlternateMain(),
@@ -3758,6 +3765,36 @@ function syncMain2ShieldControl({ legalize = !autosaveSuspended } = {}) {
   option.hidden = !eligible;
   checkbox.disabled = !eligible;
   if (legalize && !eligible) checkbox.checked = false;
+  syncMain2ShieldSelect(eligible && checkbox.checked);
+}
+
+// 物品欄的盾牌種類（裝備欄位的值，普通盾牌在最前面）。
+function getOwnedShieldNames() {
+  const counts = window.Inventory?.isTextOnly() ? null : window.Inventory?.getEquippableCounts();
+  if (!counts) return [];
+  return [...(counts.shields > 0 ? ["盾牌"] : []), ...counts.magicShields.keys()];
+}
+
+// 主手 2 的盾牌下拉：勾選且條件滿足、物品欄有兩種以上不同的盾牌才出現；只有一種時不出現，直接用那一面。
+// 選擇存在這個控制項（autosave、JSON、分享都帶），隱藏時保留原本的值。
+function syncMain2ShieldSelect(active) {
+  const select = document.getElementById("main2ShieldItem");
+  if (!select) return;
+  const names = active ? getOwnedShieldNames() : [];
+  select.hidden = names.length < 2;
+  if (select.hidden) return;
+  const saved = select.dataset.choice || select.value;
+  select.replaceChildren(...names.map(name => new Option(name, name)));
+  const held = window.Inventory.entries().find(entry => entry.slot === "shield");
+  const heldName = held ? window.Inventory.getEquipmentValue(held) : "";
+  select.value = names.includes(heldName) ? heldName : names.includes(saved) ? saved : names[0];
+  select.dataset.choice = select.value;
+}
+
+// 主手 2 目前要拿哪一面盾牌：下拉顯示時是下拉的值，否則由物品欄決定。
+function getMain2ShieldChoice() {
+  const select = document.getElementById("main2ShieldItem");
+  return select && !select.hidden ? select.value : true;
 }
 
 function updateOffHandRolePresentation() {
@@ -4436,7 +4473,7 @@ function updateEquipmentLoadoutSummary() {
   const summaryRows = [
     mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon, "main"), { warningKey: mainWeaponWarning }),
     offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", offName, weaponDetails(offWeapon, "off"), { warningKey: offWeaponWarning }),
-    isOffHandAlternateMain() && isEffectiveEquippedShield() && buildEquipmentSummaryRow("盾牌", "盾牌", shieldDetails()),
+    isOffHandAlternateMain() && isEffectiveEquippedShield() && buildEquipmentSummaryRow("盾牌", getMain2ShieldLabel(), shieldDetails()),
     armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warningKey: armorWarning }),
     magic.sources.length && buildEquipmentSummaryRow("魔法物品", "魔法物品", magic.sources.map(source => [
       source.label, source.ac ? `AC${formatSigned(source.ac)}` : "", source.saves ? `豁免${formatSigned(source.saves)}` : ""
@@ -5536,7 +5573,7 @@ function restoreInventoryState(data) {
     mainHand: pactHand === "main" ? "" : pendingEquipmentValues.mainHand,
     offHand: pactHand === "off" ? "" : pendingEquipmentValues.offHand,
     armor: pendingEquipmentValues.armor,
-    shield: data.offHandAsMain === true && data.main2Shield === true
+    shield: data.offHandAsMain === true && data.main2Shield === true && (String(data.main2ShieldItem || "") || true)
   }, { reset: !hasInventory });
 }
 
@@ -6824,6 +6861,10 @@ window.addEventListener("DOMContentLoaded", async function() {
     refreshEquipmentEffects();
   });
   main2ShieldToggle?.addEventListener("change", refreshEquipmentEffects);
+  document.getElementById("main2ShieldItem")?.addEventListener("change", (event) => {
+    event.target.dataset.choice = event.target.value;
+    refreshEquipmentEffects();
+  });
   armorSelect?.addEventListener("change", syncInventorySlots);
   // 契約武器同時只有一把：勾選一手時取消另一手。
   Object.values(PACT_WEAPON_HANDS).forEach(config => {

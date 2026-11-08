@@ -795,13 +795,14 @@
     return name ? globalScope.MagicItemCatalog?.resolveEquipmentName(name) || null : null;
   }
 
-  // 副手當主手時盾牌位置要拿哪一面（沒有下拉時）：玩家點的那面、已經拿著的、普通盾牌，最後才是魔法盾牌。
-  function chooseShieldName(list, kinds, preferred) {
+  // 副手當主手時盾牌位置要拿哪一面：玩家點的那面、下拉選的那面（request 是名稱時）、已經拿著的、普通盾牌，最後才是魔法盾牌。
+  function chooseShieldName(list, kinds, preferred, request) {
     const shieldValue = entry => entry.magic ? magicEquipmentOf(entry)?.name || "" : (kinds.shields.has(entry.itemId) ? entry.itemId : "");
+    const named = typeof request === "string" && list.find(entry => shieldValue(entry) === request);
     const held = list.find(entry => entry.slot === "shield");
     const plain = list.find(entry => !entry.magic && kinds.shields.has(entry.itemId));
     const magic = list.find(entry => entry.magic && kinds.shields.has(entry.itemId) && magicEquipmentOf(entry));
-    return [preferred, held, plain, magic].filter(Boolean).map(shieldValue).find(Boolean) || "";
+    return [preferred, named, held, plain, magic].filter(Boolean).map(shieldValue).find(Boolean) || "";
   }
 
   /**
@@ -820,8 +821,10 @@
       if (kinds.weapons.has(baseOf(name)) || kinds.shields.has(baseOf(name))) bump(name);
     });
     if (kinds.armors.has(baseOf(armor))) bump(armor);
-    // 副手當主手的盾牌：物品欄有任何一面就夠了，沒有時補普通盾牌。
-    if (shield && !chooseShieldName(entries, kinds) && kinds.shields.has("盾牌")) bump("盾牌");
+    // 副手當主手的盾牌：存檔指定的那面不在物品欄時補上；沒有指定時物品欄有任何一面就夠了，沒有時補普通盾牌。
+    const shieldBase = typeof shield === "string" ? baseOf(shield) : "";
+    if (shieldBase && kinds.shields.has(shieldBase)) bump(shield);
+    else if (shield && !chooseShieldName(entries, kinds) && kinds.shields.has("盾牌")) bump("盾牌");
     const counts = getEquippableCounts();
     const owned = (name) => {
       if (kinds.shields.has(baseOf(name))) return magicEquipmentByName(name) ? counts.magicShields.get(name) || 0 : counts.shields;
@@ -875,7 +878,7 @@
   }
 
   /**
-   * 讓物品的裝備位置符合角色卡的選擇（{ mainHand, offHand, armor, shield }；shield 是副手當主手時的盾牌勾選）。
+   * 讓物品的裝備位置符合角色卡的選擇（{ mainHand, offHand, armor, shield }；shield 是副手當主手時的盾牌：false、true 或下拉選的名稱）。
    * 選擇變了的位置先放回身上（成為獨立的一筆），新的選擇再從物品欄拿 1 件（options.prefer 是玩家點的那筆 uid）。
    * 物品欄沒有這件物品時留空；物品欄已滿、又要從多件的標籤多開一筆時放不下，回傳這些位置，其餘位置照常更新。
    */
@@ -884,7 +887,7 @@
     const kinds = staticKinds();
     const next = entries.map(copyEntry);
     const preferred = next.find(entry => entry.uid === prefer && kinds.shields.has(entry.itemId));
-    const wanted = { mainHand, offHand, armor, shield: shield ? chooseShieldName(next, kinds, preferred) : "" };
+    const wanted = { mainHand, offHand, armor, shield: shield ? chooseShieldName(next, kinds, preferred, shield) : "" };
     let changed = false;
     next.forEach((entry) => {
       if (entry.slot && !matchesEquipment(entry, wanted[entry.slot], kinds)) {

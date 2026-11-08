@@ -141,12 +141,18 @@
     return item.wieldedAs ? `weapon:${item.wieldedAs}` : "";
   }
 
+  // 副手當主手時的盾牌：false 沒拿，字串是下拉選的那一面，true 交給物品欄決定。
+  function main2ShieldRequest() {
+    if (document.getElementById("offHandAsMain")?.checked !== true || document.getElementById("main2Shield")?.checked !== true) return false;
+    return globalScope.getMain2ShieldChoice?.() ?? true;
+  }
+
   function currentEquipment() {
     return {
       mainHand: handFromInventory("main"),
       offHand: handFromInventory("off"),
       armor: fieldValue("armor"),
-      shield: document.getElementById("offHandAsMain")?.checked === true && document.getElementById("main2Shield")?.checked === true
+      shield: main2ShieldRequest()
     };
   }
 
@@ -912,7 +918,7 @@
         };
         refreshActions();
         const onSlotChange = (event) => {
-          if (["mainHand", "offHand", "armor", "main2Shield", "offHandAsMain"].includes(event.target?.id)) refreshActions();
+          if (["mainHand", "offHand", "armor", "main2Shield", "main2ShieldItem", "offHandAsMain"].includes(event.target?.id)) refreshActions();
         };
         document.addEventListener("change", onSlotChange);
         // 裝備或卸除會改變這一筆的數量與裝備位置。
@@ -1568,7 +1574,7 @@
         mainHand: handFromInventory("main"),
         offHand: handFromInventory("off"),
         armor: fieldValue("armor"),
-        shield: document.getElementById("offHandAsMain")?.checked === true && document.getElementById("main2Shield")?.checked === true
+        shield: main2ShieldRequest()
       });
       syncEquippedSlots({ restoring: true });
     }
@@ -1625,7 +1631,7 @@
       const trigger = event.target.closest?.("[data-starting-equipment]");
       if (trigger) openStartingEquipmentDialog(trigger);
     });
-    ["mainHand", "offHand", "armor", "main2Shield", "offHandAsMain", "str", "race"].forEach((id) => {
+    ["mainHand", "offHand", "armor", "main2Shield", "main2ShieldItem", "offHandAsMain", "str", "race"].forEach((id) => {
       document.getElementById(id)?.addEventListener("change", render);
     });
     ["money-balance-cp", "money-balance-sp", "money-balance-gp", "money-balance-pp", "money-balance-ep"].forEach((id) => {
