@@ -90,6 +90,8 @@
         "effects": { "$ref": "#/definitions/effects" },
         "displayName": { "type": "string", "minLength": 1, "description": "選定後的顯示名稱樣板：{base} 為基本款，{選項 ID} 為該選項的 label。省略時為「名稱（基本款、選項）」。" },
         "consumable": { "const": true, "description": "用掉就減 1。" },
+        "manualEffect": { "const": true, "description": "角色卡不會自動套用這件物品的效果，商店與物品欄的說明下方會提示玩家依說明處理。" },
+        "equipmentName": { "type": "string", "minLength": 1, "description": "一般商店也賣的同一件物品的裝備品名（須是 equipment-data.js 的品名）：裝備詳情改顯示這件的說明。" },
         "weight": { "type": "number", "exclusiveMinimum": 0, "description": "每件磅數，只在譯文明寫時填。" },
         "text": { "type": "string", "minLength": 1, "description": "說明本文（逐字取自譯文，不含副標）。支援 _斜體_、**粗體**、「- 」清單、#### 小標與 GFM 表格，建置時轉成 HTML。" }
       }

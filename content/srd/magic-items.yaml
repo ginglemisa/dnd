@@ -9,6 +9,7 @@ items:
     rarity: uncommon
     attunement: false
     base: { any: [ medium-armor, heavy-armor ], except: [ 獸皮甲 ], label: "任意中甲或重甲，獸皮甲除外" }
+    manualEffect: true
     text: |-
       這套護甲以精金強化，精金是世上最堅硬的物質之一。當你穿戴著它時，任何對你的重擊都會變成普通命中。
   - id: ammunition-plus
@@ -30,6 +31,7 @@ items:
     effects: { attack: bonus, damage: bonus }
     displayName: "{base}{bonus}"
     consumable: true
+    manualEffect: true
     text: |-
       使用這件魔法彈藥進行的攻擊檢定與傷害擲骰，你獲得加值。加值由彈藥的稀有度決定。彈藥一旦擊中目標，就不再具有魔法。
 
@@ -61,6 +63,7 @@ items:
           - { value: plant, label: 植物 }
           - { value: undead, label: 不死生物 }
     consumable: true
+    manualEffect: true
     text: |-
       這種魔法彈藥專門用來屠殺特定類型的生物，該類型由DM選擇，或由DM在下表上擲骰隨機決定。若該類型的生物受到這種彈藥的傷害，該生物進行一次DC 17的體質豁免，失敗者額外受到6d10力場傷害，成功者額外傷害減半。
 
@@ -83,6 +86,7 @@ items:
     group: wearable
     rarity: rare
     attunement: true
+    manualEffect: true
     text: |-
       你穿戴這個護符時，你的體質為19。若你不穿戴它時體質已有19或更高，它對你沒有效果。
   - id: amulet-of-proof-against-detection-and-location
@@ -121,6 +125,7 @@ items:
     rarity: very-rare
     attunement: true
     base: { fixed: 盾牌 }
+    manualEffect: true
     text: |-
       手持這面盾牌時，你可以進行附贈動作使其活化。盾牌會躍入空中，並懸停在你的空間中保護你，如同你正在持用它一般，讓你的雙手空出來。盾牌會保持活化1分鐘，直到你進行附贈動作結束此效果，或直到你死亡或陷入失能狀態為止，屆時盾牌會落到地上，若你有一隻手空著則落入你手中。
   - id: apparatus-of-the-crab
@@ -185,6 +190,7 @@ items:
     rarity: legendary
     attunement: true
     base: { fixed: 全身板甲 }
+    manualEffect: true
     text: |-
       穿戴這件護甲時，你具有鈍擊、穿刺與揮砍傷害的抗性。
 
@@ -211,6 +217,7 @@ items:
           - { value: psychic, label: 心靈 }
           - { value: radiant, label: 光耀 }
           - { value: thunder, label: 雷鳴 }
+    manualEffect: true
     text: |-
       穿戴這件護甲時，你對一種傷害類型具有抗性。該類型由DM選擇，或由DM在下表上擲骰隨機決定。
 
@@ -229,6 +236,7 @@ items:
     rarity: rare
     attunement: true
     base: { any: [ light-armor, medium-armor, heavy-armor ], label: "任意輕甲、中甲或重甲" }
+    manualEffect: true
     text: |-
       穿戴這件護甲時，你對下列傷害類型之一具有抗性：鈍擊、穿刺或揮砍。該類型由DM選擇或隨機決定。
 
@@ -241,6 +249,7 @@ items:
     rarity: rare
     attunement: true
     base: { fixed: 盾牌 }
+    manualEffect: true
     text: |-
       當你持用這面盾牌時，你對遠程攻擊檢定的護甲等級獲得+2加值。此加值與盾牌原有的AC加值疊加。
 
@@ -390,6 +399,7 @@ items:
     group: wearable
     rarity: rare
     attunement: true
+    manualEffect: true
     text: |-
       穿戴這條腰帶時，你獲得以下益處：
 
@@ -423,6 +433,7 @@ items:
           - { value: fire, label: 火, rarity: very-rare, score: 25 }
           - { value: cloud, label: 雲, rarity: legendary, score: 27 }
           - { value: storm, label: 風暴, rarity: legendary, score: 29 }
+    manualEffect: true
     text: |-
       穿戴這條腰帶時，你的力量會變為腰帶賦予的屬性值。巨人的種類決定該屬性值（見下表）。若你不穿戴腰帶時的力量等於或高於腰帶的屬性值，此物品對你沒有任何效果。
 
@@ -442,6 +453,7 @@ items:
     attunement: true
     base: { from: [ 戰斧, 巨斧, 長戟 ] }
     effects: { attack: 1, damage: 1 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。此外，當你與這件武器同調時，你已達到的每一個等級都使你的生命值上限增加1。
 
@@ -478,6 +490,7 @@ items:
     group: wearable
     rarity: rare
     attunement: true
+    manualEffect: true
     text: |-
       穿戴這雙靴子時，你可以進行附贈動作，將靴跟互相敲擊。若你這麼做，靴子會使你的速度加倍，且任何對你進行藉機攻擊的生物，其攻擊檢定具有劣勢。若你再次敲擊靴跟，就會結束此效果。
 
@@ -490,6 +503,7 @@ items:
     group: wearable
     rarity: uncommon
     attunement: true
+    manualEffect: true
     text: |-
       穿戴這雙靴子時，你的速度變為30呎（除非你的速度原本更高），且你的速度不會因為你攜帶超過負重能力的重量或穿戴重甲而降低。
 
@@ -528,6 +542,7 @@ items:
     group: wearable
     rarity: uncommon
     attunement: true
+    manualEffect: true
     text: |-
       穿戴這對護腕時，你擁有長弓與短弓的熟練，且使用此類武器進行的傷害擲骰獲得+2加值。
   - id: bracers-of-defense
@@ -839,6 +854,7 @@ items:
     attunement: false
     base: { fixed: 匕首 }
     effects: { attack: 1, damage: 1 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
 
@@ -851,6 +867,7 @@ items:
     rarity: very-rare
     attunement: true
     base: { from: [ 巨劍, 長劍, 刺劍, 彎刀, 短劍 ] }
+    manualEffect: true
     text: |-
       你可以進行附贈動作，把這件魔法武器拋向空中。這麼做時，武器開始懸停，飛行至多30呎，並攻擊其自身5呎內你選擇的一個生物。武器使用你的攻擊檢定，並在傷害擲骰上加上你的屬性調整值。
 
@@ -937,6 +954,7 @@ items:
     attunement: true
     base: { any: [ melee-weapon ], label: 任意近戰武器 }
     effects: { attack: 3, damage: 3 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+3加值。
 
@@ -950,6 +968,7 @@ items:
     attunement: true
     base: { any: [ light-armor, medium-armor, heavy-armor ], label: "任意輕甲、中甲或重甲" }
     effects: { ac: 1 }
+    manualEffect: true
     text: |-
       穿戴這件護甲時，你獲得+1護甲等級加值，並且你懂深淵語。此外，護甲上帶爪的護手讓你的徒手打擊造成1d8揮砍傷害，而非一般的鈍擊傷害，並且你的徒手打擊的攻擊檢定與傷害擲骰獲得+1加值。
 
@@ -1017,6 +1036,7 @@ items:
           - { value: silver, label: 銀龍 }
           - { value: white, label: 白龍 }
     effects: { ac: 1 }
+    manualEffect: true
     text: |-
       龍鱗甲由某一種龍的鱗片製成。有時龍會收集自己脫落的鱗片並贈予他人。其他時候，獵人會小心保存死去巨龍的獸皮。無論是哪種情況，_龍鱗甲_都極為珍貴。
 
@@ -1040,6 +1060,7 @@ items:
     attunement: false
     base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
     effects: { attack: 1, damage: 1 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
 
@@ -1092,6 +1113,7 @@ items:
     attunement: false
     base: { from: [ 半身板甲, 全身板甲 ] }
     effects: { ac: 2 }
+    manualEffect: true
     text: |-
       穿戴這件護甲時，你獲得+2護甲等級加值。此外，若有效果違背你的意願使你沿著地面移動，你可以進行反應動作，將你被移動的距離減少最多10呎。
   - id: dwarven-thrower
@@ -1103,6 +1125,7 @@ items:
     attunement: 由矮人或已與矮人腰帶同調的生物
     base: { fixed: 戰錘 }
     effects: { attack: 3, damage: 3 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+3加值。它具有投擲屬性，一般射程為20呎，遠射程為60呎。當你以這件武器進行遠程攻擊並命中時，它額外造成1d8力場傷害；若目標是巨人，則額外造成2d8力場傷害。無論命中或未命中，武器隨即飛回你的手中。
   - id: efficient-quiver
@@ -1183,6 +1206,7 @@ items:
     attunement: false
     base: { from: [ 鎖子甲, 半身鎖甲 ] }
     effects: { ac: 1 }
+    manualEffect: true
     text: |-
       穿戴這件護甲時，你獲得+1護甲等級加值。即使你未受過中甲或重甲的訓練，也視為受過這件護甲的訓練。
   - id: energy-bow
@@ -1194,6 +1218,7 @@ items:
     attunement: true
     base: { from: [ 長弓, 短弓 ] }
     effects: { attack: 1, damage: 1 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值，這件武器沒有弓弦。每次你以射擊的姿勢拉開手臂時，一支由金色能量構成的魔法箭矢便會出現，已搭好並準備發射。這件武器產生的箭矢命中時造成力場傷害而非穿刺傷害，並在命中或未命中目標之後消失。在消失之前，這支箭矢在半徑20呎內散發明亮光照，並再向外20呎散發微光光照。
 
@@ -1371,6 +1396,7 @@ items:
     rarity: rare
     attunement: true
     base: { any: [ melee-weapon ], label: 任意近戰武器 }
+    manualEffect: true
     text: |-
       手持這件魔法武器時，你可以進行附贈動作並使用命令詞，使烈焰包覆武器造成傷害的部分。這些火焰在半徑40呎內散發明亮光照，並再向外40呎散發微光光照。武器燃燒期間，命中時額外造成2d6火焰傷害。火焰持續到你進行附贈動作再次下達命令，或你丟下、收起或將武器入鞘為止。
   - id: folding-boat
@@ -1402,6 +1428,7 @@ items:
     rarity: very-rare
     attunement: true
     base: { from: [ 長柄刀, 巨劍, 長劍, 刺劍, 彎刀, 短劍 ] }
+    manualEffect: true
     text: |-
       當你以這件魔法武器進行攻擊檢定並命中時，目標額外受到1d6冷凍傷害。此外，只要你手持這件武器，你對火焰傷害具有抗性。
 
@@ -1416,6 +1443,7 @@ items:
     group: wearable
     rarity: uncommon
     attunement: true
+    manualEffect: true
     text: |-
       穿戴這副護手時，你的力量為19。若不穿戴護手時你的力量就已達到19或更高，護手對你沒有效果。
   - id: gem-of-brightness
@@ -1457,6 +1485,7 @@ items:
     attunement: false
     base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
     effects: { attack: 1, damage: 1 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
 
@@ -1470,6 +1499,7 @@ items:
     attunement: false
     base: { fixed: 鑲釘皮甲 }
     effects: { ac: 1 }
+    manualEffect: true
     text: |-
       穿戴這件護甲時，你獲得+1護甲等級加值。你也可以進行附贈動作，使護甲呈現出一般衣物或其他種類護甲的外觀。你決定它的外觀，包括顏色、款式與配件，但護甲仍保有其正常的體積與重量。這種幻象外觀持續到你再次使用此特性，或脫下護甲為止。
   - id: gloves-of-missile-snaring
@@ -1500,6 +1530,7 @@ items:
     group: wearable
     rarity: uncommon
     attunement: false
+    manualEffect: true
     text: |-
       這雙手套穿戴時無法被察覺。穿戴它們時，你進行敏捷（巧手）檢定獲得+5加值。
   - id: goggles-of-night
@@ -1521,6 +1552,7 @@ items:
     attunement: true
     base: { from: [ 巨錘, 戰錘 ] }
     effects: { attack: 1, damage: 1 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
 
@@ -1597,6 +1629,7 @@ items:
     group: wearable
     rarity: uncommon
     attunement: true
+    manualEffect: true
     text: |-
       你穿戴這條頭帶時，你的智力為19。若你不靠它智力就已是19或更高，它對你沒有效果。
   - id: helm-of-brilliance
@@ -1660,6 +1693,7 @@ items:
     attunement: 由聖騎士
     base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
     effects: { attack: 3, damage: 3 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+3加值。你用它命中邪魔或不死生物時，該生物額外受到2d10光耀傷害。
 
@@ -1861,6 +1895,7 @@ items:
     rarity: uncommon
     attunement: false
     base: { fixed: 標槍 }
+    manualEffect: true
     text: |-
       每次你以這件魔法武器進行攻擊檢定並命中時，你可以讓它造成閃電傷害而非穿刺傷害。
 
@@ -1884,6 +1919,7 @@ items:
     attunement: true
     base: { from: [ 長柄刀, 巨劍, 長劍, 刺劍, 彎刀, 鐮刀, 短劍 ] }
     effects: { attack: 1, damage: 1, saves: 1 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。只要武器在你身上，你的豁免也獲得+1加值。
 
@@ -1898,6 +1934,7 @@ items:
     rarity: rare
     attunement: true
     base: { fixed: 硬頭錘 }
+    manualEffect: true
     text: |-
       你用這件魔法武器命中邪魔或不死生物時，該生物額外受到2d6光耀傷害。若目標在承受此傷害後生命值為25點或更少，它必須成功通過DC 15的感知豁免，否則被摧毀。豁免成功時，該生物陷入恐慌狀態，持續到你的下個回合結束。
 
@@ -1911,6 +1948,7 @@ items:
     attunement: false
     base: { fixed: 硬頭錘 }
     effects: { attack: 1, damage: 1 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。當你使用這件武器攻擊構裝生物時，加值增加為+3。
 
@@ -1923,6 +1961,7 @@ items:
     rarity: rare
     attunement: true
     base: { fixed: 硬頭錘 }
+    manualEffect: true
     text: |-
       這件魔法武器有3次充能，並且每天黎明恢復1d3次已消耗的充能。手持武器時，你可以進行魔法動作並消耗1次充能，從中釋放一波恐懼。你30呎內由你選擇的每個生物必須成功通過DC 15的感知豁免，否則陷入恐慌狀態1分鐘。在以這種方式陷入恐慌狀態期間，生物必須把回合花在盡可能遠離你的移動上，且不能進行藉機攻擊。它的動作只能用來進行疾走動作，或嘗試脫離阻止它移動的效果。若它無處可移動，該生物可以進行閃避動作。在其每個回合結束時，生物重複進行該豁免，成功則結束其身上的此效果。
   - id: mantle-of-spell-resistance
@@ -2057,6 +2096,7 @@ items:
     rarity: uncommon
     attunement: false
     base: { any: [ medium-armor, heavy-armor ], except: [ 獸皮甲 ], label: "任意中甲或重甲，獸皮甲除外" }
+    manualEffect: true
     text: |-
       秘銀是一種輕盈而柔韌的金屬。以這種材料製成的護甲可以穿在一般衣物底下。若該護甲原本會使敏捷（隱匿）檢定具有劣勢，或有力量需求，其秘銀版本就沒有這些限制。
   - id: mysterious-deck
@@ -2229,6 +2269,7 @@ items:
     attunement: true
     base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
     effects: { attack: 2, damage: 2 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+2加值。
 
@@ -2241,6 +2282,7 @@ items:
     rarity: very-rare
     attunement: true
     base: { from: [ 長弓, 短弓 ] }
+    manualEffect: true
     text: |-
       當你把箭搭上這把弓時，它會以精靈語低語：「迅速擊敗我的敵人。」當你用這件武器進行遠程攻擊時，你可以說出或以手語打出下列命令詞：「願你這傷害過我的人迅速死亡。」你攻擊的目標會成為你的死敵，直到它死亡，或直到7天後的黎明為止。你同一時間只能有一個這樣的死敵。當你的死敵死亡後，你可以在下次黎明後選擇新的死敵。
 
@@ -2375,6 +2417,7 @@ items:
     rarity: legendary
     attunement: true
     base: { from: [ 半身板甲, 全身板甲 ] }
+    manualEffect: true
     text: |-
       穿戴這件護甲時，你可以進行魔法動作並使用命令詞，獲得_以太化_法術的效果。若你脫下護甲，或進行魔法動作重複命令詞，該法術會立即結束。護甲的此特性直到下次黎明前都無法再次使用。
   - id: portable-hole
@@ -2484,6 +2527,7 @@ items:
           - { value: cloud, label: 雲, rarity: very-rare, score: 27 }
           - { value: storm, label: 風暴, rarity: legendary, score: 29 }
     consumable: true
+    manualEffect: true
     text: |-
       喝下這瓶藥水時，你的力量值會改變，持續1小時。巨人的類型決定該力量值（見下表）。若你的力量等於或高於該力量值，藥水對你沒有效果。
 
@@ -2524,6 +2568,7 @@ items:
           - { value: superior, label: 強效, rarity: rare, heal: "8d4 + 8" }
           - { value: supreme, label: 極效, rarity: very-rare, heal: "10d4 + 20" }
     consumable: true
+    equipmentName: 治療藥水
     text: |-
       你喝下這瓶藥水時會恢復生命值。恢復的生命值多寡取決於藥水的稀有度，如下表所示。
 
@@ -2681,6 +2726,7 @@ items:
     attunement: true
     base: { fixed: 長棍 }
     effects: { attack: 2, damage: 2 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+2加值。
 
@@ -3042,6 +3088,7 @@ items:
     group: wearable
     rarity: legendary
     attunement: "由術士、契術師或法師"
+    manualEffect: true
     text: |-
       這件優雅的衣物以精緻的布料製成，並裝飾著符文。
 
@@ -3111,6 +3158,7 @@ items:
     category: rod
     rarity: very-rare
     attunement: true
+    manualEffect: true
     text: |-
       這根權杖具有下列特性。
 
@@ -3244,6 +3292,7 @@ items:
     attunement: true
     base: { fixed: 彎刀 }
     effects: { attack: 2, damage: 2 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+2加值。此外，你可以在自己的每個回合以附贈動作使用它進行一次攻擊。
   - id: sending-stones
@@ -3266,6 +3315,7 @@ items:
     rarity: uncommon
     attunement: false
     base: { fixed: 盾牌 }
+    manualEffect: true
     text: |-
       手持這面盾牌時，你的先攻擲骰與感知（察覺）檢定具有優勢。盾牌上飾有一個眼睛的符號。
   - id: shield-plus
@@ -3296,6 +3346,7 @@ items:
     rarity: rare
     attunement: true
     base: { fixed: 盾牌 }
+    manualEffect: true
     text: |-
       手持這面盾牌時，你對遠程武器攻擊造成的傷害具有抗性。
 
@@ -3309,6 +3360,7 @@ items:
     attunement: true
     base: { fixed: 盾牌 }
     effects: { ac: 2 }
+    manualEffect: true
     text: |-
       手持這面盾牌時，你獲得+2的AC加值。此加值與盾牌本身的一般AC加值相加。
 
@@ -3348,6 +3400,7 @@ items:
     rarity: very-rare
     attunement: true
     base: { fixed: 盾牌 }
+    manualEffect: true
     text: |-
       手持這面盾牌時，你對法術與其他魔法效果的豁免具有優勢，且法術攻擊檢定對你具有劣勢。
   - id: spell-scroll
@@ -3372,6 +3425,7 @@ items:
           - { value: 8, label: "8環", rarity: very-rare, saveDc: 18, attackBonus: 10 }
           - { value: 9, label: "9環", rarity: legendary, saveDc: 19, attackBonus: 11 }
     consumable: true
+    equipmentName: 法術卷軸
     text: |-
       _法術卷軸_上寫有單一法術的文字，以神秘的密碼書寫。若該法術在你的法術列表上，你可以閱讀卷軸並施放其法術，不需要材料成分。否則，卷軸無法辨讀。藉由閱讀卷軸來施放法術，需要該法術的一般施法時間。法術施放完畢後，卷軸化為塵土。若施法被打斷，卷軸不會消失。
 
@@ -3702,6 +3756,7 @@ items:
     attunement: true
     base: { fixed: 長劍 }
     effects: { attack: 2, damage: 2 }
+    manualEffect: true
     text: |-
       這件物品看起來像是一個劍柄。
 
@@ -3718,6 +3773,7 @@ items:
     rarity: rare
     attunement: true
     base: { from: [ 長柄刀, 巨劍, 長劍, 刺劍, 彎刀, 短劍 ] }
+    manualEffect: true
     text: |-
       當你以這件魔法武器攻擊一個生物，且攻擊檢定的d20擲出20時，若該目標不是構裝生物或不死生物，則額外受到15點黯蝕傷害，且你獲得等同於所受黯蝕傷害量的臨時生命值。
   - id: sword-of-sharpness
@@ -3728,6 +3784,7 @@ items:
     rarity: very-rare
     attunement: true
     base: { from: [ 長柄刀, 巨劍, 長劍, 彎刀 ] }
+    manualEffect: true
     text: |-
       當你以這件魔法武器攻擊一個物體並命中時，對目標的武器傷害骰取最大值。
 
@@ -3740,6 +3797,7 @@ items:
     rarity: rare
     attunement: true
     base: { from: [ 長柄刀, 巨劍, 長劍, 刺劍, 彎刀, 短劍 ] }
+    manualEffect: true
     text: |-
       當你以這件魔法武器的攻擊命中一個生物時，目標額外受到2d6黯蝕傷害，並且必須成功通過DC 15的體質豁免，否則在1小時內無法恢復生命值。目標在其每個回合結束時重複進行該豁免，成功則結束其身上的此效果。
   - id: talisman-of-pure-good
@@ -3750,6 +3808,7 @@ items:
     group: wearable
     rarity: legendary
     attunement: 由牧師或聖騎士
+    manualEffect: true
     text: |-
       這個護符是善良的強大象徵。觸碰護符的邪魔或不死生物會受到8d6光耀傷害，且每次在其回合結束時仍握著或攜帶護符，就再次受到該傷害。
 
@@ -3774,6 +3833,7 @@ items:
     group: wearable
     rarity: legendary
     attunement: true
+    manualEffect: true
     text: |-
       這件物品象徵不知悔改的邪惡。不是邪魔也不是不死生物的生物接觸護符時，受到8d6黯蝕傷害，之後每次在其握著或攜帶護符的情況下結束回合時，再次受到同樣的傷害。
 
@@ -3788,6 +3848,7 @@ items:
     rarity: very-rare
     attunement: true
     base: { fixed: 巨棒 }
+    manualEffect: true
     text: |-
       當你與這件魔法武器同調時，你的力量為20，除非你的力量原本就等於或高於該數值。此武器對其擊中的任何生物造成額外1d8雷鳴傷害，並對其擊中、未被穿戴或攜帶的物體造成額外3d8雷鳴傷害。
 
@@ -3834,6 +3895,7 @@ items:
     rarity: uncommon
     attunement: true
     base: { fixed: 三叉戟 }
+    manualEffect: true
     text: |-
       這件魔法武器有3次充能，每天黎明恢復1d3次已消耗的充能。你攜帶它時，可以消耗1次充能，從中對一隻具有游泳速度的野獸施放_支配野獸_（豁免DC 15）。
   - id: universal-solvent
@@ -3857,6 +3919,7 @@ items:
     rarity: rare
     attunement: false
     base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
+    manualEffect: true
     text: |-
       這件魔法武器對其擊中的任何生物造成額外2d6傷害。此額外傷害的類型與武器的一般傷害類型相同。
   - id: vorpal-sword
@@ -3868,6 +3931,7 @@ items:
     attunement: true
     base: { from: [ 長柄刀, 巨劍, 長劍, 彎刀 ] }
     effects: { attack: 3, damage: 3 }
+    manualEffect: true
     text: |-
       使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+3加值。此外，此武器無視對揮砍傷害的抗性。
 
@@ -4008,6 +4072,7 @@ items:
           - { value: 2, label: "+2", rarity: rare }
           - { value: 3, label: "+3", rarity: very-rare }
     displayName: "戰法魔杖{bonus}"
+    manualEffect: true
     text: |-
       手持這根魔杖時，你的法術攻擊檢定獲得一個由魔杖稀有度決定的加值。此外，你進行法術攻擊檢定時無視半掩蔽。
   - id: wand-of-web
@@ -4086,6 +4151,7 @@ items:
     rarity: uncommon
     attunement: true
     base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
+    manualEffect: true
     text: |-
       只要此武器在你伸手可及之處且你與它同調，你和你30呎內的盟友就獲得以下益處。
 

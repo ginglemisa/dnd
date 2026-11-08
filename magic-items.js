@@ -21,6 +21,11 @@
     return rule(id) ? viewOf(id) : null;
   }
 
+  // 一般商店也賣的物品（治療藥水、法術卷軸）：由裝備品名找到對應的魔法物品；沒有時為 null。
+  function getByEquipmentName(name) {
+    return getAll().find(item => item.equipmentName === name) || null;
+  }
+
   function getAll() {
     return Object.keys(magicItemRules).map(viewOf);
   }
@@ -163,6 +168,7 @@
   window.MagicItemCatalog = Object.freeze({
     getAll,
     get,
+    getByEquipmentName,
     getCategories,
     getBaseChoices,
     getDisplayName,

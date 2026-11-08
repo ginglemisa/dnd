@@ -700,12 +700,14 @@ SRD 5.2.1「魔法物品 A–Z」共 258 件，全部寫在單一檔 `content/sr
 | `effects` | 只放角色卡會自動計算的恆定固定數值：`attack`、`damage`（武器攻擊與傷害）、`ac`、`saves`；值是正整數，或 `bonus`（取自 `bonus` 選項）。`condition` 是 `ac`／`saves` 的生效條件：`unarmored`（未穿戴護甲且未使用盾牌）、`held`（手持這件物品）。對特定目標才有的加值、只對遠程的 AC、可轉移的加值等條件式效果不寫，留在說明文字。 |
 | `displayName` | 選定後的顯示名稱樣板，`{base}` 為基本款、`{選項 id}` 為該選項的 `label`，例如 `"{base}{bonus}"`。省略時為「名稱（可選的基本款、選項）」，例如「治療藥水（高等）」「焰舌（長劍）」；固定基本款不列入。 |
 | `consumable` | `true`：用掉就減 1（藥水、卷軸、彈藥、粉、珠等）。 |
+| `manualEffect` | `true`：角色卡不會自動套用這件物品的效果，商店視窗與物品欄視窗的說明下方會多一行提示。 |
+| `equipmentName` | 一般商店也賣的同一件物品（治療藥水、法術卷軸）的裝備品名，須是 `equipment-data.js` 的品名。裝備詳情、商店名稱連結與物品欄視窗改顯示這件的說明。 |
 | `weight` | 每件磅數，只有譯文明寫時才填。 |
 | `text` | 說明本文，不含類別與稀有度的副標（副標由上面的欄位組成）。段落之間空一行，支援 `_斜體_`、`**粗體**`、「- 」清單、`####` 小標與 GFM 表格；不可有 HTML。註腳的星號寫成 `*`。 |
 
 - 建置檢查：格式、`id` 與 `nameEn` 對應、中英文名不重複、奇物的 `group`、`base` 的品名與分類、選項與稀有度的對應、`bonus` 與傷害類型、`effects`、`displayName` 的代入標記、說明沒有英文內文，以及 `magic-item-id-baseline.json`（`items` 為物品 id，`options` 為「物品 id:選項 id:選項值」）。
 - `npm run build` 產生根目錄的 `magic-item-content.generated.js`（規則與名稱，網頁一開始就載入）與 `magic-item-text.generated.js`（說明本文的 HTML，第一次需要時才載入，離線版內嵌）。Markdown 在建置時轉成 HTML，執行時不解析。
-- 網站經 `magic-items.js` 的 `MagicItemCatalog` 讀取，不從顯示文字反推規則：`getAll()`、`get(id)`、`getCategories()`、`getBaseChoices(id)`、`getDisplayName(id, selection)`、`getEffects(id, selection)`、`getRarity(id, selection)`、`getRarityLabel(rarity)`、`getSubtitle(id)`、`getHeal(id, selection)`、`loadText()`、`getText(id)`（回傳 `{ html }` 的 Promise）。`selection` 是 `{ base: 基本款品名, <選項 id>: 選項值 }`。
+- 網站經 `magic-items.js` 的 `MagicItemCatalog` 讀取，不從顯示文字反推規則：`getAll()`、`get(id)`、`getByEquipmentName(name)`、`getCategories()`、`getBaseChoices(id)`、`getDisplayName(id, selection)`、`getEffects(id, selection)`、`getRarity(id, selection)`、`getRarityLabel(rarity)`、`getSubtitle(id)`、`getHeal(id, selection)`、`loadText()`、`getText(id)`（回傳 `{ html }` 的 Promise）。`selection` 是 `{ base: 基本款品名, <選項 id>: 選項值 }`。
 
 ## 檢查與預覽
 

@@ -87,8 +87,9 @@ function checkOptions(item, at, damageLabels, errors) {
   if (item.rarityText && item.rarity !== "varies") errors.push(`${at}：rarityText 只用於 varies`);
 }
 
-function checkItem(item, index, { lists, known, damageLabels }, errors) {
+function checkItem(item, index, { lists, known, damageLabels, equipmentNames }, errors) {
   const at = `${WHERE} items[${index}] ${item.id}`;
+  if (item.equipmentName && !equipmentNames.has(item.equipmentName)) errors.push(`${at}：equipmentName「${item.equipmentName}」不是 equipment-data.js 的品名`);
   if (item.id !== expectedId(item.nameEn)) errors.push(`${at}：id 應為 ${expectedId(item.nameEn)}（由 nameEn 轉成）`);
   if (item.category === "wondrous" && !item.group) errors.push(`${at}：奇物須有 group`);
   if (item.category !== "wondrous" && item.group) errors.push(`${at}：只有奇物寫 group`);
@@ -116,7 +117,7 @@ function loadMagicItems() {
   const data = readYamlFile(FILE);
   if (!validate(data)) throw new ContentError(`魔法物品內容檢查失敗：\n- ${schemaErrors(validate, WHERE).join("\n- ")}`);
   const lists = loadBaseLists();
-  const context = { lists, known: knownEquipment(lists), damageLabels: loadSpellCatalog().damageTypeLabels };
+  const context = { lists, known: knownEquipment(lists), damageLabels: loadSpellCatalog().damageTypeLabels, equipmentNames: new Set(Object.keys(loadEquipmentData().EQUIPMENT_ENGLISH_NAMES)) };
   const errors = [];
   data.items.forEach((item, index) => checkItem(item, index, context, errors));
   ["id", "name", "nameEn"].forEach(field => checkUnique(data.items, field, errors));
