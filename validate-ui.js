@@ -4338,7 +4338,7 @@ async function verifyInventoryPersistence(browser, url) {
       assert.deepEqual(await textSnapshot(textShared), [true, 0, "巨劍", "true", true], "share restores text mode");
     } finally { await textShared.close(); }
     // Magic items keep their id and options through autosave, JSON and share; old saves without magic are unaffected.
-    const magicState = { class: "fighter", level: "1", __inventory: { version: 1, items: [
+    const magicState = { class: "fighter", level: "1", mainHand: "", offHand: "", armor: "", __inventory: { version: 1, items: [
       { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } },
       { uid: "bag", quantity: 1, magic: { id: "bag-of-holding" } },
       { uid: "lost", quantity: 2, magic: { id: "no-such-item", foo: "bar" } },
