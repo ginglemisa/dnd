@@ -9,12 +9,13 @@
 | `validate.js` | 譯文檢查：禁用字與用語、表格列數、段落與斜體小標數、骰式與數字（譯文 vs 英文）、網站版標籤是否沿用；`--srd` 另與 SRD 英文逐項比對 |
 | `parse-srd.js` | 解析 SRD 5.2.1 英文 Markdown（`spells.md`），供 `validate.js --srd` 比對 |
 | `glossary.md` | 翻譯術語表（單位、學派、傷害類型、狀態、規則用語），與網站一致 |
+| `reviewed-suspects.json` | 人工確認過、不需修改的疑點與理由；`validate.js` 不再列出，清單項目不再出現時會提示刪除 |
 
 ```bash
 node tools/spell-reference/validate.js --srd <SRD 5.2.1 的 spells.md 路徑>
 ```
 
-「疑點」只是提示（例如骰式次數與英文不同、網站版的標籤在譯文沒有出現），需要人工確認；錯誤才會讓指令失敗，加 `--strict` 則疑點也算失敗。
+「疑點」只是提示（例如骰式次數與英文不同、網站版的標籤在譯文沒有出現），需要人工確認；錯誤才會讓指令失敗，加 `--strict` 則疑點也算失敗。確認不需修改的疑點，把 `疑點 ` 後面的整段文字連同理由加進 `reviewed-suspects.json`。
 
 ## 翻譯與比對的約定
 

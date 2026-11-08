@@ -4,7 +4,7 @@
 //   --srd：另外與 SRD 5.2.1 英文 Markdown 逐項比對（英文原文、材料、觸發條件與規則欄位是否被改動），並確認共 339 個（戲法 27）。
 //          職業清單比對 srd.classes；沒寫時比對 classes（表示網站法表與 SRD 相同）。
 //   --strict：「疑點」也算失敗（預設只列出供人工確認）。
-//   有帶 id 時只檢查那幾個。「疑點」是需要人工確認的提示，不一定是錯誤。
+//   有帶 id 時只檢查那幾個。「疑點」是需要人工確認的提示，不一定是錯誤；確認不需修改的寫進 reviewed-suspects.json，之後不再列出。
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -12,6 +12,7 @@ const { readYamlFile, listYaml, CONTENT_DIR } = require('../content/yaml');
 const { parseSrdSpells } = require('./parse-srd');
 
 const SPELL_DIR = path.join(CONTENT_DIR, 'srd', 'spells');
+const REVIEWED_FILE = path.join(__dirname, 'reviewed-suspects.json');
 
 const args = process.argv.slice(2);
 const flag = name => args.includes(name);
@@ -152,10 +153,17 @@ function main() {
     const cantrips = docs.filter(d => d.level === 0).length;
     if (docs.length !== 339 || cantrips !== 27) fail('total', `應為 339 個（戲法 27），實際 ${docs.length}（戲法 ${cantrips}）`);
   }
-  suspects.forEach(s => console.log(`疑點 ${s}`));
+  // 人工確認過、不需修改的疑點不再列出；清單裡已不再出現的項目提示刪除（只在完整檢查時判斷）
+  const reviewed = new Set(JSON.parse(fs.readFileSync(REVIEWED_FILE, 'utf8')).items.map(item => item.suspect));
+  const fresh = suspects.filter(s => !reviewed.has(s));
+  const stale = onlyIds.length ? [] : [...reviewed].filter(s => !suspects.includes(s));
+  fresh.forEach(s => console.log(`疑點 ${s}`));
+  stale.forEach(s => console.log(`已確認清單的項目已不再出現，可從 reviewed-suspects.json 刪除：${s}`));
   failures.forEach(f => console.error(`錯誤 ${f}`));
-  console.log(`檢查 ${docs.length} 個法術：錯誤 ${failures.length}、疑點 ${suspects.length}`);
-  process.exit(failures.length || (flag('--strict') && suspects.length) ? 1 : 0);
+  const reviewedCount = suspects.length - fresh.length;
+  const note = reviewedCount ? `（另有 ${reviewedCount} 個已確認，見 reviewed-suspects.json）` : '';
+  console.log(`檢查 ${docs.length} 個法術：錯誤 ${failures.length}、疑點 ${fresh.length}${note}`);
+  process.exit(failures.length || (flag('--strict') && fresh.length) ? 1 : 0);
 }
 
 main();
