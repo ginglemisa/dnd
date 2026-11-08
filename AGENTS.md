@@ -93,6 +93,7 @@
 | `validate-tabletop-spellcasting.js`（純 Node） | 法術 ID／metadata、法術位、專注、自動擲骰 |
 | `tools/spell-reference/validate.js --srd <spells.md>`（純 Node，不在 `npm test`） | 法術 SRD 譯文與 SRD 職業清單；需要本機的 SRD 5.2.1 英文 `spells.md`，見 [tools/spell-reference/README.md](tools/spell-reference/README.md) |
 | `tools/contrast-audit.js`（不在 `npm test`；`--external` 會連到第三方網站） | 四種外觀的文字對比與 token 表；調整主題色時使用，只回報不判定失敗 |
+| `tools/visual-snapshot.js check`（不在 `npm test`；用法見檔頭，約 25 分鐘，`--quick` 約 7 分鐘） | CSS 純重構時使用：以 `main`（或 `--base` 指定的 ref）為基準，比對四種外觀、多種寬度下角色卡各頁、跑團、分享模式與主要視窗的 computed style、位置大小與截圖；有差異就失敗並產生 HTML 報告。快照放在系統暫存資料夾 |
 | `validate-action-metadata.js` | 動作定義與摘要、跑團操作與偏好、專長來源與資格、武器／AC、自創法術與自訂骰式 |
 | `validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源；持續法術對 AC／速度的影響 |
 | `validate-spellbook.js` | 法術書、準備與來源、職業／手動記憶、舊資料遷移、法術頁版面 |
