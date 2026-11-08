@@ -474,6 +474,21 @@
     return actionRow(text, control);
   }
 
+  // 防禦者的加值分配（物品視窗與跑團武器卡）：0 到全部加值轉到 AC，攻擊與傷害減少、AC 增加相同數值；不能轉移時回傳 null。不存檔。
+  function buildBonusTransferControl(entry) {
+    const transfer = api().getBonusTransfer(entry.uid);
+    if (!transfer) return null;
+    const stepper = buildStepper(transfer.value, `${api().getLabel(entry)}轉到 AC 的加值`, {
+      min: 0,
+      max: transfer.max,
+      onChange: value => api().setBonusTransfer(entry.uid, value)
+    });
+    const wrap = el("div", "inventory-bonus-transfer");
+    wrap.dataset.bonusTransfer = entry.uid;
+    wrap.append(el("span", "inventory-bonus-transfer__label", "加值轉到 AC"), stepper.wrap);
+    return wrap;
+  }
+
   /**
    * 持有區的互動列：裝備／卸除、檢定、使用次數、飲用、投擲與塗抹。ctx.afterUse(result) 在數量或次數改變後同步視窗，ctx.close() 在裝備或卸除時關閉視窗。
    * 檢定與傷害骰只在擲骰功能開啟時顯示。回傳 null 表示這件物品沒有互動。
@@ -571,6 +586,8 @@
       }
     }
     if (entry.magic && magicRule?.attunement) rows.push(buildAttunementRow(entry, magicRule, label));
+    const transfer = entry.magic ? buildBonusTransferControl(entry) : null;
+    if (transfer) rows.push(actionRow("可把部分或全部加值轉到 AC，攻擊與傷害會減少相同數值；重新整理後回到 0。", transfer));
     if (!rows.length) return null;
     const section = el("div", "inventory-item-actions");
     section.append(...rows);
@@ -699,14 +716,14 @@
   }
 
   // min 為 0 時（持有物品的視窗）數量可以減到 0，按「完成」時再確認是否刪除。
-  function buildStepper(value, label, { min = 1 } = {}) {
+  function buildStepper(value, label, { min = 1, max = api().LIMITS.quantity, onChange = null } = {}) {
     const wrap = el("div", "inventory-stepper");
     const minus = button("inventory-stepper__button", "−");
     minus.setAttribute("aria-label", `減少${label}`);
     const input = el("input", "inventory-stepper__input");
     input.type = "number";
     input.min = String(min);
-    input.max = String(api().LIMITS.quantity);
+    input.max = String(max);
     input.step = "1";
     input.inputMode = "numeric";
     input.value = String(value);
@@ -716,10 +733,12 @@
     plus.setAttribute("aria-label", `增加${label}`);
     const read = () => {
       const parsed = Math.floor(Number(input.value));
-      return Math.min(api().LIMITS.quantity, Math.max(min, Number.isFinite(parsed) && input.value.trim() !== "" ? parsed : 1));
+      return Math.min(max, Math.max(min, Number.isFinite(parsed) && input.value.trim() !== "" ? parsed : 1));
     };
-    minus.addEventListener("click", () => { input.value = String(Math.max(min, read() - 1)); });
-    plus.addEventListener("click", () => { input.value = String(Math.min(api().LIMITS.quantity, read() + 1)); });
+    const changed = () => onChange?.(read());
+    minus.addEventListener("click", () => { input.value = String(Math.max(min, read() - 1)); changed(); });
+    plus.addEventListener("click", () => { input.value = String(Math.min(max, read() + 1)); changed(); });
+    input.addEventListener("change", changed);
     wrap.append(minus, input, plus);
     return { wrap, input, read };
   }
@@ -1788,7 +1807,7 @@
     });
   }
 
-  globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog, syncEquippedSlots, buildStepper });
+  globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog, syncEquippedSlots, buildStepper, buildBonusTransferControl });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);

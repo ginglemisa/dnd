@@ -2958,6 +2958,19 @@ button.inventory-arrange-done {
   line-height: 1.5;
 }
 
+/* 防禦者的加值分配：物品視窗與跑團武器卡共用。 */
+.inventory-bonus-transfer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inventory-bonus-transfer__label {
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+}
+
 /* 持有區的互動列（裝備、檢定、使用次數、飲用、投擲）：說明文字在上，按鈕一列靠左，放不下才換行。 */
 .inventory-item-actions {
   display: grid;

@@ -140,8 +140,11 @@
         ...(beast ? { strModifier: globalScope.calculateAbilityModifier(beast.abilities.str), dexModifier: globalScope.calculateAbilityModifier(beast.abilities.dex), ignoreMagicEffects: true } : {})
       })?.find(item => item.key === hand)
       : null;
+    // 防禦者的加值分配：融入荒野形態時武器加值不算，不顯示。
+    const held = beast ? null : globalScope.Inventory?.entries().find(entry => entry.slot === (hand === "main" ? "mainHand" : "offHand"));
     return {
       hand,
+      held,
       label: hand === "main" ? "主手" : (isAlternateMain ? "主手2" : "副手"),
       name: readField(`${prefix}-name`),
       hit: projected?.hit ?? (beast ? "" : readField(`${prefix}-hit`)),
@@ -327,6 +330,8 @@
     }
     list.querySelectorAll("dt").forEach(term => term.classList.add("sr-only"));
     section.appendChild(list);
+    const transfer = weapon.held ? globalScope.InventoryUI?.buildBonusTransferControl?.(weapon.held) : null;
+    if (transfer) section.appendChild(transfer);
     return section;
   }
 
@@ -346,7 +351,10 @@
       elements.weaponSummary.replaceChildren(empty, choose);
       return;
     }
+    // 步進器按完會重繪，焦點留在同一顆按鈕。
+    const focusedLabel = document.activeElement?.closest?.("[data-bonus-transfer]") ? document.activeElement.getAttribute("aria-label") : null;
     elements.weaponSummary.replaceChildren(...weapons.filter(hasWeaponData).map(createWeaponSummary));
+    if (focusedLabel) [...elements.weaponSummary.querySelectorAll("[data-bonus-transfer] [aria-label]")].find(item => item.getAttribute("aria-label") === focusedLabel)?.focus();
   }
 
   function getWeaponRuleEntries() {

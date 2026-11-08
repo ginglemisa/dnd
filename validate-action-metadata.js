@@ -1191,6 +1191,34 @@ async function verifyEquipmentLoadout(browser, url) {
     const armored = { armor: "鎖子甲+1", offHand: "盾牌+2" };
     assert.equal((await magicNumbers({ ...armored, ...inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1, magic: { id: "armor-plus", bonus: 1 } }, { uid: "shield", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 2 } }) })).ac,
       "21", "magic armor and shield add while worn (16+1+2+2)");
+    // 防禦者：裝備中且已同調才能把加值轉到 AC，攻擊與傷害減少、AC 增加相同數值；分配不存檔。
+    assert.deepEqual(await page.evaluate(([base]) => {
+      const defender = { uid: "def", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "defender" } };
+      const load = (extra, entry) => applyStateObject({ ...base, mainHand: "", ...extra, __inventory: { version: 1, items: [entry] } });
+      const numbers = () => [document.getElementById("atk-main-hit").value, document.getElementById("atk-main-dmg").value, document.getElementById("ac-display").value];
+      load({}, defender);
+      const inPack = [Inventory.getBonusTransfer("def"), Inventory.setBonusTransfer("def", 2)];
+      load({ mainHand: "防禦者（長劍）" }, { ...defender, attuned: false });
+      const unattuned = Inventory.getBonusTransfer("def");
+      load({ mainHand: "防禦者（長劍）" }, defender);
+      const start = [Inventory.getBonusTransfer("def"), numbers()];
+      Inventory.setBonusTransfer("def", 2);
+      const two = [Inventory.getBonusTransfer("def"), numbers()];
+      Inventory.setBonusTransfer("def", 9);
+      const clamped = [Inventory.getBonusTransfer("def").value, numbers()];
+      const saved = JSON.stringify(collectStateObject()).includes("bonusTransfer") || Object.keys(Inventory.getState().items[0]).sort().join();
+      applyStateObject(collectStateObject());
+      const reloaded = [Inventory.getBonusTransfer("def").value, numbers()];
+      return { inPack, unattuned, start, two, clamped, saved, reloaded };
+    }, [magicBase]), {
+      inPack: [null, false],
+      unattuned: null,
+      start: [{ value: 0, max: 3 }, ["+9", "1d8+6揮砍", "12"]],
+      two: [{ value: 2, max: 3 }, ["+7", "1d8+4揮砍", "14"]],
+      clamped: [3, ["+6", "1d8+3揮砍", "15"]],
+      saved: "attuned,itemId,magic,quantity,uid",
+      reloaded: [0, ["+9", "1d8+6揮砍", "12"]]
+    }, "the Defender moves its bonus to AC only while attuned and held, and the split is not saved");
     // 魔法款沿用基本款的規則：熟練、護甲訓練、力量需求、重甲、雙手與攻擊列名稱。
     assert.deepEqual(await page.evaluate(([base]) => {
       const held = (extra, ...items) => applyStateObject({ ...base, ...extra, __inventory: { version: 1, items } });

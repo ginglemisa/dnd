@@ -51,6 +51,8 @@
   let textOnly = false;
   let catalogCache = null;
   let uidSeed = Date.now() % 1679616;
+  // 防禦者轉到 AC 的加值（uid → 點數）：只留在記憶體，不進存檔，重新整理或載入角色回到 0。
+  const bonusTransfers = new Map();
 
   function getList(key) {
     const value = globalScope[key];
@@ -715,6 +717,7 @@
   }
 
   function restore(state) {
+    bonusTransfers.clear();
     textOnly = state?.textOnly === true;
     entries = textOnly ? [] : normalizeState(state);
     emit("restore");
@@ -885,6 +888,7 @@
     next.forEach((entry) => {
       if (entry.slot && !matchesEquipment(entry, wanted[entry.slot], kinds)) {
         delete entry.slot;
+        bonusTransfers.delete(entry.uid);
         changed = true;
       }
     });
@@ -938,9 +942,32 @@
       if (others.some(item => item.magic.id === entry.magic.id)) return "duplicate";
       if (others.length >= LIMITS.attunement) return "limit";
       entry.attuned = true;
-    } else delete entry.attuned;
+    } else {
+      delete entry.attuned;
+      bonusTransfers.delete(entry.uid);
+    }
     commit(next, "attune");
     return "ok";
+  }
+
+  // 可以轉移加值的物品要裝備在手上且已同調。回傳 { value, max } 或 null。
+  function getBonusTransfer(uid) {
+    const entry = entries.find(item => item.uid === uid);
+    if (!magicRule(entry)?.bonusTransfer || !entry.attuned || !["mainHand", "offHand"].includes(entry.slot)) return null;
+    const max = globalScope.MagicItemCatalog.getEffects(entry.magic.id, getMagicSelection(entry)).attack || 0;
+    return { value: Math.min(bonusTransfers.get(uid) || 0, max), max };
+  }
+
+  /** 設定轉到 AC 的加值（夾在 0 到全部加值之間）；不能轉移時回傳 false。不存檔，只發出 inventory:change 讓角色卡重算。 */
+  function setBonusTransfer(uid, value) {
+    const current = getBonusTransfer(uid);
+    if (!current) return false;
+    const next = Math.max(0, Math.min(current.max, Math.floor(Number(value)) || 0));
+    if (next === current.value) return true;
+    if (next) bonusTransfers.set(uid, next);
+    else bonusTransfers.delete(uid);
+    emit("transfer");
+    return true;
   }
 
   /** 切換「只以文字管理物品」。開啟時回傳原物品欄的文字寫法並清空物品欄；關閉時物品欄從空的開始。 */
@@ -997,6 +1024,8 @@
     getEquipmentValue,
     setAttuned,
     getAttunement,
+    getBonusTransfer,
+    setBonusTransfer,
     remove,
     consume,
     restore,

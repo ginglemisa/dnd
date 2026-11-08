@@ -739,6 +739,12 @@
       if (!rule || (rule.attunement && !entry.attuned)) return;
       const effects = catalog.getEffects(entry.magic.id, inventory.getMagicSelection(entry));
       const hand = result.hands[entry.slot] || null;
+      // 防禦者：玩家把部分加值轉到 AC 時，攻擊與傷害減少、AC 增加相同數值（裝備在手上且已同調才有 getBonusTransfer）。
+      const transferred = hand ? inventory.getBonusTransfer?.(entry.uid)?.value || 0 : 0;
+      if (transferred) {
+        effects.attack -= transferred;
+        effects.damage -= transferred;
+      }
       if (effects.condition === "held" && !hand) return;
       if (effects.condition === "unarmored" && (context.wearingArmor || context.usingShield)) return;
       if (hand && (effects.attack || effects.damage)) {
@@ -746,12 +752,13 @@
         hand.damage += effects.damage || 0;
         hand.label = inventory.getLabel(entry);
       }
-      const source = { label: inventory.getLabel(entry), ac: 0, saves: effects.saves || 0 };
+      const source = { label: inventory.getLabel(entry), ac: transferred, saves: effects.saves || 0 };
+      result.ac.other += transferred;
       if (effects.ac) {
         const kind = inventory.getCatalogItem(entry.itemId)?.kind;
         if (rule.category !== "armor" && rule.category !== "weapon") {
           result.ac.other += effects.ac;
-          source.ac = effects.ac;
+          source.ac += effects.ac;
         } else if (kind === "armor" && entry.slot === "armor") result.ac.armor += effects.ac;
         else if (kind === "shield" && (entry.slot === "offHand" || entry.slot === "shield")) result.ac.shield += effects.ac;
       }

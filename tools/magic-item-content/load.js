@@ -100,6 +100,7 @@ function checkItem(item, { lists, known, damageLabels, equipmentNames }, errors)
   const tokens = (item.displayName || "").match(/\{[^}]*\}/g) || [];
   const allowed = new Set([...(item.base ? ["{base}"] : []), ...(item.options || []).map(option => `{${option.id}}`)]);
   tokens.filter(token => !allowed.has(token)).forEach(token => errors.push(`${at}：displayName 的 ${token} 不是基本款或選項`));
+  if (item.bonusTransfer && !item.effects?.attack) errors.push(`${at}：bonusTransfer 要有 effects.attack`);
   if ((item.siteText || item.sitePrice) && !item.equipmentName) errors.push(`${at}：siteText、sitePrice 只用於寫了 equipmentName 的物品`);
   if (Boolean(item.siteText) !== Boolean(item.sitePrice)) errors.push(`${at}：siteText 與 sitePrice 要一起寫`);
   if (/[A-Za-z]{4,}/.test(item.text)) errors.push(`${at}：text 只放中文，不放英文內文`);

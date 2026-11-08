@@ -8,6 +8,7 @@ rarity: legendary
 attunement: true
 base: { any: [ melee-weapon ], label: 任意近戰武器 }
 effects: { attack: 3, damage: 3 }
+bonusTransfer: true
 manualEffect: true
 text: |-
   使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+3加值。

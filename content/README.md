@@ -701,6 +701,7 @@ text: |-
 | `effects` | 只放角色卡會自動計算的恆定固定數值：`attack`、`damage`（武器攻擊與傷害）、`ac`、`saves`；值是正整數，或 `bonus`（取自 `bonus` 選項）。`condition` 是 `ac`／`saves` 的生效條件：`unarmored`（未穿戴護甲且未使用盾牌）、`held`（手持這件物品）。對特定目標才有的加值、只對遠程的 AC、可轉移的加值等條件式效果不寫，留在說明文字。 |
 | `displayName` | 選定後的顯示名稱樣板，`{base}` 為基本款、`{選項 id}` 為該選項的 `label`，例如 `"{base}{bonus}"`。省略時為「名稱（可選的基本款、選項）」，例如「治療藥水（高等）」「焰舌（長劍）」；固定基本款不列入。 |
 | `consumable` | `true`：用掉就減 1（藥水、卷軸、彈藥、粉、珠等）。 |
+| `bonusTransfer` | `true`：武器的攻擊與傷害加值可以部分或全部轉移到 AC（防禦者），物品視窗與跑團武器卡有步進器，不存檔；要有 `effects.attack`。 |
 | `manualEffect` | `true`：角色卡不會自動套用這件物品的效果，商店視窗與物品欄視窗的說明下方會多一行提示。 |
 | `equipmentName` | 一般商店也賣的同一件物品（治療藥水、法術卷軸）的裝備品名，須是 `equipment-data.js` 的品名。裝備詳情、商店名稱連結與物品欄視窗改顯示這件的說明。 |
 | `sitePrice`、`siteText` | 只有寫了 `equipmentName` 的物品才寫：詳情多「網站版｜SRD 版」頁籤，網站版是這段價格與說明（純文字、保留換行），SRD 版是 `text`。兩個欄位要一起寫。 |
