@@ -103,7 +103,7 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261108-css-split">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261108-magic-shop">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/utility.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/dice.css?v=20261108-css-split">
@@ -3113,9 +3113,10 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 </script>
 <script src="equipment-data.js?v=20261105-starting-equipment" defer></script>
 <script src="search.js?v=20261108-css-split" defer></script>
-<script src="equipment-shop.js?v=20261108-shop-scroll-count" defer></script>
+<script src="equipment-shop.js?v=20261108-magic-shop" defer></script>
 <script src="inventory.js?v=20261108-magic-shop" defer></script>
-<script src="inventory-ui.js?v=20261107-equip-closes-item" defer></script>
+<script src="inventory-ui.js?v=20261108-magic-shop" defer></script>
+<script src="magic-item-shop.js?v=20261108-magic-shop" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -6632,7 +6633,12 @@ function setupMoneyTracker() {
     scheduleSaveAllFields();
     return true;
   };
-  window.MoneyTracker = Object.freeze({ readTotal, formatAmount, purchaseItems, receiveGold });
+  // 魔法物品商店在「只以文字管理物品」時：不扣款，名稱併入攜帶物品的「購買物品：」行。
+  const addGearText = (items) => {
+    mergePurchasedGear(items);
+    scheduleSaveAllFields();
+  };
+  window.MoneyTracker = Object.freeze({ readTotal, formatAmount, purchaseItems, receiveGold, addGearText });
 
   renderLogList();
   updateSummary();

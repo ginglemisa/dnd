@@ -3243,12 +3243,16 @@ button.inventory-arrange-done {
 /* Selected category, active filter and cart count share the primary action colour. */
 .equipment-shop .equipment-shop__category[aria-pressed="true"],
 .equipment-shop .equipment-shop__category-toggle.is-filtered,
+.equipment-shop__magic-toggle[aria-pressed="true"],
+.magic-item-segmented__button[aria-pressed="true"],
 .equipment-shop__badge {
   color: var(--on-accent);
 }
 
 :where(html:not([data-ui-theme="warm"])) .equipment-shop .equipment-shop__category[aria-pressed="true"],
 :where(html:not([data-ui-theme="warm"])) .equipment-shop .equipment-shop__category-toggle.is-filtered,
+:where(html:not([data-ui-theme="warm"])) .equipment-shop__magic-toggle[aria-pressed="true"],
+:where(html:not([data-ui-theme="warm"])) .magic-item-segmented__button[aria-pressed="true"],
 :where(html:not([data-ui-theme="warm"])) .equipment-shop__badge {
   border-color: var(--accent-strong);
   background: var(--accent-strong);
@@ -3256,6 +3260,8 @@ button.inventory-arrange-done {
 
 :where(html[data-ui-theme="warm"]) .equipment-shop .equipment-shop__category[aria-pressed="true"],
 :where(html[data-ui-theme="warm"]) .equipment-shop .equipment-shop__category-toggle.is-filtered,
+:where(html[data-ui-theme="warm"]) .equipment-shop__magic-toggle[aria-pressed="true"],
+:where(html[data-ui-theme="warm"]) .magic-item-segmented__button[aria-pressed="true"],
 :where(html[data-ui-theme="warm"]) .equipment-shop__badge {
   border-color: var(--border-strong);
   background: var(--action-fill);
@@ -3508,8 +3514,140 @@ button.inventory-arrange-done {
   font-weight: 700;
 }
 
-.app-dialog[data-variant="equipment-detail"] .app-dialog__surface {
+.app-dialog[data-variant="equipment-detail"] .app-dialog__surface,
+.app-dialog[data-variant="magic-item-grant"] .app-dialog__surface {
   width: min(100%, 40rem);
+}
+
+/* 魔法物品模式：沒有購物與結帳，整列可點，名稱靠左、稀有度與同調靠右。 */
+.app-dialog[data-variant="equipment-shop"][data-shop-mode="magic"] .app-dialog__actions {
+  display: none;
+}
+
+.equipment-shop__item--magic {
+  display: block;
+  padding: 0;
+}
+
+.magic-shop__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 2.75rem;
+  margin: 0;
+  padding: 0.3rem 0.25rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+.magic-shop__row:hover,
+.magic-shop__row:focus-visible {
+  background: var(--surface-soft);
+  box-shadow: none;
+  transform: none;
+  color: var(--accent-strong);
+}
+
+.magic-shop__name {
+  min-width: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.magic-shop__meta {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.15rem 0.5rem;
+  max-width: 55%;
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.magic-shop__attunement {
+  color: var(--accent-strong);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+}
+
+/* 取得視窗：說明自己捲動，選項固定在下方，長說明也不必捲到底才看到要選什麼。 */
+.app-dialog[data-variant="magic-item-grant"] .app-dialog__body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.app-dialog[data-variant="magic-item-grant"] .magic-item-detail {
+  flex: 0 1 auto;
+  min-height: 5rem;
+  padding: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.magic-item-fields {
+  flex: 0 0 auto;
+  max-height: 45vh;
+  max-height: 45dvh;
+  padding: 0.75rem 1rem 0;
+  border-top: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.app-dialog__body .magic-item-detail__subtitle {
+  margin: 0 0 0.6rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.app-dialog__body .magic-item-detail__manual {
+  margin: 0.25rem 0 0;
+  color: var(--warning);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.app-dialog__body .magic-item-detail__status {
+  margin: 0 0 0.5rem;
+  color: var(--text-muted);
+}
+
+.magic-item-detail__retry {
+  width: auto;
+  min-height: 2.4rem;
+  margin: 0;
+  padding: 0.3rem 0.9rem;
+}
+
+.magic-item-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.magic-item-segmented__button {
+  flex: 1 1 auto;
+  width: auto;
+  min-height: 2.6rem;
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  font-size: var(--fs-sm);
+}
+
+.inventory-holding.has-detail > .magic-item-detail {
+  margin-bottom: 0.75rem;
 }
 
 .app-dialog__body .equipment-detail-dialog__meta {

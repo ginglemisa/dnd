@@ -1703,7 +1703,7 @@
     });
   }
 
-  globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog, syncEquippedSlots });
+  globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog, syncEquippedSlots, buildStepper });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);
