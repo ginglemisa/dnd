@@ -1,11 +1,14 @@
 /**
  * 物品欄資料（傳統 defer script，無額外 runtime dependency）。
  *
- * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses? }] }。
+ * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses?, magic? }] }。
  *   itemId 是裝備說明的品名（與 mainHand／商店相同的中文名稱）；name 是顯示名稱，自訂物品必填，目錄品項只在寫法不同時保留
  *   （例如「書籍（禱文）」）。weight（每件磅數）、container 與 desc（描述）只用於自訂物品；in 是所在容器的 uid；
  *   source "initial" 標記快速創角匯入的初始裝備，"equipped" 標記因主手／副手／護甲已裝備而補上的物品（整理成標籤時先抵掉，不重複）。
  *   uses 是有使用次數的目錄物品（EQUIPMENT_ITEM_ACTIONS 的 uses，例如醫療包）目前這件的剩餘次數；沒有這個欄位表示全新，同一筆的其餘件數都是全新的。
+ * - magic 是魔法物品：{ id, <選項 id>: 值 }（MagicItemCatalog 的 selection，基本款就是 itemId，不重複存 base）。沒有基本款的魔法物品沒有 itemId 也沒有 name；
+ *   顯示名稱由目錄算、說明不進存檔，目錄找不到 id 時保留這一筆並顯示「未知魔法物品」。同 id、同選項、同 itemId 才能合併。
+ *   例外：一般的治療藥水與法術卷軸沿用既有寫法（{ itemId: "治療藥水" }、{ itemId: "法術卷軸", name: "X法術卷軸" }），沒有 magic。
  * - 執行時的 slot 是這件物品正裝備在哪個位置（mainHand、offHand、armor、shield）：固定 1 件、在最外層，由 syncEquipped() 依角色卡的裝備選擇維護。
  *   裝備選擇已經存在角色欄位，slot 不寫進存檔（getState() 拿掉、restore() 不讀），載入後重新對應：裝備中那件存檔時是身上的 1 件，下拉規則會再拿回同樣的物品。
  *   同名物品可以有很多筆（拆分、商店購買、卸除都會新增一筆），各自獨立；只有玩家拖曳合併（merge()）才合成一筆，自訂物品不能合併。
@@ -19,7 +22,7 @@
   "use strict";
 
   const VERSION = 1;
-  const LIMITS = Object.freeze({ items: 300, quantity: 9999, name: 40, desc: 200, weight: 9999, depth: 3 });
+  const LIMITS = Object.freeze({ items: 300, quantity: 9999, name: 40, desc: 200, weight: 9999, depth: 3, magicValue: 64, magicOptions: 12 });
   const SOURCES = new Set(["initial", "equipped"]);
   const SLOTS = Object.freeze(["mainHand", "offHand", "armor", "shield"]);
   const UID_PATTERN = /^[A-Za-z0-9_-]{1,24}$/u;
@@ -38,6 +41,8 @@
   const BOOK_PATTERN = /^(?:書籍|書本|書)（[^（）]+）$/u;
   // 「多種」標題可當通稱品項（例如職業裝備只寫「聖徽」）；彈藥一律選具體品項。
   const GROUP_EXCLUDED = new Set(["彈藥"]);
+  const MAGIC_OPTION_KEY = /^[a-z][a-zA-Z]*$/u;
+  const UNKNOWN_MAGIC_LABEL = "未知魔法物品";
 
   let entries = [];
   let textOnly = false;
@@ -148,17 +153,32 @@
     return uid;
   }
 
+  // 魔法物品的 id 加選項，鍵依字母排序（合併時直接比對）；基本款就是 itemId，不重複存，不合格式的選項略過。
+  function cleanMagic(raw) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    const id = typeof raw.id === "string" ? raw.id.trim().slice(0, LIMITS.magicValue) : "";
+    if (!id) return null;
+    const magic = { id };
+    Object.keys(raw).filter(key => key !== "id" && key !== "base" && MAGIC_OPTION_KEY.test(key)).sort().slice(0, LIMITS.magicOptions).forEach((key) => {
+      const value = raw[key];
+      if ((typeof value === "number" && Number.isFinite(value)) || (typeof value === "string" && value && value.length <= LIMITS.magicValue)) magic[key] = value;
+    });
+    return magic;
+  }
+
   function normalizeEntry(raw) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
     const rawItemId = cleanText(raw.itemId);
     const itemId = RENAMED_ITEM_IDS[rawItemId] || rawItemId;
-    const name = cleanText(raw.name);
-    if (!itemId && !name) return null;
+    const magic = cleanMagic(raw.magic);
+    const name = magic ? "" : cleanText(raw.name);
+    if (!itemId && !name && !magic) return null;
     const entry = { uid: typeof raw.uid === "string" && UID_PATTERN.test(raw.uid) ? raw.uid : "", quantity: clampQuantity(raw.quantity) };
     if (itemId) entry.itemId = itemId;
     // 舊版「祭祀長袍」是保留寫法的顯示名稱，品名統一後不再保留。
     if (name && name !== itemId && !(rawItemId === "長袍" && name === "祭祀長袍")) entry.name = name;
-    if (!itemId) {
+    if (magic) entry.magic = magic;
+    if (!itemId && !magic) {
       const weight = Number(raw.weight);
       if (raw.weight !== null && raw.weight !== "" && raw.weight !== undefined && Number.isFinite(weight) && weight >= 0) {
         entry.weight = Math.min(Math.round(weight * 1000) / 1000, LIMITS.weight);
@@ -218,13 +238,33 @@
   }
 
   function copyEntry(entry) {
-    return { ...entry };
+    return entry.magic ? { ...entry, magic: { ...entry.magic } } : { ...entry };
   }
 
   // 存檔的寫法：slot 只在執行時使用。
   function savedEntry(entry) {
-    const { slot, ...saved } = entry;
+    const { slot, ...saved } = copyEntry(entry);
     return saved;
+  }
+
+  // 自訂物品：既不是目錄品項也不是魔法物品，名稱、重量與描述由玩家決定。
+  function isCustomEntry(entry) {
+    return Boolean(entry) && !entry.itemId && !entry.magic;
+  }
+
+  /** 魔法物品的 MagicItemCatalog selection：{ base?, <選項 id>: 值 }；不是魔法物品時回傳 null。 */
+  function getMagicSelection(entry) {
+    if (!entry?.magic) return null;
+    const { id, ...options } = entry.magic;
+    return entry.itemId ? { ...options, base: entry.itemId } : options;
+  }
+
+  function magicRule(entry) {
+    return entry?.magic ? globalScope.MagicItemCatalog?.get(entry.magic.id) || null : null;
+  }
+
+  function magicKey(entry) {
+    return entry.magic ? JSON.stringify(entry.magic) : "";
   }
 
   function emit(reason) {
@@ -240,12 +280,15 @@
 
   function getLabel(entry) {
     if (!entry) return "";
+    if (entry.magic) return magicRule(entry) ? globalScope.MagicItemCatalog.getDisplayName(entry.magic.id, getMagicSelection(entry)) : UNKNOWN_MAGIC_LABEL;
     return entry.name || getCatalogItem(entry.itemId)?.label || SHORT_NAMES[entry.itemId] || entry.itemId || "";
   }
 
   function getUnitWeight(entry) {
     if (!entry) return null;
-    if (entry.itemId) return getCatalogItem(entry.itemId)?.weight ?? null;
+    const magicWeight = magicRule(entry)?.weight ?? null;
+    if (entry.itemId) return getCatalogItem(entry.itemId)?.weight ?? magicWeight;
+    if (entry.magic) return magicWeight;
     return Number.isFinite(entry.weight) ? entry.weight : null;
   }
 
@@ -311,9 +354,10 @@
     });
   }
 
-  // 可以合成一筆：同一個目錄品項且顯示名稱相同；自訂物品、容器與裝備中的物品不合併。
+  // 可以合成一筆：同一個目錄品項或魔法物品（同選項）且顯示名稱相同；自訂物品、容器與裝備中的物品不合併。
   function canStack(entry, other) {
-    return Boolean(entry.itemId) && entry.itemId === other.itemId
+    return !isCustomEntry(entry) && !isCustomEntry(other) && (entry.itemId || "") === (other.itemId || "")
+      && magicKey(entry) === magicKey(other)
       && (entry.name || "") === (other.name || "")
       && !entry.slot && !other.slot
       && !isContainerEntry(entry) && !isContainerEntry(other);
@@ -331,6 +375,13 @@
   function expandRequests(requests, into, source) {
     const expanded = [];
     requests.forEach((request) => {
+      // 魔法物品不走名稱解析與套組拆分；itemId 是基本款。
+      const magic = cleanMagic(request.magic);
+      if (magic) {
+        const itemId = cleanText(request.itemId);
+        expanded.push({ ...(itemId ? { itemId } : {}), magic, quantity: clampQuantity(request.quantity ?? 1), into, source });
+        return;
+      }
       const resolved = request.text ? parseItemText(request.text) : { itemId: cleanText(request.itemId), name: cleanText(request.name) };
       // 文字清單的容器（parseListText 的 children）：目錄容器或標成容器的自訂物品，內容物放進去。
       if (request.text && Array.isArray(request.children) && request.children.length) {
@@ -369,6 +420,7 @@
     const entry = { uid: "", quantity: clampQuantity(request.quantity) };
     if (request.itemId) entry.itemId = request.itemId;
     if (request.name) entry.name = request.name;
+    if (request.magic) entry.magic = request.magic;
     if (Number.isFinite(request.weight)) entry.weight = request.weight;
     if (request.container) entry.container = true;
     if (request.desc) entry.desc = request.desc;
@@ -398,7 +450,7 @@
   }
 
   /**
-   * 加入物品。requests：[{ itemId?, name?, text?, quantity?, weight?, container? }]；text 可用「名稱 ×n」「箭矢(20)」寫法。
+   * 加入物品。requests：[{ itemId?, name?, text?, quantity?, weight?, container?, magic? }]；magic 見檔頭；text 可用「名稱 ×n」「箭矢(20)」寫法。
    * options.into 是放入的容器 uid；options.source "initial" 標記初始裝備；options.dryRun 只檢查是否放得下；
    * options.absorbEquipped 時，同名的「因裝備而補上」物品先抵掉數量（整理成標籤用，避免已補上的裝備再加一次）；
    * options.newStack 時一律新增一筆、不併入同名物品（商店購買）。其他情況併入同一處數量最多的同名物品。
@@ -422,7 +474,7 @@
   function absorbEquipped(next, requests, remaining = new Map(next.filter(entry => entry.source === "equipped").map(entry => [entry, entry.quantity]))) {
     // 裝備中的物品在文字裡排在最外層，先抵最外層，容器裡的同名物品才留在容器裡。
     requests.forEach((request) => {
-      if (!request.itemId || request.name || request.contents) return;
+      if (!request.itemId || request.name || request.magic || request.contents) return;
       remaining.forEach((left, entry) => {
         if (!request.quantity || !left || entry.itemId !== request.itemId) return;
         const taken = Math.min(left, request.quantity);
@@ -490,19 +542,19 @@
     }
     if (changes.name !== undefined) {
       const name = cleanText(changes.name);
-      if (!entry.itemId && name) entry.name = name;
+      if (isCustomEntry(entry) && name) entry.name = name;
     }
-    if (!entry.itemId && changes.weight !== undefined) {
+    if (isCustomEntry(entry) && changes.weight !== undefined) {
       const weight = Number(changes.weight);
       if (changes.weight === null || changes.weight === "" || !Number.isFinite(weight) || weight < 0) delete entry.weight;
       else entry.weight = Math.min(Math.round(weight * 1000) / 1000, LIMITS.weight);
     }
-    if (!entry.itemId && changes.desc !== undefined) {
+    if (isCustomEntry(entry) && changes.desc !== undefined) {
       const desc = cleanDesc(changes.desc);
       if (desc) entry.desc = desc;
       else delete entry.desc;
     }
-    if (!entry.itemId && changes.container !== undefined) {
+    if (isCustomEntry(entry) && changes.container !== undefined) {
       if (changes.container === true) entry.container = true;
       else {
         delete entry.container;
@@ -837,6 +889,8 @@
     parseListText,
     getCatalogItem,
     getCatalog: () => [...catalog().values()],
+    getMagicSelection,
+    isCustom: isCustomEntry,
     isContainer: entry => isContainerEntry(entry),
     entries: () => entries.map(copyEntry),
     getEntry: uid => {

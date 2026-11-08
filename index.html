@@ -117,7 +117,7 @@
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="magic-item-content.generated.js?v=0" defer></script>
-  <script src="magic-items.js?v=20261108-magic-content" defer></script>
+  <script src="magic-items.js?v=20261108-magic-shop" defer></script>
   <script src="monster-content.generated.js?v=0" defer></script>
   <script src="monster.js?v=20261108-wild-shape-ux" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261108-new-forms" defer></script>
@@ -3114,7 +3114,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="equipment-data.js?v=20261105-starting-equipment" defer></script>
 <script src="search.js?v=20261108-css-split" defer></script>
 <script src="equipment-shop.js?v=20261108-shop-scroll-count" defer></script>
-<script src="inventory.js?v=20261105-inventory-stacks" defer></script>
+<script src="inventory.js?v=20261108-magic-shop" defer></script>
 <script src="inventory-ui.js?v=20261107-equip-closes-item" defer></script>
 
 <script>
@@ -4914,7 +4914,14 @@ function assertCharacterDataCount(value, maximum) {
 
 // 物品欄（inventory.js）的匯入預檢：版本 1、至多 300 筆，每筆只有約定欄位且型別正確；細部清理由 Inventory.restore() 負責。
 const INVENTORY_KEYS = new Set(["version", "textOnly", "items"]);
-const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses"]);
+const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses", "magic"]);
+// 魔法物品：{ id, <選項 id>: 字串或數字 }。
+function isValidInventoryMagic(magic) {
+  if (!magic || typeof magic !== "object" || Array.isArray(magic) || typeof magic.id !== "string" || !magic.id || magic.id.length > 64) return false;
+  const fields = Object.entries(magic);
+  return fields.length <= 16 && fields.every(([key, field]) => key.length <= 32
+    && ((typeof field === "string" && field.length <= 64) || (typeof field === "number" && Number.isFinite(field))));
+}
 function isValidInventoryState(value) {
   if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1 || !Array.isArray(value.items)) return false;
   if (!Object.keys(value).every(key => INVENTORY_KEYS.has(key)) || (value.textOnly !== undefined && typeof value.textOnly !== "boolean")) return false;
@@ -4927,7 +4934,8 @@ function isValidInventoryState(value) {
     && (entry.container === undefined || typeof entry.container === "boolean")
     && (entry.uses === undefined || (Number.isInteger(entry.uses) && entry.uses >= 1 && entry.uses <= 9999))
     && (entry.desc === undefined || (typeof entry.desc === "string" && entry.desc.length <= 400))
-    && (typeof entry.itemId === "string" || typeof entry.name === "string"));
+    && (entry.magic === undefined || isValidInventoryMagic(entry.magic))
+    && (typeof entry.itemId === "string" || typeof entry.name === "string" || entry.magic !== undefined));
 }
 
 function validateCharacterState(data) {
