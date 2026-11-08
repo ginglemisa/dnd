@@ -473,8 +473,9 @@
   // 同調由玩家自己開（角色卡不代填）；限定條件只是提示，不阻擋。分享模式只看得到狀態。
   function buildAttunementRow(entry, rule, label) {
     const need = rule.attunement === true ? "需要同調才會生效。" : `需要${rule.attunement}同調才會生效。`;
-    const text = entry.attuned ? `同調中。${rule.attunement === true ? "" : need}` : need;
-    if (globalScope.SHARE_MODE) return actionRow(text);
+    if (globalScope.SHARE_MODE) return actionRow(entry.attuned ? "同調中。" : need);
+    // 同調中已有標示，限定條件才另外寫。
+    const text = entry.attuned && rule.attunement === true ? "" : need;
     const control = actionButton(entry.attuned ? "結束同調" : "開始同調", () => {
       const result = api().setAttuned(entry.uid, !entry.attuned);
       if (result !== "ok" && ATTUNEMENT_REFUSALS[result]) globalScope.AppDialog.notify(ATTUNEMENT_REFUSALS[result], { tone: "warning" });
