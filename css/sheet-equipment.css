@@ -2454,6 +2454,21 @@ button.inventory-more-item:is(:hover, :focus-visible, :active) {
   line-height: 1.45;
 }
 
+.inventory-attunement {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+}
+
+.inventory-attunement[hidden] {
+  display: none;
+}
+
+.inventory-tag.is-attuned {
+  border-color: var(--accent-strong);
+}
+
 .inventory-weight[hidden] {
   display: none;
 }

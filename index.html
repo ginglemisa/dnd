@@ -103,7 +103,7 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261108-magic-shop">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261108-magic-equip">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/utility.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/dice.css?v=20261108-css-split">
@@ -1295,7 +1295,7 @@
       <input type="hidden" id="money-log-data" value="[]">
       <input type="hidden" id="money-history-data" value="[]">
     </div>
-    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div id="inventory-weight" class="inventory-weight" aria-live="polite"></div><p id="inventory-over" class="inventory-over" role="status" hidden>負重超過攜帶上限 <button type="button" id="inventory-over-hide" class="inventory-over__hide">隱藏</button></p><p id="inventory-arrange-hint" class="inventory-arrange-hint" hidden><span>拖曳標籤調整順序，拖到同名標籤上可合併，或用方向鍵前後移動。</span><button type="button" id="inventory-arrange-done" class="inventory-arrange-done">完成</button></p><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的：可以從下方商店購買或免費取得，或建立自訂物品。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他物品或備註（自由文字）"></textarea><div id="inventory-actions" class="inventory-actions"><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>商店</span></button><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>自訂物品</span></button></div></div>
+    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div id="inventory-weight" class="inventory-weight" aria-live="polite"></div><p id="inventory-attunement" class="inventory-attunement" hidden></p><p id="inventory-over" class="inventory-over" role="status" hidden>負重超過攜帶上限 <button type="button" id="inventory-over-hide" class="inventory-over__hide">隱藏</button></p><p id="inventory-arrange-hint" class="inventory-arrange-hint" hidden><span>拖曳標籤調整順序，拖到同名標籤上可合併，或用方向鍵前後移動。</span><button type="button" id="inventory-arrange-done" class="inventory-arrange-done">完成</button></p><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的：可以從下方商店購買或免費取得，或建立自訂物品。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他物品或備註（自由文字）"></textarea><div id="inventory-actions" class="inventory-actions"><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>商店</span></button><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>自訂物品</span></button></div></div>
   </div>
 
   <div class="section">
@@ -3115,7 +3115,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="search.js?v=20261108-magic-shop" defer></script>
 <script src="equipment-shop.js?v=20261108-magic-shop" defer></script>
 <script src="inventory.js?v=20261108-magic-equip" defer></script>
-<script src="inventory-ui.js?v=20261108-magic-equip" defer></script>
+<script src="inventory-ui.js?v=20261108-magic-attune" defer></script>
 <script src="magic-item-shop.js?v=20261108-magic-equip" defer></script>
 
 <script>

@@ -8,6 +8,8 @@
  *   （寫回裝備頁下拉，按下後視窗立即關閉）、工具與撬棍的檢定、醫療包的使用次數、治療藥水飲用回復生命值、投擲物與毒藥；檢定與傷害骰只在擲骰功能開啟時顯示。
  *   魔法物品：視窗上方是與魔法商店相同的副標與說明（magic-item-shop.js 的 renderDetail()）；consumable 物品有「使用」（數量 −1），藥水有 getHeal() 時是「飲用」。
  *   目錄找不到的魔法物品保留這一筆，顯示「未知魔法物品」。
+ *   需要同調的魔法物品在互動列有同調開關（Inventory.setAttuned()，分享模式只顯示狀態）：由玩家自己開，超過上限或同調同一種物品時提示原因、不改狀態；
+ *   限定條件（例如「由法師」）只顯示不阻擋。同調中的標籤與視窗標示「同調」，物品欄有需同調物品時標題下方顯示「同調 N/3」。
  *   至少 2 件的物品在互動列最後一行多一顆「拆分」（沒有互動列時自成一行），開 `inventory-split` 視窗輸入兩堆的數量；拆開後是兩個獨立標籤。
  * - 裝備：物品經 Inventory.syncEquipped() 從物品欄拿 1 件出來，成為固定 ×1、排在「裝備中」的標籤（entry.slot）；角色卡的裝備選擇是唯一依據，
  *   index.html 在選擇改變與還原存檔後呼叫 syncEquippedSlots()。從標籤的「裝備」按鈕拿那個標籤，從下拉則由 Inventory 依規則找。卸除後在身上成為獨立的 ×1 標籤。
@@ -462,6 +464,25 @@
     return row;
   }
 
+  const ATTUNEMENT_REFUSALS = Object.freeze({
+    stack: "一次只能同調一件，請先拆分這個標籤。",
+    limit: `同時最多同調 ${globalScope.Inventory?.LIMITS.attunement ?? 3} 件魔法物品，請先結束其他物品的同調。`,
+    duplicate: "不能同時同調兩件相同的魔法物品。"
+  });
+
+  // 同調由玩家自己開（角色卡不代填）；限定條件只是提示，不阻擋。分享模式只看得到狀態。
+  function buildAttunementRow(entry, rule, label) {
+    const need = rule.attunement === true ? "需要同調才會生效。" : `需要${rule.attunement}同調才會生效。`;
+    const text = entry.attuned ? `同調中。${rule.attunement === true ? "" : need}` : need;
+    if (globalScope.SHARE_MODE) return actionRow(text);
+    const control = actionButton(entry.attuned ? "結束同調" : "開始同調", () => {
+      const result = api().setAttuned(entry.uid, !entry.attuned);
+      if (result !== "ok" && ATTUNEMENT_REFUSALS[result]) globalScope.AppDialog.notify(ATTUNEMENT_REFUSALS[result], { tone: "warning" });
+    }, `切換${label}的同調`);
+    control.setAttribute("aria-pressed", String(Boolean(entry.attuned)));
+    return actionRow(text, control);
+  }
+
   /**
    * 持有區的互動列：裝備／卸除、檢定、使用次數、飲用、投擲與塗抹。ctx.afterUse(result) 在數量或次數改變後同步視窗，ctx.close() 在裝備或卸除時關閉視窗。
    * 檢定與傷害骰只在擲骰功能開啟時顯示。回傳 null 表示這件物品沒有互動。
@@ -558,6 +579,7 @@
         }, `使用${label}`)));
       }
     }
+    if (entry.magic && magicRule?.attunement) rows.push(buildAttunementRow(entry, magicRule, label));
     if (!rows.length) return null;
     const section = el("div", "inventory-item-actions");
     section.append(...rows);
@@ -816,7 +838,9 @@
         const weight = el("span", "inventory-holding__weight");
         const badge = el("span", "inventory-tag__badge", "裝備中");
         badge.hidden = !entry.slot;
-        meta.append(badge);
+        const attunedBadge = el("span", "inventory-tag__badge", "同調中");
+        attunedBadge.hidden = !entry.attuned;
+        meta.append(badge, attunedBadge);
         holding.appendChild(meta);
         const syncWeight = (current) => {
           weight.textContent = weightDescription(current);
@@ -831,9 +855,12 @@
           const current = api().getEntry(uid);
           if (!current) return;
           badge.hidden = !current.slot;
+          attunedBadge.hidden = !current.attuned;
           syncWeight(current);
           // 裝備中的物品固定 1 件，沒有數量與位置；其他時候數量真的變了才改輸入框，保留玩家還沒按「完成」的輸入。
           if (controls) controls.row.hidden = Boolean(current.slot);
+          // 同調中的物品固定 1 件，數量不能改（位置可以）。
+          if (controls?.quantityField) controls.quantityField.hidden = Boolean(current.attuned);
           if (controls && current.quantity !== shownQuantity) controls.stepper.input.value = String(current.quantity);
           shownQuantity = current.quantity;
           const next = withSplitAction(buildItemActions(current, {
@@ -876,15 +903,20 @@
         if (fields) holding.appendChild(fields.nameRow);
         const row = el("div", "inventory-holding__row");
         const stepper = buildStepper(entry.quantity, "數量", { min: 0 });
+        let quantityField = null;
         if (api().isContainer(entry)) stepper.wrap.hidden = true;
-        else row.appendChild(labelled("數量", stepper.wrap));
+        else {
+          quantityField = labelled("數量", stepper.wrap);
+          quantityField.hidden = Boolean(entry.attuned);
+          row.appendChild(quantityField);
+        }
         const location = buildLocationSelect(uid, entry.in);
         row.appendChild(labelled("位置", location));
         holding.appendChild(row);
         row.hidden = Boolean(entry.slot);
         if (fields) holding.append(fields.desc, fields.toggleLabel);
         body.appendChild(holding);
-        controls = { stepper, location, row, ...fields };
+        controls = { stepper, location, row, quantityField, ...fields };
       },
       actions: [
         { label: "刪除", intent: "danger", resolve: async () => (await removeEntry(api().getEntry(uid) || entry, trigger)) ? "removed" : false },
@@ -1057,6 +1089,10 @@
       item.classList.add("is-fixed");
     }
     if (api().isCustom(entry)) tag.classList.add("is-custom");
+    if (entry.attuned) {
+      tag.classList.add("is-attuned");
+      tag.appendChild(el("span", "inventory-tag__badge", "同調"));
+    }
     tag.addEventListener("click", () => { if (!arranging) openItemDialog(entry.uid, tag); });
     item.appendChild(tag);
     if (api().isContainer(entry)) {
@@ -1156,6 +1192,14 @@
     summary.replaceChildren(...parts);
   }
 
+  function renderAttunement() {
+    const summary = document.getElementById("inventory-attunement");
+    if (!summary) return;
+    const { count, max, needed } = api().getAttunement();
+    summary.hidden = !needed || api().isTextOnly();
+    summary.textContent = `同調 ${count}/${max}`;
+  }
+
   // 「整理成標籤」只在選單裡（⋯ 上亮小點）；這時不顯示「物品欄還是空的」，避免跟下方文字矛盾。
   function syncTidy() {
     const panel = document.getElementById("inventory-panel");
@@ -1199,6 +1243,7 @@
       const textOnlyButton = document.getElementById("inventory-text-only");
       textOnlyButton?.setAttribute("aria-pressed", String(textOnly));
       renderWeight();
+      renderAttunement();
     } finally {
       rendering = false;
     }
