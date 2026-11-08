@@ -13905,6 +13905,7 @@ html[data-theme="dark"] .feat-desc-subtitle {
   }
 }
 
+/* ===== PDF export dialog ===== */
 .pdf-export-flow-modal {
   position: fixed;
   inset: 0;
@@ -20104,7 +20105,7 @@ html[data-theme="dark"] #tabletop-panel-actions .tabletop-weapon-field:nth-child
   }
 }
 
-/* ===== Dark theme component coverage ===== */
+/* ===== Remaining dark and late overrides (rules that must stay last) ===== */
 html[data-theme="dark"] #tab-basic #hp-display,
 html[data-theme="dark"] #tab-basic #ac-display,
 html[data-theme="dark"] #tab-basic .speed-current-display,
