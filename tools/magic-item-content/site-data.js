@@ -1,4 +1,4 @@
-// 網站讀取的魔法物品資料：npm run build 由 content/srd/magic-items.yaml 產生根目錄的兩個檔案（衍生產物，不提交）。
+// 網站讀取的魔法物品資料：npm run build 由 content/srd/magic-items/ 產生根目錄的兩個檔案（衍生產物，不提交）。
 // - magic-item-content.generated.js：magicItemRules（規則與名稱）、magicItemLabels（類別、小標、稀有度的名稱）、magicItemBaseLists（「任意某類」基本款的展開清單）、
 //   magicItemTextFile（說明本文產物的檔名與快取版本）。網頁一開始就載入，網站經 magic-items.js 的 MagicItemCatalog 讀取。
 // - magic-item-text.generated.js：magicItemText（說明本文的 HTML），第一次需要時才載入；離線版內嵌。
@@ -39,7 +39,7 @@ const entries = (ids, map) => ids.map(id => `  ${JSON.stringify(id)}: ${JSON.str
 function renderText(items) {
   const ids = [...items.keys()];
   const text = Object.fromEntries(ids.map(id => [id, itemHtml(items.get(id))]));
-  const source = `// ${TEXT_OUTPUT_NAME}：由 npm run build 從 content/srd/magic-items.yaml 產生，請勿手動修改。
+  const source = `// ${TEXT_OUTPUT_NAME}：由 npm run build 從 content/srd/magic-items/ 產生，請勿手動修改。
 // 魔法物品的說明本文（SRD 5.2.1 繁中譯文，CC BY 4.0）：html 是說明的 HTML。網頁版在第一次需要時才載入。
 globalThis.magicItemText = {
 ${entries(ids, text)}
@@ -55,7 +55,7 @@ function renderContent(items, baseLists, textSource) {
   const ids = [...items.keys()];
   const rules = Object.fromEntries(ids.map(id => [id, itemRules(items.get(id))]));
   const textFile = `${TEXT_OUTPUT_NAME}?v=${contentVersion(textSource)}`;
-  const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd/magic-items.yaml 產生，請勿手動修改。
+  const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd/magic-items/ 產生，請勿手動修改。
 // magicItemRules：規則與名稱（類別、稀有度、同調、基本款、選項、自動計算的固定數值）。magicItemLabels：類別、小標、稀有度的名稱。
 // magicItemBaseLists：「任意某類」基本款的展開清單。magicItemTextFile：說明本文產物（${TEXT_OUTPUT_NAME}）的網址與快取版本。
 // 網站經 magic-items.js 的 MagicItemCatalog 讀取。
