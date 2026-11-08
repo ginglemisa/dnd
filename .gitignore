@@ -17,3 +17,5 @@ node_modules/
 /spell-content.generated.js
 /spell-srd.generated.js
 /twD20-offline.html
+# Visual snapshot output (tools/visual-snapshot.js); default location is the system temp folder
+/.visual-snapshots/
