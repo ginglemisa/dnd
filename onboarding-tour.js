@@ -581,7 +581,7 @@
           text: () => {
             if (this.abilityMenuGuideActive) return "接下來，選擇角色的屬性產生方式。\n\n點擊決定屬性開始設定。";
             if (this.stepPhase === 1) {
-              return "你有 27 點可以分配。每項屬性從 8 開始，最高到 15。\n\n升到 9～13：每升 1 花 1 點\n升到 14、15：每升 1 花 2 點\n\n剩餘點數顯示在下方，全部用完才能進入下一步。";
+              return "你有 27 點可以分配。每項屬性從 8 開始，最高到 15。\n\n升到 9～13：每升 1 花 1 點\n升到 14、15：每升 1 花 2 點\n\n剩餘點數顯示在下方，花費不能超過 27 點。";
             }
             if (this.stepPhase === 2) {
               return "選擇背景後，將提供的屬性加值分配至角色屬性。\n\n確認所有數值後，點擊套用完成屬性設定。";
@@ -911,6 +911,9 @@
         if (typeof step.beforeTab === "function") step.beforeTab();
         this.showTab(step.tab);
         await waitForLayoutStability();
+        // The tab's entrance animation shifts its content by a few pixels, so measure after it ends.
+        const entrance = document.querySelector(".tab-content.active")?.getAnimations() || [];
+        await Promise.all(entrance.map(animation => animation.finished.catch(() => {})));
         if (!this.active || transitionId !== this.transitionId) return;
         if (typeof step.beforePosition === "function") {
           await step.beforePosition();
