@@ -146,7 +146,7 @@
     const projected = globalScope.isWeaponAttackAutomationEnabled?.()
       ? globalScope.calculateHandAttacks?.({
         shillelaghHand: globalScope.TabletopMode?.getActiveShillelaghHand?.() ?? null,
-        ...(beast ? { strModifier: globalScope.calculateAbilityModifier(beast.abilities.str), dexModifier: globalScope.calculateAbilityModifier(beast.abilities.dex) } : {})
+        ...(beast ? { strModifier: globalScope.calculateAbilityModifier(beast.abilities.str), dexModifier: globalScope.calculateAbilityModifier(beast.abilities.dex), ignoreMagicEffects: true } : {})
       })?.find(item => item.key === hand)
       : null;
     return {
@@ -1273,6 +1273,7 @@ function render() {
     }
     document.addEventListener("input", scheduleRender);
     document.addEventListener("change", scheduleRender);
+    document.addEventListener("inventory:change", scheduleRender);
     globalScope.addEventListener("actionpanelchange", scheduleRender);
     globalScope.addEventListener("tabletopstatechange", scheduleRender);
     globalScope.addEventListener("tabletopactionpreferenceschange", handleActionPreferencesChange);

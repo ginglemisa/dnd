@@ -705,7 +705,63 @@
     return Math.max(1, calculateAbilityModifier(charismaScore));
   }
 
-  /** 計算 AC，包含無甲防禦、護甲、盾牌及防禦戰鬥風格。 */
+  // 目前是否穿甲、持盾（防禦護腕的「沒穿護甲且沒用盾牌」）；未受盾牌訓練也算持盾。
+  function readMagicEffectContext() {
+    const armorName = globalScope.document?.getElementById?.("armor")?.value || "";
+    const armorIsShield = globalScope.isShieldItem?.(armorName) === true;
+    return {
+      wearingArmor: Boolean(armorName) && !armorIsShield,
+      usingShield: armorIsShield || globalScope.isEffectiveEquippedShield?.() === true
+    };
+  }
+
+  /**
+   * 目前生效的魔法物品固定加值，規則只在這裡：物品不需同調或已同調才算。
+   * - hands.mainHand／offHand 的 attack、damage、label：裝備在那一手才算，只影響那一手。
+   * - ac.armor、ac.shield：魔法護甲穿著、魔法盾牌持用中才算（盾牌訓練等既有條件由呼叫端判斷）；ac.other 是戒指、斗篷等其他物品。
+   * - saves：持有就算，武器也一樣（吉兆之刃不必手持）。
+   * - condition held 要裝備在手上，unarmored 要沒穿護甲且沒用盾牌。
+   * - sources：不靠裝備位置的加值來源 [{ label, ac, saves }]，裝備摘要顯示用。
+   * context 可傳 { wearingArmor, usingShield }，省略時讀目前的裝備欄位。
+   */
+  function getActiveMagicEffects(context = readMagicEffectContext()) {
+    const result = {
+      hands: { mainHand: { attack: 0, damage: 0, label: "" }, offHand: { attack: 0, damage: 0, label: "" } },
+      ac: { armor: 0, shield: 0, other: 0 },
+      saves: 0,
+      sources: []
+    };
+    const catalog = globalScope.MagicItemCatalog;
+    const inventory = globalScope.Inventory;
+    if (!catalog || !inventory) return result;
+    inventory.entries().forEach((entry) => {
+      const rule = entry.magic ? catalog.get(entry.magic.id) : null;
+      if (!rule || (rule.attunement && !entry.attuned)) return;
+      const effects = catalog.getEffects(entry.magic.id, inventory.getMagicSelection(entry));
+      const hand = result.hands[entry.slot] || null;
+      if (effects.condition === "held" && !hand) return;
+      if (effects.condition === "unarmored" && (context.wearingArmor || context.usingShield)) return;
+      if (hand && (effects.attack || effects.damage)) {
+        hand.attack += effects.attack || 0;
+        hand.damage += effects.damage || 0;
+        hand.label = inventory.getLabel(entry);
+      }
+      const source = { label: inventory.getLabel(entry), ac: 0, saves: effects.saves || 0 };
+      if (effects.ac) {
+        const kind = inventory.getCatalogItem(entry.itemId)?.kind;
+        if (rule.category !== "armor" && rule.category !== "weapon") {
+          result.ac.other += effects.ac;
+          source.ac = effects.ac;
+        } else if (kind === "armor" && entry.slot === "armor") result.ac.armor += effects.ac;
+        else if (kind === "shield" && (entry.slot === "offHand" || entry.slot === "shield")) result.ac.shield += effects.ac;
+      }
+      result.saves += source.saves;
+      if (source.ac || source.saves) result.sources.push(source);
+    });
+    return result;
+  }
+
+  /** 計算 AC，包含無甲防禦、護甲、盾牌、防禦戰鬥風格與魔法物品加值（magicBonus，由 getActiveMagicEffects() 算出、呼叫端決定哪些部分生效）。 */
   function calculateArmorClass(options = {}) {
     const className = String(options.className || "").trim();
     const level = Number.parseInt(options.level, 10) || 1;
@@ -736,6 +792,7 @@
 
     if (options.hasShield) armorClass += 2;
     if (armor && options.hasDefenseFightingStyle) armorClass += 1;
+    armorClass += Number(options.magicBonus) || 0;
     return armorClass;
   }
 
@@ -847,6 +904,7 @@
     isDruidBeastAllowed,
     calculateWildShapeCheck,
     calculateArmorClass,
+    getActiveMagicEffects,
     calculateCharacterMaxHp,
     calculateCharacterSpeed,
     calculateProficiencyBonus,

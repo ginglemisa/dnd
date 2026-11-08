@@ -1157,7 +1157,9 @@
   function getMageArmorEffect() {
     const dexterity = getDruidForm()?.abilities.dex ?? document.getElementById("dex")?.value ?? 10;
     const modifier = globalScope.calculateAbilityModifier(dexterity);
-    return { active: combatState.mageArmorActive, ac: 13 + modifier, dexterityModifier: modifier };
+    // 法師護甲取代護甲的計算，戒指、斗篷等魔法物品的加值仍要算（荒野形態不算）。
+    const magicBonus = getDruidForm() ? 0 : globalScope.getActiveMagicEffects?.().ac.other || 0;
+    return { active: combatState.mageArmorActive, ac: 13 + modifier + magicBonus, dexterityModifier: modifier };
   }
 
   const PERSISTENT_SPELL_EFFECTS = Object.freeze([
@@ -1595,7 +1597,11 @@
     const signed = value => globalScope.formatSignedValue(value);
     const check = (ability, beastTotal) => signed(globalScope.calculateWildShapeCheck(Number(original), Number(read(ability)), score(ability), beastTotal));
     if (/^(str|dex|con|int|wis|cha)-mod$/.test(id)) return signed(mod(id.slice(0, 3)));
-    if (/^save-(str|dex|con|int|wis|cha)$/.test(id)) return check(id.slice(5), beast.saves?.[id.slice(5)]);
+    if (/^save-(str|dex|con|int|wis|cha)$/.test(id)) {
+      // 豁免欄含魔法物品的加值；荒野形態只有穿戴中的護甲與盾牌保留，先扣掉（手動填的數字不動）。
+      const magicSaves = globalScope.isAutomaticKeyStatsEnabled?.() ? globalScope.getActiveMagicEffects?.().saves || 0 : 0;
+      return signed(globalScope.calculateWildShapeCheck(Number(original) - magicSaves, Number(read(id.slice(5))), score(id.slice(5)), beast.saves?.[id.slice(5)]));
+    }
     if (id.startsWith("skill-")) {
       const key = id.slice(6);
       const ability = globalScope.CharacterSkillAbilities?.[key];
@@ -1618,10 +1624,13 @@
       const shield = ((state.equipment.off === "wear" && globalScope.isEffectiveEquippedShield?.())
         || (state.equipment.armor === "wear" && armorName === "盾牌"))
         && globalScope.isShieldProficient?.() !== false;
+      // 只有穿戴中的魔法護甲與盾牌加值保留，其他持有物不算。
+      const magicAc = globalScope.getActiveMagicEffects?.().ac;
+      const shieldMagic = shield ? magicAc?.shield || 0 : 0;
       if (armor) return String(globalScope.calculateArmorClass({ armor, hasArmor: true, className: "druid",
         dexterityScore: score("dex"), constitutionScore: score("con"), wisdomScore: score("wis"), charismaScore: score("cha"),
-        hasShield: shield, hasDefenseFightingStyle: globalScope.hasDefenseFightingStyleFeat?.() }));
-      return String(Number(beast.ac) + (shield ? 2 : 0));
+        hasShield: shield, hasDefenseFightingStyle: globalScope.hasDefenseFightingStyleFeat?.(), magicBonus: (magicAc?.armor || 0) + shieldMagic }));
+      return String(Number(beast.ac) + (shield ? 2 + shieldMagic : 0));
     }
     return original;
   }
@@ -5392,6 +5401,8 @@
       scheduleRender
     );
     globalScope.addEventListener("spellmanagementchange", scheduleRender);
+    // 同調切換與物品變動會改 AC、豁免（魔法物品加值）。
+    document.addEventListener("inventory:change", scheduleRender);
   }
 
   function init() {
