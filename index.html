@@ -3780,15 +3780,27 @@ function getOwnedShieldNames() {
 function syncMain2ShieldSelect(active) {
   const select = document.getElementById("main2ShieldItem");
   if (!select) return;
+  const choice = select.dataset.choice || "";
   const names = active ? getOwnedShieldNames() : [];
   select.hidden = names.length < 2;
-  if (select.hidden) return;
-  const saved = select.dataset.choice || select.value;
+  if (select.hidden) {
+    select.replaceChildren(...(choice ? [new Option(choice, choice)] : []));
+    select.value = choice;
+    return;
+  }
   select.replaceChildren(...names.map(name => new Option(name, name)));
   const held = window.Inventory.entries().find(entry => entry.slot === "shield");
   const heldName = held ? window.Inventory.getEquipmentValue(held) : "";
-  select.value = names.includes(heldName) ? heldName : names.includes(saved) ? saved : names[0];
-  select.dataset.choice = select.value;
+  select.value = [choice, heldName].find(name => names.includes(name)) || names[0];
+}
+
+// 存檔的選項這時還沒建立，先記在控制項上，syncMain2ShieldSelect 建好選項時選回來；舊資料沒有這個欄位時清空。
+function restoreMain2ShieldChoice(value) {
+  const select = document.getElementById("main2ShieldItem");
+  if (!select) return;
+  select.dataset.choice = value;
+  select.replaceChildren(...(value ? [new Option(value, value)] : []));
+  select.value = value;
 }
 
 // 主手 2 目前要拿哪一面盾牌：下拉顯示時是下拉的值，否則由物品欄決定。
@@ -5631,6 +5643,7 @@ function applyStateObjectNow(data) {
     if (offHandAsMain) offHandAsMain.checked = data.offHandAsMain === true;
     const main2Shield = document.getElementById("main2Shield");
     if (main2Shield) main2Shield.checked = false;
+    restoreMain2ShieldChoice(String(data.main2ShieldItem || ""));
 
     getDynamicAreaConfigs().forEach(area => {
       if (area.key === "feats-area") return;

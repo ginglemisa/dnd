@@ -378,6 +378,9 @@
       }
       closeItem();
       toggle.checked = true;
+      // 玩家點的這一面也是下拉的選擇。
+      const choice = document.getElementById("main2ShieldItem");
+      if (choice) choice.dataset.choice = api().getEquipmentValue(entry);
       preferUid = entry.uid;
       toggle.dispatchEvent(new Event("change", { bubbles: true }));
       return;
