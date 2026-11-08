@@ -1,0 +1,711 @@
+/* ===== Tabletop resources: notched consumption rails ===== */
+:where(html:not([data-ui-theme="warm"])) #tabletop-panel-resources {
+  --resource-paper: #f8faff;
+  --resource-ink: #16213d;
+  --resource-caption: #62728e;
+  --resource-active: #2852d6;
+  --resource-track: #dce4f1;
+  --resource-rule: rgba(76, 104, 168, 0.28);
+}
+
+:where(html[data-ui-theme="warm"]) #tabletop-panel-resources {
+  --resource-paper: var(--surface-strong);
+  --resource-ink: var(--text);
+  --resource-caption: var(--text-muted);
+  --resource-active: var(--accent);
+  --resource-track: var(--surface-muted);
+  --resource-rule: var(--border);
+}
+
+html[data-theme="dark"] #tabletop-panel-resources {
+  --resource-paper: var(--surface-strong);
+  --resource-ink: var(--text);
+  --resource-caption: var(--text-muted);
+  --resource-active: var(--accent);
+  --resource-track: var(--surface-muted);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tabletop-panel-resources {
+  --resource-rule: var(--border-strong);
+}
+
+html:where([data-ui-theme="warm"])[data-theme="dark"] #tabletop-panel-resources {
+  --resource-rule: var(--border);
+}
+
+#tabletop-panel-resources .tabletop-section-heading {
+  align-items: center;
+}
+
+#tabletop-panel-resources .tabletop-resource-list,
+#tabletop-panel-resources .tabletop-custom-resource-list,
+#tabletop-built-in-resources {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+#tabletop-panel-resources .tabletop-resource-row,
+#tabletop-panel-resources .tabletop-custom-resource {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.48rem 1rem;
+  min-height: 4.7rem;
+  padding: 0.9rem 0.15rem;
+  border-bottom: 1px solid var(--resource-rule);
+}
+
+#tabletop-panel-resources .tabletop-resource-row:last-child,
+#tabletop-panel-resources .tabletop-custom-resource:last-child {
+  border-bottom: 0;
+}
+
+#tabletop-panel-resources .tabletop-resource-row__copy,
+#tabletop-panel-resources .tabletop-custom-resource__heading {
+  min-width: 0;
+}
+
+#tabletop-panel-resources .tabletop-resource-row__copy h4,
+#tabletop-panel-resources .tabletop-custom-resource h4 {
+  color: var(--resource-ink);
+  font-size: var(--fs-base);
+  font-weight: 900;
+  letter-spacing: 0.015em;
+  line-height: 1.25;
+}
+
+.tabletop-hit-die-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tabletop-hit-die-roll,
+.tabletop-hit-die-heal {
+  min-height: 2.25rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.tabletop-hit-die-roll {
+  padding: 0.2rem 0.35rem;
+  border-radius: var(--radius-sm);
+  font-weight: 900;
+}
+
+.tabletop-hit-die-heal {
+  min-width: 2.25rem;
+  padding: 0.2rem;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.tabletop-hit-die-roll:not(:disabled),
+.tabletop-hit-die-heal:not(:disabled) {
+  cursor: pointer;
+}
+
+.tabletop-hit-die-roll:not(:disabled):hover,
+.tabletop-hit-die-heal:not(:disabled):hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tabletop-hit-die-roll:disabled,
+.tabletop-hit-die-heal:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.hit-die-recovery-log {
+  display: grid;
+  gap: 0.45rem;
+  max-height: min(42vh, 18rem);
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-body);
+  font-variant-numeric: tabular-nums;
+  list-style: none;
+}
+
+.hit-die-recovery-result {
+  margin-top: 0.8rem !important;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+#tabletop-panel-resources .tabletop-resource-row p,
+#tabletop-panel-resources .tabletop-custom-resource p {
+  max-width: 38rem;
+  margin-top: 0.2rem;
+  color: var(--resource-caption);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+#tabletop-panel-resources .tabletop-resource-row__controls,
+#tabletop-panel-resources .tabletop-resource-stepper,
+#tabletop-panel-resources .tabletop-custom-resource__stepper {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.tabletop-number-stepper {
+  display: grid;
+  grid-template-columns: 2.65rem minmax(5.35rem, auto) 2.65rem;
+  align-items: stretch;
+  min-height: 2.75rem;
+  border: 1px solid var(--resource-rule);
+  background: var(--resource-paper);
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--resource-track) 72%, transparent);
+  overflow: hidden;
+}
+
+:where(html:not([data-ui-theme="warm"])) .tabletop-number-stepper {
+  border-radius: 0.42rem;
+}
+
+:where(html[data-ui-theme="warm"]) .tabletop-number-stepper {
+  border-radius: var(--radius-sm);
+}
+
+#tabletop-panel-resources .tabletop-number-stepper__adjust,
+#tabletop-panel-resources .tabletop-number-stepper__adjust:not(.tabletop-compact-button) {
+  display: grid;
+  place-items: center;
+  width: 2.65rem;
+  min-width: 2.65rem;
+  min-height: 2.65rem;
+  margin: 0;
+  padding: 0 0 0.08rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--resource-active);
+  box-shadow: none;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: background 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+#tabletop-panel-resources .tabletop-number-stepper__adjust:first-child {
+  border-right: 1px solid var(--resource-rule);
+}
+
+#tabletop-panel-resources .tabletop-number-stepper__adjust:last-child {
+  border-left: 1px solid var(--resource-rule);
+}
+
+#tabletop-panel-resources .tabletop-number-stepper__adjust:disabled {
+  border-color: var(--resource-rule);
+  background: transparent;
+  color: var(--disabled-text);
+  opacity: 0.45;
+}
+
+#tabletop-panel-resources .tabletop-number-stepper__value {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.65rem;
+  margin: 0;
+  padding: 0.2rem 0.7rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--resource-ink);
+  box-shadow: none;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 1.16rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+}
+
+#tabletop-panel-resources button.tabletop-number-stepper__value {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: color 120ms ease, box-shadow 120ms ease;
+}
+
+#tabletop-panel-resources .tabletop-number-stepper button:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px var(--resource-active);
+}
+
+.tabletop-resource-meter {
+  position: relative;
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 0.38rem;
+  background: var(--resource-track);
+  overflow: hidden;
+}
+
+:where(html:not([data-ui-theme="warm"])) .tabletop-resource-meter {
+  border-radius: 1px;
+}
+
+:where(html[data-ui-theme="warm"]) .tabletop-resource-meter {
+  border-radius: var(--radius-sm);
+}
+
+.tabletop-resource-meter::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent calc(10% - 1px),
+    color-mix(in srgb, var(--resource-paper) 80%, transparent) calc(10% - 1px),
+    color-mix(in srgb, var(--resource-paper) 80%, transparent) 10%
+  );
+  pointer-events: none;
+}
+
+.tabletop-resource-meter__fill {
+  display: block;
+  width: var(--tabletop-resource-fill, 0%);
+  height: 100%;
+  background: var(--resource-active);
+  clip-path: polygon(0 0, calc(100% - 0.28rem) 0, 100% 50%, calc(100% - 0.28rem) 100%, 0 100%);
+}
+
+.tabletop-resource-meter.is-empty .tabletop-resource-meter__fill {
+  opacity: 0;
+}
+
+.tabletop-resource-meter.is-full .tabletop-resource-meter__fill {
+  clip-path: none;
+}
+
+#tabletop-panel-resources .tabletop-resource-stepper > .tabletop-compact-button,
+#tabletop-panel-resources .tabletop-custom-resource__stepper > .tabletop-compact-button {
+  min-height: 2.65rem;
+  padding: 0.35rem 0.62rem;
+  border-color: transparent;
+  background: transparent;
+  color: var(--resource-caption);
+  font-size: 0.72rem;
+  font-weight: 850;
+  box-shadow: inset 0 0 0 1px var(--resource-rule);
+}
+
+:where(html:not([data-ui-theme="warm"])) #tabletop-panel-resources .tabletop-resource-stepper > .tabletop-compact-button,
+:where(html:not([data-ui-theme="warm"])) #tabletop-panel-resources .tabletop-custom-resource__stepper > .tabletop-compact-button {
+  border-radius: 0.42rem;
+}
+
+:where(html[data-ui-theme="warm"]) #tabletop-panel-resources .tabletop-resource-stepper > .tabletop-compact-button,
+:where(html[data-ui-theme="warm"]) #tabletop-panel-resources .tabletop-custom-resource__stepper > .tabletop-compact-button {
+  border-radius: var(--radius-sm);
+}
+
+#tabletop-panel-resources .tabletop-custom-resource {
+  padding-block: 1rem 0.82rem;
+}
+
+#tabletop-panel-resources .tabletop-custom-resource__heading {
+  grid-column: 1;
+  align-self: center;
+}
+
+#tabletop-panel-resources .tabletop-custom-resource__stepper {
+  grid-column: 2;
+  margin: 0;
+}
+
+#tabletop-panel-resources .tabletop-custom-resource__actions {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+  gap: 0.12rem;
+  margin: -0.05rem 0 0;
+}
+
+#tabletop-panel-resources .tabletop-custom-resource__actions .tabletop-compact-button {
+  min-height: 1.85rem;
+  padding: 0.15rem 0.32rem;
+  border-color: transparent;
+  background: transparent;
+  color: var(--resource-caption);
+  font-size: 0.7rem;
+  font-weight: 750;
+  box-shadow: none;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tabletop-panel-resources .tabletop-custom-resource__actions .tabletop-compact-button {
+  border-radius: 0.3rem;
+}
+
+:where(html[data-ui-theme="warm"]) #tabletop-panel-resources .tabletop-custom-resource__actions .tabletop-compact-button {
+  border-radius: var(--radius-sm);
+}
+
+#tabletop-panel-resources .tabletop-custom-resource__actions .tabletop-danger-button {
+  color: var(--danger);
+}
+
+#tabletop-custom-resource-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  border-color: var(--resource-rule);
+  background: var(--resource-paper);
+  color: var(--resource-active);
+  box-shadow: none;
+}
+
+#tabletop-custom-resource-add::before {
+  content: "+";
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+#tabletop-custom-resource-add[aria-expanded="true"]::before {
+  content: "×";
+}
+
+/* 跑團模式武器沿用角色卡的攻擊欄位骨架；值改為擲骰按鈕。 */
+#tabletop-panel-actions .tabletop-weapon-summary {
+  gap: 0.65rem;
+}
+
+#tabletop-panel-actions .tabletop-weapon-attack-card {
+  padding: 0.72rem;
+}
+
+#tabletop-panel-actions .tabletop-weapon-fields {
+  grid-template-columns: minmax(0, 1fr) 3.7rem minmax(0, 1.5fr);
+  gap: 0.42rem;
+  margin: 0;
+}
+
+#tabletop-panel-actions .tabletop-weapon-field {
+  display: grid;
+  min-width: 0;
+}
+
+#tabletop-panel-actions .tabletop-weapon-field:nth-child(4) {
+  grid-column: 1 / -1;
+}
+
+#tabletop-panel-actions .tabletop-weapon-field dt {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  line-height: normal;
+}
+
+#tabletop-panel-actions .tabletop-weapon-field dd {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  margin: 0;
+}
+
+#tabletop-panel-actions .tabletop-inline-roll {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.65rem;
+  margin: 0;
+  padding: 0.5rem;
+  color: var(--accent);
+  box-shadow: none;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tabletop-panel-actions .tabletop-inline-roll {
+  border: 1px solid rgba(151, 168, 201, 0.34);
+  border-radius: 0.95rem;
+  background: linear-gradient(180deg, var(--classic-tint-bg) 0%, var(--classic-tint-bg) 100%);
+}
+
+:where(html[data-ui-theme="warm"]) #tabletop-panel-actions .tabletop-inline-roll {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+}
+
+#tabletop-panel-actions .tabletop-inline-roll:not(:disabled) {
+  box-shadow: none;
+}
+
+#tabletop-panel-actions .tabletop-inline-roll:disabled {
+  background: var(--surface-muted);
+  color: var(--text);
+  cursor: default;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tabletop-panel-actions .tabletop-inline-roll:disabled {
+  border-color: rgba(151, 168, 201, 0.34);
+}
+
+:where(html[data-ui-theme="warm"]) #tabletop-panel-actions .tabletop-inline-roll:disabled {
+  border-color: var(--border);
+}
+
+#tabletop-panel-actions .tabletop-weapon-field:nth-child(4) dd {
+  min-height: 2.65rem;
+  justify-content: center;
+  padding: 0.5rem;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tabletop-panel-actions .tabletop-weapon-field:nth-child(4) dd {
+  border: 1px solid rgba(151, 168, 201, 0.34);
+  border-radius: 0.95rem;
+  background: #fff;
+}
+
+:where(html[data-ui-theme="warm"]) #tabletop-panel-actions .tabletop-weapon-field:nth-child(4) dd {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+}
+
+#tabletop-panel-actions .tabletop-weapon-field .tabletop-source-tag {
+  justify-self: center;
+  min-height: 0;
+  padding: 0.18rem 0.55rem;
+  font-size: var(--fs-xs);
+  font-weight: 900;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tabletop-panel-actions .tabletop-weapon-field .tabletop-source-tag {
+  border: 1px solid rgba(255, 128, 42, 0.58);
+  border-radius: 999px;
+  background: rgba(255, 128, 42, 0.12);
+  color: #a44505;
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tabletop-panel-actions .tabletop-weapon-field .tabletop-source-tag {
+  color: #ffb27a;
+}
+
+:where(html[data-ui-theme="warm"]) #tabletop-panel-actions .tabletop-weapon-field .tabletop-source-tag {
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+#tabletop-panel-actions .tabletop-weapon-field--note-with-mastery dd {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+#tabletop-panel-actions .tabletop-weapon-note-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#tabletop-panel-actions .tabletop-weapon-mastery {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+#tabletop-panel-actions .tabletop-weapon-mastery:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (min-width: 500px) {
+  #tabletop-panel-actions .tabletop-weapon-fields {
+    grid-template-columns: minmax(0, 1fr) 3.7rem minmax(0, 1.5fr);
+    gap: 0.55rem;
+  }
+}
+
+@media (max-width: 380px) {
+  #tabletop-panel-actions .tabletop-weapon-fields {
+    grid-template-columns: minmax(0, 1fr) 3.7rem minmax(0, 1.5fr);
+    gap: 0.42rem;
+  }
+}
+
+@media (width < 320px) {
+  #tabletop-panel-actions .tabletop-weapon-fields {
+    grid-template-columns: 3.7rem minmax(0, 1fr);
+  }
+
+  #tabletop-panel-actions .tabletop-weapon-field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (width < 280px) {
+  #tabletop-panel-actions .tabletop-weapon-fields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  }
+}
+
+html[data-theme="dark"] #tabletop-panel-actions .tabletop-inline-roll,
+html[data-theme="dark"] #tabletop-panel-actions .tabletop-weapon-field:nth-child(4) dd {
+  border-color: var(--border-strong);
+}
+
+html[data-theme="dark"] #tabletop-panel-actions .tabletop-inline-roll:not(:disabled) {
+  background: var(--surface-soft);
+  color: var(--accent-strong);
+}
+
+html[data-theme="dark"] #tabletop-panel-actions .tabletop-inline-roll:disabled,
+html[data-theme="dark"] #tabletop-panel-actions .tabletop-weapon-field:nth-child(4) dd {
+  background: var(--input-bg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #tabletop-panel-actions .tabletop-inline-roll:not(:disabled):hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  :where(html:not([data-ui-theme="warm"])) #tabletop-panel-actions .tabletop-weapon-mastery:hover {
+    border-color: rgba(255, 128, 42, 0.85);
+    background: rgba(255, 128, 42, 0.2);
+    color: #8f3b05;
+  }
+
+  :where(html[data-ui-theme="warm"]) #tabletop-panel-actions .tabletop-weapon-mastery:hover {
+    border-color: var(--warning-border);
+    background: var(--warning-soft);
+    color: var(--warning);
+  }
+}
+
+#tabletop-panel-resources .tabletop-custom-resource-form {
+  gap: 0.7rem;
+  padding: 0.9rem;
+  border: 1px solid var(--resource-rule);
+  border-left: 3px solid var(--resource-active);
+  background: var(--resource-paper);
+  box-shadow: none;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tabletop-panel-resources .tabletop-custom-resource-form {
+  border-radius: 0.42rem;
+}
+
+:where(html[data-ui-theme="warm"]) #tabletop-panel-resources .tabletop-custom-resource-form {
+  border-radius: var(--radius-sm);
+}
+
+#tabletop-panel-resources .tabletop-custom-resource-form > label,
+#tabletop-panel-resources .tabletop-custom-resource-numbers label {
+  color: var(--resource-caption);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.035em;
+}
+
+#tabletop-panel-resources .tabletop-custom-resource-form input {
+  color: var(--resource-ink);
+  font-size: var(--fs-sm);
+  letter-spacing: normal;
+}
+
+#tabletop-custom-resources .tabletop-empty-state {
+  padding: 1rem 0.85rem;
+  border: 1px dashed var(--resource-rule);
+  background: transparent;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tabletop-custom-resources .tabletop-empty-state {
+  border-radius: 0.42rem;
+}
+
+:where(html[data-ui-theme="warm"]) #tabletop-custom-resources .tabletop-empty-state {
+  border-radius: var(--radius-sm);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #tabletop-panel-resources .tabletop-number-stepper__adjust:not(:disabled):hover {
+    background: var(--accent-soft);
+    color: var(--resource-active);
+  }
+
+  #tabletop-panel-resources button.tabletop-number-stepper__value:hover {
+    color: var(--resource-active);
+    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--resource-active) 62%, transparent);
+  }
+
+  #tabletop-panel-resources .tabletop-resource-stepper > .tabletop-compact-button:not(:disabled):hover,
+  #tabletop-panel-resources .tabletop-custom-resource__stepper > .tabletop-compact-button:not(:disabled):hover {
+    border-color: transparent;
+    background: var(--resource-active);
+    color: var(--on-accent);
+  }
+
+  #tabletop-panel-resources .tabletop-custom-resource__actions .tabletop-compact-button:not(:disabled):hover {
+    border-color: transparent;
+    background: var(--surface-muted);
+    color: var(--resource-ink);
+  }
+}
+
+@media (max-width: 600px) {
+  #tabletop-panel-resources .tabletop-resource-row,
+  #tabletop-panel-resources .tabletop-custom-resource {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  #tabletop-panel-resources .tabletop-resource-row__controls,
+  #tabletop-panel-resources .tabletop-resource-stepper,
+  #tabletop-panel-resources .tabletop-custom-resource__stepper {
+    grid-column: 1;
+    width: 100%;
+    justify-self: stretch;
+    justify-content: flex-start;
+  }
+
+  #tabletop-panel-resources .tabletop-number-stepper {
+    flex: 1 1 auto;
+    grid-template-columns: 2.75rem minmax(5.35rem, 1fr) 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #tabletop-panel-resources .tabletop-number-stepper button {
+    transition: none;
+  }
+}
+

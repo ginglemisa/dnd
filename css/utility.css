@@ -1,0 +1,705 @@
+/* ===== Share / Utility ===== */
+.share-mode-tip {
+  padding: 10px 12px;
+  font-weight: 700;
+}
+
+:where(html:not([data-ui-theme="warm"])) .share-mode-tip {
+  border: 1px solid #f3c76e;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff9e8 0%, #fff2c8 100%);
+  color: #7a4b00;
+}
+
+:where(html[data-ui-theme="warm"]) .share-mode-tip {
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.share-mode-tip {
+  border-inline-start-width: 5px !important;
+  line-height: 1.6;
+}
+
+html[data-theme="dark"] .share-mode-tip,
+html[data-theme="dark"] .quick-build-source-warning {
+  border-color: var(--warning-border);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.share-mode-tip__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.share-mode-tip__heading strong {
+  flex: 1;
+  min-width: 0;
+}
+
+button.share-mode-tip__toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  margin: -4px -6px -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+button.share-mode-tip__toggle:is(:hover, :focus-visible) {
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  transform: none;
+}
+
+button.share-mode-tip__toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.share-mode-tip__arrow {
+  transition: transform 120ms ease;
+}
+
+.share-mode-tip__toggle[aria-expanded="false"] .share-mode-tip__arrow {
+  transform: rotate(-90deg);
+}
+
+.share-mode-tip__details span {
+  display: block;
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+/* 跑團模式的選單按鈕固定在頁面右上角，箭頭要讓開才按得到。 */
+html[data-view-mode="tabletop"] .share-mode-tip__heading {
+  padding-inline-end: 52px;
+}
+
+/* 分享模式少掉的選單項目；匯出 JSON 由 arrangeShareModeMenu 移到下一列，這一列就空了。其他列維持原本的欄位比例。 */
+html.is-share-mode :is(#help-quick-build-btn, #set-default-abilities, #restart-onboarding-btn, #clear-storage-btn, .utility-menu__row--icon, .share-url-btn, .utility-menu__setting--auto-calc) {
+  display: none;
+}
+
+/* 分享模式鎖定的角色能力：沒有對應操作的按鈕與提示直接不顯示。缺項提示也不顯示，因為看的人無法補填。 */
+html.is-share-mode :is(#feat-add-empty, .feat-icon-btn, #add-tool-proficiency, .tool-proficiency-hint, .tool-proficiency-remove,
+  .skill-calc-button, .feature-choice-card__settings-button, #spellbook-manage, #class-feature-choice-reminder, #character-choice-warning-toggle,
+  button.tabletop-class-choice-alert) {
+  display: none !important;
+}
+
+html.is-share-mode input[data-share-locked="true"] {
+  cursor: not-allowed;
+}
+
+/* 灰底是鎖定，白底是可以改；自動計算開著時 AC 也不能手改。 */
+html.is-share-mode input:not([type="checkbox"], [type="radio"])[data-share-locked="true"],
+html.is-share-mode #tab-basic #ac-display[readonly] {
+  border-color: var(--locked-border) !important;
+  background: var(--disabled-bg) !important;
+  cursor: not-allowed;
+}
+
+html.is-share-mode input:is([type="checkbox"], [type="radio"])[data-share-locked="true"] {
+  opacity: 0.55;
+}
+
+html.is-share-mode :is(.language-field, .language-extra-row, .tool-proficiency-row):has(select[data-share-locked="true"]) {
+  border-color: var(--locked-border);
+  background: var(--locked-surface);
+}
+
+/* 換護甲或盾牌後的 AC 提示：放在「目前 AC」左邊，放不下時自動換到上方一行。 */
+html.is-share-mode .equipment-current-ac {
+  flex-wrap: wrap;
+}
+
+.share-ac-warning[hidden] {
+  display: none;
+}
+
+.share-ac-warning {
+  flex: 1 1 18rem;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+button.class-feature-choice-link.share-ac-warning__jump {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+button.class-feature-choice-link.share-ac-warning__jump > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+button.share-ac-warning__hide {
+  flex: none;
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-inline-start: 1px solid var(--warning-border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font-size: var(--fs-sm);
+}
+
+button.share-ac-warning__hide:is(:hover, :focus-visible) {
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  transform: none;
+  text-decoration: underline;
+}
+
+.spell-prepared-share-rule {
+  margin: 0 0 0.5rem;
+}
+
+.utility-menu__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.feature-choice-disclosure {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.feature-choice-disclosure > summary {
+  min-height: 2.75rem;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.feature-choice-disclosure > summary:hover {
+  color: var(--accent);
+}
+
+.feature-choice-disclosure > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.feature-choice-disclosure[open] > .output {
+  margin-top: 0.65rem;
+}
+
+.feature-choice-card {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.78rem 0.86rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  color: var(--text-body);
+  line-height: 1.58;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.feature-choice-card + .feature-choice-card {
+  margin-top: 0.62rem;
+}
+
+.feature-choice-card:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.feature-choice-card.is-unavailable {
+  opacity: 0.62;
+}
+
+.feature-choice-card.is-unavailable .inline-check-label {
+  cursor: not-allowed;
+}
+
+.feature-choice-card__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.58rem;
+  min-height: 1.5rem;
+  color: var(--text);
+  font-size: var(--fs-base);
+  font-weight: 800;
+}
+
+label.feature-choice-card__heading {
+  cursor: pointer;
+}
+
+.feature-choice-card__checks {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.26rem;
+}
+
+.feature-choice-card--invocation .feature-choice-card__heading {
+  align-items: flex-start;
+}
+
+.feature-choice-card--invocation .feature-choice-card__checks,
+.feature-choice-card__invocation-pick {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.feature-choice-card__invocation-pick {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.feature-choice-card__repeatable-checks {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.feature-choice-card__body > .feature-choice-card__repeatable-checks {
+  margin-top: 0.35rem;
+}
+
+.feature-choice-card__repeatable-checks .inline-check-label {
+  margin: 0;
+}
+
+.feature-choice-card__settings-button {
+  width: auto;
+  min-height: 2rem;
+  margin: -0.2rem 0 -0.2rem auto;
+  padding: 0.28rem 0.55rem;
+  font-size: var(--fs-xs);
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.agonizing-blast-setting {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+}
+
+.agonizing-blast-setting > label {
+  display: grid;
+  gap: 0.34rem;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+}
+
+.agonizing-blast-setting__select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.agonizing-blast-setting__description {
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  line-height: 1.58;
+}
+
+.agonizing-blast-setting__description > :first-child {
+  margin-top: 0;
+}
+
+.agonizing-blast-setting__description > :last-child {
+  margin-bottom: 0;
+}
+
+.invocation-target-select {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 11rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 750;
+}
+
+.invocation-target-select select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.feature-choice-card__body {
+  padding-left: 1.65rem;
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  line-height: 1.62;
+  white-space: normal;
+}
+
+.feature-choice-card__meta {
+  margin-bottom: 0.38rem;
+  color: var(--accent-strong);
+  font-weight: 750;
+}
+
+.feature-choice-card--metamagic .feature-choice-card__heading > strong,
+.feature-choice-card--metamagic .feature-choice-card__heading > .feature-choice-card__meta {
+  white-space: nowrap;
+}
+
+.feature-choice-card--metamagic .feature-choice-card__heading > .feature-choice-card__meta {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.62;
+}
+
+.feature-choice-card__body > :first-child {
+  margin-top: 0;
+}
+
+.feature-choice-card__body > :last-child {
+  margin-bottom: 0;
+}
+
+.feature-choice-card__body p {
+  margin: 0.42rem 0;
+  line-height: 1.62;
+}
+
+.feature-choice-card__body ul {
+  margin: 0.44rem 0;
+  padding-left: 1.3rem;
+}
+
+.feature-choice-card__body li {
+  padding-left: 0.08rem;
+  line-height: 1.58;
+}
+
+.feature-choice-card__body li + li {
+  margin-top: 0.28rem;
+}
+
+.feature-choice-card__body .invocation-prereq {
+  margin: 0;
+}
+
+@media (hover: hover) {
+  .feature-choice-card:not(.is-unavailable):hover {
+    border-color: var(--border-strong);
+    background: var(--surface-strong);
+  }
+}
+
+@media (max-width: 420px) {
+  .feature-choice-card {
+    padding: 0.72rem 0.76rem;
+  }
+
+  .feature-choice-card__body {
+    padding-left: 0;
+  }
+}
+
+.invocation-prereq {
+  display: inline-block;
+  margin: 2px 0 6px;
+  padding: 2px 8px;
+  font-size: 0.9em;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+:where(html:not([data-ui-theme="warm"])) .invocation-prereq {
+  border: 1px solid var(--classic-line-soft);
+  border-radius: 999px;
+  background: var(--classic-tint-bg);
+  color: var(--classic-muted-text);
+}
+
+:where(html[data-ui-theme="warm"]) .invocation-prereq {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text-body);
+}
+
+html[data-theme="dark"] #equipment-notes-section details,
+html[data-theme="dark"] #equipment-notes-section details:hover,
+html[data-theme="dark"] .selection-summary,
+html[data-theme="dark"] .selection-summary-card,
+html[data-theme="dark"] .ability,
+html[data-theme="dark"] .modifier,
+html[data-theme="dark"] .action-help table,
+html[data-theme="dark"] .weapon-attack-card,
+html[data-theme="dark"] .equipment-loadout-summary,
+html[data-theme="dark"] .weapon-attack-fields input.is-automated,
+html[data-theme="dark"] .equipment-summary-row,
+html[data-theme="dark"] .money-balance-grid > div,
+html[data-theme="dark"] .spell-entry--derived,
+html[data-theme="dark"] .spell-slot-column,
+html[data-theme="dark"] .invocation-prereq {
+  border-color: var(--border);
+  background: var(--surface-soft);
+  color: var(--text-body);
+  box-shadow: none;
+}
+
+@media (min-width: 360px) {
+  .spell-slot-column {
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    justify-content: center;
+    justify-items: center;
+    align-content: start;
+    gap: 0.45rem 0.55rem;
+    text-align: center;
+  }
+}
+
+@media (min-width: 500px) {
+  .spell-slot-column {
+    display: flex;
+    justify-content: center;
+    text-align: left;
+  }
+}
+
+/* ===== Hero / Footer ===== */
+:where(html:not([data-ui-theme="warm"])) .site-hero {
+  padding: 8px 14px 2px;
+}
+
+:where(html[data-ui-theme="warm"]) .site-hero {
+  padding: 6px 10px 4px;
+  border-left: 4px solid var(--action-fill);
+}
+
+.site-hero h1 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 900;
+}
+
+.site-hero p {
+  margin: 2px 0 0;
+  font-size: var(--fs-sm);
+}
+
+.site-footer {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  box-shadow: none;
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+
+:where(html:not([data-ui-theme="warm"])) .site-footer {
+  border: 1px solid rgba(151, 168, 201, 0.26);
+  border-radius: 1.25rem;
+}
+
+:where(html[data-ui-theme="warm"]) .site-footer {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.site-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.site-footer a {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+:where(html:not([data-ui-theme="warm"])) .site-footer a {
+  color: #2a55d4;
+}
+
+:where(html[data-ui-theme="warm"]) .site-footer a {
+  color: var(--accent);
+}
+
+html[data-theme="dark"] .site-footer a,
+html[data-theme="dark"] .equipment-item-link,
+html[data-theme="dark"] .feat-icon-btn--add {
+  color: var(--accent);
+}
+
+.site-footer a:hover,
+.site-footer a:focus-visible {
+  text-decoration: underline;
+}
+
+/* ===== Floating UI ===== */
+#exit-share-mode:not([hidden]) {
+  position: fixed;
+  right: max(3rem, calc((100vw - var(--app-max-width)) / 2 + 3rem));
+  bottom: 0.85rem;
+  z-index: 999;
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  background: var(--surface-strong);
+  color: var(--text-body);
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#scrollToTopBtn {
+  position: fixed;
+  right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
+  bottom: calc(0.55rem + 2.5rem);
+  z-index: 999;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  box-shadow: none;
+  opacity: 1;
+}
+
+#scrollToBottomBtn {
+  position: fixed;
+  right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
+  bottom: 0.55rem;
+  z-index: 1100;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  box-shadow: none;
+  opacity: 1;
+}
+
+:where(html:not([data-ui-theme="warm"])) #scrollToBottomBtn {
+  transition: bottom 0.2s ease;
+}
+
+:where(html[data-ui-theme="warm"]) #scrollToBottomBtn {
+  transition: bottom 120ms ease;
+}
+
+html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scrollToBottomBtn) {
+  color: var(--text-muted);
+}
+
+#spell-search-fab,
+#equipment-search-fab {
+  position: fixed;
+  top: var(--floating-top-offset, 4.2rem);
+  right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
+  z-index: 1200;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  box-shadow: none;
+  opacity: 1;
+}
+
+:where(html:not([data-ui-theme="warm"])) #spell-search-fab,
+:where(html:not([data-ui-theme="warm"])) #equipment-search-fab {
+  transition: top 0.2s ease;
+}
+
+:where(html[data-ui-theme="warm"]) #spell-search-fab,
+:where(html[data-ui-theme="warm"]) #equipment-search-fab {
+  transition: top 120ms ease;
+}
+
+#spell-search-fab.is-hidden,
+#equipment-search-fab.is-hidden {
+  display: none;
+}
+
+#spell-search-fab:hover,
+#equipment-search-fab:hover {
+  opacity: 1;
+}
+
+#scrollToTopBtn:hover {
+  opacity: 1;
+}
+
+#scrollToBottomBtn:hover {
+  opacity: 1;
+}
+

@@ -1,0 +1,1204 @@
+/* ===== Dice roller ===== */
+#dice-roller-fab {
+  position: fixed;
+  left: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
+  bottom: 0.55rem;
+  z-index: 1200;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  box-shadow: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #dice-roller-fab::after {
+    position: absolute;
+    left: calc(100% + 0.45rem);
+    bottom: 50%;
+    padding: 0.35rem 0.55rem;
+    border-radius: 0.45rem;
+    background: var(--surface-elevated, var(--surface));
+    color: var(--text);
+    box-shadow: var(--shadow-soft);
+    content: "點我擲骰";
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(50%);
+    transition: opacity 120ms ease;
+  }
+
+  #dice-roller-fab:hover::after {
+    opacity: 1;
+  }
+}
+
+#dice-roller-fab.is-hidden {
+  display: none;
+}
+
+#dice-roller-fab.dice-roller-fab--announce {
+  animation: dice-roller-fab-announce 1.2s ease-in-out 3;
+}
+
+@keyframes dice-roller-fab-announce {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(255, 196, 64, 0));
+    transform: scale(1);
+  }
+
+  50% {
+    filter: drop-shadow(0 0 4px rgba(255, 214, 92, 0.95)) drop-shadow(0 0 12px rgba(255, 170, 30, 0.85));
+    transform: scale(1.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #dice-roller-fab.dice-roller-fab--announce {
+    animation: dice-roller-fab-announce-static 3.6s step-end 1;
+  }
+
+  @keyframes dice-roller-fab-announce-static {
+    0% {
+      filter: drop-shadow(0 0 4px rgba(255, 214, 92, 0.95)) drop-shadow(0 0 12px rgba(255, 170, 30, 0.85));
+    }
+
+    100% {
+      filter: none;
+    }
+  }
+}
+
+#dice-roller-fab:hover,
+#dice-roller-fab:focus-visible,
+#dice-roller-fab:active {
+  transform: none;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.dice-roller-modal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-backdrop);
+  display: grid;
+  place-items: center;
+  padding:
+    max(0.75rem, env(safe-area-inset-top, 0px))
+    max(0.75rem, env(safe-area-inset-right, 0px))
+    max(0.75rem, env(safe-area-inset-bottom, 0px))
+    max(0.75rem, env(safe-area-inset-left, 0px));
+  background: var(--overlay-strong);
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+
+.dice-roller-modal[hidden] {
+  display: none;
+}
+
+.dice-roller-modal.is-open {
+  opacity: 1;
+}
+
+.dice-roller-card {
+  position: relative;
+  z-index: var(--z-dialog);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  width: min(51rem, 100%);
+  height: min(33rem, calc(100svh - 1.5rem));
+  max-height: 100%;
+  padding: clamp(0.75rem, 2vw, 1.15rem);
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
+  opacity: 0;
+  transform: scale(1.025);
+  transition: opacity 220ms ease-out, transform 240ms cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+:where(html:not([data-ui-theme="warm"])) .dice-roller-card {
+  box-shadow: 0 28px 90px rgba(3, 10, 24, 0.42);
+}
+
+:where(html[data-ui-theme="warm"]) .dice-roller-card {
+  box-shadow: var(--shadow-strong);
+}
+
+.dice-roller-modal.is-open .dice-roller-card {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.dice-roller-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.dice-roller-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-xl);
+  letter-spacing: 0.02em;
+}
+
+.dice-roller-close {
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-color: transparent;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.dice-roller-display {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text);
+}
+
+.dice-roller-stage {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(0.65rem, 2vw, 1.2rem);
+  overflow: hidden;
+  contain: layout paint;
+}
+
+.dice-roller-stage.is-history {
+  place-items: stretch;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  contain: layout paint style;
+}
+
+.dice-roller-stage.is-history .dice-roller-empty {
+  align-self: center;
+  justify-self: center;
+}
+
+.dice-roller-stage.is-history:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: -3px;
+}
+
+.dice-roller-card.is-ability-roll {
+  width: min(38rem, 100%);
+  height: min(44rem, calc(100svh - 1.5rem));
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.dice-roller-controls[hidden] { display: none; }
+
+.is-ability-roll .dice-roller-stage { padding: 0.7rem; }
+
+.dice-ability-form {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.dice-ability-form label { margin: 0; }
+
+.dice-ability-hint,
+.dice-ability-status {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.dice-ability-results,
+.dice-ability-assignments {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem 1rem;
+}
+
+.dice-ability-results {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 7rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dice-ability-start {
+  grid-column: 1 / -1;
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.dice-ability-art {
+  display: grid;
+  place-content: center;
+  width: 5rem;
+  height: 5rem;
+  overflow: hidden;
+}
+
+.dice-ability-art canvas,
+.dice-ability-art img {
+  display: block;
+  width: 10rem;
+  height: 10rem;
+  max-width: none;
+}
+
+.dice-ability-art span { font-size: 3rem; }
+
+.dice-ability-results strong { align-self: center; }
+
+.dice-ability-results strong {
+  color: var(--accent);
+  font-size: clamp(1.6rem, 4vw, 2rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.dice-ability-assignments label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.dice-ability-form select {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.4rem;
+  margin: 0;
+  padding: 0.3rem 1.5rem 0.3rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.dice-ability-background {
+  min-width: 0;
+  margin: 0;
+  padding: 0.4rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.dice-ability-background legend {
+  padding: 0 0.5rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.dice-ability-pattern {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.85rem;
+}
+
+.dice-ability-pattern label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 2rem;
+  width: auto;
+  cursor: pointer;
+}
+
+.dice-ability-pattern input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.dice-ability-bonuses {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.dice-ability-bonuses label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.dice-ability-apply { width: 100%; }
+
+.dice-ability-history-dice {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.dice-ability-history-dice > span {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+:where(html:not([data-ui-theme="warm"])) .dice-ability-history-dice > span {
+  border-radius: 0.3rem;
+}
+
+:where(html[data-ui-theme="warm"]) .dice-ability-history-dice > span {
+  border-radius: var(--radius-sm);
+}
+
+.dice-ability-history-dice .is-dropped,
+.dice-roller-detail-result.is-dropped {
+  text-decoration: line-through;
+  opacity: 0.45;
+  color: var(--text-muted);
+}
+
+.dice-roller-history {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dice-roller-history-entry {
+  border-bottom: 1px solid var(--border);
+  color: var(--text-body);
+  font-size: clamp(0.86rem, 2.8vw, 1.08rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.dice-roller-history-entry.is-legacy {
+  padding: clamp(0.65rem, 1.8vw, 0.9rem) clamp(0.65rem, 2vw, 1rem);
+}
+
+.dice-roller-history-entry:first-child {
+  background: var(--accent-soft);
+  color: var(--text);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.dice-roller-history-open {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: clamp(0.65rem, 1.8vw, 0.9rem) clamp(0.65rem, 2vw, 1rem);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  box-shadow: none;
+}
+
+.dice-roller-history-open:hover,
+.dice-roller-history-open:active {
+  transform: none;
+  border: 0;
+  background: color-mix(in srgb, var(--accent-soft) 62%, transparent);
+  color: inherit;
+  box-shadow: none;
+}
+
+.dice-roller-history-open:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: -3px;
+}
+
+.dice-roller-history-chevron {
+  color: var(--text-muted);
+  font-size: 1.45em;
+  font-weight: 400;
+  line-height: 0.75;
+}
+
+.dice-roller-detail-back {
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  box-shadow: none;
+}
+
+.dice-roller-detail-back:hover,
+.dice-roller-detail-back:active {
+  transform: none;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  box-shadow: none;
+}
+
+.dice-roller-history-detail {
+  display: grid;
+  align-content: start;
+  gap: clamp(0.7rem, 2vw, 1rem);
+  width: 100%;
+}
+
+.dice-roller-automated-results {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.dice-roller-automated-result {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.7rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  overflow-wrap: anywhere;
+}
+
+.dice-roller-automated-result__equation {
+  color: var(--text);
+  font-size: var(--fs-lg);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.dice-roller-automated-result__detail {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+
+.dice-roller-detail-expression {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: clamp(0.78rem, 2.2vw, 0.94rem);
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.dice-roller-detail-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.05rem, 1fr));
+  gap: 0.42rem;
+}
+
+.dice-roller-detail-result {
+  display: grid;
+  place-items: center;
+  min-height: 2.55rem;
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: var(--text);
+  font-size: clamp(0.88rem, 2.5vw, 1.05rem);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.dice-roller-detail-result.is-low {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+  color: var(--danger);
+}
+
+.dice-roller-detail-result.is-high {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  color: var(--primary);
+}
+
+.dice-roller-empty {
+  color: var(--text-muted);
+  font-size: clamp(0.82rem, 2.2vw, 1rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.dice-roller-animation {
+  display: block;
+  width: min(48%, 14rem);
+  max-height: 72%;
+  object-fit: contain;
+}
+
+.dice-roller-results {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  gap: clamp(0.25rem, 1.2vw, 0.8rem);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.dice-roller-result {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  color: var(--text);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.9;
+  letter-spacing: -0.055em;
+  opacity: 0;
+  transform: scale(0.86);
+  animation: dice-result-reveal 220ms ease-out forwards;
+}
+
+.dice-roller-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  min-height: 3.45rem;
+  padding: 0.65rem clamp(0.85rem, 2.5vw, 1.35rem);
+  border-top: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.dice-roller-view-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.38em;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.dice-roller-view-tab {
+  width: auto;
+  min-width: 0;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: inherit;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  box-shadow: none;
+  text-align: left;
+}
+
+.dice-roller-view-tab:hover,
+.dice-roller-view-tab:active,
+.dice-roller-view-tab.is-active {
+  transform: none;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  box-shadow: none;
+}
+
+.dice-roller-view-tab:disabled:not(.is-active) {
+  opacity: 1;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.dice-roller-total output {
+  font-size: clamp(1.4rem, 4vw, 2.25rem);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.dice-roller-controls {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: clamp(0.35rem, 1vw, 0.65rem);
+  min-width: 0;
+}
+
+.dice-roller-controls button {
+  position: relative;
+  min-width: 0;
+  min-height: 3.15rem;
+  padding: 0.52rem 0.4rem;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  font-size: clamp(0.78rem, 2.3vw, 1rem);
+  font-weight: 900;
+  letter-spacing: 0.015em;
+}
+
+.dice-roller-die {
+  display: grid;
+  grid-template-columns: 1fr;
+  place-items: center;
+  transition: filter 180ms ease, color 180ms ease, background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.dice-roller-die.has-count {
+  border-color: var(--border-strong);
+  background: var(--surface-muted);
+  color: var(--text-body);
+  filter: grayscale(1);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.dice-roller-count {
+  position: absolute;
+  right: 0.28rem;
+  bottom: 0.22rem;
+  min-width: 1.15rem;
+  color: currentColor;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: right;
+}
+
+.dice-roller-die::after,
+.dice-roller-roll::after,
+.dice-roller-clear::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+:where(html:not([data-ui-theme="warm"])) .dice-roller-die::after,
+:where(html:not([data-ui-theme="warm"])) .dice-roller-roll::after,
+:where(html:not([data-ui-theme="warm"])) .dice-roller-clear::after {
+  background: var(--accent);
+}
+
+:where(html[data-ui-theme="warm"]) .dice-roller-die::after,
+:where(html[data-ui-theme="warm"]) .dice-roller-roll::after,
+:where(html[data-ui-theme="warm"]) .dice-roller-clear::after {
+  background: var(--action-fill);
+}
+
+.dice-roller-die.is-holding::after,
+.dice-roller-roll.is-holding::after,
+.dice-roller-clear.is-holding::after {
+  animation: dice-long-press 1.3s linear forwards;
+}
+
+.dice-roller-roll {
+  border-color: transparent;
+  background: var(--accent-gradient);
+  color: var(--on-accent);
+}
+
+.dice-roller-roll::after {
+  background: #000;
+}
+
+html[data-theme="dark"] .dice-roller-roll::after {
+  background: #fff;
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .dice-roller-roll::after {
+  background: var(--on-accent);
+}
+
+.dice-roller-clear {
+  color: var(--text-muted);
+}
+
+@keyframes dice-result-reveal {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dice-long-press {
+  to { transform: scaleX(1); }
+}
+
+@media (max-width: 620px) {
+  .dice-roller-card {
+    gap: 0.55rem;
+    padding: 0.65rem;
+    border-radius: var(--radius-md);
+  }
+
+  .dice-roller-controls {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .dice-roller-controls button {
+    min-height: 3rem;
+  }
+
+  .dice-roller-roll {
+    grid-column: span 2;
+  }
+}
+
+@media (max-height: 560px) {
+  .dice-roller-card:not(.is-ability-roll) {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .dice-roller-card:not(.is-ability-roll) .dice-roller-header {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.65rem;
+    z-index: 1;
+  }
+
+  .dice-roller-card:not(.is-ability-roll) .dice-roller-header h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .dice-roller-close {
+    background: var(--surface-strong);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dice-roller-modal,
+  .dice-roller-card,
+  .dice-roller-die,
+  .dice-roller-result {
+    transition-duration: 100ms;
+    animation-duration: 100ms;
+    animation-delay: 0ms;
+    transform: none;
+  }
+
+  .dice-roller-die.is-holding::after,
+  .dice-roller-roll.is-holding::after,
+  .dice-roller-clear.is-holding::after {
+    animation-duration: 1.3s;
+  }
+}
+
+#tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: none;
+  /* Read by the tour as the top limit for dragging its window. */
+  padding-top: env(safe-area-inset-top, 0px);
+  pointer-events: none;
+}
+
+#tour-overlay.onboarding-spell-preview {
+  z-index: 12700;
+}
+
+/* 導覽的法術示範只看網站版：不顯示「網站版｜SRD 版」切換，標頭維持在原位置，下方留給說明。 */
+.app-dialog[data-tour-spell-preview] .spell-version__tabs {
+  display: none;
+}
+
+/* Some tour steps use the whole viewport for their highlighted content. */
+html.onboarding-app-bar-hidden .tabs-shell {
+  visibility: hidden;
+}
+
+#tour-overlay[data-tour-kind="tabletop"].onboarding-spell-preview #tour-tooltip,
+#tour-overlay[data-tour-kind="tabletop"].onboarding-resource-step #tour-tooltip {
+  max-height: min(38dvh, calc(100dvh - 32px));
+}
+
+#point-buy-modal.onboarding-tour-preview .point-buy-modal-card {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* The tour scrolls its targets to the top, so the card uses the full height. */
+@media (max-width: 499px) {
+  #point-buy-modal.onboarding-tour-point-buy {
+    align-items: flex-start;
+  }
+
+  #point-buy-modal.onboarding-tour-point-buy .point-buy-modal-card {
+    max-height: 100%;
+  }
+}
+
+.tour-mask {
+  position: fixed;
+  pointer-events: auto;
+}
+
+:where(html:not([data-ui-theme="warm"])) .tour-mask {
+  background: rgba(10, 16, 30, 0.72);
+}
+
+:where(html[data-ui-theme="warm"]) .tour-mask {
+  background: var(--overlay-strong);
+}
+
+#tour-focus-ring,
+#tour-focus-ring-secondary {
+  position: fixed;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: default;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tour-focus-ring,
+:where(html:not([data-ui-theme="warm"])) #tour-focus-ring-secondary {
+  border: 3px solid #7aa2ff;
+  border-radius: 12px;
+  box-shadow: 0 0 0 2px rgba(122, 162, 255, 0.38), 0 0 26px rgba(122, 162, 255, 0.7);
+}
+
+:where(html[data-ui-theme="warm"]) #tour-focus-ring,
+:where(html[data-ui-theme="warm"]) #tour-focus-ring-secondary {
+  border: 3px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-soft);
+}
+
+#tour-tooltip {
+  position: fixed;
+  width: min(252px, calc(100vw - 20px));
+  padding: 10px;
+  pointer-events: auto;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tour-tooltip {
+  border: 1px solid #c7d2e9;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(10, 16, 30, 0.24);
+}
+
+:where(html[data-ui-theme="warm"]) #tour-tooltip {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-strong);
+}
+
+html[data-theme="dark"] #tour-tooltip {
+  border-color: var(--border-strong);
+  background: var(--surface-strong);
+  color: var(--text-body);
+  box-shadow: var(--shadow-strong);
+}
+
+#tour-overlay[data-tour-kind="sheet"] #tour-tooltip {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  max-height: min(32dvh, calc(100dvh - 20px));
+}
+
+#tour-overlay[data-tour-kind="sheet"] #tour-step-text {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#tour-overlay[data-tour-kind="sheet"] .tour-heading-row,
+#tour-overlay[data-tour-kind="sheet"] .tour-btn-row {
+  flex-shrink: 0;
+}
+
+#tour-overlay[data-tour-kind="tabletop"] #tour-tooltip {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  max-height: min(55dvh, calc(100dvh - 32px));
+}
+
+#tour-overlay[data-tour-kind="tabletop"] #tour-step-text {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+  line-height: 1.6;
+}
+
+#tour-overlay[data-tour-kind="tabletop"] .tour-heading-row,
+#tour-overlay[data-tour-kind="tabletop"] .tour-btn-row {
+  flex-shrink: 0;
+}
+
+#tour-overlay[data-tour-kind="tabletop"] .tour-btn-row {
+  flex-wrap: wrap;
+}
+
+#tour-overlay[data-tour-kind="tabletop"] .tour-btn-row button {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+#tour-step-text details {
+  margin-top: 12px;
+  white-space: normal;
+}
+
+#tour-step-text summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: list-item;
+  align-content: center;
+  font-weight: 700;
+}
+
+#tour-step-text details p { margin: 8px 0; }
+
+.tour-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+#tour-step-title {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 900;
+}
+
+#tour-step-progress {
+  flex: 0 0 auto;
+  padding: 0.18rem 0.48rem;
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tour-step-progress {
+  border: 1px solid rgba(86, 117, 242, 0.28);
+  border-radius: 999px;
+  background: rgba(86, 117, 242, 0.1);
+  color: #315fc4;
+}
+
+:where(html[data-ui-theme="warm"]) #tour-step-progress {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+html[data-theme="dark"] #tour-step-progress {
+  background: var(--accent-soft);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tour-step-progress {
+  border-color: var(--border-strong);
+  color: var(--accent-strong);
+}
+
+html:where([data-ui-theme="warm"])[data-theme="dark"] #tour-step-progress {
+  border-color: var(--border);
+  color: var(--accent);
+}
+
+#tour-step-text {
+  white-space: pre-line;
+  /* The whole window drags; overflowing guidance scrolls vertically instead. */
+  touch-action: none;
+}
+
+#tour-step-text.is-scrollable {
+  touch-action: pan-y;
+}
+
+#tour-step-text .tour-step-emphasis {
+  color: var(--warning);
+  font-weight: 800;
+}
+
+/* Same timing as the dice button glow, so both pulse together. */
+#tabletop-initiative.tour-roll-pulse {
+  animation: tour-roll-pulse 1.2s ease-in-out 3;
+}
+
+@keyframes tour-roll-pulse {
+  0%,
+  100% {
+    text-shadow: none;
+    transform: scale(1);
+  }
+
+  50% {
+    text-shadow: 0 0 6px rgba(255, 196, 64, 0.9);
+    transform: scale(1.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #tabletop-initiative.tour-roll-pulse {
+    animation: tour-roll-pulse-static 3.6s step-end 1;
+  }
+
+  @keyframes tour-roll-pulse-static {
+    0% {
+      text-shadow: 0 0 6px rgba(255, 196, 64, 0.9);
+    }
+
+    100% {
+      text-shadow: none;
+    }
+  }
+}
+
+#tour-step-text .tour-step-action {
+  display: inline;
+  width: auto;
+  min-height: 0;
+  vertical-align: baseline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: none;
+  box-shadow: none;
+  font: inherit;
+  font-weight: 800;
+  line-height: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+#tour-step-text .tour-step-action:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+#tour-step-text {
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tour-step-text {
+  color: var(--classic-heading-text);
+}
+
+:where(html[data-ui-theme="warm"]) #tour-step-text {
+  color: var(--text);
+}
+
+.tour-btn-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+#tour-next-btn,
+#tour-skip-btn,
+#tour-prev-btn {
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: var(--fs-xs);
+}
+
+:where(html:not([data-ui-theme="warm"])) #tour-prev-btn {
+  background: linear-gradient(180deg, var(--classic-tint-bg) 0%, var(--classic-tint-bg) 100%);
+  color: var(--classic-heading-text);
+}
+
+:where(html[data-ui-theme="warm"]) #tour-prev-btn {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+html[data-theme="dark"] #tour-step-text,
+html[data-theme="dark"] #tour-prev-btn {
+  color: var(--text-body);
+}
+
+html[data-theme="dark"] #tour-prev-btn {
+  background: var(--control-bg);
+}
+
+#tour-prev-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tour-next-btn {
+  background: var(--accent-gradient);
+  color: #fff;
+}
+
+:where(html[data-ui-theme="warm"]) #tour-next-btn {
+  background: var(--action-fill);
+  color: var(--on-accent);
+}
+

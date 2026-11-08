@@ -1,0 +1,1025 @@
+/* ===== Basic Tab ===== */
+.hp-card,
+.mini-stat-card {
+  padding: 0.95rem 1rem;
+}
+
+:where(html:not([data-ui-theme="warm"])) .hp-card,
+:where(html:not([data-ui-theme="warm"])) .mini-stat-card {
+  border: 1px solid rgba(151, 168, 201, 0.26);
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 14px rgba(18, 33, 68, 0.055);
+}
+
+:where(html[data-ui-theme="warm"]) .hp-card,
+:where(html[data-ui-theme="warm"]) .mini-stat-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+#tab-basic .mini-stat-card {
+  padding: 0.85rem;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tab-basic .mini-stat-card {
+  border-radius: 1.1rem;
+}
+
+:where(html[data-ui-theme="warm"]) #tab-basic .mini-stat-card {
+  border-radius: var(--radius-lg);
+}
+
+.hp-title,
+.mini-stat-label {
+  margin-bottom: 0.35rem;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hp-title {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.basic-overview {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.basic-overview-group {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.field-info-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.15rem 0.75rem;
+  margin: 0 0 -0.25rem;
+  padding: 0 0.25rem;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
+
+.field-info-hint[hidden] { display: none; }
+
+.field-info-hint .character-features-info-icon { font-size: inherit; }
+
+button.field-info-hint__dismiss {
+  display: inline;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  margin: -0.25rem 0 -0.25rem auto;
+  padding: 0.25rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--accent-strong);
+  font: inherit;
+  letter-spacing: inherit;
+  text-decoration: underline solid;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+button.field-info-hint__dismiss:hover,
+button.field-info-hint__dismiss:active {
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+button.field-info-hint__dismiss:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.basic-row {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.basic-row--class-level {
+  grid-template-columns: 1fr;
+}
+
+.basic-row--origin {
+  grid-template-columns: 1fr;
+}
+
+.basic-row--vitals {
+  grid-template-columns: minmax(0, 4fr) minmax(0, 3fr);
+}
+
+.basic-row--combat {
+  grid-template-columns: minmax(0, 4fr) minmax(0, 3fr);
+}
+
+.basic-row--combat > .mini-stat-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+}
+
+.basic-row--combat .speed-current-display {
+  width: 100%;
+  height: 3rem;
+  min-height: 3rem;
+}
+
+.basic-combat-pair-card {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.basic-row--combat > .basic-combat-pair-card {
+  grid-template-rows: auto;
+}
+
+.basic-combat-field {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+}
+
+.basic-pair-card {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.basic-pair-card--class-level {
+  grid-template-columns: minmax(0, 1.5fr) minmax(4.5rem, 0.65fr) minmax(5.5rem, 0.85fr);
+}
+
+.basic-pair-field--level {
+  width: 100%;
+}
+
+.hit-die-size {
+  white-space: nowrap;
+}
+
+@container (max-width: 6.5rem) {
+  .hit-die-size {
+    display: none;
+  }
+}
+
+.basic-pair-field--level select,
+.basic-pair-field--hit-dice select {
+  width: 100%;
+  min-height: 2.9rem;
+}
+
+.basic-pair-card--class-level .class-feature-option {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 0.75rem;
+}
+
+:where(html:not([data-ui-theme="warm"])) .basic-pair-card--class-level .class-feature-option {
+  border-top: 1px solid rgba(151, 168, 201, 0.2);
+}
+
+:where(html[data-ui-theme="warm"]) .basic-pair-card--class-level .class-feature-option {
+  border-top: 1px solid var(--border);
+}
+
+.basic-pair-card--class-level .class-feature-option select {
+  width: 100%;
+  margin: 0;
+  font-weight: 800;
+  text-align: left;
+}
+
+.basic-pair-card--equal {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-content: start;
+}
+
+.basic-pair-card--custom-background {
+  grid-template-columns: minmax(0, 0.9fr) auto minmax(0, 1.1fr);
+}
+
+.custom-background-edit {
+  align-self: end;
+  min-height: 2.9rem;
+  margin: 0;
+  padding-inline: 0.65rem;
+  white-space: nowrap;
+}
+
+@media (360px <= width < 540px) {
+  .basic-pair-card--custom-background {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .basic-pair-card--custom-background .basic-pair-field--race {
+    grid-column: 1 / -1;
+  }
+}
+
+.basic-pair-card--equal .race-options {
+  grid-column: 1 / -1;
+  padding-top: 0.75rem;
+}
+
+:where(html:not([data-ui-theme="warm"])) .basic-pair-card--equal .race-options {
+  border-top: 1px solid rgba(151, 168, 201, 0.2);
+}
+
+:where(html[data-ui-theme="warm"]) .basic-pair-card--equal .race-options {
+  border-top: 1px solid var(--border);
+}
+
+.basic-pair-field,
+.basic-single-card {
+  min-width: 0;
+}
+
+.race-select-control {
+  display: flex;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.race-select-control #race {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.race-size-select {
+  width: 6rem;
+  min-width: 6rem;
+  margin: 0;
+  font-weight: 800;
+}
+
+.race-size-select option {
+  font-weight: 800;
+}
+
+.basic-metric-card {
+  min-width: 0;
+}
+
+.basic-metric-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.basic-metric-values > * {
+  min-width: 0;
+}
+
+.basic-metric-values > select {
+  width: 100%;
+  min-height: 3rem;
+}
+
+/* 極窄角色卡：先增加欄位寬度，不縮小文字或擠壓控制項。 */
+@media (width < 360px) {
+  .basic-pair-card--class-level {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .basic-pair-field--class {
+    grid-column: 1 / -1;
+  }
+
+  .basic-pair-card--equal,
+  .basic-row--vitals,
+  .basic-row--combat {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+#hit-die-label .hit-die-size {
+  display: inline;
+}
+
+.hp-value,
+#ac-display,
+#hp-display {
+  color: var(--accent);
+  font-size: var(--fs-2xl);
+  font-weight: 900;
+}
+
+#tab-basic #hp-display,
+#tab-basic #ac-display,
+#tab-basic .speed-current-display,
+#tab-basic .basic-display-checkbox,
+#tab-basic .tight-input,
+#tab-basic .hp-card input[type="number"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.7rem 0.85rem;
+  color: var(--text);
+  text-align: center;
+  font-size: var(--fs-xl);
+  font-weight: 800;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tab-basic #hp-display,
+:where(html:not([data-ui-theme="warm"])) #tab-basic #ac-display,
+:where(html:not([data-ui-theme="warm"])) #tab-basic .speed-current-display,
+:where(html:not([data-ui-theme="warm"])) #tab-basic .basic-display-checkbox,
+:where(html:not([data-ui-theme="warm"])) #tab-basic .tight-input,
+:where(html:not([data-ui-theme="warm"])) #tab-basic .hp-card input[type="number"] {
+  border-radius: 1rem;
+  border: 1px solid rgba(151, 168, 201, 0.34);
+  background: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 1px 2px rgba(22, 38, 80, 0.04);
+}
+
+:where(html[data-ui-theme="warm"]) #tab-basic #hp-display,
+:where(html[data-ui-theme="warm"]) #tab-basic #ac-display,
+:where(html[data-ui-theme="warm"]) #tab-basic .speed-current-display,
+:where(html[data-ui-theme="warm"]) #tab-basic .basic-display-checkbox,
+:where(html[data-ui-theme="warm"]) #tab-basic .tight-input,
+:where(html[data-ui-theme="warm"]) #tab-basic .hp-card input[type="number"] {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  box-shadow: none;
+}
+
+#tab-basic #hp-display,
+#tab-basic #ac-display,
+#tab-basic .speed-current-display {
+  margin-left: 0;
+  color: var(--accent);
+}
+
+#tab-basic .derived-stat-input {
+  margin: 0;
+  caret-color: transparent;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+#tab-basic .derived-stat-input[readonly] {
+  cursor: default;
+}
+
+#tab-basic.manual-key-stats .derived-stat-input {
+  caret-color: auto;
+  cursor: text;
+}
+
+#tab-basic.manual-key-stats .derived-stat-input:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+#tab-basic .basic-display-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  cursor: pointer;
+  position: relative;
+}
+
+#tab-basic .basic-display-checkbox::after {
+  content: "";
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tab-basic .basic-display-checkbox::after {
+  border: 1.5px solid rgba(110, 110, 110, 0.72);
+  border-radius: 0.16rem;
+  background:
+    linear-gradient(135deg, transparent 36%, rgba(110, 110, 110, 0.86) 37%, rgba(110, 110, 110, 0.86) 43%, transparent 44%) center/100% 100%,
+    linear-gradient(225deg, transparent 36%, rgba(110, 110, 110, 0.86) 37%, rgba(110, 110, 110, 0.86) 43%, transparent 44%) center/100% 100%,
+    linear-gradient(315deg, transparent 36%, rgba(110, 110, 110, 0.86) 37%, rgba(110, 110, 110, 0.86) 43%, transparent 44%) center/100% 100%,
+    linear-gradient(45deg, transparent 36%, rgba(110, 110, 110, 0.86) 37%, rgba(110, 110, 110, 0.86) 43%, transparent 44%) center/100% 100%,
+    linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.92), 0 1px 2px rgba(22, 38, 80, 0.08);
+}
+
+:where(html[data-ui-theme="warm"]) #tab-basic .basic-display-checkbox::after {
+  border: 1.5px solid var(--border);
+  border-radius: 0.16rem;
+  background:
+    linear-gradient(135deg, transparent 36%, var(--surface-muted) 37%, var(--surface-muted) 43%, transparent 44%) center/100% 100%,
+    linear-gradient(225deg, transparent 36%, var(--surface-muted) 37%, var(--surface-muted) 43%, transparent 44%) center/100% 100%,
+    linear-gradient(315deg, transparent 36%, var(--surface-muted) 37%, var(--surface-muted) 43%, transparent 44%) center/100% 100%,
+    linear-gradient(45deg, transparent 36%, var(--surface-muted) 37%, var(--surface-muted) 43%, transparent 44%) center/100% 100%,
+    var(--surface-strong);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] #tab-basic .basic-display-checkbox::after {
+  border-color: var(--text-muted);
+  background:
+    linear-gradient(135deg, transparent 36%, var(--text-muted) 37%, var(--text-muted) 43%, transparent 44%) center/100% 100%,
+    linear-gradient(225deg, transparent 36%, var(--text-muted) 37%, var(--text-muted) 43%, transparent 44%) center/100% 100%,
+    linear-gradient(315deg, transparent 36%, var(--text-muted) 37%, var(--text-muted) 43%, transparent 44%) center/100% 100%,
+    linear-gradient(45deg, transparent 36%, var(--text-muted) 37%, var(--text-muted) 43%, transparent 44%) center/100% 100%,
+    var(--surface-soft);
+  box-shadow: none;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tab-basic .basic-display-checkbox:checked::after {
+  border-color: rgba(40, 82, 214, 0.78);
+  background:
+    linear-gradient(135deg, transparent 34%, rgba(40, 82, 214, 0.96) 35%, rgba(40, 82, 214, 0.96) 44%, transparent 45%) center/100% 100%,
+    linear-gradient(225deg, transparent 34%, rgba(40, 82, 214, 0.96) 35%, rgba(40, 82, 214, 0.96) 44%, transparent 45%) center/100% 100%,
+    linear-gradient(315deg, transparent 34%, rgba(40, 82, 214, 0.96) 35%, rgba(40, 82, 214, 0.96) 44%, transparent 45%) center/100% 100%,
+    linear-gradient(45deg, transparent 34%, rgba(40, 82, 214, 0.96) 35%, rgba(40, 82, 214, 0.96) 44%, transparent 45%) center/100% 100%,
+    linear-gradient(180deg, #ffffff 0%, #dfe5f0 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.96), 0 2px 6px rgba(40, 82, 214, 0.18);
+}
+
+:where(html[data-ui-theme="warm"]) #tab-basic .basic-display-checkbox:checked::after {
+  border-color: var(--accent);
+  background:
+    linear-gradient(135deg, transparent 34%, var(--action-fill) 35%, var(--action-fill) 44%, transparent 45%) center/100% 100%,
+    linear-gradient(225deg, transparent 34%, var(--action-fill) 35%, var(--action-fill) 44%, transparent 45%) center/100% 100%,
+    linear-gradient(315deg, transparent 34%, var(--action-fill) 35%, var(--action-fill) 44%, transparent 45%) center/100% 100%,
+    linear-gradient(45deg, transparent 34%, var(--action-fill) 35%, var(--action-fill) 44%, transparent 45%) center/100% 100%,
+    var(--surface-strong);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] #tab-basic .basic-display-checkbox:checked::after {
+  content: "✓";
+  display: grid;
+  place-items: center;
+  border-color: var(--accent);
+  font-size: 1rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .basic-display-checkbox:checked::after {
+  background: var(--accent);
+  color: #071521;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-checkbox:checked::after {
+  background: var(--action-fill);
+  color: var(--on-accent);
+  box-shadow: none;
+}
+
+:where(html:not([data-ui-theme="warm"])) #tab-basic .basic-display-checkbox:focus-visible {
+  border-color: rgba(36, 93, 255, 0.55);
+  box-shadow: 0 0 0 4px rgba(36, 93, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+:where(html[data-ui-theme="warm"]) #tab-basic .basic-display-checkbox:focus-visible {
+  border-color: var(--accent);
+  box-shadow: none; outline: 2px solid var(--focus-ring); outline-offset: 2px;
+}
+
+html[data-theme="dark"] #tab-basic .basic-display-checkbox:checked {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+html[data-theme="dark"] #tab-basic .basic-display-checkbox:focus-visible {
+  border-color: var(--accent);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .basic-display-checkbox:focus-visible {
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-checkbox:focus-visible {
+  box-shadow: none; outline: 2px solid var(--focus-ring); outline-offset: 2px;
+}
+
+#tab-basic .mini-stat-card input[type="number"],
+#tab-basic .mini-stat-card button,
+.tight-input {
+  min-height: 2.7rem;
+  font-size: var(--fs-base);
+}
+
+#class,
+#class option,
+#level,
+#level option,
+#lifedicen,
+#lifedicen option,
+#background,
+#background option,
+#race,
+#race option,
+#alignment,
+#alignment option {
+  font-weight: 800;
+}
+
+.ability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.95rem;
+}
+
+@media (min-width: 360px) {
+  #tab-basic .ability-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 720px) {
+  #tab-basic .ability-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+}
+
+.ability {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.95rem;
+}
+
+:where(html:not([data-ui-theme="warm"])) .ability {
+  border: 1px solid rgba(151, 168, 201, 0.26);
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(241, 246, 255, 0.88) 100%);
+  box-shadow: 0 4px 14px rgba(18, 33, 68, 0.05);
+}
+
+:where(html[data-ui-theme="warm"]) .ability {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  box-shadow: none;
+}
+
+@media (min-width: 720px) {
+  #tab-basic .ability {
+    padding-inline: 0.5rem;
+  }
+}
+
+.ability-title {
+  font-size: var(--fs-sm);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+@media (min-width: 720px) {
+  #tab-basic .ability-title {
+    font-size: 0.8rem;
+  }
+}
+
+.modifier {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 4.65rem;
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-3xl);
+  font-weight: 900;
+}
+
+:where(html:not([data-ui-theme="warm"])) .modifier {
+  border: 1px solid rgba(128, 148, 184, 0.28);
+  border-radius: 0.95rem;
+  background: linear-gradient(180deg, var(--classic-tint-bg) 0%, var(--classic-tint-bg) 100%);
+}
+
+:where(html[data-ui-theme="warm"]) .modifier {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+}
+
+@media (min-width: 720px) {
+  #tab-basic .modifier {
+    font-size: 1.65rem;
+  }
+}
+
+.modifier-main {
+  white-space: nowrap;
+}
+
+.ability-score {
+  appearance: textfield;
+  -moz-appearance: textfield;
+  min-height: 3rem;
+  padding: 0.7rem 0.85rem;
+  color: var(--text);
+  font-size: var(--fs-xl);
+  font-weight: 900;
+  text-align: center;
+}
+
+:where(html:not([data-ui-theme="warm"])) .ability-score {
+  border: 1px solid rgba(151, 168, 201, 0.34);
+  border-radius: 0.95rem;
+  background: #fff;
+}
+
+:where(html[data-ui-theme="warm"]) .ability-score {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+}
+
+.ability-score::-webkit-inner-spin-button,
+.ability-score::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+@media (min-width: 720px) {
+  #tab-basic .ability-score {
+    padding-inline: 0.25rem;
+    font-size: 1rem;
+  }
+}
+
+/* ===== Skills ===== */
+#tab-skills {
+  container: skill-tab / inline-size;
+}
+
+#tab-skills > .section,
+.skill-detail-row > .section {
+  container: skill-section / inline-size;
+}
+
+/* 每區一致的標題列：標題、圖例或說明靠左，操作靠右，窄時換行。 */
+.skill-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.skill-section-heading h3 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 850;
+}
+
+.skill-section-heading .character-features-hint {
+  margin: 0;
+}
+
+.skill-calc-button[hidden] {
+  display: none;
+}
+
+/* 自動計算時數值唯讀，看起來是結果而不是輸入欄；關閉開關（.manual-key-stats）才回到輸入框外觀。 */
+#tab-skills:not(.manual-key-stats) .save-pair input[readonly],
+#tab-skills:not(.manual-key-stats) .skill-cell input[readonly] {
+  border-color: var(--border);
+  background: transparent;
+  box-shadow: none;
+  caret-color: transparent;
+  cursor: default;
+}
+
+.skill-calc-button {
+  width: auto;
+  min-width: 0;
+  margin: 0 0 0 auto;
+  padding: 0.35rem 0.7rem;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.skill-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.65rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  order: 3;
+  flex-basis: 100%;
+}
+
+/* 職業與專長都沒有可專精的技能時，圖例不列專精。 */
+.skill-legend [data-expertise-legend] {
+  display: none;
+}
+
+#skill-bonus-section:has(.circle-checkbox:not(:disabled)) .skill-legend [data-expertise-legend] {
+  display: inline;
+}
+
+.save-grid,
+.skill-grid {
+  display: grid;
+  margin-top: 0.6rem;
+}
+
+/* 六項豁免：物理（力量、敏捷、體質）與心智（智力、感知、魅力）各一排，寬時排成一列。 */
+.save-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.save-pair {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.save-pair label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  margin: 0;
+}
+
+/* 豁免只分有無熟練：真實勾選框透明蓋滿名稱區，符號沿用技能的 ○ ●。 */
+.save-name {
+  position: relative;
+  min-height: 2.75rem;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  color: var(--text);
+}
+
+.save-name:hover {
+  background: var(--accent-soft);
+}
+
+/* 用 appearance 而不是 opacity 隱藏：缺項提示的跳轉不會聚焦 opacity 為 0 的控制項。 */
+.save-name input[type="checkbox"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  appearance: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.save-name input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--focus-ring, var(--accent));
+  outline-offset: -2px;
+}
+
+.save-name input:checked + .skill-rank-mark {
+  color: var(--accent);
+}
+
+.save-name input:checked + .skill-rank-mark::before {
+  content: "●";
+}
+
+.save-name .save-full,
+.skill-name {
+  color: var(--text-body);
+}
+
+.save-pair input[type="text"] {
+  width: 100%;
+  min-width: 0;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  margin: 0;
+  padding: 0.25rem;
+  text-align: center;
+  font-size: var(--fs-xl);
+  font-weight: 800;
+}
+
+/* 18 項技能依屬性分組。窄時兩欄（力量＋敏捷＋智力／感知＋魅力）；
+   寬時外層 stack 攤平成四欄（力量＋敏捷／智力／感知／魅力）。DOM 順序即跑團模式的技能順序。 */
+.skill-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem 0.75rem;
+}
+
+.skill-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.skill-group-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0 0.1rem 0.15rem;
+  border-bottom: 2px solid var(--border-strong, var(--border));
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.skill-group-mod {
+  font-variant-numeric: tabular-nums;
+}
+
+.skill-cell {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.15rem;
+  min-height: 2.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.skill-cell input[type="text"] {
+  width: 2.75rem;
+  height: 2.25rem;
+  min-height: 2.25rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.15rem;
+  text-align: center;
+  font-size: var(--fs-base);
+  font-weight: 800;
+  background: var(--surface-strong);
+}
+
+.skill-name {
+  margin: 0;
+  font-size: var(--fs-base);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.skill-cell:has(input[data-skill-rank]:checked) .skill-name {
+  font-weight: 800;
+}
+
+/* 分組標題已列屬性；這段文字留給跑團模式讀取，不重複顯示。 */
+.skill-ability {
+  display: none;
+}
+
+/* 熟練與專精是兩個真實勾選框（存檔、PDF、提醒的唯一狀態），重疊成一個切換區。
+   未熟練時點到熟練；已熟練或專精時點到專精，互斥邏輯讓點擊依序成為 ○→●→◆→○。
+   不能專精的技能，專精 label 隱藏，只在 ○ 與 ● 之間切換。 */
+.skill-rank-controls {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  min-height: 2.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.skill-rank-controls:hover {
+  background: var(--accent-soft);
+}
+
+.skill-rank-controls:has(input:focus-visible) {
+  outline: 2px solid var(--focus-ring, var(--accent));
+  outline-offset: -2px;
+}
+
+.skill-rank-mark {
+  color: var(--text-muted);
+  font-size: var(--fs-base);
+  line-height: 1;
+}
+
+.skill-rank-mark::before {
+  content: "○";
+}
+
+.skill-rank-controls:has(input[id^="prof-"]:checked) .skill-rank-mark,
+.skill-rank-controls:has(.circle-checkbox:checked) .skill-rank-mark {
+  color: var(--accent);
+}
+
+.skill-rank-controls:has(input[id^="prof-"]:checked) .skill-rank-mark::before {
+  content: "●";
+}
+
+.skill-rank-controls:has(.circle-checkbox:checked) .skill-rank-mark::before {
+  content: "◆";
+}
+
+.skill-rank-target {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-radius: var(--radius-sm);
+}
+
+.skill-rank-target:has(.circle-checkbox) {
+  z-index: 1;
+}
+
+.skill-rank-controls:has(input:checked) .skill-rank-target:has(.circle-checkbox) {
+  z-index: 3;
+}
+
+.skill-rank-target[hidden] {
+  display: none;
+}
+
+/* 用 appearance 而不是 opacity 隱藏：缺項提示的跳轉不會聚焦 opacity 為 0 的控制項。焦點框畫在切換區。 */
+.skill-rank-controls input[type="checkbox"] {
+  flex: 0 0 20px;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 0;
+  background: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.skill-rank-controls input[type="checkbox"]:focus-visible {
+  outline: none;
+}
+
+/* 語言與工具左右並排、等高；放不下就上下堆疊。工具增加時整列跟著變高。 */
+.skill-detail-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.95rem;
+}
+
+@container skill-tab (min-width: 40rem) {
+  .skill-detail-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container skill-section (min-width: 22rem) {
+  .skill-legend {
+    order: 0;
+    flex-basis: auto;
+  }
+}
+
+@container skill-section (min-width: 30rem) {
+  .save-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@container skill-section (min-width: 36rem) {
+  .skill-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .skill-stack--outer {
+    display: contents;
+  }
+}
+

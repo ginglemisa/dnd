@@ -3,7 +3,7 @@
  *
  * 其他專案整合契約：
  * - 沿用 index.html 的 spell-search-*、equipment-search-* 表單／結果 DOM，
- *   以及 styles.css 對應的搜尋與 equipment-detail-* 樣式。
+ *   以及 css/sheet-equipment.css、css/sheet-spells.css 對應的搜尋與 equipment-detail-* 樣式。
  * - 法術來源：SpellCatalog.getAllSpells/getClassIds/getDisplayName；
  *   結果點擊交給 window.autoPrepareSpellFromFeature(spellId, trigger)，
  *   由宿主負責詳情、準備法術與角色資料保存。

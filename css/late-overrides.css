@@ -1,0 +1,639 @@
+/* ===== Remaining dark and late overrides (rules that must stay last) ===== */
+html[data-theme="dark"] #tab-basic #hp-display,
+html[data-theme="dark"] #tab-basic #ac-display,
+html[data-theme="dark"] #tab-basic .speed-current-display,
+html[data-theme="dark"] #tab-basic .basic-display-checkbox,
+html[data-theme="dark"] #tab-basic .tight-input,
+html[data-theme="dark"] #tab-basic .hp-card input[type="number"] {
+  border-color: var(--border-strong);
+  background: var(--input-bg);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic #hp-display,
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic #ac-display,
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .speed-current-display,
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .basic-display-checkbox,
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .tight-input,
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .hp-card input[type="number"] {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic #hp-display,
+html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic #ac-display,
+html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .speed-current-display,
+html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-checkbox,
+html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .tight-input,
+html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .hp-card input[type="number"] {
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .tab-button.active,
+html[data-theme="dark"] .tabs-shell .tab-button.active:hover,
+html[data-theme="dark"] .utility-menu__button--primary,
+html[data-theme="dark"] .utility-menu__button--primary:hover,
+html[data-theme="dark"] #legal-onboarding-btn {
+  border-color: var(--accent-strong);
+  background: var(--accent-gradient);
+  color: var(--on-accent);
+}
+
+html[data-theme="dark"] .selection-summary-card,
+html[data-theme="dark"] .ability-score,
+html[data-theme="dark"] .skill-cell input[type="text"],
+html[data-theme="dark"] .weapon-attack-fields input,
+html[data-theme="dark"] .weapon-attack-fields .weapon-attack-free-note,
+html[data-theme="dark"] #attack-calculation-popup,
+html[data-theme="dark"] #tab-actions .form-row.small-text input,
+html[data-theme="dark"] .spell-search-results,
+html[data-theme="dark"] .equipment-search-results,
+html[data-theme="dark"] .equipment-search-clear,
+html[data-theme="dark"] .feat-icon-btn,
+html[data-theme="dark"] .point-buy-row,
+html[data-theme="dark"] .point-buy-step,
+html[data-theme="dark"] .ability-choice-close,
+html[data-theme="dark"] .default-ability-class-close,
+html[data-theme="dark"] .point-buy-close,
+html[data-theme="dark"] #legal-close-btn,
+html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-precheck-list__jump,
+html[data-theme="dark"] .pdf-export-name-field__input,
+html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-choice-option,
+html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-race-option,
+html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-format-option,
+html[data-theme="dark"] .pdf-export-flow-modal__button--secondary {
+  border-color: var(--border-strong);
+  background: var(--input-bg);
+  color: var(--text);
+}
+
+html[data-theme="dark"] #tab-basic .hp-card input[type="number"],
+html[data-theme="dark"] .weapon-automation-toggle input::after,
+html[data-theme="dark"] .money-detail-toggle input::after,
+html[data-theme="dark"] .inventory-switch::after {
+  background: var(--input-bg);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .pdf-export-check-success > span {
+  background: #dcfce7;
+  color: #166534;
+}
+
+html:where([data-ui-theme="warm"])[data-theme="dark"] .pdf-export-check-success > span {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+html[data-theme="dark"] .ability-choice-card p,
+html[data-theme="dark"] .ability-choice-tip,
+html[data-theme="dark"] .point-buy-header p,
+html[data-theme="dark"] .point-buy-hint,
+html[data-theme="dark"] .point-buy-table-head,
+html[data-theme="dark"] .point-buy-value--bonus,
+html[data-theme="dark"] .point-buy-summary,
+html[data-theme="dark"] .point-buy-background,
+html[data-theme="dark"] .default-ability-class-note,
+html[data-theme="dark"] .default-ability-class-group h4,
+html[data-theme="dark"] .point-buy-preset-copy span,
+html[data-theme="dark"] .point-buy-preset-status,
+html[data-theme="dark"] .legal-modal-meta,
+html[data-theme="dark"] .pdf-export-flow-modal__eyebrow,
+html[data-theme="dark"] .pdf-export-flow-modal__subtitle,
+html[data-theme="dark"] .pdf-export-step-copy,
+html[data-theme="dark"] .pdf-export-wait-note span,
+html[data-theme="dark"] .pdf-export-choice-option span,
+html[data-theme="dark"] .pdf-export-format-option__detail,
+html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-format-note {
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .point-buy-exit-card {
+  color: var(--text-body);
+}
+
+html[data-theme="dark"] .point-buy-exit-card h3 {
+  color: var(--danger);
+}
+
+html[data-theme="dark"] .point-buy-row--bonus-locked,
+html[data-theme="dark"] input:disabled,
+html[data-theme="dark"] textarea:disabled,
+html[data-theme="dark"] button:disabled {
+  background: var(--disabled-bg);
+  color: var(--disabled-text);
+}
+
+html[data-theme="dark"] select:is(:disabled, [data-share-locked="true"]) {
+  background: var(--disabled-bg);
+  color: var(--text-muted);
+}
+
+/* Classic dark: navy canvas, slate surfaces and brass actions share one palette. */
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .mini-stat-label--features {
+  color: var(--accent-strong);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .utility-menu__button--primary:not(:disabled),
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .pdf-export-flow-modal__button--primary:not(:disabled),
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .money-type-toggle button.is-active,
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .money-submit-btn:not(:disabled),
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #money-adjust-save:not(:disabled),
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tour-next-btn:not(:disabled),
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #legal-onboarding-btn:not(:disabled) {
+  border-color: var(--action-fill);
+  background: var(--action-fill);
+  color: var(--on-accent);
+  box-shadow: var(--action-shadow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .utility-menu__button--primary:not(:disabled):hover,
+  html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .app-dialog__button--primary:not(:disabled):hover,
+  html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabletop-primary-button:not(:disabled):hover,
+  html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabletop-condition-modal__apply:not(:disabled):hover,
+  html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .dice-roller-roll:not(:disabled):hover,
+  html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .pdf-export-flow-modal__button--primary:not(:disabled):hover,
+  html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tour-next-btn:not(:disabled):hover,
+  html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #legal-onboarding-btn:not(:disabled):hover {
+    background: var(--action-hover);
+    color: var(--on-accent);
+    box-shadow: var(--action-shadow);
+  }
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-automation-toggle input:not(:checked),
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .money-detail-toggle input:not(:checked),
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .inventory-more-switch:not([aria-pressed="true"]) .inventory-switch {
+  border-color: var(--border-strong);
+  background: var(--surface-muted);
+}
+
+/* 跑團荒野形態（tabletop-druid.js）：總覽狀態卡、其他分頁的細狀態列、變形與已知形態視窗、行動頁野獸攻擊卡、資源頁德魯伊列。 */
+.druid-operation { display: grid; gap: .75rem; min-width: 0; }
+.druid-operation p { margin: .35rem 0; line-height: 1.65; overflow-wrap: anywhere; }
+.druid-field { display: grid; gap: .4rem; font-weight: 600; }
+.druid-field select, .druid-field input { width: 100%; min-width: 0; min-height: 42px; box-sizing: border-box; }
+.druid-dialog-title-group { display: grid; flex: 1 1 auto; min-width: 0; gap: 4px; }
+.druid-known-count { margin: 0; color: var(--text-body); font-size: var(--fs-sm); font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.5; }
+.druid-known-count.is-over-limit { color: var(--danger); }
+.druid-check { display: flex; align-items: center; gap: .5rem; min-height: 40px; }
+.druid-check input { flex: 0 0 auto; width: 18px; height: 18px; }
+.druid-button-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0; }
+.druid-shape-description { white-space: normal; }
+.druid-shape-description p, .druid-shape-description ul { margin: .85rem 0; }
+.druid-shape-description ul { padding-left: 1.4rem; }
+.druid-shape-description li { margin: .4rem 0; }
+.druid-companion-spell { margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--border); color: var(--text-body); font-size: var(--fs-sm); line-height: 1.5; }
+.druid-companion-spell__title { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .5rem; margin: 0 0 .35rem; color: var(--text); }
+.druid-resource-note { color: var(--text-muted); }
+.druid-error { color: var(--danger); font-weight: 600; }
+.druid-text-button { width: auto; min-width: 0; min-height: 32px; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; color: var(--accent-strong); font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* 小標籤：感官、特性、移動方式、臨時 HP。 */
+.druid-tags { display: flex; flex-wrap: wrap; gap: .3rem; min-width: 0; }
+.druid-tag { display: inline-flex; align-items: center; padding: .05rem .5rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-soft); color: var(--text-body); font-size: var(--fs-xs); font-weight: 750; line-height: 1.55; white-space: nowrap; }
+:where(html[data-ui-theme="warm"]) .druid-tag { border-radius: var(--radius-sm); }
+.druid-tag--hp, .druid-tag--current { border-color: var(--accent-strong); color: var(--accent-strong); }
+.druid-tag--locked { color: var(--text-muted); }
+
+/* 總覽的形態狀態卡：一個主按鈕；變形中改成強調外框。 */
+.druid-card { display: grid; gap: .55rem; margin: .75rem .75rem .85rem; padding: .75rem .85rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); }
+.druid-card[hidden] { display: none; }
+.druid-card.is-shaped { border: 2px solid var(--accent-strong); }
+.druid-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+.druid-card__title { min-width: 0; }
+.druid-card__title .tabletop-eyebrow { display: block; }
+.druid-card__title h3 { margin: .1rem 0 0; color: var(--text); font-size: var(--fs-lg); line-height: 1.3; overflow-wrap: anywhere; }
+.druid-card__type { margin-left: .45rem; color: var(--text-muted); font-size: var(--fs-sm); font-weight: 750; }
+.druid-pips { display: inline-flex; flex: 0 0 auto; align-items: baseline; gap: .35rem; color: var(--accent-strong); font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.druid-pips__dots { font-size: var(--fs-base); letter-spacing: .08em; }
+.druid-card__note { margin: 0; color: var(--text-body); font-size: var(--fs-sm); line-height: 1.5; }
+.druid-card__warning { margin: 0; color: var(--warning); font-size: var(--fs-sm); font-weight: 750; line-height: 1.5; }
+.druid-card__actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.druid-card__companion { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem .75rem; padding-top: .5rem; border-top: 1px solid var(--border); color: var(--text-body); font-size: var(--fs-sm); }
+
+/* 其他分頁的細狀態列；法術頁變形時是警示列。 */
+.druid-strip { display: flex; align-items: center; justify-content: space-between; gap: .35rem .75rem; margin: .6rem .75rem; padding: .4rem .6rem; border: 1px solid var(--border-strong); border-left: 4px solid var(--accent-strong); border-radius: var(--radius-sm); background: var(--surface); }
+.druid-strip[hidden] { display: none; }
+.druid-strip__copy { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: baseline; gap: .1rem .6rem; min-width: 0; margin: 0; color: var(--text); font-size: var(--fs-sm); line-height: 1.45; }
+.druid-strip__copy span { color: var(--text-body); }
+.druid-strip__actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: .4rem; margin-left: auto; }
+.druid-strip--warning { border-color: var(--warning-border); border-left-color: var(--warning); background: var(--warning-soft); }
+.druid-strip--warning .druid-strip__copy strong { color: var(--warning); }
+.druid-strip--warning .druid-strip__copy span { color: var(--text); }
+
+/* 變形視窗：已知形態卡片，選中的加強調外框。 */
+.druid-shape__known { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .75rem; color: var(--text-muted); font-size: var(--fs-sm); font-weight: 750; }
+.druid-form-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: .55rem; }
+.druid-form-card { position: relative; display: grid; align-content: start; gap: .35rem; min-width: 0; padding: .65rem .75rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); cursor: pointer; }
+.druid-form-card:hover { border-color: var(--accent); }
+.druid-form-card.is-selected { border-color: var(--accent-strong); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-strong); }
+.druid-form-card:has(.druid-form-card__input:focus-visible) { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.druid-form-card__input { position: absolute; top: .5rem; right: .5rem; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
+.druid-form-card > span { display: block; min-width: 0; }
+.druid-form-card > .druid-form-card__head, .druid-form-card > .druid-tags { display: flex; }
+.druid-form-card__head { flex-wrap: wrap; align-items: baseline; gap: .2rem .5rem; }
+.druid-form-card__name { color: var(--text); font-size: var(--fs-base); }
+.druid-form-card__meta { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 750; }
+.druid-form-card__attack { color: var(--text); font-size: var(--fs-sm); font-weight: 750; line-height: 1.45; }
+.druid-form-card__summary { color: var(--text-muted); font-size: var(--fs-xs); line-height: 1.45; }
+.druid-shape__effects { margin: 0; padding: .45rem .6rem; border-radius: var(--radius-sm); background: var(--surface-soft); color: var(--text-body); font-size: var(--fs-sm); font-weight: 750; line-height: 1.5; }
+.druid-operation .druid-shape__effects { margin: 0; }
+.druid-advanced { border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.druid-advanced > summary { padding: .65rem .7rem; color: var(--text-body); font-size: var(--fs-sm); font-weight: 750; line-height: 1.45; cursor: pointer; }
+.druid-advanced__body { display: grid; gap: .6rem; padding: 0 .7rem .7rem; }
+
+/* 管理已知形態：CR 分組、移動方式篩選、原地展開資料卡。 */
+.druid-operation .druid-known__intro { margin: 0; color: var(--text-body); font-size: var(--fs-sm); line-height: 1.5; }
+.druid-known-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem .75rem; }
+.druid-filters { display: flex; flex-wrap: wrap; gap: .35rem; }
+.druid-chip { width: auto; min-width: 0; min-height: 36px; margin: 0; padding: .3rem .8rem; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); color: var(--text-body); box-shadow: none; font-size: var(--fs-sm); font-weight: 800; line-height: 1.3; cursor: pointer; }
+:where(html[data-ui-theme="warm"]) .druid-chip { border-radius: var(--radius-sm); }
+.druid-chip[aria-pressed="true"] { border-color: var(--action-fill); background: var(--action-fill); color: var(--on-accent); }
+.druid-chip--recommend { border-style: dashed; color: var(--accent-strong); }
+.druid-known-group { display: grid; gap: .25rem; }
+.druid-known-group[hidden] { display: none; }
+.druid-known-group__title { margin: .35rem 0 0; padding-bottom: .2rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: var(--fs-sm); font-weight: 900; }
+.druid-known-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); align-items: start; gap: 0 .75rem; }
+.druid-known-form { display: grid; grid-template-columns: 20px auto minmax(0, 1fr); align-items: center; column-gap: .5rem; min-width: 0; }
+.druid-known-form[hidden] { display: none; }
+.druid-known-form > .druid-check { width: auto; margin: 0; }
+.druid-known-form.is-locked .druid-beast-name { color: var(--text-muted); }
+.druid-beast-name { justify-self: start; width: auto; min-width: 0; min-height: 40px; margin: 0; padding: .35rem 0; color: inherit; font: inherit; background: none; border: 0; border-radius: 0; box-shadow: none; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.druid-tag__icon { margin-right: .1rem; }
+.druid-known-detail { grid-column: 1 / -1; margin: .1rem 0 .5rem; padding: .6rem .7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-soft); color: var(--text); font-size: var(--fs-sm); line-height: 1.5; }
+.druid-known-detail[hidden] { display: none; }
+:is(.druid-known-detail, .druid-beast-card) .beast-card .title { margin-bottom: .35rem; font-size: var(--fs-base); font-weight: 800; }
+:is(.druid-known-detail, .druid-beast-card) .beast-card .muted { margin-left: .3rem; color: var(--text-muted); font-size: var(--fs-sm); font-weight: 650; }
+:is(.druid-known-detail, .druid-beast-card) .beast-card .row { display: flex; flex-wrap: wrap; gap: .25rem .9rem; }
+.druid-beast-card { font-size: var(--fs-sm); line-height: 1.55; }
+
+/* 行動頁的野獸攻擊卡：武器卡的骨架，名稱不是按鈕；備註是攻擊方式與效果句。 */
+.druid-beast-attacks { display: grid; gap: .65rem; min-width: 0; }
+.druid-beast-attacks__title { margin: 0; color: var(--text); font-size: var(--fs-base); }
+.druid-dice-note { margin: 0; color: var(--warning); font-size: var(--fs-sm); font-weight: 750; line-height: 1.5; }
+#tabletop-panel-actions .druid-beast-attack-card__name { display: flex; align-items: center; min-height: 2.65rem; padding: 0 .2rem; color: var(--text); font-size: var(--fs-sm); font-weight: 900; line-height: 1.35; overflow-wrap: anywhere; }
+#tabletop-panel-actions .druid-beast-attack-card__fixed { display: flex; align-items: center; justify-content: center; min-height: 2.65rem; color: var(--text); font-size: var(--fs-sm); font-weight: 800; }
+#tabletop-panel-actions .tabletop-weapon-field.druid-beast-attack-card__note-field dd { justify-content: stretch; gap: .4rem; text-align: left; }
+.druid-beast-attack-card__note { display: grid; gap: .15rem; }
+.druid-beast-attack-card__reach { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 800; }
+.druid-beast-attack-card__effect { font-weight: 600; line-height: 1.5; }
+.druid-beast-attack-card .druid-button-row { margin: 0; }
+.druid-beast-traits { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: .5rem; }
+.druid-beast-trait { padding: .55rem .7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-soft); color: var(--text-body); font-size: var(--fs-sm); line-height: 1.5; }
+.druid-beast-trait strong { display: block; color: var(--text); }
+.druid-beast-trait p { margin: .15rem 0 0; }
+.druid-beast-recovery { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; }
+.druid-beast-recovery .druid-check { width: auto; min-height: 36px; font-size: var(--fs-sm); font-weight: 800; }
+/* 攻擊卡裡的勾選不套用武器欄位的 label／input 外框。 */
+#tabletop-panel-actions .druid-beast-attack-card .druid-check { display: flex; gap: .5rem; color: var(--text); white-space: normal; }
+#tabletop-panel-actions .druid-beast-attack-card .druid-check input { width: 18px; min-height: 0; height: 18px; margin: 0; padding: 0; }
+.druid-beast-recovery__hint { flex-basis: 100%; margin: 0; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; }
+.druid-beast-action-controls { display: grid; gap: .35rem; margin-top: .5rem; }
+.druid-beast-action-controls .druid-button-row { margin: 0; }
+
+/* 資源頁的自然恢復、野性復甦：按鈕與已使用勾選同一列。 */
+.druid-resource-row__actions { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .45rem; }
+.druid-resource-row__checks { display: grid; justify-items: start; gap: 0; }
+.druid-resource-row__checks .druid-check { width: auto; font-size: var(--fs-sm); font-weight: 750; }
+
+/* The utility menu is an overlay, so its surface must remain opaque. */
+.tabletop-class-choice-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+  font-family: inherit;
+  font-weight: inherit;
+  box-shadow: none;
+}
+
+.tabletop-class-choice-alert__action {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.tabletop-class-choice-alert:hover {
+  border-color: var(--warning);
+  box-shadow: inset 0 0 0 1px var(--warning-border);
+}
+
+.tabletop-class-choice-alert {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--warning-border);
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+
+:where(html:not([data-ui-theme="warm"])) .tabletop-class-choice-alert {
+  border-radius: 8px;
+}
+
+:where(html[data-ui-theme="warm"]) .tabletop-class-choice-alert {
+  border-radius: var(--radius-sm);
+}
+
+/* 生命值、操作回饋與狀態共用右欄，頭像保留尺寸並垂直置中。 */
+.tabletop-health-controls .tabletop-temporary-hp-form,
+.tabletop-health-controls .tabletop-live-status {
+  grid-column: 1 / -1;
+}
+
+.tabletop-health-layout .tabletop-avatar {
+  align-self: center;
+}
+
+.tabletop-health-controls .tabletop-conditions {
+  grid-column: 1 / -1;
+  margin: 0.28rem 0 0;
+  padding: 0.35rem 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.tabletop-health-controls .tabletop-condition-manage {
+  grid-column: 2;
+}
+
+.tabletop-health-controls .tabletop-active-conditions {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+}
+
+.tabletop-health-controls .tabletop-hp-primary strong {
+  white-space: nowrap;
+}
+
+@media (min-width: 720px) {
+  .tabletop-health-controls .tabletop-hp-primary,
+  .tabletop-health-controls .tabletop-hp-temporary,
+  .tabletop-health-controls .tabletop-life-controls > * {
+    height: 3rem;
+    min-height: 3rem;
+  }
+
+  .tabletop-health-controls .tabletop-hp-primary strong,
+  .tabletop-health-controls .tabletop-hp-temporary strong {
+    font-size: 1.25rem;
+  }
+
+  .tabletop-health-controls .tabletop-conditions {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .tabletop-health-controls .tabletop-condition-manage {
+    grid-column: 3;
+  }
+
+  .tabletop-health-controls .tabletop-active-conditions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+}
+
+@media (min-width: 389px) and (max-width: 520px) {
+  .tabletop-health-controls .tabletop-hp-primary strong {
+    font-size: clamp(1.1rem, 5vw, 1.5rem);
+  }
+}
+
+/* 中型螢幕：頭像與生命值操作只佔前兩列，目前狀態改為橫跨整個工作區。 */
+@media (min-width: 389px) and (max-width: 719px) {
+  .tabletop-health-layout:not(.tabletop-health-layout--avatar-collapsed) .tabletop-hp-primary,
+  .tabletop-health-layout:not(.tabletop-health-layout--avatar-collapsed) .tabletop-hp-temporary,
+  .tabletop-health-layout:not(.tabletop-health-layout--avatar-collapsed) .tabletop-life-controls > * {
+    height: clamp(3rem, 10.5vw, 4.75rem);
+    min-height: clamp(3rem, 10.5vw, 4.75rem);
+  }
+
+  .tabletop-health-layout:not(.tabletop-health-layout--avatar-collapsed) .tabletop-temporary-hp-form,
+  .tabletop-health-layout:not(.tabletop-health-layout--avatar-collapsed) .tabletop-live-status,
+  .tabletop-health-layout:not(.tabletop-health-layout--avatar-collapsed) .tabletop-conditions {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+}
+
+/* 圖片收起後，中型螢幕已有足夠空間容納同一列操作。 */
+@media (min-width: 560px) and (max-width: 719px) {
+  .tabletop-health-layout--avatar-collapsed .tabletop-health-controls {
+    display: grid;
+  }
+
+  .tabletop-health-layout--avatar-collapsed .tabletop-hp-primary,
+  .tabletop-health-layout--avatar-collapsed .tabletop-hp-temporary,
+  .tabletop-health-layout--avatar-collapsed .tabletop-life-controls > * {
+    height: 3rem;
+    min-height: 3rem;
+  }
+
+  .tabletop-health-layout--avatar-collapsed .tabletop-hp-primary,
+  .tabletop-health-layout--avatar-collapsed .tabletop-hp-temporary {
+    padding: 0.2rem 0.4rem;
+    gap: 0;
+  }
+
+  .tabletop-health-layout--avatar-collapsed .tabletop-hp-primary strong,
+  .tabletop-health-layout--avatar-collapsed .tabletop-hp-temporary strong {
+    font-size: 1.25rem;
+  }
+
+  .tabletop-health-layout--avatar-collapsed .tabletop-life-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 520px) {
+  .tabletop-health-layout--avatar-collapsed .tabletop-conditions {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .tabletop-health-layout--avatar-collapsed .tabletop-condition-manage {
+    grid-column: 3;
+  }
+
+  .tabletop-health-layout--avatar-collapsed .tabletop-active-conditions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+/* 小手機：圖片在左、四列操作在右；回饋與狀態接在兩者下方。 */
+@media (max-width: 388px) {
+  .tabletop-health-layout {
+    container-type: inline-size;
+    grid-template-columns: minmax(0, 1fr) 1.35rem minmax(0, 1fr);
+  }
+
+  .tabletop-health-layout--avatar-collapsed {
+    grid-template-columns: 1.35rem minmax(0, 1fr);
+  }
+
+  .tabletop-health-layout .tabletop-avatar {
+    max-width: max(5.75rem, 29cqw);
+    justify-self: center;
+  }
+
+  .tabletop-health-layout .tabletop-life-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tabletop-health-layout .tabletop-temporary-hp-form,
+  .tabletop-health-layout .tabletop-live-status,
+  .tabletop-health-layout .tabletop-conditions {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+}
+
+/* 極窄螢幕：圖片獨立一列，操作使用全寬。 */
+@media (max-width: 319px) {
+  .tabletop-health-layout {
+    grid-template-columns: minmax(0, 1fr) 1.35rem;
+  }
+
+  .tabletop-health-layout .tabletop-avatar {
+    grid-column: 1;
+    grid-row: 1;
+    width: 5.75rem;
+  }
+
+  .tabletop-health-layout--avatar-collapsed {
+    grid-template-columns: 1.35rem minmax(0, 1fr);
+  }
+
+  .tabletop-health-layout--avatar-collapsed .tabletop-avatar-visibility-toggle {
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+
+}
+
+/* 小手機收起圖片時，HP 可並排；最窄螢幕仍保留單欄。 */
+/* About shares the AppDialog behavior and the active theme's semantic colors. */
+.app-dialog[data-variant="legal-about"] .app-dialog__surface {
+  position: relative;
+  width: min(680px, 100%);
+  height: min(82dvh, 760px);
+  color: var(--text-body);
+}
+.app-dialog[data-variant="legal-about"] .app-dialog__header {
+  position: absolute;
+  z-index: 1;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0;
+  border: 0;
+}
+.app-dialog[data-variant="legal-about"] .app-dialog__header h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.app-dialog[data-variant="legal-about"] .app-dialog__close {
+  background: var(--surface-strong);
+  color: var(--text);
+  box-shadow: none;
+}
+.app-dialog[data-variant="legal-about"] .app-dialog__close:hover {
+  background: var(--surface-muted);
+}
+.app-dialog[data-variant="legal-about"] .app-dialog__body {
+  display: block;
+  flex: 1 1 auto;
+  padding: 1.25rem;
+  overflow-wrap: anywhere;
+  line-height: 1.75;
+}
+.legal-about-content h2 {
+  margin: 1.5rem 0 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  font-size: var(--fs-xl);
+  line-height: 1.5;
+}
+.legal-about-content > h2:first-child {
+  margin-top: 0;
+  padding: 0 3rem 0 0;
+  border: 0;
+}
+.legal-about-content h3 { margin: 1.25rem 0 0.35rem; color: var(--text); }
+.app-dialog__body .legal-about-content p { margin: 0.45rem 0 0; white-space: normal; }
+.legal-about-content ul { padding-left: 1.3rem; margin: 0.55rem 0; }
+.legal-about-content li + li { margin-top: 0.25rem; }
+.legal-about-content a { color: var(--accent); text-underline-offset: 0.18em; }
+.legal-about-content a:hover { color: var(--accent-strong); }
+.legal-about-content a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.legal-about-content [id] { scroll-margin-top: 3.5rem; }
+.legal-about-content .legal-divider { margin: 1.5rem 0; border: 0; border-top: 2px solid var(--border-strong); }
+.legal-about-footer { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
+/* Source choices are kept for a later return to automatic spell management. */
+.manual-spell-source-hint {
+  --manual-spell-reminder-color: var(--warning);
+  margin: 12px 0 0;
+  color: var(--manual-spell-reminder-color);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+.manual-spell-source-hint .manual-spell-source-hint__hide {
+  appearance: none;
+  display: inline;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--manual-spell-reminder-color) 85%, var(--text) 15%);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+.manual-spell-source-hint .manual-spell-source-hint__hide:is(:hover, :active) {
+  color: var(--manual-spell-reminder-color);
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  translate: none;
+}
+.manual-spell-source-hint__hide:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+body[data-manual-spells] :is(.magic-initiate-controls, .class-feature-mission-cantrip,
+  #bard-magical-discoveries, .class-feature-additional-choices, [data-agonizing-blast-settings]) {
+  display: none !important;
+}
+
+/* Warm dark: quiet paper rules without dimming controls or semantic states.
+   --border / --border-strong remain available to buttons, fields and choices. */
+:where(html[data-ui-theme="warm"][data-theme="dark"]) .section {
+  border-color: var(--border);
+  border-top-color: var(--border-strong);
+}
+
+:where(html[data-ui-theme="warm"][data-theme="dark"]) :is(
+  .skill-cell, .save-pair, .hp-card, .mini-stat-card, .output,
+  .spell-slot-column, .site-footer,
+  .tabletop-section, .tabletop-skill-values, .tabletop-skill-value:nth-child(n),
+  .tabletop-defense-summary__item, .tabletop-spell-level,
+  .app-dialog__header, .app-dialog__actions,
+  .tabletop-condition-modal__header, .tabletop-condition-modal__actions,
+  .legal-modal-divider, .legal-modal-meta,
+  .legal-about-content .legal-divider, .legal-about-footer
+) {
+  border-color: var(--border-decoration);
+}
+
+:where(html[data-ui-theme="warm"][data-theme="dark"])
+  :is(#quick-build-wizard, #quick-build-pact-tome, #quick-build-spell-detail)
+  :is(.quick-build-header, .quick-build-footer, .quick-build-pact-tome-actions,
+    .quick-build-spell-detail-header, .quick-build-spell-prepare,
+    .quick-build-flow-section + .quick-build-flow-section) {
+  border-color: var(--border-decoration);
+}

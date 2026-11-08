@@ -912,7 +912,11 @@ async function verifyPdf(page, fieldsOnly) {
 
 async function prepareToastFixture(page) {
   await page.setContent("<!doctype html><html><body></body></html>");
-  await page.addStyleTag({ path: path.join(__dirname, "styles.css") });
+  // Same stylesheets, in the same order, as index.html.
+  const indexHtml = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+  for (const [, href] of indexHtml.matchAll(/<link rel="stylesheet" href="([^"?]+)/g)) {
+    await page.addStyleTag({ path: path.join(__dirname, href) });
+  }
   await page.addScriptTag({ path: path.join(__dirname, "app-dialog.js") });
 }
 

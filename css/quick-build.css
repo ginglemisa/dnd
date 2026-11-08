@@ -1,4 +1,4 @@
-/* 快速創角精靈、法術詳情與契約之書視窗（元素由 quick-build.js 建立）。在 styles.css 之後載入。 */
+/* 快速創角精靈、法術詳情與契約之書視窗（元素由 quick-build.js 建立）。在 css/ 的其他樣式檔之後載入。 */
 
 #quick-build-wizard {
   position: fixed;

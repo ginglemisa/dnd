@@ -1,0 +1,1054 @@
+/* ===== PDF export dialog ===== */
+.pdf-export-flow-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  animation: pdf-export-overlay-in 160ms ease-out both;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal {
+  background: rgba(12, 20, 38, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal {
+  background: var(--overlay);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card {
+  display: grid;
+  gap: 0;
+  width: min(560px, 100%);
+  max-height: min(90vh, 760px);
+  max-height: min(90dvh, 760px);
+  padding: clamp(1.1rem, 3vw, 1.45rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border: 1px solid rgba(151, 168, 201, 0.38);
+  border-radius: 1.35rem;
+  background: var(--classic-tint-bg);
+  box-shadow: 0 28px 80px rgba(9, 18, 39, 0.36);
+  animation: pdf-export-card-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card {
+  display: grid;
+  gap: 0;
+  width: min(560px, 100%);
+  max-height: min(90vh, 760px);
+  max-height: min(90dvh, 760px);
+  padding: clamp(1.1rem, 3vw, 1.45rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-strong);
+  animation: pdf-export-card-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.pdf-export-flow-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__header {
+  border-bottom: 1px solid rgba(112, 134, 184, 0.2);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__header {
+  border-bottom: 1px solid var(--border);
+}
+
+.pdf-export-flow-modal__heading {
+  display: grid;
+  gap: 4px;
+}
+
+.pdf-export-flow-modal__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__eyebrow {
+  color: var(--classic-line-strong);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__eyebrow {
+  color: var(--accent);
+}
+
+.pdf-export-flow-modal__card h3 {
+  margin: 0;
+  font-size: clamp(1.2rem, 4vw, 1.4rem);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card h3 {
+  color: #172541;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card h3 {
+  color: var(--text);
+}
+
+.pdf-export-flow-modal__card p {
+  margin: 0;
+}
+
+.pdf-export-flow-modal__subtitle {
+  max-width: 42rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__subtitle {
+  color: var(--classic-muted-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__subtitle {
+  color: var(--text-muted);
+}
+
+.pdf-export-flow-modal__card .pdf-export-flow-modal__close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: -0.2rem -0.2rem 0 0;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 1.55rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-flow-modal__close {
+  border-radius: 999px;
+  color: var(--classic-muted-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-flow-modal__close {
+  border-radius: var(--radius-lg);
+  color: var(--text-muted);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-flow-modal__close:hover,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-flow-modal__close:focus-visible {
+  border-color: rgba(82, 111, 174, 0.24);
+  background: var(--classic-tint-bg);
+  color: var(--classic-heading-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-flow-modal__close:hover,
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-flow-modal__close:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+#pdf-export-desc {
+  padding-top: 18px;
+  animation: pdf-export-step-in 180ms ease-out both;
+}
+
+.pdf-export-flow-modal__card ol {
+  margin: 0;
+  padding: 0;
+}
+
+.pdf-export-step-copy {
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-step-copy {
+  color: var(--classic-muted-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-step-copy {
+  color: var(--text-body);
+}
+
+.pdf-export-precheck-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px !important;
+  list-style: none;
+}
+
+.pdf-export-flow-modal__card .pdf-export-precheck-list__jump {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-precheck-list__jump {
+  border: 1px solid rgba(76, 100, 154, 0.22);
+  border-radius: 0.75rem;
+  background: #fff;
+  color: var(--classic-heading-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-precheck-list__jump {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.pdf-export-flow-modal__card .pdf-export-precheck-list__jump:hover,
+.pdf-export-flow-modal__card .pdf-export-precheck-list__jump:focus-visible {
+  transform: translateY(-1px);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-precheck-list__jump:hover,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-precheck-list__jump:focus-visible {
+  border-color: var(--classic-line-strong);
+  background: #fff;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-precheck-list__jump:hover,
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-precheck-list__jump:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface-strong);
+}
+
+.pdf-export-precheck-list__action {
+  flex: 0 0 auto;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-precheck-list__action {
+  color: #46639f;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-precheck-list__action {
+  color: var(--accent);
+}
+
+.pdf-export-check-success,
+.pdf-export-status,
+.pdf-export-wait-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-check-success,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-status,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-wait-note {
+  border-radius: 0.9rem;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-check-success,
+:where(html[data-ui-theme="warm"]) .pdf-export-status,
+:where(html[data-ui-theme="warm"]) .pdf-export-wait-note {
+  border-radius: var(--radius-sm);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-check-success {
+  border: 1px solid rgba(49, 126, 88, 0.2);
+  background: #f0f8f4;
+  color: #235e43;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-check-success {
+  border: 1px solid var(--success);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .pdf-export-check-success {
+  border-color: rgba(134, 239, 172, 0.5);
+  background: #164b34;
+  color: #dcfce7;
+}
+
+html:where([data-ui-theme="warm"])[data-theme="dark"] .pdf-export-check-success {
+  border-color: var(--success);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.pdf-export-check-success > span,
+.pdf-export-status__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  font-weight: 900;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-check-success > span,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-status__icon {
+  border-radius: 999px;
+  background: #dcefe5;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-check-success > span,
+:where(html[data-ui-theme="warm"]) .pdf-export-status__icon {
+  border-radius: var(--radius-sm);
+  background: var(--success-soft);
+}
+
+.pdf-export-check-success strong,
+.pdf-export-status strong,
+.pdf-export-wait-note strong {
+  display: block;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-check-success strong,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-status strong,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-wait-note strong {
+  color: var(--classic-heading-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-check-success strong,
+:where(html[data-ui-theme="warm"]) .pdf-export-status strong,
+:where(html[data-ui-theme="warm"]) .pdf-export-wait-note strong {
+  color: var(--success);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .pdf-export-check-success strong {
+  color: #f0fdf4;
+}
+
+html:where([data-ui-theme="warm"])[data-theme="dark"] .pdf-export-check-success strong {
+  color: var(--on-accent);
+}
+
+.pdf-export-check-success p,
+.pdf-export-status p,
+.pdf-export-wait-note span {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-check-success p,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-status p,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-wait-note span {
+  color: var(--classic-muted-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-check-success p,
+:where(html[data-ui-theme="warm"]) .pdf-export-status p,
+:where(html[data-ui-theme="warm"]) .pdf-export-wait-note span {
+  color: var(--success);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .pdf-export-check-success p {
+  color: #bbf7d0;
+}
+
+html:where([data-ui-theme="warm"])[data-theme="dark"] .pdf-export-check-success p {
+  color: var(--success);
+}
+
+.pdf-export-name-field {
+  display: grid;
+  gap: 8px;
+}
+
+.pdf-export-name-field label {
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-name-field label {
+  color: var(--classic-heading-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-name-field label {
+  color: var(--text);
+}
+
+html[data-theme="dark"] .ability-choice-card h3,
+html[data-theme="dark"] .default-ability-class-card h3,
+html[data-theme="dark"] .point-buy-preset-copy strong,
+html[data-theme="dark"] .point-buy-header h3,
+html[data-theme="dark"] .point-buy-ability,
+html[data-theme="dark"] .point-buy-value,
+html[data-theme="dark"] .point-buy-total,
+html[data-theme="dark"] .pdf-export-flow-modal__card h3,
+html[data-theme="dark"] .pdf-export-wait-note strong,
+html[data-theme="dark"] .pdf-export-name-field label,
+html[data-theme="dark"] .legal-modal-meta-title {
+  color: var(--text);
+}
+
+.pdf-export-name-field + .pdf-export-name-field {
+  margin-top: 18px;
+}
+
+.pdf-export-avatar-option label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.pdf-export-avatar-option input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.pdf-export-avatar-option__image {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.pdf-export-name-field__optional {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1.4;
+  vertical-align: 1px;
+}
+
+.pdf-export-name-field__input {
+  width: 100%;
+  min-height: 50px;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-name-field__input {
+  border: 1px solid rgba(76, 104, 168, 0.32);
+  border-radius: 0.85rem;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(15, 26, 58, 0.03);
+  color: #172541;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-name-field__input {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  box-shadow: none;
+  color: var(--text);
+}
+
+.pdf-export-name-field__input::placeholder {
+  font-weight: 500;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-name-field__input::placeholder {
+  color: #98a2b3;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-name-field__input::placeholder {
+  color: var(--text-muted);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-name-field__input:hover {
+  border-color: rgba(62, 88, 148, 0.52);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-name-field__input:hover {
+  border-color: var(--border);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-name-field__input:focus {
+  border-color: var(--classic-line-strong);
+  outline: 0;
+  box-shadow: 0 0 0 4px rgba(69, 105, 187, 0.14);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-name-field__input:focus {
+  border-color: var(--accent);
+  box-shadow: none; outline: 2px solid var(--focus-ring); outline-offset: 2px;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-name-field__input[aria-invalid="true"] {
+  border-color: #c94a42;
+  box-shadow: 0 0 0 4px rgba(201, 74, 66, 0.1);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-name-field__input[aria-invalid="true"] {
+  border-color: var(--danger-border);
+  box-shadow: none;
+}
+
+.pdf-export-name-field__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-name-field__meta {
+  color: #77839a;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-name-field__meta {
+  color: var(--text-muted);
+}
+
+.pdf-export-name-field__counter {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-name-field__counter.is-over {
+  color: #b42318;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-name-field__counter.is-over {
+  color: var(--warning);
+}
+
+.pdf-export-choice-options,
+.pdf-export-race-options {
+  display: grid;
+  gap: 9px;
+}
+
+.pdf-export-choice-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pdf-export-race-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pdf-export-flow-modal__card .pdf-export-choice-option,
+.pdf-export-flow-modal__card .pdf-export-race-option {
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-choice-option,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-race-option {
+  border: 1px solid rgba(76, 100, 154, 0.24);
+  border-radius: 0.8rem;
+  background: #fff;
+  color: var(--classic-heading-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-choice-option,
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-race-option {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.pdf-export-flow-modal__card .pdf-export-choice-option {
+  display: grid;
+  gap: 4px;
+  padding: 13px 14px;
+}
+
+.pdf-export-choice-option strong {
+  font-size: 0.92rem;
+}
+
+.pdf-export-choice-option span {
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-choice-option span {
+  color: var(--classic-muted-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-choice-option span {
+  color: var(--text-muted);
+}
+
+.pdf-export-flow-modal__card .pdf-export-race-option {
+  padding: 11px 12px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.pdf-export-flow-modal__card .pdf-export-choice-option:hover,
+.pdf-export-flow-modal__card .pdf-export-choice-option:focus-visible,
+.pdf-export-flow-modal__card .pdf-export-race-option:hover,
+.pdf-export-flow-modal__card .pdf-export-race-option:focus-visible {
+  transform: translateY(-1px);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-choice-option:hover,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-choice-option:focus-visible,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-race-option:hover,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-race-option:focus-visible {
+  border-color: var(--classic-line-strong);
+  background: #fff;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-choice-option:hover,
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-choice-option:focus-visible,
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-race-option:hover,
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-race-option:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface-strong);
+}
+
+html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-choice-option:hover,
+html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-choice-option:focus-visible {
+  border-color: var(--accent-strong);
+  background: var(--surface-muted);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-wait-note {
+  border: 1px solid rgba(69, 105, 187, 0.18);
+  background: var(--classic-tint-bg);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-wait-note {
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+
+.pdf-export-wait-note > span {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.pdf-export-format-options {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.pdf-export-flow-modal__card .pdf-export-format-option {
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  padding: 14px 15px;
+  text-align: left;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-format-option {
+  border: 1px solid rgba(76, 100, 154, 0.24);
+  border-radius: 0.9rem;
+  background: #fff;
+  color: var(--classic-heading-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-format-option {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.pdf-export-flow-modal__card .pdf-export-format-option:hover,
+.pdf-export-flow-modal__card .pdf-export-format-option:focus-visible {
+  transform: translateY(-1px);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-format-option:hover,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-format-option:focus-visible {
+  border-color: var(--classic-line-strong);
+  background: #fff;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-format-option:hover,
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-format-option:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface-strong);
+}
+
+.pdf-export-format-option__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 1rem;
+}
+
+.pdf-export-format-option__badge {
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-format-option__badge {
+  color: #46639f;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-format-option__badge {
+  color: var(--accent);
+}
+
+.pdf-export-format-option__detail {
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-format-option__detail {
+  color: var(--classic-muted-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-format-option__detail {
+  color: var(--text-body);
+}
+
+.pdf-export-flow-modal__card .pdf-export-format-note {
+  margin-top: 13px;
+  padding-top: 12px;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-format-note {
+  border-top: 1px solid rgba(112, 134, 184, 0.2);
+  color: var(--classic-muted-text);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-format-note {
+  border-top: 1px solid var(--border);
+  color: var(--text-body);
+}
+
+.pdf-export-format-note a {
+  font-weight: 750;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-format-note a {
+  color: #46639f;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-format-note a {
+  color: var(--accent);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-status--progress {
+  border: 1px solid rgba(69, 105, 187, 0.18);
+  background: var(--classic-tint-bg);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-status--progress {
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-status--error {
+  border: 1px solid rgba(180, 35, 24, 0.18);
+  background: #fff2f2;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-status--error {
+  border: 1px solid var(--danger-border);
+  background: var(--danger-soft);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-status--error .pdf-export-status__icon {
+  background: #fbded9;
+  color: #b42318;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-status--error .pdf-export-status__icon {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-status--error .pdf-export-flow-modal__error {
+  color: #b42318;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-status--error .pdf-export-flow-modal__error {
+  color: var(--danger);
+}
+
+.pdf-export-status__spinner {
+  flex: 0 0 auto;
+  width: 1.65rem;
+  height: 1.65rem;
+  animation: pdf-export-spin 800ms linear infinite;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-status__spinner {
+  border: 3px solid rgba(69, 105, 187, 0.2);
+  border-top-color: var(--classic-line-strong);
+  border-radius: 999px;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-status__spinner {
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 999px;
+}
+
+@keyframes pdf-export-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pdf-export-card-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes pdf-export-step-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pdf-export-spin {
+  to { transform: rotate(360deg); }
+}
+
+.onboarding-jump-target {
+  animation: onboarding-jump-highlight 1.8s ease-out;
+}
+
+@keyframes onboarding-jump-highlight {
+  0%, 35% {
+    outline: 3px solid rgba(82, 111, 174, 0.88);
+    outline-offset: 5px;
+    box-shadow: 0 0 0 8px rgba(82, 111, 174, 0.16);
+  }
+  100% {
+    outline-color: transparent;
+    outline-offset: 9px;
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+/* 勾選框與單選鈕緊貼選項文字：外框貼近控制項，不蓋到文字。 */
+input[type="checkbox"].onboarding-jump-target,
+input[type="radio"].onboarding-jump-target {
+  animation-name: onboarding-jump-highlight-compact;
+}
+
+@keyframes onboarding-jump-highlight-compact {
+  0%, 35% {
+    outline: 3px solid rgba(82, 111, 174, 0.88);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 4px rgba(82, 111, 174, 0.16);
+  }
+  100% {
+    outline-color: transparent;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-jump-target {
+    animation-duration: 0.01ms;
+  }
+
+  :where(html:not([data-ui-theme="warm"])) .onboarding-jump-target {
+    outline: 3px solid var(--classic-line-strong);
+    outline-offset: 5px;
+  }
+  :where(html[data-ui-theme="warm"]) .onboarding-jump-target {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 5px;
+  }
+  :where(html) input[type="checkbox"].onboarding-jump-target,
+  :where(html) input[type="radio"].onboarding-jump-target {
+    outline-offset: 1px;
+  }
+}
+
+.pdf-export-flow-modal__card button {
+  width: auto;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.pdf-export-flow-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 14px;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__actions {
+  border-top: 1px solid rgba(114, 133, 176, 0.18);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__actions {
+  border-top: 1px solid var(--border);
+}
+
+.pdf-export-flow-modal__actions[hidden] {
+  display: none;
+}
+
+.pdf-export-flow-modal__card .pdf-export-flow-modal__button {
+  min-height: 42px;
+  padding: 9px 16px;
+  font-size: 0.9rem;
+  font-weight: 850;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card .pdf-export-flow-modal__button {
+  border-radius: 0.75rem;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card .pdf-export-flow-modal__button {
+  border-radius: var(--radius-lg);
+}
+
+.pdf-export-flow-modal__card .pdf-export-flow-modal__button:hover,
+.pdf-export-flow-modal__card .pdf-export-flow-modal__button:focus-visible {
+  transform: translateY(-1px);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__button--primary {
+  border: 1px solid var(--classic-line-strong);
+  background: #315fc4;
+  box-shadow: 0 7px 16px rgba(42, 78, 157, 0.2);
+  color: #fff;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__button--primary {
+  border: 2px solid var(--ink);
+  background: var(--action-fill);
+  box-shadow: var(--shadow-control);
+  color: var(--on-accent);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__button--primary:hover,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__button--primary:focus-visible {
+  background: var(--classic-line-strong);
+  box-shadow: 0 9px 20px rgba(42, 78, 157, 0.25);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__button--primary:hover,
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__button--primary:focus-visible {
+  background: var(--action-fill);
+  box-shadow: var(--shadow-control);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__button--secondary {
+  border: 1px solid rgba(76, 100, 154, 0.28);
+  background: #fff;
+  color: #405170;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__button--secondary {
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text-body);
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__button--secondary:hover,
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__button--secondary:focus-visible {
+  border-color: #6c83b5;
+  background: var(--classic-tint-bg);
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__button--secondary:hover,
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__button--secondary:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface-strong);
+}
+
+.pdf-export-flow-modal__error {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+:where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__error {
+  color: #b42318;
+}
+
+:where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__error {
+  color: var(--warning);
+}
+
+.pdf-export-flow-modal__error:empty {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .pdf-export-flow-modal {
+    align-items: flex-end;
+    padding: 8px;
+  }
+
+  :where(html:not([data-ui-theme="warm"])) .pdf-export-flow-modal__card {
+    width: 100%;
+    max-height: 92vh;
+    max-height: 92dvh;
+    border-radius: 1.25rem;
+  }
+
+  :where(html[data-ui-theme="warm"]) .pdf-export-flow-modal__card {
+    width: 100%;
+    max-height: 92vh;
+    max-height: 92dvh;
+    border-radius: var(--radius-lg);
+  }
+
+  .pdf-export-choice-options {
+    grid-template-columns: 1fr;
+  }
+
+  .pdf-export-format-option__heading {
+    align-items: flex-start;
+  }
+
+  .pdf-export-flow-modal__actions .pdf-export-flow-modal__button {
+    flex: 1 1 0;
+  }
+}
+
