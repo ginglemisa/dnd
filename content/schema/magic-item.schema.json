@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "magic-item.schema.json",
+  "title": "twD20 魔法物品內容檔",
+  "description": "content/srd/magic-items.yaml：SRD 魔法物品。寫法見 content/README.md 的「魔法物品」。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "definitions": {
+    "rarity": { "enum": ["common", "uncommon", "rare", "very-rare", "legendary", "artifact"], "description": "稀有度：常見、非常見、稀有、極稀有、傳說、神器。" },
+    "effectValue": {
+      "oneOf": [
+        { "type": "integer", "minimum": 1 },
+        { "const": "bonus" }
+      ],
+      "description": "固定加值，或 bonus（取自 bonus 選項的值）。"
+    },
+    "effects": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "只放角色卡會自動計算的恆定固定數值。條件式效果留在說明文字。",
+      "properties": {
+        "attack": { "$ref": "#/definitions/effectValue", "description": "武器攻擊檢定加值。" },
+        "damage": { "$ref": "#/definitions/effectValue", "description": "武器傷害擲骰加值。" },
+        "ac": { "$ref": "#/definitions/effectValue", "description": "護甲等級加值。" },
+        "saves": { "$ref": "#/definitions/effectValue", "description": "豁免加值。" },
+        "condition": { "enum": ["unarmored", "held"], "description": "ac／saves 的生效條件。unarmored：未穿戴護甲且未使用盾牌；held：手持這件物品。" }
+      }
+    },
+    "base": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "基本款，擇一：fixed（固定一種）、from（列出可選品名）、any（裝備分類）。品名須對得上 equipment-data.js。",
+      "properties": {
+        "fixed": { "type": "string", "minLength": 1 },
+        "from": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "any": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["simple-weapon", "martial-weapon", "melee-weapon", "light-armor", "medium-armor", "heavy-armor", "ammunition"] }
+        },
+        "except": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "any 要排除的品名。" },
+        "label": { "type": "string", "minLength": 1, "description": "any 的顯示文字（例如「任意近戰武器」），接在類別後的括弧。" }
+      }
+    },
+    "choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "label"],
+      "properties": {
+        "value": { "type": ["integer", "string"], "description": "選項值，寫進物品欄存檔：不可改名（列在基準檔）。" },
+        "label": { "type": "string", "minLength": 1, "description": "選項文字；也是顯示名稱括弧內的文字。" },
+        "rarity": { "$ref": "#/definitions/rarity", "description": "此選項的稀有度（物品的 rarity 為 varies 時必填）。" },
+        "effects": { "$ref": "#/definitions/effects", "description": "選了此項才有的固定數值。" },
+        "heal": { "type": "string", "pattern": "^\\d+d\\d+( \\+ \\d+)?$", "description": "治療藥水恢復的生命值骰式。" },
+        "score": { "type": "integer", "minimum": 1, "description": "巨人之力物品賦予的力量值。" },
+        "saveDc": { "type": "integer", "minimum": 1, "description": "法術卷軸的豁免 DC。" },
+        "attackBonus": { "type": "integer", "minimum": 1, "description": "法術卷軸的攻擊加值。" },
+        "omitInName": { "const": true, "description": "顯示名稱不加這個選項（一般的治療藥水）。" }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "choices"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-zA-Z]*$", "description": "選項 ID，是物品欄存檔 magic 物件的欄位名：不可改名（列在基準檔）。bonus 是 +N 加值。" },
+        "label": { "type": "string", "minLength": 1, "description": "選項組的名稱（例如「加值」「傷害類型」）。" },
+        "choices": { "type": "array", "minItems": 2, "items": { "$ref": "#/definitions/choice" } }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "nameEn", "source", "category", "rarity", "attunement", "text"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "穩定 key，由 nameEn 轉成 kebab-case（「X, +1, +2, or +3」為 x-plus，括弧內別名不算）。寫進物品欄存檔：不可改名（列在基準檔）。" },
+        "name": { "type": "string", "minLength": 1, "description": "中文譯名，以譯名表定稿為準。" },
+        "nameEn": { "type": "string", "minLength": 1, "description": "SRD 英文名。" },
+        "source": { "enum": ["srd"], "description": "內容來源。" },
+        "category": { "enum": ["weapon", "armor", "potion", "ring", "scroll", "rod", "staff", "wand", "wondrous"], "description": "類別：武器、護甲、藥水、戒指、卷軸、權杖、法杖、魔杖、奇物。" },
+        "group": { "enum": ["wearable", "container", "consumable", "tool", "book", "curio"], "description": "奇物的小標：穿戴、容器、消耗品、工具與載具、書籍、奇珍。只有奇物要寫。" },
+        "rarity": { "enum": ["common", "uncommon", "rare", "very-rare", "legendary", "artifact", "varies"], "description": "稀有度；隨選項變動時寫 varies，並在選項寫各自的 rarity。" },
+        "rarityText": { "type": "string", "minLength": 1, "description": "varies 的副標文字（省略時為「稀有度不定」）。" },
+        "attunement": { "type": ["boolean", "string"], "minLength": 1, "description": "false 不需同調、true 需同調，或限定條件文字（例如「由法師」，顯示為「需由法師同調」）。" },
+        "base": { "$ref": "#/definitions/base" },
+        "options": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/option" }, "description": "取得時要選的項目。沒有自訂項時省略。" },
+        "effects": { "$ref": "#/definitions/effects" },
+        "displayName": { "type": "string", "minLength": 1, "description": "選定後的顯示名稱樣板：{base} 為基本款，{選項 ID} 為該選項的 label。省略時為「名稱（基本款、選項）」。" },
+        "consumable": { "const": true, "description": "用掉就減 1。" },
+        "weight": { "type": "number", "exclusiveMinimum": 0, "description": "每件磅數，只在譯文明寫時填。" },
+        "text": { "type": "string", "minLength": 1, "description": "說明本文（逐字取自譯文，不含副標）。支援 _斜體_、**粗體**、「- 」清單、#### 小標與 GFM 表格，建置時轉成 HTML。" }
+      }
+    }
+  },
+  "properties": {
+    "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/item" } }
+  }
+}
