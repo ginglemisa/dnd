@@ -1615,6 +1615,8 @@ async function validateInventoryStacks(page) {
     const slots = () => Inventory.entries().filter(entry => entry.slot).map(entry => [entry.uid, entry.slot]);
     const reload = () => applyStateObject(collectStateObject());
     const result = {};
+    // 前一個情境的下拉可能留著「不在物品欄」的選項，先清空再開始。
+    load();
     load(plain, sword);
     result.both = options("mainHand");
     choose("mainHand", "長劍");
