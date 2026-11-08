@@ -839,7 +839,7 @@
         const weight = el("span", "inventory-holding__weight");
         const badge = el("span", "inventory-tag__badge", "裝備中");
         badge.hidden = !entry.slot;
-        const attunedBadge = el("span", "inventory-tag__badge", "同調中");
+        const attunedBadge = el("span", "inventory-attuned-badge", "同調中");
         attunedBadge.hidden = !entry.attuned;
         meta.append(badge, attunedBadge);
         holding.appendChild(meta);

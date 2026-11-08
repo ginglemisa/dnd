@@ -2465,6 +2465,10 @@ button.inventory-more-item:is(:hover, :focus-visible, :active) {
   display: none;
 }
 
+.inventory-attuned-badge[hidden] {
+  display: none;
+}
+
 .inventory-tag.is-attuned {
   border-color: var(--accent-strong);
 }
@@ -2615,6 +2619,7 @@ button.inventory-over__hide:is(:hover, :active) {
   border-style: dashed;
 }
 
+.inventory-attuned-badge,
 .inventory-tag__badge {
   color: var(--accent-strong);
   font-size: var(--fs-xs);
