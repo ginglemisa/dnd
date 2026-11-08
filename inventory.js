@@ -286,7 +286,9 @@
 
   function getUnitWeight(entry) {
     if (!entry) return null;
-    const magicWeight = magicRule(entry)?.weight ?? null;
+    // 高等以上的治療藥水譯文沒寫重量，與一般商店的同一種藥水相同。
+    const rule = magicRule(entry);
+    const magicWeight = rule?.weight ?? getCatalogItem(rule?.equipmentName)?.weight ?? null;
     if (entry.itemId) return getCatalogItem(entry.itemId)?.weight ?? magicWeight;
     if (entry.magic) return magicWeight;
     return Number.isFinite(entry.weight) ? entry.weight : null;

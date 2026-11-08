@@ -3634,6 +3634,10 @@ button.inventory-arrange-done {
   padding: 0.3rem 0.9rem;
 }
 
+.magic-item-field .inventory-field__label {
+  font-weight: 700;
+}
+
 .magic-item-segmented {
   display: flex;
   flex-wrap: wrap;
