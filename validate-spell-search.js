@@ -1654,6 +1654,14 @@ async function validateInventoryStacks(page) {
   assert.equal(versions.detailTags, "50 金幣", "the equipment detail keeps its price line");
   assert.deepEqual(versions.shopItems, [["治療藥水", 50, "金幣", 0.5, null], ["法術卷軸", 30, "金幣", 0, 0], ["法術卷軸", 50, "金幣", 0, 1]], "the normal shop still reads price and weight from the equipment notes");
 
+  // 魔法模式的法術卷軸開放到 5 環，5 環只有 SRD 版，仍寫成舊卷軸的寫法；一般商店維持戲法與 1 環。
+  const scrolls = await page.evaluate(() => {
+    const normal = [...new Set(EQUIPMENT_SHOP_ITEMS.filter(item => item.name === "法術卷軸").map(item => item.spellLevel))];
+    const fifth = SpellCatalog.getAllReferenceSpells().filter(spell => spell.level === 5);
+    return { normal, fifthCount: fifth.length, playable: fifth.filter(spell => spell.playable).length };
+  });
+  assert.deepEqual(scrolls, { normal: [0, 1], fifthCount: 38, playable: 0 }, "the normal shop stays at cantrips and level 1, and level 5 has 38 SRD-only spells");
+
   // 魔法款和同名普通款是不同的選項，value 是魔法款自己的名稱；只有魔法款時不列普通選項。重新載入不互換，存檔寫魔法款但物品欄沒有時補上那一件。
   const magicEquip = await page.evaluate(([base]) => {
     const sword = { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } };

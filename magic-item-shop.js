@@ -14,8 +14,8 @@
   const MANUAL_NOTE = "角色卡不會自動套用這項效果，請依說明處理";
   const PARTIAL_MANUAL_NOTE = "固定加值會自動計算，其餘效果請依說明處理";
   const SHOP_NOTE = "點物品查看效果後獲得，不花費金幣";
-  // 網站的法術只到 4 環，法術卷軸也只提供到這裡。
-  const MAX_SCROLL_LEVEL = 4;
+  // 魔法模式的法術卷軸開放到 5 環；5 環法術只有 SRD 版，角色不能施放，但卷軸仍可取得。
+  const MAX_SCROLL_LEVEL = 5;
   const SEGMENTED_MAX = 4;
   const DEFAULT_AMMO_QUANTITY = 20;
   const ICON = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="9.4" cy="13" rx="8" ry="3.7"/><ellipse cx="9.7" cy="12.9" rx="5" ry="1.4"/><path d="M4.2 15.9V19.6C4.2 21 6.8 22 9.7 22s5.5-1 5.5-2.4v-3.9"/><path d="M16.3 2.8c.8-.3 1.8-.1 2 .7l4.3 17c.2.8-.4 1.3-1.2 1.5s-1.5 0-1.7-.8l-4.3-17c-.2-.7.2-1.2.9-1.4ZM16.3 7.6l2.9-.75"/></g><path d="M4.4 3.7L5.27 5.93 7.5 6.8 5.27 7.67 4.4 9.9 3.53 7.67 1.3 6.8 3.53 5.93ZM9.4 1.1L10.04 2.76 11.7 3.4 10.04 4.04 9.4 5.7 8.76 4.04 7.1 3.4 8.76 2.76ZM13.3 5.2L13.78 6.42 15 6.9 13.78 7.38 13.3 8.6 12.82 7.38 11.6 6.9 12.82 6.42Z" fill="currentColor" stroke="currentColor" stroke-width=".7" stroke-linejoin="round"/></svg>';
@@ -214,11 +214,20 @@
     return { ...field, read: () => { const index = field.read(); return index === undefined ? undefined : option.choices[Number(index)].value; } };
   }
 
-  // 法術卷軸：環階（戲法到 4 環）與該環階的法術。
+  // 某環階可記載的法術：有網站版的沿用一般商店的清單；5 環只有 SRD 版，取查閱用的清單。
+  function getScrollSpells(spellLevel) {
+    const playable = globalScope.EquipmentShop?.getSpellOptions?.(spellLevel) || [];
+    if (playable.length) return playable;
+    return (globalScope.SpellCatalog?.getAllReferenceSpells?.() || [])
+      .filter(spell => spell.level === spellLevel && spell.classIds.length)
+      .sort((a, b) => a.nameZh.localeCompare(b.nameZh, "zh-Hant"));
+  }
+
+  // 法術卷軸：環階（戲法到 5 環）與該環階的法術。
   function createScrollFields(option) {
     const choices = option.choices.filter(choice => choice.value <= MAX_SCROLL_LEVEL);
     const level = createSelectField("環階", "", choices.map((choice, index) => [String(index), choice.label]), "");
-    const spells = () => globalScope.EquipmentShop?.getSpellOptions?.(choices[Number(level.select.value)].value) || [];
+    const spells = () => getScrollSpells(choices[Number(level.select.value)].value);
     const spell = createSelectField("法術", "選擇法術…", [], "請先選擇法術。");
     const renderSpells = () => {
       spell.select.replaceChildren(new Option("選擇法術…", ""), ...spells().map(candidate => new Option(candidate.nameZh, candidate.spellId)));
