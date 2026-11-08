@@ -6,12 +6,13 @@
  * - 資料一律經 MagicItemCatalog；魔法物品不放進 equipment-data.js、equipment-notes.js、equipment-shop.js 的資料。
  * - 取得視窗：說明、基本款、選項（4 項以內分段按鈕，超過用下拉）、法術卷軸的環階與法術、魔法彈藥的數量。獲得不花費金幣、不記交易。
  * - 寫入物品欄的形狀見 inventory.js 檔頭。一般的治療藥水與法術卷軸沿用既有寫法；只以文字管理物品時比照結帳寫進攜帶物品文字。
- * - renderDetail() 是副標、說明與「不會自動套用」提示的共用畫面：商店視窗、物品欄視窗與裝備詳情都用它。
+ * - renderDetail() 是副標、說明與手動效果提示（有固定加值的物品改說明固定加值會自動計算）的共用畫面：商店視窗、物品欄視窗與裝備詳情都用它。
  */
 (function (globalScope) {
   "use strict";
 
   const MANUAL_NOTE = "角色卡不會自動套用這項效果，請依說明處理";
+  const PARTIAL_MANUAL_NOTE = "固定加值會自動計算，其餘效果請依說明處理";
   const SHOP_NOTE = "點物品查看效果後獲得，不花費金幣";
   // 網站的法術只到 4 環，法術卷軸也只提供到這裡。
   const MAX_SCROLL_LEVEL = 4;
@@ -93,6 +94,11 @@
     return row;
   }
 
+  // 有固定加值會自動計算的物品；魔法彈藥網站不追蹤，不算。
+  function hasAutomaticBonus(item) {
+    return !isAmmunition(item) && Object.keys(item.effects || {}).some(key => key !== "condition");
+  }
+
   /** 把副標、說明（延遲載入，失敗可重試）與提示畫進 container；沒有這件物品時回傳 false。 */
   function renderDetail(container, id) {
     const item = catalog()?.get(id);
@@ -101,7 +107,7 @@
     wrap.appendChild(el("p", "magic-item-detail__subtitle", catalog().getSubtitle(id)));
     const text = el("div", "magic-item-detail__text spell-version__srd-body");
     wrap.appendChild(text);
-    if (item.manualEffect) wrap.appendChild(el("p", "magic-item-detail__manual", MANUAL_NOTE));
+    if (item.manualEffect) wrap.appendChild(el("p", "magic-item-detail__manual", hasAutomaticBonus(item) ? PARTIAL_MANUAL_NOTE : MANUAL_NOTE));
     container.appendChild(wrap);
     const load = () => {
       text.replaceChildren(el("p", "magic-item-detail__status", "載入說明中…"));
