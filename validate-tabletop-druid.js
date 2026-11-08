@@ -106,6 +106,50 @@ async function checkPersistentSpells(page) {
   console.log("Persistent spells: casting, targets, cancellation, stacking, themes, persistence, dismissal and beast stats passed.");
 }
 
+// 荒野形態：只有穿戴中的魔法護甲與盾牌加值保留，戒指等其他持有物的加值不算；法師護甲與樹膚術照常。
+async function checkMagicItemsInWildShape(page) {
+  const results = await page.evaluate(() => {
+    TabletopMode.setMode("sheet");
+    TabletopMode.applyState({});
+    applyStateObject({ __autoCalculatedChecks: true, class: "druid", level: "8", str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40", armor: "皮甲", mainHand: "", offHand: "盾牌", offHandAsMain: false, "prof-wis": true,
+      __inventory: { version: 1, items: [
+        { uid: "hide", itemId: "皮甲", quantity: 1, equippedAs: "armor", magic: { id: "armor-plus", bonus: 1 } },
+        { uid: "shield", itemId: "盾牌", quantity: 1, equippedAs: "offHand", magic: { id: "shield-plus", bonus: 2 } },
+        { uid: "ring", quantity: 1, attuned: true, magic: { id: "ring-of-protection" } }
+      ] } });
+    TabletopMode.setMode("tabletop");
+    const c = () => TabletopMode.getDruidContext();
+    const run = (op, data) => TabletopMode.commitDruidOperation(op, data, c().token);
+    const equipment = (armor, off) => ({ armor, main: "merge", off, other: "merge" });
+    const value = id => TabletopMode.getDruidEffectiveValue(id, document.getElementById(id).value);
+    const output = { sheetAc: document.getElementById("ac-display").value, sheetWis: document.getElementById("save-wis").value, attacks: calculateHandAttacks({ ignoreMagicEffects: true })[1].hit };
+    output.known = run("known", { keys: ["wolf"] }).ok;
+    output.merged = [run("shape", { key: "wolf", equipment: equipment("merge", "merge") }).ok, value("ac-display"), value("save-wis")];
+    output.ended = run("end").ok;
+    TabletopMode.setBuiltInResourceSpent("druid-wild-shape", 0, 3);
+    output.worn = [run("shape", { key: "wolf", equipment: equipment("wear", "wear") }).ok, value("ac-display")];
+    run("end");
+    return output;
+  });
+  assert.deepEqual(results, { sheetAc: "19", sheetWis: "+8", attacks: "", known: true, merged: [true, "12", "+7"], ended: true, worn: [true, "18"] }, "wild shape keeps only worn magic armor and shields");
+  assert.deepEqual(await page.evaluate(async () => {
+    TabletopMode.setMode("sheet");
+    applyStateObject({ __autoCalculatedChecks: true, class: "wizard", level: "5", str: "10", dex: "14", armor: "", mainHand: "", offHand: "",
+      __inventory: { version: 1, items: [{ uid: "ring", quantity: 1, attuned: true, magic: { id: "ring-of-protection" } }] } });
+    TabletopMode.setMode("tabletop");
+    TabletopMode.setPanel("overview");
+    TabletopMode.setMageArmorActive(true);
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    const mage = document.getElementById("tabletop-ac").innerText;
+    TabletopMode.setMageArmorActive(false);
+    TabletopMode.setPersistentSpellEffect("barkskin", true);
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    return [mage, document.getElementById("tabletop-ac").innerText];
+  }), ["16 (法護)", "17 (樹膚)"], "persistent spells still work with a magic ring");
+}
+
 async function main() {
   const root = __dirname;
   const server = http.createServer((req, res) => {
@@ -614,6 +658,7 @@ async function main() {
     await dialog.getByRole("button", { name: "取消", exact: true }).click();
     await setLevel("8");
     await checkPersistentSpells(page);
+    await checkMagicItemsInWildShape(page);
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Druid status card, strips, known forms, shape cards, attack cards, recharge, resources, cancellation, alternate payment, autosave and responsive layout passed.");
   } finally {

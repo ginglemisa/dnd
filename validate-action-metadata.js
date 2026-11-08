@@ -1165,6 +1165,57 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "wizard", mainHand: "長劍", offHand: "盾牌", offHandAsMain: false, armor: "" }));
     assert.equal(await page.inputValue("#ac-display"), "10");
 
+    // 魔法物品的固定加值：只影響裝備的那一手，需同調的物品同調後才算；副手不加屬性調整值時魔法傷害加值仍要加。
+    const magicBase = { __spellManagement: { version: 2, manual: false, entries: [] }, __autoCalculatedChecks: true, class: "fighter", level: "5", str: "16", dex: "14", con: "12", int: "10", wis: "10", cha: "10",
+      mainHand: "", offHand: "", offHandAsMain: false, main2Shield: false, armor: "", shillelaghWeaponHand: "none", "prof-dex": false };
+    const magicNumbers = extra => page.evaluate(([base, extra]) => {
+      applyStateObject({ ...base, ...extra });
+      const value = id => document.getElementById(id).value;
+      return { main: [value("atk-main-hit"), value("atk-main-dmg")], off: [value("atk-off-hit"), value("atk-off-dmg")], ac: value("ac-display"), dexSave: value("save-dex") };
+    }, [magicBase, extra]);
+    const plus = (uid, itemId, bonus, extra = {}) => ({ uid, itemId, quantity: 1, magic: { id: "weapon-plus", bonus }, ...extra });
+    const inventoryOf = (...items) => ({ __inventory: { version: 1, items } });
+    assert.deepEqual(await magicNumbers({ mainHand: "長劍", offHand: "短劍", ...inventoryOf(plus("sword", "長劍", 2, { equippedAs: "mainHand" }), { uid: "plain", itemId: "短劍", quantity: 1 }) }),
+      { main: ["+8", "1d8+5揮砍"], off: ["+6", "1d6穿刺"], ac: "12", dexSave: "+2" }, "weapon +N only changes its own hand");
+    assert.deepEqual((await magicNumbers({ mainHand: "長劍", offHand: "短劍", ...inventoryOf({ uid: "plain", itemId: "長劍", quantity: 1 }, plus("sword", "短劍", 1, { equippedAs: "offHand" })) })).off,
+      ["+7", "1d6+1穿刺"], "the off hand keeps the magic damage bonus without the ability modifier");
+    assert.deepEqual((await magicNumbers({ class: "monk", dex: "16", str: "10", wis: "14", mainHand: "短棒", ...inventoryOf(plus("club", "短棒", 1, { equippedAs: "mainHand" })) })).main,
+      ["+7", "1d8+4鈍擊"], "Martial Arts adds the magic bonus");
+    assert.deepEqual((await magicNumbers({ mainHand: "長劍", ...inventoryOf({ uid: "sun", itemId: "長劍", quantity: 1, equippedAs: "mainHand", magic: { id: "sun-blade" } }) })).main,
+      ["+6", "1d8+3揮砍"], "an item that needs attunement does nothing until attuned");
+    assert.deepEqual((await magicNumbers({ mainHand: "長劍", ...inventoryOf({ uid: "sun", itemId: "長劍", quantity: 1, equippedAs: "mainHand", attuned: true, magic: { id: "sun-blade" } }) })).main,
+      ["+8", "1d8+5揮砍"], "attuned items apply");
+    const details = await page.evaluate(() => { const result = calculateHandAttacks()[0].details; return [result.magicLabel, result.magicAttackBonus, result.magicDamageBonus, renderAttackCalculationPopup(result, "hit").includes("陽炎劍")]; });
+    assert.deepEqual(details, ["陽炎劍", 2, 2, true], "attack details list the magic bonus");
+    assert.match(await page.locator("#equipment-loadout-summary-content").textContent(), /陽炎劍：.*魔法 \+2/u, "the loadout summary names the magic weapon and its bonus");
+    const armored = { armor: "鎖子甲", offHand: "盾牌" };
+    assert.equal((await magicNumbers({ ...armored, ...inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1, equippedAs: "armor", magic: { id: "armor-plus", bonus: 1 } }, { uid: "shield", itemId: "盾牌", quantity: 1, equippedAs: "offHand", magic: { id: "shield-plus", bonus: 2 } }) })).ac,
+      "21", "magic armor and shield add while worn (16+1+2+2)");
+    assert.equal((await magicNumbers(inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1, magic: { id: "armor-plus", bonus: 1 } }, { uid: "shield", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 2 } }))).ac,
+      "12", "carried armor and shields add nothing");
+    assert.equal((await magicNumbers({ class: "wizard", offHand: "盾牌", ...inventoryOf({ uid: "shield", itemId: "盾牌", quantity: 1, equippedAs: "offHand", magic: { id: "shield-plus", bonus: 2 } }) })).ac,
+      "12", "an untrained shield gives no magic bonus either");
+    const ringOn = { uid: "ring", quantity: 1, attuned: true, magic: { id: "ring-of-protection" } };
+    assert.deepEqual(await magicNumbers(inventoryOf(ringOn, { uid: "cloak", quantity: 1, magic: { id: "cloak-of-protection" } })).then(result => [result.ac, result.dexSave]), ["13", "+3"], "attuned ring adds AC and saves; the unattuned cloak does not");
+    assert.deepEqual(await magicNumbers(inventoryOf({ uid: "blade", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "luck-blade" } })).then(result => [result.main[0], result.dexSave]), ["", "+3"], "luck blade saves do not need the blade in hand");
+    const bracers = { uid: "bracers", quantity: 1, attuned: true, magic: { id: "bracers-of-defense" } };
+    assert.equal((await magicNumbers(inventoryOf(bracers))).ac, "14", "bracers apply unarmored");
+    assert.equal((await magicNumbers({ armor: "皮甲", ...inventoryOf(bracers, { uid: "leather", itemId: "皮甲", quantity: 1 }) })).ac, "13", "bracers stop with armor");
+    assert.equal((await magicNumbers({ offHand: "盾牌", ...inventoryOf(bracers, { uid: "plainshield", itemId: "盾牌", quantity: 1 }) })).ac, "14", "bracers stop with a shield");
+    const staff = { uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id: "staff-of-power" } };
+    assert.deepEqual(await magicNumbers({ class: "wizard", ...inventoryOf(staff) }).then(result => [result.ac, result.dexSave]), ["12", "+2"], "a held-only staff does nothing in the pack");
+    assert.deepEqual(await magicNumbers({ class: "wizard", mainHand: "長棍", ...inventoryOf({ ...staff, equippedAs: "mainHand" }) }).then(result => [result.ac, result.dexSave]), ["14", "+4"], "held staff adds AC and saves");
+    await page.evaluate(() => Inventory.setAttuned("staff", false));
+    await page.waitForFunction(() => document.getElementById("ac-display").value === "12");
+    assert.equal(await page.inputValue("#save-dex"), "+2", "ending attunement recalculates");
+    await page.evaluate(() => {
+      document.getElementById("auto-calculate-key-stats-toggle").checked = false;
+      document.getElementById("ac-display").value = "30";
+      Inventory.setAttuned("staff", true);
+    });
+    assert.equal(await page.inputValue("#ac-display"), "30", "manual AC stays manual");
+    await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
+
     // 刃之魔契：不再熟練全部軍用武器，只有標記為契約武器的那一把熟練、可用魅力；同時只有一把。
     // 傷害類型（預設黯蝕）存在 pactWeaponDamageType，裝備摘要視窗、刃之魔契卡片與跑團動作的下拉都是它的鏡像。
     const pactState = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "warlock", level: "3", str: "10", dex: "12", cha: "16", mainHand: "長劍", offHand: "", offHandAsMain: false, armor: "", pactWeaponDamageType: "",
@@ -1272,6 +1323,8 @@ async function verifyEquipmentLoadout(browser, url) {
       class: "druid", level: "3", str: "10", dex: "10", wis: "16", "spellcasting-ability": "wis", mainHand: "長棍", offHand: "", offHandAsMain: false, armor: "",
       shillelaghWeaponHand: "none", shillelaghDamageType: "",
       __inventory: { version: 1, items: [{ uid: "quarterstaff", itemId: "長棍", quantity: 1 }, { uid: "longsword", itemId: "長劍", quantity: 1 }] } };
+    await page.evaluate(state => applyStateObject(state), { ...shillelaghState, shillelaghWeaponHand: "main", __inventory: { version: 1, items: [{ uid: "quarterstaff", itemId: "長棍", quantity: 1, equippedAs: "mainHand", magic: { id: "weapon-plus", bonus: 1 } }] } });
+    assert.deepEqual([await page.inputValue("#atk-main-hit"), await page.inputValue("#atk-main-dmg")], ["+6", "1d8+4力場"], "Shillelagh keeps the magic bonus");
     await page.evaluate(state => applyStateObject(state), shillelaghState);
     const shillelaghControls = () => page.evaluate(() => ["main", "off"].map(hand => !document.querySelector(`[data-shillelagh-hand="${hand}"]`).hidden));
     assert.deepEqual(await shillelaghControls(), [true, false], "only the hand holding a club or quarterstaff offers Shillelagh");

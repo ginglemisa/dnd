@@ -1598,6 +1598,119 @@ async function validateInventoryStacks(page) {
     split: [[5, ""], [2, ""], [1, "mainHand"]], reloaded: [[5, ""], [2, ""], [1, "mainHand"]]
   }, "old data is converted without changing totals; slots stay out of save and share files and come back from the equipment fields");
 
+  // 魔法款和同名普通款是不同的選項：value 都是基本款名稱，沒指定時一律拿普通款；只有魔法款時不列普通選項。重新載入不互換。
+  const magicEquip = await page.evaluate(([base]) => {
+    const sword = { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } };
+    const plain = { uid: "plain", itemId: "長劍", quantity: 1 };
+    const inv = (...items) => ({ __inventory: { version: 1, items } });
+    const load = (...items) => applyStateObject({ ...base, ...inv(...items) });
+    const options = id => [...document.getElementById(id).options].filter(option => option.value && !option.disabled).map(option => [option.textContent, option.dataset.magicUid || ""]);
+    const choose = (id, value, uid = "") => {
+      const select = document.getElementById(id);
+      const found = writeEquipmentSelection(select, value, uid);
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      return found;
+    };
+    const selection = id => readEquipmentSelection(document.getElementById(id));
+    const slots = () => Inventory.entries().filter(entry => entry.slot).map(entry => [entry.uid, entry.slot]);
+    const reload = () => applyStateObject(collectStateObject());
+    const result = {};
+    load(plain, sword);
+    result.both = options("mainHand");
+    choose("mainHand", "長劍");
+    result.plainSlot = slots();
+    reload();
+    result.plainReload = [selection("mainHand"), slots(), Inventory.getState().items.find(entry => entry.uid === "plain")];
+    choose("mainHand", "長劍", "plus");
+    result.magicSlot = slots();
+    result.saved = Inventory.getState().items.find(entry => entry.uid === "plus").equippedAs;
+    reload();
+    result.magicReload = [selection("mainHand"), slots(), Inventory.entries().length];
+    // 重建下拉（物品欄變動）不會跳回普通款。
+    Inventory.add([{ name: "雜物" }]);
+    result.rebuilt = selection("mainHand");
+    load(sword);
+    result.onlyMagic = options("mainHand");
+    applyStateObject({ ...base, mainHand: "長劍", ...inv(sword) });
+    result.ensureAddsPlain = Inventory.entries().map(entry => [Boolean(entry.magic), entry.source || "", entry.slot || ""]);
+    applyStateObject({ ...base, mainHand: "長劍", ...inv({ ...sword, equippedAs: "mainHand" }) });
+    result.ensureSkipsMagic = [Inventory.entries().length, slots(), selection("mainHand").uid];
+    // 雙持同名
+    load({ uid: "p", itemId: "短劍", quantity: 1 }, { uid: "m", itemId: "短劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } });
+    choose("mainHand", "短劍", "m");
+    result.offWhenMainMagic = options("offHand").filter(([label]) => label.startsWith("短劍"));
+    choose("mainHand", "短劍");
+    result.offWhenMainPlain = options("offHand").filter(([label]) => label.startsWith("短劍"));
+    // 一筆多件：裝備時拆出一件，下拉仍選著魔法款；兩手都拿得到。
+    load({ uid: "s", itemId: "短劍", quantity: 2, magic: { id: "weapon-plus", bonus: 1 } });
+    choose("mainHand", "短劍", "s");
+    result.split = [Inventory.entries().map(entry => [entry.quantity, entry.slot || ""]), selection("mainHand").uid === slots()[0][0]];
+    choose("offHand", "短劍", "s");
+    result.bothHands = slots().map(([, slot]) => slot).sort();
+    // 盾牌的兩個位置：副手是下拉，主手 2 是勾選；勾選預設拿普通款，只有魔法盾牌時拿魔法盾牌，存檔後拿回同一面。
+    const plainShield = { uid: "ps", itemId: "盾牌", quantity: 1 };
+    const magicShield = { uid: "ms", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 1 } };
+    load(plainShield, magicShield);
+    result.shieldOptions = options("offHand").filter(([label]) => label.startsWith("盾牌"));
+    choose("offHand", "盾牌", "ms");
+    result.offShield = slots();
+    const alternate = { ...base, offHandAsMain: true };
+    applyStateObject({ ...alternate, ...inv(plainShield, magicShield) });
+    const toggle = document.getElementById("main2Shield");
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    result.checkboxPlain = slots();
+    applyStateObject({ ...alternate, ...inv(magicShield) });
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    result.checkboxMagic = slots();
+    applyStateObject(collectStateObject());
+    result.checkboxReload = [slots(), Inventory.entries().length];
+    // 同調：上限、同種第二件、一筆多件；同調中不能合併或拆分，移除後自然消失。
+    load({ uid: "r1", quantity: 1, magic: { id: "ring-of-protection" } }, { uid: "r2", quantity: 1, magic: { id: "ring-of-protection" } },
+      { uid: "c", quantity: 1, magic: { id: "cloak-of-protection" } }, { uid: "b", quantity: 1, magic: { id: "bracers-of-defense" } },
+      { uid: "st", quantity: 1, magic: { id: "stone-of-good-luck" } }, { uid: "st2", quantity: 2, magic: { id: "periapt-of-wound-closure" } }, { uid: "bag", quantity: 1, magic: { id: "bag-of-holding" } });
+    result.attune = [Inventory.setAttuned("r1", true), Inventory.setAttuned("r2", true), Inventory.setAttuned("st2", true), Inventory.setAttuned("bag", true), Inventory.setAttuned("c", true), Inventory.setAttuned("b", true), Inventory.setAttuned("st", true), Inventory.getAttunement()];
+    result.attunedStack = [Inventory.getMergeTargets("r2").some(entry => entry.uid === "r1"), Inventory.getMergeTargets("r1").length];
+    Inventory.remove("r1");
+    result.afterRemove = Inventory.getAttunement().count;
+    Inventory.update("c", { quantity: 5 });
+    result.fixedQuantity = Inventory.getEntry("c").quantity;
+    const note = id => {
+      const box = document.createElement("div");
+      MagicItemShop.renderDetail(box, id);
+      return box.querySelector(".magic-item-detail__manual")?.textContent || "";
+    };
+    result.notes = ["defender", "ammunition-plus", "flame-tongue"].map(note);
+    return result;
+  }, [blank]);
+  assert.deepEqual(magicEquip, {
+    both: [["長劍", ""], ["長劍+2", "plus"]],
+    plainSlot: [["plain", "mainHand"]],
+    plainReload: [{ value: "長劍", uid: "" }, [["plain", "mainHand"]], { uid: "plain", quantity: 1, itemId: "長劍" }],
+    magicSlot: [["plus", "mainHand"]],
+    saved: "mainHand",
+    magicReload: [{ value: "長劍", uid: "plus" }, [["plus", "mainHand"]], 2],
+    rebuilt: { value: "長劍", uid: "plus" },
+    onlyMagic: [["長劍+2", "plus"]],
+    ensureAddsPlain: [[true, "", ""], [false, "equipped", "mainHand"]],
+    ensureSkipsMagic: [1, [["plus", "mainHand"]], "plus"],
+    offWhenMainMagic: [["短劍", ""]],
+    offWhenMainPlain: [["短劍+1", "m"]],
+    split: [[[1, ""], [1, "mainHand"]], true],
+    bothHands: ["mainHand", "offHand"],
+    shieldOptions: [["盾牌", ""], ["盾牌+1", "ms"]],
+    offShield: [["ms", "offHand"]],
+    checkboxPlain: [["ps", "shield"]],
+    checkboxMagic: [["ms", "shield"]],
+    checkboxReload: [[["ms", "shield"]], 1],
+    attune: ["ok", "duplicate", "stack", "unavailable", "ok", "ok", "limit", { count: 3, max: 3, needed: true }],
+    attunedStack: [false, 0],
+    afterRemove: 2,
+    fixedQuantity: 1,
+    notes: ["固定加值會自動計算，其餘效果請依說明處理", "角色卡不會自動套用這項效果，請依說明處理", "角色卡不會自動套用這項效果，請依說明處理"]
+  }, "magic and plain items with the same base stay apart in every equipment path, and attunement follows its limits");
+
   // 物品欄滿 300 筆又要多開一筆時裝備失敗：下拉改回原本的選擇並提示；×1 的標籤不用多開一筆，照常裝備。
   const fullItems = [{ uid: "d2", itemId: "匕首", quantity: 2 }, ...Array.from({ length: 299 }, (_, index) => ({ name: `雜物${index}`, quantity: 1 }))];
   await reset(fullItems);

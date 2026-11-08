@@ -4363,6 +4363,53 @@ async function verifyInventoryPersistence(browser, url) {
       assert.deepEqual(await magicSnapshot(magicShared), magicExpected, "share restores magic items");
       assert.equal(await magicShared.evaluate(() => { EquipmentShop.open(); return Boolean(document.querySelector(".equipment-shop__magic-toggle")); }), false, "share mode cannot switch to the magic shop");
     } finally { await magicShared.close(); }
+    // 裝備中的魔法款（equippedAs）與同調（attuned）經 autosave、JSON、分享都還原，普通與魔法同名時不互換；普通物品的存檔不多欄位。
+    const equippedState = { class: "fighter", level: "5", str: "16", mainHand: "長劍", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "plain", itemId: "長劍", quantity: 1 },
+      { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 }, equippedAs: "mainHand" },
+      { uid: "ring", quantity: 1, magic: { id: "ring-of-protection" }, attuned: true }
+    ] } };
+    const equippedSnapshot = target => target.evaluate(() => {
+      const select = document.getElementById("mainHand");
+      return { option: select.selectedOptions[0].textContent, state: Inventory.getState().items, slots: Inventory.entries().filter(entry => entry.slot).map(entry => entry.uid), hit: document.getElementById("atk-main-hit").value };
+    });
+    const equippedExpected = { option: "長劍+2", state: equippedState.__inventory.items, slots: ["plus"], hit: "+8" };
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, equippedState);
+    assert.deepEqual(await equippedSnapshot(page), equippedExpected, "a magic item equipped next to its plain twin loads as itself");
+    await page.goto(url);
+    assert.deepEqual(await equippedSnapshot(page), equippedExpected, "autosave restores the equipped magic item and attunement");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await equippedSnapshot(page), equippedExpected, "JSON restores the equipped magic item and attunement");
+    const equippedHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const equippedShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = equippedHash;
+      await equippedShared.goto(sharedUrl.href);
+      await equippedShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await equippedSnapshot(equippedShared), equippedExpected, "share restores the equipped magic item and attunement");
+      await equippedShared.evaluate(() => InventoryUI.openItemDialog("ring"));
+      const sharedRing = equippedShared.locator('.app-dialog[data-variant="inventory-item"]');
+      await sharedRing.waitFor();
+      assert.equal(await sharedRing.getByRole("button", { name: /同調/u }).count(), 0, "share mode cannot toggle attunement");
+    } finally { await equippedShared.close(); }
+    // 舊資料沒有這兩個欄位：普通物品照舊，魔法款不被當成已裝備。
+    assert.deepEqual(await page.evaluate(() => {
+      applyStateObject({ class: "fighter", level: "1", mainHand: "長劍", __inventory: { version: 1, items: [{ uid: "own", itemId: "長劍", quantity: 1 }, { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } }] } });
+      return { option: document.getElementById("mainHand").selectedOptions[0].textContent, state: Inventory.getState().items };
+    }), { option: "長劍", state: [{ uid: "own", itemId: "長劍", quantity: 1 }, { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } }] }, "saves without equippedAs always wield the plain item");
+    assert.deepEqual(await page.evaluate(() => [
+      { uid: "a", quantity: 1, magic: { id: "x" }, equippedAs: "mainHand", attuned: true },
+      { uid: "a", quantity: 1, magic: { id: "x" }, equippedAs: "hat" },
+      { uid: "a", quantity: 1, magic: { id: "x" }, attuned: "yes" }
+    ].map(entry => isValidInventoryState({ version: 1, items: [entry] }))), [true, false, false], "the import preflight checks the new fields");
+    assert.deepEqual(await page.evaluate(() => {
+      Inventory.restore({ version: 1, items: [
+        { uid: "a", itemId: "長劍", quantity: 1, equippedAs: "mainHand", attuned: true },
+        { uid: "b", quantity: 2, attuned: true, magic: { id: "ring-of-protection" } },
+        { uid: "c", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "weapon-plus", bonus: 1 } }
+      ] });
+      return Inventory.getState().items;
+    }), [{ uid: "a", itemId: "長劍", quantity: 1 }, { uid: "b", quantity: 2, magic: { id: "ring-of-protection" } }, { uid: "c", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } }], "plain items, stacks and items without attunement drop the new fields");
     console.log("Inventory persistence: autosave, JSON export, share (including empty inventories and text mode), legacy seeding, missing equipped items, descriptions, safe custom names and magic items passed.");
   } finally { await page.close(); }
 }
