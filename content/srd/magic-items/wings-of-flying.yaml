@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: wings-of-flying
+name: 飛翼斗篷
+nameEn: "Wings of Flying"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: true
+text: |-
+  穿戴這件斗篷時，你可以進行魔法動作，把斗篷變成你背上的一對翅膀。翅膀持續1小時，或直到你以魔法動作提前結束此效果。翅膀給你60呎的飛行速度。若翅膀消失時你在空中，你會墜落。翅膀消失後，1d12小時內你無法再次使用它們。

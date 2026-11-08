@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: robe-of-the-archmagi
+name: 大法師法袍
+nameEn: "Robe of the Archmagi"
+source: srd
+category: wondrous
+group: wearable
+rarity: legendary
+attunement: "由術士、契術師或法師"
+manualEffect: true
+text: |-
+  這件優雅的衣物以精緻的布料製成，並裝飾著符文。
+
+  你穿戴這件法袍時，獲得這些益處。
+
+  _護甲。_ 如果你沒有穿戴護甲，你的基礎護甲等級為15加上你的敏捷調整值。
+
+  _魔法抗性。_ 你對法術與其他魔法效果的豁免具有優勢。
+
+  _戰法師。_ 你的法術豁免DC與法術攻擊加值各增加2。

@@ -22,7 +22,7 @@
   * `spell-srd.generated.js`：法術詳情「SRD 版」的譯文，網頁版延遲載入、離線版內嵌。法術 YAML 的英文原文不進任何產物。
   * `monster-content.generated.js`：`monsterRules`、`monsterText`、`monsterLabels`，經 `monster.js` 的 `BeastCatalog`（`get()`、`getStatBlock()`、`getRules()`）與 `createBeastCard()`／`renderBeastPopupHtml()` 讀取；野獸資料卡文字與跑團數值都由結構化數值產生。
   * `monster-srd.generated.js`：野獸資料卡「SRD 版」的 HTML，網頁版延遲載入、離線版內嵌。怪物 YAML 的英文原文不進任何產物。
-  * `magic-item-content.generated.js`：`magicItemRules`、`magicItemLabels`、`magicItemBaseLists`，經 `magic-items.js` 的 `MagicItemCatalog` 讀取；魔法物品是單一檔 `content/srd/magic-items.yaml`，獨立於裝備資料。
+  * `magic-item-content.generated.js`：`magicItemRules`、`magicItemLabels`、`magicItemBaseLists`，經 `magic-items.js` 的 `MagicItemCatalog` 讀取；魔法物品一件一檔，放在 `content/srd/magic-items/`，獨立於裝備資料。
   * `magic-item-text.generated.js`：魔法物品說明的 HTML，網頁版延遲載入（`MagicItemCatalog.loadText()`／`getText()`）、離線版內嵌。內容檔只放中文和 `nameEn`。
 * `content/private/` 是私人內容包（gitignore），目前只有職業類會被建置讀取（私人職業、子職、`class-extensions/`、`rules/multiclass.yaml`），寫進只在本機使用的 `class-content.private.generated.js`。私人法術只訂了格式、建置不讀；私人專長、背景、種族不支援（資料夾存在時建置失敗）。私人內容不得提交或複製到公開檔案，公開建置不得依賴它。
 * 持久化 ID 以基準檔把關：職業／子職／選項／動作 key／資源 key 用 `class-id-baseline.json`，專長（含專長選擇欄位、快速創角草稿的專長名稱、跑團動作 key）用 `feat-id-baseline.json`，背景用 `background-id-baseline.json`，種族（含血統選單值、快速創角草稿值、跑團動作與資源 key）用 `race-id-baseline.json`，法術用 `spell-id-baseline.json`（只列有網站版、角色可用的法術），怪物（野獸 key 與「key:動作 id」，寫進德魯伊已知形態、`beastUsed` 與跑團動作 key）用 `monster-id-baseline.json`，魔法物品（物品 id 與「物品 id:選項 id:選項值」，寫進物品欄存檔）用 `magic-item-id-baseline.json`，物品欄品項（裝備說明的中文品名）用 `equipment-id-baseline.json`（不在建置內，由 `validate-spell-search.js --equipment-only` 比對，需手動更新）。只在確認刻意新增，或已處理舊資料相容的移除／改名後，才更新基準檔（`npm run build -- --update-id-baseline`）；不得用基準檔掩蓋意外遺失。`spellId` 不隨顯示名稱改動。
@@ -57,7 +57,7 @@
 | 法術 | `content/srd/spells/`（建置產物見上），`spell-list.js`（`SpellCatalog`）建立索引與 API；SRD 譯文檢查 `tools/spell-reference/` |
 | 狀態、神祇 | `condition.js`、`deity-info.js` |
 | 規則說明提示框（技能／規則詞表、技能／狀態／野獸浮層） | `rule-tips.js`；野獸資料卡 `monster.js` 的 `createBeastCard`（網站版／SRD 版切換共用 `sheet-spells.js` 的 `createContentVersionView`） |
-| 魔法物品 | `content/srd/magic-items.yaml`（建置產物見上），`magic-items.js`（`MagicItemCatalog`）；魔法商店模式與取得視窗 `magic-item-shop.js`（`MagicItemShop`） |
+| 魔法物品 | `content/srd/magic-items/`（建置產物見上），`magic-items.js`（`MagicItemCatalog`）；魔法商店模式與取得視窗 `magic-item-shop.js`（`MagicItemShop`） |
 | 裝備與商店 | `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；物品欄資料 `inventory.js`（`Inventory`）、標籤介面 `inventory-ui.js` |
 | 角色卡 DOM、初始化、持久化、分享 | `index.html` |
 | 分享模式的鎖定、換法術職業表、AC 提示 | `share-readonly.js` |

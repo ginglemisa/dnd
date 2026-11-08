@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: spell-scroll
+name: 法術卷軸
+nameEn: "Spell Scroll"
+source: srd
+category: scroll
+rarity: varies
+attunement: false
+options:
+  - id: spellLevel
+    label: 法術環階
+    choices:
+      - { value: 0, label: 戲法, rarity: common, saveDc: 13, attackBonus: 5 }
+      - { value: 1, label: "1環", rarity: common, saveDc: 13, attackBonus: 5 }
+      - { value: 2, label: "2環", rarity: uncommon, saveDc: 13, attackBonus: 5 }
+      - { value: 3, label: "3環", rarity: uncommon, saveDc: 15, attackBonus: 7 }
+      - { value: 4, label: "4環", rarity: rare, saveDc: 15, attackBonus: 7 }
+      - { value: 5, label: "5環", rarity: rare, saveDc: 17, attackBonus: 9 }
+      - { value: 6, label: "6環", rarity: very-rare, saveDc: 17, attackBonus: 9 }
+      - { value: 7, label: "7環", rarity: very-rare, saveDc: 18, attackBonus: 10 }
+      - { value: 8, label: "8環", rarity: very-rare, saveDc: 18, attackBonus: 10 }
+      - { value: 9, label: "9環", rarity: legendary, saveDc: 19, attackBonus: 11 }
+consumable: true
+equipmentName: 法術卷軸
+text: |-
+  _法術卷軸_上寫有單一法術的文字，以神秘的密碼書寫。若該法術在你的法術列表上，你可以閱讀卷軸並施放其法術，不需要材料成分。否則，卷軸無法辨讀。藉由閱讀卷軸來施放法術，需要該法術的一般施法時間。法術施放完畢後，卷軸化為塵土。若施法被打斷，卷軸不會消失。
+
+  若該法術在你的法術列表上，但環階高於你通常能施放的環階，你要使用你的施法屬性進行一次屬性檢定，以判定你是否成功施放該法術。DC等於10加上該法術的環階。檢定失敗時，該法術從卷軸上消失，沒有其他效果。
+
+  卷軸上法術的環階決定了該法術的豁免DC與攻擊加值，以及卷軸的稀有度，如下表所示。
+
+  | 法術環階 | 稀有度 | 豁免DC | 攻擊加值 |
+  | --- | --- | --- | --- |
+  | 戲法 | 常見 | 13 | +5 |
+  | 1 | 常見 | 13 | +5 |
+  | 2 | 非常見 | 13 | +5 |
+  | 3 | 非常見 | 15 | +7 |
+  | 4 | 稀有 | 15 | +7 |
+  | 5 | 稀有 | 17 | +9 |
+  | 6 | 極稀有 | 17 | +9 |
+  | 7 | 極稀有 | 18 | +10 |
+  | 8 | 極稀有 | 18 | +10 |
+  | 9 | 傳說 | 19 | +11 |
+
+  _將卷軸抄入法術書。_ _法術卷軸_上的法師法術可以抄入法術書。以這種方式抄寫法術時，抄寫者必須成功通過DC等於10加上該法術環階的智力（奧秘）檢定。檢定成功時，法術被抄寫下來。無論檢定成功或失敗，_法術卷軸_都會被摧毀。

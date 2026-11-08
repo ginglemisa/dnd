@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: wand-of-enemy-detection
+name: 搜敵魔杖
+nameEn: "Wand of Enemy Detection"
+source: srd
+category: wand
+rarity: rare
+attunement: true
+text: |-
+  這根魔杖有7次充能。手持它時，你可以進行魔法動作，消耗1次充能。在1分鐘內，你知道距你60呎內離你最近的敵對生物所在的方向，但不知道它與你的距離。魔杖能感應到隱形、處於以太狀態、經過偽裝或躲藏的敵對生物，以及一目了然的敵對生物。若你不再手持魔杖，此效果結束。
+
+  _恢復充能。_ 魔杖每天黎明恢復1d6 + 1次已消耗的充能。若你消耗魔杖的最後一次充能，擲1d20。擲出1時，魔杖化為灰燼並被摧毀。

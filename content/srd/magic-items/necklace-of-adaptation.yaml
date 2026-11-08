@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: necklace-of-adaptation
+name: 適應項鍊
+nameEn: "Necklace of Adaptation"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+text: |-
+  穿戴這條項鍊時，你可以在任何環境中正常呼吸，且你進行豁免以避免或結束中毒狀態時具有優勢。

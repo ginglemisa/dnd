@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: wand-of-fear
+name: 恐懼魔杖
+nameEn: "Wand of Fear"
+source: srd
+category: wand
+rarity: rare
+attunement: true
+text: |-
+  這根魔杖有7次充能。
+
+  _法術。_ 手持魔杖時，你可以從中施放下表中的一個法術（豁免DC 15）。表格列出施放各法術需要消耗的充能次數。
+
+  | 法術 | 充能消耗 |
+  | --- | --- |
+  | *命令術*（限「滾」或「趴下」） | 1 |
+  | *恐懼術*（60呎錐形區域） | 3 |
+
+  _恢復充能。_ 魔杖每天黎明恢復1d6 + 1次已消耗的充能。若你消耗魔杖的最後一次充能，擲1d20。擲出1時，魔杖化為灰燼並被摧毀。

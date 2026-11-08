@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: shield-plus
+name: "盾牌+1／+2／+3"
+nameEn: "Shield, +1, +2, or +3"
+source: srd
+category: armor
+rarity: varies
+rarityText: "非常見（+1）、稀有（+2）或極稀有（+3）"
+attunement: false
+base: { fixed: 盾牌 }
+options:
+  - id: bonus
+    label: 加值
+    choices:
+      - { value: 1, label: "+1", rarity: uncommon }
+      - { value: 2, label: "+2", rarity: rare }
+      - { value: 3, label: "+3", rarity: very-rare }
+effects: { ac: bonus }
+displayName: "{base}{bonus}"
+text: |-
+  手持這面盾牌時，除了盾牌本身的一般AC加值外，你還獲得由盾牌稀有度決定的AC加值。

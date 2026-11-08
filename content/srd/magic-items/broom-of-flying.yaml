@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: broom-of-flying
+name: 飛天掃帚
+nameEn: "Broom of Flying"
+source: srd
+category: wondrous
+group: tool
+rarity: uncommon
+attunement: true
+text: |-
+  這把木掃帚在你跨坐其上並進行魔法動作讓它懸停在你身下之前，功能與普通掃帚無異；懸停之後，就可以騎乘它在空中飛行。它的飛行速度為50呎。它最多可承載400磅，但承載超過200磅時，飛行速度變為30呎。當你著陸或不再騎乘時，掃帚就會停止懸停。
+
+  作為魔法動作，只要你說出地點並熟悉該地，你就可以讓掃帚獨自前往你1英里內的目的地。當你進行魔法動作並使用命令詞時，若掃帚仍在你1英里內，它就會回到你身邊。

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: well-of-many-worlds
+name: 諸界之井
+nameEn: "Well of Many Worlds"
+source: srd
+category: wondrous
+group: tool
+rarity: legendary
+attunement: false
+text: |-
+  這塊質地細緻、如絲綢般柔軟的黑布，被摺疊成手帕大小。它可以展開成直徑6呎的圓形布面。
+
+  你可以進行魔法動作，展開_諸界之井_並將它放在堅硬的表面上，隨即它會形成一道通往另一個世界或位面的雙向、直徑6呎的圓形傳送門。每次此物品開啟傳送門時，由DM決定它通往何處。傳送門保持開啟，直到其5呎內的一個生物進行魔法動作，抓住布的邊緣將它摺起來以關閉。
+
+  _諸界之井_開啟一次傳送門後，1d8小時內無法再次這麼做。

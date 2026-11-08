@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: wand-of-the-war-mage-plus
+name: "戰法魔杖+1／+2／+3"
+nameEn: "Wand of the War Mage, +1, +2, or +3"
+source: srd
+category: wand
+rarity: varies
+rarityText: "非常見（+1）、稀有（+2）或極稀有（+3）"
+attunement: 由施法者
+options:
+  - id: bonus
+    label: 加值
+    choices:
+      - { value: 1, label: "+1", rarity: uncommon }
+      - { value: 2, label: "+2", rarity: rare }
+      - { value: 3, label: "+3", rarity: very-rare }
+displayName: "戰法魔杖{bonus}"
+manualEffect: true
+text: |-
+  手持這根魔杖時，你的法術攻擊檢定獲得一個由魔杖稀有度決定的加值。此外，你進行法術攻擊檢定時無視半掩蔽。

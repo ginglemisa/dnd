@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: oil-of-slipperiness
+name: 滑溜之油
+nameEn: "Oil of Slipperiness"
+source: srd
+category: potion
+rarity: uncommon
+attunement: false
+consumable: true
+text: |-
+  一瓶這種油可以塗滿一個中型或更小的生物，連同它穿戴與攜帶的裝備（每高於中型一個體型類別，就需要多一瓶）。塗抹這種油需時10分鐘。受影響的生物接著獲得_行動自如_法術的效果，持續8小時。
+
+  或者，也可以作為魔法動作將這種油倒在地上，覆蓋一個邊長10呎的正方形，在該區域內重現_油膩術_法術的效果，持續8小時。
+
+  這種黏稠的黑色油膏濃厚而沉重，但倒出時流動得很快。

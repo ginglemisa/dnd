@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: gloves-of-missile-snaring
+name: 避矢奪箭手套
+nameEn: "Gloves of Missile Snaring"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+text: |-
+  如果你穿戴這雙手套時被使用遠程武器或投擲武器進行的攻擊檢定命中，且你有一隻空手，你可以進行反應動作，將傷害減少1d10加上你的敏捷調整值。若你將傷害減為0，且彈藥或武器小到你能用那隻手握住，你就能接住它。

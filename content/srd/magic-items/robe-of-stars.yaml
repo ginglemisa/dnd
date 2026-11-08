@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: robe-of-stars
+name: 星辰法袍
+nameEn: "Robe of Stars"
+source: srd
+category: wondrous
+group: wearable
+rarity: very-rare
+attunement: true
+effects: { saves: 1 }
+text: |-
+  這件黑色或深藍色的法袍上繡有白色或銀色的小星星。你穿戴它時，豁免獲得+1加值。
+
+  法袍前方上半部有六顆特別大的星星。穿戴這件法袍時，你可以進行魔法動作，摘下其中一顆星星並消耗它，來施放_魔法飛彈_的5環版本。每天黃昏，有1d6顆被摘下的星星會重新出現在法袍上。
+
+  你穿戴法袍時，可以進行魔法動作，連同你穿戴和攜帶的一切進入星界。你會留在那裡，直到你進行魔法動作返回你原本所在的位面。你會重新出現在你最後佔據的空間；如果該空間已被佔據，則出現在最近的未被佔據空間。

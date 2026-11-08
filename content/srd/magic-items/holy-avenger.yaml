@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: holy-avenger
+name: 神聖復仇者
+nameEn: "Holy Avenger"
+source: srd
+category: weapon
+rarity: legendary
+attunement: 由聖騎士
+base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
+effects: { attack: 3, damage: 3 }
+manualEffect: true
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+3加值。你用它命中邪魔或不死生物時，該生物額外受到2d10光耀傷害。
+
+  當你手持出鞘的武器時，它會產生以你為源頭的10呎發散區域。你與發散區域內所有對你友善的生物，對法術與其他魔法效果的豁免具有優勢。若你擁有17級以上的聖騎士等級，發散區域的大小增加為30呎。

@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-gaseous-form
+name: 氣化形體藥水
+nameEn: "Potion of Gaseous Form"
+source: srd
+category: potion
+rarity: rare
+attunement: false
+consumable: true
+text: |-
+  喝下這瓶藥水時，你獲得_氣化形體_法術的效果，持續1小時（不需專注），或直到你以附贈動作結束該效果為止。
+
+  這瓶藥水的容器似乎裝著會像水一樣流動傾倒的霧氣。

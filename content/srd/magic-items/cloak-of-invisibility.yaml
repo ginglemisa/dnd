@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: cloak-of-invisibility
+name: 隱形斗篷
+nameEn: "Cloak of Invisibility"
+source: srd
+category: wondrous
+group: wearable
+rarity: legendary
+attunement: true
+text: |-
+  這件斗篷有3次充能，每天黎明恢復1d3次已消耗的充能。穿戴斗篷時，你可以進行魔法動作拉起兜帽罩住頭部並消耗1次充能，使自己陷入隱形狀態1小時。若你放下兜帽（不需動作）或不再穿戴斗篷，此效果會提前結束。

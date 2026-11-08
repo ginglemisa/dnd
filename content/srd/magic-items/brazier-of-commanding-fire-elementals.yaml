@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: brazier-of-commanding-fire-elementals
+name: 命令火元素火盆
+nameEn: "Brazier of Commanding Fire Elementals"
+source: srd
+category: wondrous
+group: tool
+rarity: rare
+attunement: false
+text: |-
+  當你在這個火盆5呎內時，你可以進行魔法動作來召喚一隻火元素。該元素生物出現在盡可能靠近火盆的未被佔據的空間，聽得懂你的語言、服從你的命令，並在你的先攻順位上緊接在你之後進行回合。該元素生物會在1小時後、死亡時，或當你以附贈動作遣散它時消失。直到下次黎明前，火盆都無法再次這樣使用。

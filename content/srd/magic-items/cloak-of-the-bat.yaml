@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: cloak-of-the-bat
+name: 蝙蝠斗篷
+nameEn: "Cloak of the Bat"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: true
+text: |-
+  穿戴這件斗篷時，你在敏捷（隱匿）檢定上具有優勢。在微光光照或黑暗的區域中，你可以抓住斗篷的邊緣，利用它獲得40呎的飛行速度。若你在這樣飛行時任何時候沒能抓住斗篷的邊緣，或你不再處於微光光照或黑暗中，你就失去這個飛行速度。
+
+  在微光光照或黑暗的區域中穿戴斗篷時，你可以對自己施放_變形術_，變身成一隻蝙蝠。處於該形態時，你保留自己的智力、感知與魅力屬性值。直到下次黎明前，斗篷都無法再次這樣使用。

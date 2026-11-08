@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-resistance
+name: 抗性戒指
+nameEn: "Ring of Resistance"
+source: srd
+category: ring
+rarity: rare
+attunement: false
+options:
+  - id: damageType
+    label: 傷害類型
+    choices:
+      - { value: acid, label: 強酸 }
+      - { value: cold, label: 冷凍 }
+      - { value: fire, label: 火焰 }
+      - { value: force, label: 力場 }
+      - { value: lightning, label: 閃電 }
+      - { value: necrotic, label: 黯蝕 }
+      - { value: poison, label: 毒素 }
+      - { value: psychic, label: 心靈 }
+      - { value: radiant, label: 光耀 }
+      - { value: thunder, label: 雷鳴 }
+text: |-
+  穿戴這枚戒指時，你對一種傷害類型具有抗性。戒指上的寶石標示該類型，由DM選擇，或擲下表來隨機決定。
+
+  | 1d10 | 傷害類型 | 寶石 |
+  | --- | --- | --- |
+  | 1 | 強酸 | 珍珠 |
+  | 2 | 冷凍 | 碧璽 |
+  | 3 | 火焰 | 石榴石 |
+  | 4 | 力場 | 藍寶石 |
+  | 5 | 閃電 | 黃水晶 |
+  | 6 | 黯蝕 | 煤玉 |
+  | 7 | 毒素 | 紫水晶 |
+  | 8 | 心靈 | 玉 |
+  | 9 | 光耀 | 黃玉 |
+  | 10 | 雷鳴 | 尖晶石 |

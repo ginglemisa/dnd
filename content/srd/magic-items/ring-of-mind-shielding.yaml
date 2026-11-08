@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-mind-shielding
+name: 心靈護盾戒指
+nameEn: "Ring of Mind Shielding"
+source: srd
+category: ring
+rarity: uncommon
+attunement: true
+text: |-
+  穿戴這枚戒指時，你對讓其他生物能讀取你的思想、判定你是否說謊、得知你的陣營或得知你的生物類型的魔法免疫。只有在你允許時，生物才能以心靈感應與你溝通。
+
+  你可以進行魔法動作使戒指變得無法察覺，直到你進行另一個魔法動作使其變得可察覺、直到你取下戒指，或直到你死亡為止。
+
+  如果你在穿戴這枚戒指時死亡，你的靈魂會進入戒指，除非戒指中已經容納了一個靈魂。你可以留在戒指中，或前往來世。只要你的靈魂在戒指中，你就能以心靈感應與任何穿戴這枚戒指的生物溝通。穿戴者無法阻止這種心靈感應溝通。

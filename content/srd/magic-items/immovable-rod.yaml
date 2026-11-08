@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: immovable-rod
+name: 不動權杖
+nameEn: "Immovable Rod"
+source: srd
+category: rod
+rarity: uncommon
+attunement: false
+text: |-
+  這根鐵權杖一端有個按鈕。你可以進行使用動作按下按鈕，使權杖神奇地固定在原位。直到你或另一個生物進行使用動作再次按下按鈕之前，權杖都不會移動，即使它違反重力。權杖最多可承受8,000磅的重量。超過這個重量會使權杖解除啟動並掉落。生物可以進行使用動作，進行一次DC 30的力量（運動）檢定；檢定成功時，可將固定的權杖移動最多10呎。

@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-evasion
+name: 反射閃避戒指
+nameEn: "Ring of Evasion"
+source: srd
+category: ring
+rarity: rare
+attunement: true
+text: |-
+  這枚戒指有3次充能，每天黎明恢復1d3次已消耗的充能。穿戴這枚戒指時，當你敏捷豁免失敗，你可以進行反應動作並消耗1次充能，改為使該豁免成功。

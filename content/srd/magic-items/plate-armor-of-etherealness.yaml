@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: plate-armor-of-etherealness
+name: 以太化板甲
+nameEn: "Plate Armor of Etherealness"
+source: srd
+category: armor
+rarity: legendary
+attunement: true
+base: { from: [ 半身板甲, 全身板甲 ] }
+manualEffect: true
+text: |-
+  穿戴這件護甲時，你可以進行魔法動作並使用命令詞，獲得_以太化_法術的效果。若你脫下護甲，或進行魔法動作重複命令詞，該法術會立即結束。護甲的此特性直到下次黎明前都無法再次使用。

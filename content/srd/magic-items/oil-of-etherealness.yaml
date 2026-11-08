@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: oil-of-etherealness
+name: 以太化之油
+nameEn: "Oil of Etherealness"
+source: srd
+category: potion
+rarity: rare
+attunement: false
+consumable: true
+text: |-
+  一瓶這種油可以塗滿一個中型或更小的生物，連同它穿戴與攜帶的裝備（每高於中型一個體型類別，就需要多一瓶）。塗抹這種油需時10分鐘。受影響的生物接著獲得_以太化_法術的效果，持續1小時。
+
+  這種灰濁的油會在容器外側凝成珠子，並迅速蒸發。

@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: cloak-of-arachnida
+name: 節肢斗篷
+nameEn: "Cloak of Arachnida"
+source: srd
+category: wondrous
+group: wearable
+rarity: very-rare
+attunement: true
+text: |-
+  這件精緻的衣物以黑色絲綢織成，其中交織著淡淡的銀色絲線。穿戴時，你獲得以下益處。
+
+  _毒素抗性。_ 你對毒素傷害具有抗性。
+
+  _蜘蛛攀爬。_ 你具有等同於你速度的攀爬速度，可以在垂直表面上向上、向下與橫向移動，也可以沿天花板移動，且雙手保持自由。
+
+  _蜘蛛行走。_ 你不會被任何種類的蛛網困住，並且可以把蛛網視為困難地形穿越。
+
+  _蛛網。_ 你可以施放_蛛網術_（豁免DC 13）。該法術創造的蛛網會填滿其正常範圍的兩倍。此特性使用後，直到下次黎明前都無法再次使用。

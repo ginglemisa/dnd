@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-the-ram
+name: 公羊戒指
+nameEn: "Ring of the Ram"
+source: srd
+category: ring
+rarity: rare
+attunement: true
+text: |-
+  這枚戒指有3次充能，每天黎明恢復1d3次已消耗的充能。穿戴這枚戒指時，你可以進行魔法動作，消耗1至3次充能，對你自身60呎內你看得見的一個生物進行一次遠程法術攻擊。戒指會生成一個幽靈般的公羊頭，並以+7加值進行其攻擊檢定。命中時，你每花費1次充能，目標就受到2d10力場傷害，並被推離你5呎。
+
+  或者，你可以作為魔法動作消耗戒指的1至3次充能，嘗試破壞你自身60呎內你看得見的一個未被穿戴或攜帶的非魔法物體。戒指進行一次力量檢定，你每花費1次充能，檢定獲得+5加值。

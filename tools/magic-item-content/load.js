@@ -1,12 +1,12 @@
-// 讀取 content/srd/magic-items.yaml（魔法物品，單一檔），做 schema 驗證與跨資料檢查。任何錯誤都丟出 ContentError。
+// 讀取 content/srd/magic-items 的魔法物品內容檔（一件一檔），做 schema 驗證與跨資料檢查。任何錯誤都丟出 ContentError。
 "use strict";
 const path = require("path");
 const { ROOT, loadEquipmentData, loadSpellCatalog } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
-const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile } = require("../content/yaml");
+const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile, listYaml } = require("../content/yaml");
 
-const FILE = path.join(CONTENT_DIR, "srd", "magic-items.yaml");
-const WHERE = path.relative(ROOT, FILE).replace(/\\/g, "/");
+const DIR = path.join(CONTENT_DIR, "srd", "magic-items");
+const WHERE = path.relative(ROOT, DIR).replace(/\\/g, "/");
 // 彈藥在 equipment-data.js 只有名稱對照，沒有獨立清單；這裡列出物品欄使用的品名。
 const AMMUNITION = Object.freeze(["箭矢", "弩矢", "子彈，火器", "彈丸，投石索", "針"]);
 const RESERVED_OPTION_IDS = new Set(["id", "base"]);
@@ -87,8 +87,8 @@ function checkOptions(item, at, damageLabels, errors) {
   if (item.rarityText && item.rarity !== "varies") errors.push(`${at}：rarityText 只用於 varies`);
 }
 
-function checkItem(item, index, { lists, known, damageLabels, equipmentNames }, errors) {
-  const at = `${WHERE} items[${index}] ${item.id}`;
+function checkItem(item, { lists, known, damageLabels, equipmentNames }, errors) {
+  const at = item.file;
   if (item.equipmentName && !equipmentNames.has(item.equipmentName)) errors.push(`${at}：equipmentName「${item.equipmentName}」不是 equipment-data.js 的品名`);
   if (item.id !== expectedId(item.nameEn)) errors.push(`${at}：id 應為 ${expectedId(item.nameEn)}（由 nameEn 轉成）`);
   if (item.category === "wondrous" && !item.group) errors.push(`${at}：奇物須有 group`);
@@ -111,18 +111,31 @@ function checkUnique(items, field, errors) {
   });
 }
 
-// 回傳 Map（物品 id → 內容，依內容檔順序）與 baseLists（「任意某類」的展開清單）。
+// 物品的固定順序依 SRD「魔法物品 A–Z」：英文名去掉「, +1, +2, or +3」，複數的 Potions 視為 Potion，只比字母與數字。
+function orderKey(nameEn) {
+  return nameEn.replace(/, \+1, \+2, or \+3$/, "").replace(/^Potions of/, "Potion of").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+// 回傳 Map（物品 id → 內容，依 SRD 順序）與 baseLists（「任意某類」的展開清單）。
 function loadMagicItems() {
   const validate = createSchemaValidators(["magic-item"])["magic-item"];
-  const data = readYamlFile(FILE);
-  if (!validate(data)) throw new ContentError(`魔法物品內容檢查失敗：\n- ${schemaErrors(validate, WHERE).join("\n- ")}`);
+  const errors = [];
+  const items = [];
+  for (const file of listYaml(DIR)) {
+    const where = path.relative(ROOT, file).replace(/\\/g, "/");
+    let data;
+    try { data = readYamlFile(file); } catch (error) { errors.push(error.message); continue; }
+    if (!validate(data)) { errors.push(...schemaErrors(validate, where)); continue; }
+    if (path.basename(file).replace(/\.ya?ml$/, "") !== data.id) errors.push(`${where}：檔名應為 ${data.id}.yaml`);
+    items.push({ ...data, file: where });
+  }
   const lists = loadBaseLists();
   const context = { lists, known: knownEquipment(lists), damageLabels: loadSpellCatalog().damageTypeLabels, equipmentNames: new Set(Object.keys(loadEquipmentData().EQUIPMENT_ENGLISH_NAMES)) };
-  const errors = [];
-  data.items.forEach((item, index) => checkItem(item, index, context, errors));
-  ["id", "name", "nameEn"].forEach(field => checkUnique(data.items, field, errors));
+  items.forEach(item => checkItem(item, context, errors));
+  ["id", "name", "nameEn"].forEach(field => checkUnique(items, field, errors));
   if (errors.length) throw new ContentError(`魔法物品內容檢查失敗（${errors.length} 項）：\n- ${errors.join("\n- ")}`);
-  return { items: new Map(data.items.map(item => [item.id, { ...item, file: WHERE }])), baseLists: lists };
+  items.sort((a, b) => { const [x, y] = [orderKey(a.nameEn), orderKey(b.nameEn)]; return x < y ? -1 : x > y ? 1 : 0; });
+  return { items: new Map(items.map(item => [item.id, item])), baseLists: lists };
 }
 
 module.exports = { loadMagicItems };

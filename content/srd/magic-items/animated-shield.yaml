@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: animated-shield
+name: 活化盾
+nameEn: "Animated Shield"
+source: srd
+category: armor
+rarity: very-rare
+attunement: true
+base: { fixed: 盾牌 }
+manualEffect: true
+text: |-
+  手持這面盾牌時，你可以進行附贈動作使其活化。盾牌會躍入空中，並懸停在你的空間中保護你，如同你正在持用它一般，讓你的雙手空出來。盾牌會保持活化1分鐘，直到你進行附贈動作結束此效果，或直到你死亡或陷入失能狀態為止，屆時盾牌會落到地上，若你有一隻手空著則落入你手中。

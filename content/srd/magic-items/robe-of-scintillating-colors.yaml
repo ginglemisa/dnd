@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: robe-of-scintillating-colors
+name: 虹光法袍
+nameEn: "Robe of Scintillating Colors"
+source: srd
+category: wondrous
+group: wearable
+rarity: very-rare
+attunement: true
+text: |-
+  這件法袍有3次充能，每天黎明恢復1d3次已消耗的充能。你穿戴它時，可以進行魔法動作並消耗1次充能，使這件衣物顯現出變幻不定的炫目色彩圖樣，直到你下個回合結束。在此期間，法袍在半徑30呎內散發明亮光照，並再向外30呎散發微光光照，且能看見你的生物對你的攻擊檢定具有劣勢。當法袍的力量被啟動時，處於明亮光照內且能看見你的任何生物，必須成功通過DC 15的感知豁免，否則陷入震懾狀態，直到效果結束。

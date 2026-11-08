@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-jumping
+name: 跳躍戒指
+nameEn: "Ring of Jumping"
+source: srd
+category: ring
+rarity: uncommon
+attunement: true
+text: |-
+  穿戴這枚戒指時，你可以從中施放_跳躍術_，但這樣做時只能以你自己為目標。

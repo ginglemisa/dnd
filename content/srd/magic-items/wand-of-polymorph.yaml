@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: wand-of-polymorph
+name: 變形魔杖
+nameEn: "Wand of Polymorph"
+source: srd
+category: wand
+rarity: very-rare
+attunement: 由施法者
+text: |-
+  這根魔杖有7次充能。手持它時，你可以消耗1次充能，從中施放_變形術_（豁免DC 15）。
+
+  _恢復充能。_ 魔杖每天黎明恢復1d6 + 1次已消耗的充能。若你消耗魔杖的最後一次充能，擲1d20。擲出1時，魔杖化為灰燼並被摧毀。

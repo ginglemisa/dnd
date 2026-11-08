@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: eversmoking-bottle
+name: 無盡煙壺
+nameEn: "Eversmoking Bottle"
+source: srd
+category: wondrous
+group: container
+rarity: uncommon
+attunement: false
+text: |-
+  作為魔法動作，你可以打開或關閉這個瓶子。打開瓶子會使濃煙湧出，形成一團充滿以瓶子為源頭的60呎發散區域的雲霧。煙霧範圍內為重度遮蔽。
+
+  瓶子每保持開啟1分鐘，發散區域的大小就增加10呎，直到達到最大尺寸120呎。
+  關閉瓶子會使雲霧固定在原地，並在10分鐘後消散。強風（例如由_造風術_法術產生的風）會在1分鐘後驅散雲霧。

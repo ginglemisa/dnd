@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: hammer-of-thunderbolts
+name: 雷神之錘
+nameEn: "Hammer of Thunderbolts"
+source: srd
+category: weapon
+rarity: legendary
+attunement: true
+base: { from: [ 巨錘, 戰錘 ] }
+effects: { attack: 1, damage: 1 }
+manualEffect: true
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
+
+  這件武器有5次充能。你可以消耗1次充能並以這件武器進行遠程攻擊，將它擲出，視同它具有投擲屬性，一般射程20呎、遠射程60呎。若攻擊命中，武器會釋放一聲在300呎外都聽得見的雷鳴巨響。目標與其30呎內除你以外的每個生物必須成功通過DC 17的體質豁免，否則陷入震懾狀態，持續到你的下個回合結束。無論命中或未命中，武器會立刻飛回你的手中。這件武器每天黎明恢復1d4 + 1次已消耗的充能。
+
+  _巨人之禍。_ 當你與這件武器同調，並穿戴著同樣已與你同調的_巨人之力腰帶_或_食人魔力量護手_時，你獲得以下益處：
+
+  _巨人剋星。_ 當你使用這件武器對巨人進行攻擊檢定，d20擲出20時，該生物必須成功通過DC 17的體質豁免，否則死亡。
+
+  _巨人之力。_ _巨人之力腰帶_或_食人魔力量護手_所賦予的力量屬性值增加4，最高為30。

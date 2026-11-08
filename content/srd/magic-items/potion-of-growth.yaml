@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-growth
+name: 成長藥水
+nameEn: "Potion of Growth"
+source: srd
+category: potion
+rarity: uncommon
+attunement: false
+consumable: true
+text: |-
+  喝下這瓶藥水時，你獲得_變巨術/縮小術_法術的「變巨」效果，持續10分鐘（不需專注）。
+
+  藥水液體中的紅色不斷從一顆小珠擴散開來，將周圍的透明液體染色，然後再收縮。搖晃瓶子也無法打斷這個過程。

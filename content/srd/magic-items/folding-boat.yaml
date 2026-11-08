@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: folding-boat
+name: 摺疊船
+nameEn: "Folding Boat"
+source: srd
+category: wondrous
+group: tool
+rarity: rare
+attunement: false
+weight: 4
+text: |-
+  這件物體外觀是一個長12吋、寬6吋、深6吋的木盒。它重4磅，且能浮在水面。它可以打開來存放物品。這件物品另有三個命令詞，各需要進行魔法動作才能使用：
+
+  **第一命令詞。** 木盒展開成一艘划艇。
+
+  **第二命令詞。** 木盒展開成一艘龍骨船。
+
+  **第三命令詞。** 若船上沒有生物，_摺疊船_會摺回木盒。船上無法放進木盒內的任何物體會在木盒摺起時留在盒外。船上能放進木盒內的任何物體則會放入盒中。
+
+  當木盒變成船隻時，其重量變為同尺寸一般船隻的重量，原本存放在木盒內的任何物品仍留在船內。
+
+  划艇與龍骨船的數據見「裝備」章節。若任一艘船隻降到0生命值，_摺疊船_即被摧毀。

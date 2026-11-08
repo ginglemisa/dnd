@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: efficient-quiver
+name: 巧藏箭袋
+nameEn: "Efficient Quiver"
+source: srd
+category: wondrous
+group: container
+rarity: uncommon
+attunement: false
+weight: 2
+text: |-
+  箭袋的三個隔間各自連接到一個異次元空間，使箭袋能容納大量物品，而重量始終不超過2磅。最短的隔間最多可容納60支箭矢、弩矢或類似物體。中等長度的隔間最多容納18支標槍或類似物體。最長的隔間最多容納6件長形物體，例如弓、長棍或短矛。
+
+  你可以取出箭袋內的任何物品，就如同從一般箭袋或劍鞘中取出一般。

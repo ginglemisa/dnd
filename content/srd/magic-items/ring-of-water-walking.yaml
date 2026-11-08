@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-water-walking
+name: 水行戒指
+nameEn: "Ring of Water Walking"
+source: srd
+category: ring
+rarity: uncommon
+attunement: false
+text: |-
+  穿戴這枚戒指時，你從中施放_水上行走_，且只能以你自己為目標。

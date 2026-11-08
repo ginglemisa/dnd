@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: weapon-of-warning
+name: 警戒武器
+nameEn: "Weapon of Warning"
+source: srd
+category: weapon
+rarity: uncommon
+attunement: true
+base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
+manualEffect: true
+text: |-
+  只要此武器在你伸手可及之處且你與它同調，你和你30呎內的盟友就獲得以下益處。
+
+  _警報。_ 戰鬥開始時，此武器會以魔法喚醒每個正在自然睡眠的對象。此益處不會喚醒因魔法而陷入睡眠的對象。
+
+  _超自然戒備。_ 每個對象的先攻擲骰具有優勢。

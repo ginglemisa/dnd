@@ -17,7 +17,7 @@
 | 公開種族 | `content/srd/races/<種族 ID>.yaml` |
 | 公開法術 | `content/srd/spells/<法術 ID>.yaml` |
 | 公開怪物（野獸、召喚物） | `content/srd/monsters/<key>.yaml` |
-| 公開魔法物品（單一檔） | `content/srd/magic-items.yaml` |
+| 公開魔法物品（一件一檔） | `content/srd/magic-items/<id>.yaml` |
 | 私人內容包（不進公開 repo） | `content/private/classes/`、`content/private/subclasses/` |
 | 私人法術（格式已訂、尚未啟用） | `content/private/spells/<法術 ID>.yaml` |
 | 私人內容包補充既有職業（例如兼職） | `content/private/class-extensions/<職業 ID>.yaml` |
@@ -672,20 +672,21 @@ en:
 
 ## 魔法物品
 
-SRD 5.2.1「魔法物品 A–Z」共 258 件，全部寫在單一檔 `content/srd/magic-items.yaml`（`items` 陣列，依英文名順序），格式定義是 `content/schema/magic-item.schema.json`。魔法物品獨立於 `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；基本款只引用裝備的中文品名。說明文字逐字取自繁中譯文，只放中文和 `nameEn`，英文內文不進內容檔與產物。
+SRD 5.2.1「魔法物品 A–Z」共 258 件，一件一個檔案：`content/srd/magic-items/<id>.yaml`（檔名等於 `id`，開頭是 `$schema` 註解），建置時依 SRD 的英文名順序排列，格式定義是 `content/schema/magic-item.schema.json`。魔法物品獨立於 `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；基本款只引用裝備的中文品名。說明文字逐字取自繁中譯文，只放中文和 `nameEn`，英文內文不進內容檔與產物。
 
 ```yaml
-- id: dagger-of-venom
-  name: 淬毒匕首
-  nameEn: "Dagger of Venom"
-  source: srd
-  category: weapon
-  rarity: rare
-  attunement: false
-  base: { fixed: 匕首 }
-  effects: { attack: 1, damage: 1 }
-  text: |-
-    使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: dagger-of-venom
+name: 淬毒匕首
+nameEn: "Dagger of Venom"
+source: srd
+category: weapon
+rarity: rare
+attunement: false
+base: { fixed: 匕首 }
+effects: { attack: 1, damage: 1 }
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
 ```
 
 | 欄位 | 說明 |

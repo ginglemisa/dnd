@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: scimitar-of-speed
+name: 急速彎刀
+nameEn: "Scimitar of Speed"
+source: srd
+category: weapon
+rarity: very-rare
+attunement: true
+base: { fixed: 彎刀 }
+effects: { attack: 2, damage: 2 }
+manualEffect: true
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+2加值。此外，你可以在自己的每個回合以附贈動作使用它進行一次攻擊。

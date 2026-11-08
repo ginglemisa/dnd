@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: oathbow
+name: 誓仇弓
+nameEn: Oathbow
+source: srd
+category: weapon
+rarity: very-rare
+attunement: true
+base: { from: [ 長弓, 短弓 ] }
+manualEffect: true
+text: |-
+  當你把箭搭上這把弓時，它會以精靈語低語：「迅速擊敗我的敵人。」當你用這件武器進行遠程攻擊時，你可以說出或以手語打出下列命令詞：「願你這傷害過我的人迅速死亡。」你攻擊的目標會成為你的死敵，直到它死亡，或直到7天後的黎明為止。你同一時間只能有一個這樣的死敵。當你的死敵死亡後，你可以在下次黎明後選擇新的死敵。
+
+  當你用這件武器對你的死敵進行遠程攻擊檢定時，該檢定具有優勢。此外，你的目標無法從半掩蔽或四分之三掩蔽獲得益處，且你不會因遠射程而承受劣勢。若攻擊命中，你的死敵額外受到3d6穿刺傷害。
+
+  只要你的死敵還活著，你用所有其他武器進行攻擊檢定時都具有劣勢。

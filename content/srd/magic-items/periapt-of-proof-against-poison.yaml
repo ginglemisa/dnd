@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: periapt-of-proof-against-poison
+name: 辟毒護身符
+nameEn: "Periapt of Proof against Poison"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: true
+text: |-
+  這條精緻的銀鍊上掛著一枚明亮式切割的黑色寶石墜飾。穿戴它時，你對中毒狀態與毒素傷害免疫。

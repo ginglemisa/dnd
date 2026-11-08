@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-telekinesis
+name: 心靈遙控戒指
+nameEn: "Ring of Telekinesis"
+source: srd
+category: ring
+rarity: very-rare
+attunement: true
+text: |-
+  穿戴這枚戒指時，你可以從中施放_心靈遙控_。

@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: cloak-of-protection
+name: 防護斗篷
+nameEn: "Cloak of Protection"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+effects: { ac: 1, saves: 1 }
+text: |-
+  穿戴這件斗篷時，你的護甲等級與豁免獲得+1加值。

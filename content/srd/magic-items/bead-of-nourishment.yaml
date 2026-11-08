@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: bead-of-nourishment
+name: 飽腹珠
+nameEn: "Bead of Nourishment"
+source: srd
+category: wondrous
+group: consumable
+rarity: common
+attunement: false
+consumable: true
+text: |-
+  這顆無味的膠狀珠子會在你的舌頭上溶解，提供相當於1天口糧的營養。

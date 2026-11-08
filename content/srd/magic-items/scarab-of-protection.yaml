@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: scarab-of-protection
+name: 防護聖甲蟲
+nameEn: "Scarab of Protection"
+source: srd
+category: wondrous
+group: wearable
+rarity: legendary
+attunement: true
+effects: { ac: 1 }
+text: |-
+  這枚甲蟲形狀的徽章帶在你身上時，提供三種益處。
+
+  _防禦。_ 你獲得+1的AC加值。
+
+  _保存。_ 聖甲蟲有12次充能。若你對死靈法術或源自不死生物的有害效果的豁免失敗，你可以進行反應動作並消耗1次充能，將失敗的豁免轉為成功。當最後一次充能被消耗時，聖甲蟲化為粉末並被摧毀。
+
+  _法術抗性。_ 你對法術的豁免具有優勢。

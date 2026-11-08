@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: belt-of-giant-strength
+name: 巨人之力腰帶
+nameEn: "Belt of Giant Strength"
+source: srd
+category: wondrous
+group: wearable
+rarity: varies
+attunement: true
+options:
+  - id: giant
+    label: 巨人種類
+    choices:
+      - { value: hill, label: 山丘, rarity: rare, score: 21 }
+      - { value: frost-stone, label: 霜或石, rarity: very-rare, score: 23 }
+      - { value: fire, label: 火, rarity: very-rare, score: 25 }
+      - { value: cloud, label: 雲, rarity: legendary, score: 27 }
+      - { value: storm, label: 風暴, rarity: legendary, score: 29 }
+manualEffect: true
+text: |-
+  穿戴這條腰帶時，你的力量會變為腰帶賦予的屬性值。巨人的種類決定該屬性值（見下表）。若你不穿戴腰帶時的力量等於或高於腰帶的屬性值，此物品對你沒有任何效果。
+
+  | 腰帶 | 力量 | 稀有度 |
+  | --- | --- | --- |
+  | 巨人之力腰帶（山丘） | 21 | 稀有 |
+  | 巨人之力腰帶（霜或石） | 23 | 極稀有 |
+  | 巨人之力腰帶（火） | 25 | 極稀有 |
+  | 巨人之力腰帶（雲） | 27 | 傳說 |
+  | 巨人之力腰帶（風暴） | 29 | 傳說 |

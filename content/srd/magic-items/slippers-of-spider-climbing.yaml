@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: slippers-of-spider-climbing
+name: 蛛行拖鞋
+nameEn: "Slippers of Spider Climbing"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+text: |-
+  穿戴這雙輕便鞋子時，你可以在垂直表面上向上、向下與橫向移動，也可以沿著天花板移動，同時讓雙手保持空閒。你擁有等同於你速度的攀爬速度。然而，拖鞋不允許你在濕滑的表面上以這種方式移動，例如覆蓋著冰或油的表面。

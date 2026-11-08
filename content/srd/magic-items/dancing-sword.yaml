@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: dancing-sword
+name: 舞空劍
+nameEn: "Dancing Sword"
+source: srd
+category: weapon
+rarity: very-rare
+attunement: true
+base: { from: [ 巨劍, 長劍, 刺劍, 彎刀, 短劍 ] }
+manualEffect: true
+text: |-
+  你可以進行附贈動作，把這件魔法武器拋向空中。這麼做時，武器開始懸停，飛行至多30呎，並攻擊其自身5呎內你選擇的一個生物。武器使用你的攻擊檢定，並在傷害擲骰上加上你的屬性調整值。
+
+  武器懸停期間，你可以進行附贈動作，使它飛至你30呎內的另一處地點，飛行至多30呎。作為同一個附贈動作的一部分，你可以使武器攻擊其5呎內的一個生物。
+
+  懸停的武器第四次進行攻擊後，它會飛回你身邊並嘗試回到你的手中。若你沒有空著的手，武器會掉落在你所在的空間的地面上。若武器沒有通往你的暢通路徑，它會盡可能移動到靠近你的位置，然後掉落地面。若你抓住它，或你距離它超過30呎，它也會停止懸停。

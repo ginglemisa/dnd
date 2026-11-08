@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: helm-of-teleportation
+name: 傳送頭盔
+nameEn: "Helm of Teleportation"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: true
+text: |-
+  這頂頭盔有3次充能。穿戴它時，你可以消耗1次充能，從中施放_傳送術_。頭盔每天黎明恢復1d3次已消耗的充能。

@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-resistance
+name: 抗性藥水
+nameEn: "Potion of Resistance"
+source: srd
+category: potion
+rarity: uncommon
+attunement: false
+options:
+  - id: damageType
+    label: 傷害類型
+    choices:
+      - { value: acid, label: 強酸 }
+      - { value: cold, label: 冷凍 }
+      - { value: fire, label: 火焰 }
+      - { value: force, label: 力場 }
+      - { value: lightning, label: 閃電 }
+      - { value: necrotic, label: 黯蝕 }
+      - { value: poison, label: 毒素 }
+      - { value: psychic, label: 心靈 }
+      - { value: radiant, label: 光耀 }
+      - { value: thunder, label: 雷鳴 }
+consumable: true
+text: |-
+  當你喝下這瓶藥水時，你對一種傷害類型具有抗性，持續1小時。該類型由DM選擇，或擲下表來隨機決定。
+
+  | 1d10 | 傷害類型 | 1d10 | 傷害類型 |
+  | --- | --- | --- | --- |
+  | 1 | 強酸 | 6 | 黯蝕 |
+  | 2 | 冷凍 | 7 | 毒素 |
+  | 3 | 火焰 | 8 | 心靈 |
+  | 4 | 力場 | 9 | 光耀 |
+  | 5 | 閃電 | 10 | 雷鳴 |

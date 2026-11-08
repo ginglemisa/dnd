@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: armor-plus
+name: "護甲+1／+2／+3"
+nameEn: "Armor, +1, +2, or +3"
+source: srd
+category: armor
+rarity: varies
+rarityText: "稀有（+1）、極稀有（+2）或傳說（+3）"
+attunement: false
+base: { any: [ light-armor, medium-armor, heavy-armor ], label: "任意輕甲、中甲或重甲" }
+options:
+  - id: bonus
+    label: 加值
+    choices:
+      - { value: 1, label: "+1", rarity: rare }
+      - { value: 2, label: "+2", rarity: very-rare }
+      - { value: 3, label: "+3", rarity: legendary }
+effects: { ac: bonus }
+displayName: "{base}{bonus}"
+text: |-
+  穿戴這件護甲時，你的護甲等級獲得加值。加值由其稀有度決定。

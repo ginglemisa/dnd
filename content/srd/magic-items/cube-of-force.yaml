@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: cube-of-force
+name: 力場魔方
+nameEn: "Cube of Force"
+source: srd
+category: wondrous
+group: tool
+rarity: rare
+attunement: true
+text: |-
+  這個方塊寬約1吋。每一面都有不同的標記。你可以按下其中一面，消耗該面所需的充能次數，藉此施放與之對應的法術（豁免DC 17），如「力場魔方各面」表所示。
+
+  魔方起初有10次充能，每天黎明恢復1d6次已消耗的充能。
+
+  **力場魔方各面**
+
+  | 法術 | 充能消耗 |
+  | --- | --- |
+  | 法師護甲 | 1 |
+  | 護盾術 | 1 |
+  | 小屋魔法 | 3 |
+  | 私人密室 | 4 |
+  | 彈力法球 | 4 |
+  | 力場牆 | 5 |

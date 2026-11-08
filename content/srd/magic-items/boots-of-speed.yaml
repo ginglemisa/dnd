@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: boots-of-speed
+name: 速度之靴
+nameEn: "Boots of Speed"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: true
+manualEffect: true
+text: |-
+  穿戴這雙靴子時，你可以進行附贈動作，將靴跟互相敲擊。若你這麼做，靴子會使你的速度加倍，且任何對你進行藉機攻擊的生物，其攻擊檢定具有劣勢。若你再次敲擊靴跟，就會結束此效果。
+
+  當你使用靴子的特性累計達10分鐘後，這份魔法對你失效，直到你完成一次長休為止。

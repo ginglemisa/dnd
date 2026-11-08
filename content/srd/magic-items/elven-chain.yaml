@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: elven-chain
+name: 精靈鏈甲
+nameEn: "Elven Chain"
+source: srd
+category: armor
+rarity: rare
+attunement: false
+base: { from: [ 鎖子甲, 半身鎖甲 ] }
+effects: { ac: 1 }
+manualEffect: true
+text: |-
+  穿戴這件護甲時，你獲得+1護甲等級加值。即使你未受過中甲或重甲的訓練，也視為受過這件護甲的訓練。

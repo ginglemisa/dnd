@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: luck-blade
+name: 吉兆之刃
+nameEn: "Luck Blade"
+source: srd
+category: weapon
+rarity: legendary
+attunement: true
+base: { from: [ 長柄刀, 巨劍, 長劍, 刺劍, 彎刀, 鐮刀, 短劍 ] }
+effects: { attack: 1, damage: 1, saves: 1 }
+manualEffect: true
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。只要武器在你身上，你的豁免也獲得+1加值。
+
+  _幸運。_ 若武器在你身上，且你沒有陷入失能狀態，你可以呼喚它的幸運（不需動作），重擲一次失敗的D20檢定。你必須採用第二次擲骰結果。此特性使用後，直到下次黎明前，都無法再次使用。
+
+  _祈願。_ 這件武器有1d3次充能。手持它時，你可以消耗1次充能，從中施放_祈願術_。此特性使用後，直到下次黎明前，都無法再次使用。若武器沒有充能，就失去此特性。

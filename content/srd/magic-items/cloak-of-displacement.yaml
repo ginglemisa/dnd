@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: cloak-of-displacement
+name: 位移斗篷
+nameEn: "Cloak of Displacement"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: true
+text: |-
+  穿戴這件斗篷時，它會以魔法投射出一個幻象，使你看起來站在靠近你實際位置的某處，讓任何生物對你進行的攻擊檢定都具有劣勢。若你受到傷害，此特性在你的下個回合開始前停止作用。當你的速度為0時，此特性受到抑制。

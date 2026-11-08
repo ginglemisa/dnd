@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-flying
+name: 飛行藥水
+nameEn: "Potion of Flying"
+source: srd
+category: potion
+rarity: very-rare
+attunement: false
+consumable: true
+text: |-
+  喝下這瓶藥水時，你獲得等同你速度的飛行速度，持續1小時，並且可以懸停。若藥水效力消退時你在空中，除非你有其他方式停留在空中，否則你會墜落。
+
+  這瓶藥水的清澈液體漂浮在容器頂端，其中有白色混濁的雜質在飄動。

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: dragon-slayer
+name: 屠龍者
+nameEn: "Dragon Slayer"
+source: srd
+category: weapon
+rarity: rare
+attunement: false
+base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
+effects: { attack: 1, damage: 1 }
+manualEffect: true
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
+
+  若目標是龍類，這件武器額外造成3d6與武器相同類型的傷害。

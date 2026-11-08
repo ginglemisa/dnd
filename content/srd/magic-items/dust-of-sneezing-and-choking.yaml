@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: dust-of-sneezing-and-choking
+name: 噴嚏粉
+nameEn: "Dust of Sneezing and Choking"
+source: srd
+category: wondrous
+group: consumable
+rarity: uncommon
+attunement: false
+consumable: true
+text: |-
+  這種粉末裝在小容器中，外觀類似_無蹤粉_，而_鑑定術_會顯示它就是_無蹤粉_。數量足夠使用一次。
+
+  作為使用動作，你可以將粉末拋向空中，迫使你自己以及以你為源頭的30呎發散區域內的每個生物進行一次DC 15的體質豁免。構裝生物、元素生物、軟泥怪、植物與不死生物自動通過豁免。
+
+  豁免失敗時，生物會開始無法控制地打噴嚏；它陷入失能狀態並處於窒息狀態。該生物在其每個回合結束時重複進行該豁免，成功則結束其身上的此效果。此效果也會在成為_次級復原術_法術目標的任何生物身上結束。

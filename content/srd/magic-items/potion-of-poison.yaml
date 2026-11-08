@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-poison
+name: 劇毒藥水
+nameEn: "Potion of Poison"
+source: srd
+category: potion
+rarity: uncommon
+attunement: false
+consumable: true
+text: |-
+  這種混合藥劑看起來、聞起來和嚐起來都像_治療藥水_或其他有益的藥水。然而，它實際上是被幻術魔法偽裝的毒藥。_鑑定術_會揭露它的真實本質。
+
+  如果你喝下這瓶藥水，你受到4d6毒素傷害，且必須成功通過DC 13的體質豁免，否則陷入中毒狀態1小時。

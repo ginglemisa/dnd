@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: hat-of-disguise
+name: 易容帽
+nameEn: "Hat of Disguise"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+text: |-
+  穿戴這頂帽子時，你可以施放_易容術_法術。若帽子被取下，法術結束。

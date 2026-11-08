@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: giant-slayer
+name: 巨人屠殺者
+nameEn: "Giant Slayer"
+source: srd
+category: weapon
+rarity: rare
+attunement: false
+base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
+effects: { attack: 1, damage: 1 }
+manualEffect: true
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
+
+  當你以這件武器命中巨人時，該巨人額外受到2d6與武器相同類型的傷害，並且必須成功通過DC 15的力量豁免，否則陷入倒地狀態。

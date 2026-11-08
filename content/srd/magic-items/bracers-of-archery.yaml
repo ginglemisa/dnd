@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: bracers-of-archery
+name: 射手護腕
+nameEn: "Bracers of Archery"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+manualEffect: true
+text: |-
+  穿戴這對護腕時，你擁有長弓與短弓的熟練，且使用此類武器進行的傷害擲骰獲得+2加值。

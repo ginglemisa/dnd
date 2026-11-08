@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-heroism
+name: 英雄氣概藥水
+nameEn: "Potion of Heroism"
+source: srd
+category: potion
+rarity: rare
+attunement: false
+consumable: true
+text: |-
+  喝下這瓶藥水時，你獲得10點臨時生命值，持續1小時。在相同的持續時間內，你處於_祝福術_法術的效果之下（不需專注）。
+
+  這瓶藥水的藍色液體冒泡並冒著蒸氣，彷彿在沸騰。

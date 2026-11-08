@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: rod-of-alertness
+name: 警示權杖
+nameEn: "Rod of Alertness"
+source: srd
+category: rod
+rarity: very-rare
+attunement: true
+manualEffect: true
+text: |-
+  這根權杖具有下列特性。
+
+  _警覺。_ 手持權杖時，你在感知（察覺）檢定與先攻擲骰上具有優勢。
+
+  _法術。_ 手持權杖時，你可以從中施放下列法術：
+
+  - _偵測善惡_
+  - _偵測魔法_
+  - _偵測毒性和疾病_
+  - _識破隱形_
+
+  _防護靈光。_ 作為魔法動作，你可以把權杖的柄端插入地面，隨後權杖的頂端會在半徑60呎內散發明亮光照，並再向外60呎散發微光光照。處於該明亮光照內時，你和你的盟友獲得+1的護甲等級與豁免加值，並能感知同樣處於該明亮光照內的任何隱形生物的位置。
+
+  權杖頂端會停止發光，且效果在10分鐘後，或在有生物進行魔法動作將權杖從地面拔起時結束。此特性使用後，直到下次黎明前都無法再次使用。

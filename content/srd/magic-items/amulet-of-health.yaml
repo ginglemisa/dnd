@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: amulet-of-health
+name: 健康護符
+nameEn: "Amulet of Health"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: true
+manualEffect: true
+text: |-
+  你穿戴這個護符時，你的體質為19。若你不穿戴它時體質已有19或更高，它對你沒有效果。

@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ammunition-plus
+name: "彈藥+1／+2／+3"
+nameEn: "Ammunition, +1, +2, or +3"
+source: srd
+category: weapon
+rarity: varies
+rarityText: "非常見（+1）、稀有（+2）或極稀有（+3）"
+attunement: false
+base: { any: [ ammunition ], label: 任意彈藥 }
+options:
+  - id: bonus
+    label: 加值
+    choices:
+      - { value: 1, label: "+1", rarity: uncommon }
+      - { value: 2, label: "+2", rarity: rare }
+      - { value: 3, label: "+3", rarity: very-rare }
+effects: { attack: bonus, damage: bonus }
+displayName: "{base}{bonus}"
+consumable: true
+manualEffect: true
+text: |-
+  使用這件魔法彈藥進行的攻擊檢定與傷害擲骰，你獲得加值。加值由彈藥的稀有度決定。彈藥一旦擊中目標，就不再具有魔法。
+
+  這種彈藥通常以十枚或二十枚為單位被發現或出售。十枚這種彈藥的價值，等同於相同稀有度的一瓶藥水。

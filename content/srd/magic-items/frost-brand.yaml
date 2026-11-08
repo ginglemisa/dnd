@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: frost-brand
+name: 霜銘
+nameEn: "Frost Brand"
+source: srd
+category: weapon
+rarity: very-rare
+attunement: true
+base: { from: [ 長柄刀, 巨劍, 長劍, 刺劍, 彎刀, 短劍 ] }
+manualEffect: true
+text: |-
+  當你以這件魔法武器進行攻擊檢定並命中時，目標額外受到1d6冷凍傷害。此外，只要你手持這件武器，你對火焰傷害具有抗性。
+
+  在冰點以下的溫度中，這件武器在半徑10呎內散發明亮光照，並再向外10呎散發微光光照。
+
+  當你拔出這件武器時，可以熄滅你周圍30呎內所有非魔法的火焰。此特性使用後，1小時內無法再次使用。

@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: dimensional-shackles
+name: 次元鐐銬
+nameEn: "Dimensional Shackles"
+source: srd
+category: wondrous
+group: tool
+rarity: rare
+attunement: false
+text: |-
+  你可以進行使用動作，將這副鐐銬銬在處於失能狀態的生物身上。鐐銬會調整大小，以適應小型至大型體型的生物。被鐐銬束縛的生物無法使用任何異次元移動的方式，包括傳送或前往不同位面。鐐銬不會阻止該生物穿過跨次元傳送門。
+
+  你，以及你在使用鐐銬時指定的任何生物，可以進行使用動作來解開鐐銬。每30天一次，被束縛的生物可以進行一次DC 30的力量（運動）檢定。檢定成功時，該生物掙脫束縛並摧毀鐐銬。

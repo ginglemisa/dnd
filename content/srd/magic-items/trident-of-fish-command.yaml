@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: trident-of-fish-command
+name: 命令魚類三叉戟
+nameEn: "Trident of Fish Command"
+source: srd
+category: weapon
+rarity: uncommon
+attunement: true
+base: { fixed: 三叉戟 }
+manualEffect: true
+text: |-
+  這件魔法武器有3次充能，每天黎明恢復1d3次已消耗的充能。你攜帶它時，可以消耗1次充能，從中對一隻具有游泳速度的野獸施放_支配野獸_（豁免DC 15）。

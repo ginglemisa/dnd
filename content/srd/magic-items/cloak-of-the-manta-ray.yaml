@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: cloak-of-the-manta-ray
+name: 魟魚斗篷
+nameEn: "Cloak of the Manta Ray"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+text: |-
+  穿戴這件斗篷時，你可以在水下呼吸，並具有60呎的游泳速度。

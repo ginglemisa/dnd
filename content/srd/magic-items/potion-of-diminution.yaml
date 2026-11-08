@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-diminution
+name: 縮小藥水
+nameEn: "Potion of Diminution"
+source: srd
+category: potion
+rarity: rare
+attunement: false
+consumable: true
+text: |-
+  喝下這瓶藥水時，你獲得_變巨術/縮小術_法術的「縮小」效果，持續1d4小時（不需專注）。
+
+  藥水液體中的紅色不斷收縮成一顆小珠，然後再擴散開來，將周圍的透明液體染色。搖晃瓶子也無法打斷這個過程。

@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: helm-of-telepathy
+name: 心靈感應頭盔
+nameEn: "Helm of Telepathy"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+text: |-
+  穿戴這頂頭盔時，你擁有射程30呎的心靈感應，並且可以從頭盔施放_偵測思想_或_暗示術_（豁免DC 13）。頭盔施放過其中任一法術後，直到下次黎明前，都無法再從頭盔施放該法術。

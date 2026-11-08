@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-regeneration
+name: 再生戒指
+nameEn: "Ring of Regeneration"
+source: srd
+category: ring
+rarity: very-rare
+attunement: true
+text: |-
+  穿戴這枚戒指時，只要你至少有1點生命值，你每10分鐘恢復1d6點生命值。如果你失去身體部位，且在這段期間你始終至少有1點生命值，戒指會使缺失的部位在1d6 + 1天後重新長出並恢復完整功能。

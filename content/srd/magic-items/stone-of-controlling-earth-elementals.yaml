@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: stone-of-controlling-earth-elementals
+name: 土元素控制石
+nameEn: "Stone of Controlling Earth Elementals"
+source: srd
+category: wondrous
+group: tool
+rarity: rare
+attunement: false
+weight: 5
+text: |-
+  將這塊5磅重的石頭觸碰地面時，你可以進行魔法動作，召喚一隻**土元素**。該元素生物出現在你30呎內由你選擇的一個未被佔據的空間，服從你的命令，並在你的先攻順位上緊接在你之後進行回合。該元素生物在1小時後、死亡時，或你以附贈動作將其遣散時消失。直到下次黎明前，這塊石頭都無法再次這樣使用。

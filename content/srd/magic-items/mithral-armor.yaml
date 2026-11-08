@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: mithral-armor
+name: 秘銀護甲
+nameEn: "Mithral Armor"
+source: srd
+category: armor
+rarity: uncommon
+attunement: false
+base: { any: [ medium-armor, heavy-armor ], except: [ 獸皮甲 ], label: "任意中甲或重甲，獸皮甲除外" }
+manualEffect: true
+text: |-
+  秘銀是一種輕盈而柔韌的金屬。以這種材料製成的護甲可以穿在一般衣物底下。若該護甲原本會使敏捷（隱匿）檢定具有劣勢，或有力量需求，其秘銀版本就沒有這些限制。

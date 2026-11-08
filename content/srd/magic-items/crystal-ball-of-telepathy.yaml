@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: crystal-ball-of-telepathy
+name: 心靈感應水晶球
+nameEn: "Crystal Ball of Telepathy"
+source: srd
+category: wondrous
+group: curio
+rarity: legendary
+attunement: true
+text: |-
+  觸碰這顆水晶球時，你可以用它施放_探知術_（豁免DC 17）。此外，你可以與你在該法術感應器30呎內能看見的生物進行心靈感應溝通。你也可以透過感應器，對其中一個生物施放_暗示術_（豁免DC 17）。你不需要專注於這個_暗示術_來在其持續時間內維持它，但若_探知術_結束，它也會結束。直到下次黎明前，你都無法再以這種方式施放_暗示術_。

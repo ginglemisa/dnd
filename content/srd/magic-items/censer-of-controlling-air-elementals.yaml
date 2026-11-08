@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: censer-of-controlling-air-elementals
+name: 風元素控制香爐
+nameEn: "Censer of Controlling Air Elementals"
+source: srd
+category: wondrous
+group: tool
+rarity: rare
+attunement: false
+text: |-
+  輕輕搖晃這個香爐時，你可以進行魔法動作來召喚一隻風元素。該元素生物出現在盡可能靠近香爐的未被佔據的空間，聽得懂你的語言、服從你的命令，並在你的先攻順位上緊接在你之後進行回合。該元素生物會在1小時後、死亡時，或當你以附贈動作遣散它時消失。直到下次黎明前，香爐都無法再次這樣使用。

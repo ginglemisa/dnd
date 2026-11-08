@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-speed
+name: 加速藥水
+nameEn: "Potion of Speed"
+source: srd
+category: potion
+rarity: very-rare
+attunement: false
+consumable: true
+text: |-
+  當你喝下這瓶藥水時，你獲得_加速術_法術的效果，持續1分鐘（不需專注），且不會承受效果結束時通常會發生的那陣疲憊浪潮。
+
+  這瓶藥水的黃色液體中帶有黑色條紋，並自行旋轉。

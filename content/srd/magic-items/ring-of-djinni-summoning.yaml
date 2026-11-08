@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-djinni-summoning
+name: 風巨靈召喚戒指
+nameEn: "Ring of Djinni Summoning"
+source: srd
+category: ring
+rarity: legendary
+attunement: true
+text: |-
+  穿戴這枚戒指時，你可以進行魔法動作，從風元素位面召喚一隻特定的**風巨靈**。風巨靈會出現在距離你自身120呎內、由你選擇的一個未被佔據的空間。只要你維持專注，它就會持續存在，最長1小時，或直到它的生命值降至0為止。
+
+  被召喚期間，風巨靈對你和你的盟友友善，並服從你的命令。如果你未能對它下令，風巨靈會抵禦攻擊者，但不會採取其他動作。
+
+  風巨靈離去後，24小時內無法再次被召喚，且若風巨靈死亡，戒指會變成非魔法物品。
+
+  _風巨靈召喚戒指_往往由它們所召喚的風巨靈製作，並作為友誼的贈禮或敬意的象徵送給凡人。

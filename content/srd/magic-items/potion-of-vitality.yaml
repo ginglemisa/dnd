@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-vitality
+name: 活力藥水
+nameEn: "Potion of Vitality"
+source: srd
+category: potion
+rarity: very-rare
+attunement: false
+consumable: true
+text: |-
+  當你喝下這瓶藥水時，它會移除你身上所有的力竭等級，並結束你身上的中毒狀態。在接下來的24小時內，你每花費一顆生命骰，都會恢復該顆生命骰的最大生命值。
+
+  這瓶藥水的深紅色液體會規律地閃動暗淡的光芒，讓人聯想到心跳。

@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: wand-of-magic-detection
+name: 偵測魔法魔杖
+nameEn: "Wand of Magic Detection"
+source: srd
+category: wand
+rarity: uncommon
+attunement: false
+text: |-
+  這根魔杖有3次充能。手持它時，你可以消耗1次充能，從中施放_偵測魔法_。魔杖每天黎明恢復1d3次已消耗的充能。

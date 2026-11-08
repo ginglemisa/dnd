@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: dragon-scale-mail
+name: 龍鱗甲
+nameEn: "Dragon Scale Mail"
+source: srd
+category: armor
+rarity: very-rare
+attunement: true
+base: { fixed: 鱗甲 }
+options:
+  - id: dragon
+    label: 龍種
+    choices:
+      - { value: black, label: 黑龍 }
+      - { value: blue, label: 藍龍 }
+      - { value: brass, label: 黃銅龍 }
+      - { value: bronze, label: 青銅龍 }
+      - { value: copper, label: 赤銅龍 }
+      - { value: gold, label: 金龍 }
+      - { value: green, label: 綠龍 }
+      - { value: red, label: 紅龍 }
+      - { value: silver, label: 銀龍 }
+      - { value: white, label: 白龍 }
+effects: { ac: 1 }
+manualEffect: true
+text: |-
+  龍鱗甲由某一種龍的鱗片製成。有時龍會收集自己脫落的鱗片並贈予他人。其他時候，獵人會小心保存死去巨龍的獸皮。無論是哪種情況，_龍鱗甲_都極為珍貴。
+
+  穿戴這件護甲時，你獲得+1護甲等級加值，對抗龍類吐息武器的豁免具有優勢，並且對提供鱗片的那種龍所決定的一種傷害類型具有抗性（見隨附的表格）。
+
+  此外，你可以作為魔法動作集中感官，辨明距離你30英里內、與護甲屬於同一種類的最近一條龍的距離與方向。此動作在下次黎明前無法再次使用。
+
+  | 龍 | 抗性 | 龍 | 抗性 |
+  | --- | --- | --- | --- |
+  | 黑龍 | 強酸 | 金龍 | 火焰 |
+  | 藍龍 | 閃電 | 綠龍 | 毒素 |
+  | 黃銅龍 | 火焰 | 紅龍 | 火焰 |
+  | 青銅龍 | 閃電 | 銀龍 | 冷凍 |
+  | 赤銅龍 | 強酸 | 白龍 | 冷凍 |

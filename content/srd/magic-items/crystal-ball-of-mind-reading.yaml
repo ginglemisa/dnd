@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: crystal-ball-of-mind-reading
+name: 讀心水晶球
+nameEn: "Crystal Ball of Mind Reading"
+source: srd
+category: wondrous
+group: curio
+rarity: legendary
+attunement: true
+text: |-
+  觸碰這顆水晶球時，你可以用它施放_探知術_（豁免DC 17）。此外，你可以施放_偵測思想_（豁免DC 17），以你在該法術感應器30呎內能看見的生物為目標。你不需要專注於這個_偵測思想_法術來在其持續時間內維持它，但若_探知術_法術結束，它也會結束。

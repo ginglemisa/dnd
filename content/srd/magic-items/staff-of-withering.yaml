@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: staff-of-withering
+name: 凋零法杖
+nameEn: "Staff of Withering"
+source: srd
+category: staff
+rarity: rare
+attunement: true
+base: { fixed: 長棍 }
+text: |-
+  這根法杖有3次充能，每天黎明恢復1d3次已消耗的充能。
+
+  法杖可以當作魔法長棍揮舞。命中時，它造成一般長棍的傷害，且你可以消耗1次充能，對目標額外造成2d10黯蝕傷害，並迫使其進行一次DC 15的體質豁免。豁免失敗時，目標在1小時內，進行任何使用力量或體質的屬性檢定或豁免時都具有劣勢。

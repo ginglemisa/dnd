@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: mantle-of-spell-resistance
+name: 法術抗性披肩
+nameEn: "Mantle of Spell Resistance"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: true
+text: |-
+  你穿戴這件披肩時，對法術的豁免具有優勢。

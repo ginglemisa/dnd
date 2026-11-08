@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-protection
+name: 防禦戒指
+nameEn: "Ring of Protection"
+source: srd
+category: ring
+rarity: rare
+attunement: true
+effects: { ac: 1, saves: 1 }
+text: |-
+  穿戴這枚戒指時，你的護甲等級與豁免獲得+1加值。

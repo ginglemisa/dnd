@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: brooch-of-shielding
+name: 護盾胸針
+nameEn: "Brooch of Shielding"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+text: |-
+  穿戴這枚胸針時，你對力場傷害具有抗性，並且對_魔法飛彈_法術造成的傷害具有免疫。

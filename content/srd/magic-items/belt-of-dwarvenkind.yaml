@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: belt-of-dwarvenkind
+name: 矮人腰帶
+nameEn: "Belt of Dwarvenkind"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: true
+manualEffect: true
+text: |-
+  穿戴這條腰帶時，你獲得以下益處：
+
+  **矮人語。** 你懂矮人語。
+
+  **矮人之友。** 你在與矮人和灰矮人互動的魅力（遊說）檢定上具有優勢。
+
+  **堅韌。** 你的體質提高2點，最高為20。
+
+  此外，當你與腰帶同調時，每天黎明你有50%的機率長出一把濃密的鬍鬚（若你能長鬍鬚），或讓原有的鬍鬚更濃密。
+
+  若你不是矮人或灰矮人，則穿戴腰帶時你還會獲得以下額外益處：
+
+  **黑暗視覺。** 你具有射程60呎的黑暗視覺。
+
+  **韌性。** 你對毒素傷害具有抗性。你在為避免或結束中毒狀態而進行的豁免上也具有優勢。

@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: horseshoes-of-speed
+name: 加速馬蹄鐵
+nameEn: "Horseshoes of Speed"
+source: srd
+category: wondrous
+group: tool
+rarity: rare
+attunement: false
+text: |-
+  這些馬蹄鐵共四個一組。作為魔法動作，你可以把其中一個馬蹄鐵碰觸馬或類似生物的蹄，馬蹄鐵便會自行固定在蹄上。取下馬蹄鐵也需要一個魔法動作。
+
+  當四個馬蹄鐵都裝在同一個生物身上時，它的速度增加30呎。

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: vorpal-sword
+name: 斬首之劍
+nameEn: "Vorpal Sword"
+source: srd
+category: weapon
+rarity: legendary
+attunement: true
+base: { from: [ 長柄刀, 巨劍, 長劍, 彎刀 ] }
+effects: { attack: 3, damage: 3 }
+manualEffect: true
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+3加值。此外，此武器無視對揮砍傷害的抗性。
+
+  當你使用此武器攻擊至少有一個頭的生物，且攻擊檢定的d20擲出20時，你會斬下該生物的一個頭。若該生物失去那顆頭就無法存活，則該生物死亡。若生物對揮砍傷害具有免疫、沒有頭或不需要頭，或DM判定該生物體型太大，無法用此武器斬下其頭，則該生物免疫此效果。這類生物改為因這次命中受到額外30點揮砍傷害。若該生物具有傳奇抗性，它可以消耗該特性的一次每日使用次數來避免失去頭，改為受到額外傷害。

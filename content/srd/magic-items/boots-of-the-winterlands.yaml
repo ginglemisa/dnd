@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: boots-of-the-winterlands
+name: 雪地之靴
+nameEn: "Boots of the Winterlands"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+text: |-
+  這雙帶毛的靴子貼腳又溫暖。穿戴它們時，你獲得以下益處。
+
+  _冷凍抗性。_ 你對冷凍傷害具有抗性，且不需要任何額外保護就能忍受華氏0度或更低的氣溫。
+
+  _冬日行者。_ 你無視由冰或雪造成的困難地形。

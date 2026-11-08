@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-longevity
+name: 延壽藥水
+nameEn: "Potion of Longevity"
+source: srd
+category: potion
+rarity: very-rare
+attunement: false
+consumable: true
+text: |-
+  喝下這瓶藥水時，你的生理年齡減少1d6 + 6歲，最低降到13歲。之後每次你再喝下_延壽藥水_，就有10%的累積機率改為讓你老化1d6 + 6歲。
+
+  這種琥珀色的液體中懸浮著一顆小小的心臟，不合常理地仍在跳動。藥水被打開時，這些成分就會消失。

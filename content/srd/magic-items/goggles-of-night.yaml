@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: goggles-of-night
+name: 夜視鏡
+nameEn: "Goggles of Night"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: false
+text: |-
+  穿戴這副深色鏡片時，你擁有60呎的黑暗視覺。若你本來就擁有黑暗視覺，穿戴夜視鏡會使其距離增加60呎。

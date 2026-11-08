@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: crystal-ball
+name: 水晶球
+nameEn: "Crystal Ball"
+source: srd
+category: wondrous
+group: curio
+rarity: very-rare
+attunement: true
+text: |-
+  觸碰這顆水晶球時，你可以用它施放_探知術_（豁免DC 17）。

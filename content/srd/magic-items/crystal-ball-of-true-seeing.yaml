@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: crystal-ball-of-true-seeing
+name: 真知水晶球
+nameEn: "Crystal Ball of True Seeing"
+source: srd
+category: wondrous
+group: curio
+rarity: legendary
+attunement: true
+text: |-
+  觸碰這顆水晶球時，你可以用它施放_探知術_（豁免DC 17）。此外，你具有以該法術感應器為中心、射程120呎的真實視覺。

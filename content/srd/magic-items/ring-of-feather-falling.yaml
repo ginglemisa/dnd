@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-feather-falling
+name: 羽落戒指
+nameEn: "Ring of Feather Falling"
+source: srd
+category: ring
+rarity: rare
+attunement: true
+text: |-
+  穿戴這枚戒指時墜落，你每輪下降60呎，且不會受到墜落傷害。

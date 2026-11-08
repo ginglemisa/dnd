@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: horn-of-valhalla
+name: 瓦爾哈拉號角
+nameEn: "Horn of Valhalla"
+source: srd
+category: wondrous
+group: tool
+rarity: varies
+rarityText: "稀有（銀或黃銅）、極稀有（青銅）或傳說（鐵）"
+attunement: false
+options:
+  - id: metal
+    label: 材質
+    choices:
+      - { value: silver, label: 銀, rarity: rare }
+      - { value: brass, label: 黃銅, rarity: rare }
+      - { value: bronze, label: 青銅, rarity: very-rare }
+      - { value: iron, label: 鐵, rarity: legendary }
+text: |-
+  你可以進行魔法動作吹響這支號角。作為回應，來自伊斯嘉德位面的戰士靈體會出現在你60呎內未被佔據的空間。每個靈體使用**狂戰士**數據塊，並在1小時後或生命值降至0時回到伊斯嘉德。這些靈體看起來像活生生、會呼吸的戰士，並且免疫魅惑與恐慌狀態。你使用號角後，經過7天才能再次使用。
+
+  已知存在四種_瓦爾哈拉號角_，各以不同的金屬製成。號角的種類決定它召喚多少靈體，以及使用它的要求。DM選擇號角的種類，或擲下表隨機決定。
+
+  若你在未滿足要求的情況下吹響號角，被召喚的靈體會攻擊你。若你滿足要求，它們對你與你的盟友友善，並聽從你的命令。
+
+  | 1d100 | 號角種類 | 靈體 | 要求 |
+  | --- | --- | --- | --- |
+  | 01–40 | 銀 | 2 | 無 |
+  | 41–75 | 黃銅 | 3 | 熟練所有簡易武器 |
+  | 76–90 | 青銅 | 4 | 受過所有中甲的訓練 |
+  | 91–00 | 鐵 | 5 | 熟練所有軍用武器 |
