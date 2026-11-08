@@ -891,6 +891,22 @@ html.onboarding-app-bar-hidden .tabs-shell {
   }
 }
 
+/* 認識角卡 4/8 的暫時版面：只留力量、敏捷，點數列接在下方；離開這一段就還原。 */
+#point-buy-modal.onboarding-tour-point-buy-focus .point-buy-row:not([data-ability="str"], [data-ability="dex"]) {
+  display: none;
+}
+
+/* 窄螢幕的背景加值排在基礎值下方，這一段只介紹基礎值。 */
+@media (max-width: 499px) {
+  #point-buy-modal.onboarding-tour-point-buy-focus .point-buy-control-group--bonus {
+    display: none;
+  }
+
+  #point-buy-modal.onboarding-tour-point-buy-focus .point-buy-row {
+    grid-template-rows: minmax(44px, auto);
+  }
+}
+
 .tour-mask {
   position: fixed;
   pointer-events: auto;
