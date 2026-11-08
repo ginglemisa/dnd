@@ -785,7 +785,8 @@ async function validateMagicItemShop(page) {
     { uid: "greater", quantity: 2, magic: { id: "potions-of-healing", potency: "greater" } },
     { uid: "climbing", quantity: 2, magic: { id: "potion-of-climbing" } },
     { uid: "amulet", quantity: 1, magic: { id: "amulet-of-health" } },
-    { uid: "lost", quantity: 1, magic: { id: "no-such-item" } }
+    { uid: "lost", quantity: 1, magic: { id: "no-such-item" } },
+    { uid: "bag", quantity: 1, magic: { id: "bag-of-holding" } }
   ] }));
   const item = page.locator('.app-dialog[data-variant="inventory-item"]');
   const openItem = async (uid) => {
@@ -799,7 +800,10 @@ async function validateMagicItemShop(page) {
   await openItem("amulet");
   assert.equal(await item.locator(".magic-item-detail__subtitle").textContent(), "奇物，稀有（需同調）");
   assert.equal(await item.locator(".magic-item-detail__manual").textContent(), "角色卡不會自動套用這項效果，請依說明處理");
-  assert.equal(await item.locator(".inventory-action-button").count(), 0, "non-consumable items have no use button");
+  assert.deepEqual(await item.locator(".inventory-action-button").allTextContents(), ["開始同調"], "non-consumable items have no use button; items that need attunement only have the attunement switch");
+  await closeItem();
+  await openItem("bag");
+  assert.equal(await item.locator(".inventory-action-button").count(), 0, "non-consumable items without attunement have no buttons");
   await closeItem();
   await openItem("greater");
   assert.equal(await item.getByRole("button", { name: "飲用治療藥水（高等）" }).count(), 1, "potions with a heal roll use the drink flow");
