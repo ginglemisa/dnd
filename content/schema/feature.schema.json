@@ -239,7 +239,7 @@
       "required": ["label"],
       "properties": {
         "label": { "type": "string", "minLength": 1, "description": "表格的無障礙名稱（aria-label），例如「術士生成法術位換算」。" },
-        "style": { "$ref": "#/definitions/id", "description": "表格樣式，例如 spell-slot：外框加上 rule-table-shell--spell-slot，表格加上 rule-progress-table rule-progress-table--spell-slot（styles.css 依此設定寬度與欄位強調）。" },
+        "style": { "$ref": "#/definitions/id", "description": "表格樣式，例如 spell-slot：外框加上 rule-table-shell--spell-slot，表格加上 rule-progress-table rule-progress-table--spell-slot（css/base.css 依此設定寬度與欄位強調）。" },
         "kind": { "enum": ["progress", "reference"], "default": "progress", "description": "有 style 時的表格種類：progress（預設）為進程表；reference 時表格只加上樣式名稱的 class（例如 druid-terrain-spells）。" },
         "rowHeaders": { "const": true, "description": "表身每列第一格輸出 <th scope=\"row\">（列標題，例如地貌、德魯伊等級）。" },
         "rowHeaderSuffix": { "type": "string", "minLength": 1, "description": "接在每個列標題後、只在窄螢幕顯示的文字（<span class=\"rule-level-suffix\">），例如「級」。須有 rowHeaders。" },

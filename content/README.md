@@ -53,7 +53,7 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 - `[文字]{標記名}`：網站功能標記，把方括號內的文字標給網站程式使用，職業頁與跑團說明的顯示不變。**只供網站功能使用，一般文字不要用。** 標記名須是建置工具（`tools/content/markdown.js` 的 `MARKS`）列出的名稱，否則建置失敗；方括號內可有粗體，不可再有 `[`、`]`（也就不能放提示框）。目前沒有可用的標記（清單為空）。
 - `{spellSaveDc|}`：`|` 後留空＝只在跑團出現。職業頁不顯示，跑團模式顯示目前數值（`values` 有 `format` 時套用格式，例如「（DC 13）」）。
 - 規則表格用標準 GFM 表格，見下方「表格」。
-- 分隔線：單獨一行 `---`，前後各空一行，輸出 `<hr class="class-rule-divider">`（樣式由 styles.css 設定）。
+- 分隔線：單獨一行 `---`，前後各空一行，輸出 `<hr class="class-rule-divider">`（樣式在 `css/base.css`）。
 - 不可寫 HTML（出現 `<` 就報錯），也不可寫行內樣式。
 
 ## 同一個能力的三種文字
@@ -132,7 +132,7 @@ summary: 你的敏捷豁免有優勢。
 ```
 
 - 第一列是表頭，第二列只能寫 `---`（不支援對齊冒號），儲存格不可空白，也不可含 `|`（因此不能放數值標記）。
-- 每個表格的外框依出現順序寫在能力的 `tables`：`label` 是表格的無障礙名稱（必填），`style` 是進程表樣式（例如 `spell-slot`，對應 styles.css 的 `rule-table-shell--spell-slot`、`rule-progress-table--spell-slot`）。`text` 的表格數量須等於 `tables` 的項數；`tabletop` 也相同，或完全不寫表格（表格在只限職業頁的小節時，例如荒野形態的野獸形態進程表）。
+- 每個表格的外框依出現順序寫在能力的 `tables`：`label` 是表格的無障礙名稱（必填），`style` 是進程表樣式（例如 `spell-slot`，對應 `css/base.css` 的 `rule-table-shell--spell-slot`、`rule-progress-table--spell-slot`）。`text` 的表格數量須等於 `tables` 的項數；`tabletop` 也相同，或完全不寫表格（表格在只限職業頁的小節時，例如荒野形態的野獸形態進程表）。
 - 外框的其他欄位（皆可省略）：
 
   | 欄位 | 說明 |

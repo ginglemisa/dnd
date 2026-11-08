@@ -1,4 +1,4 @@
-// 荒野形態的「已知形態」（德魯伊）：styles.css 依 wild-shape-known-forms 系列 class 排版（推薦框、規則清單、野獸清單），
+// 荒野形態的「已知形態」（德魯伊）：css/base.css 依 wild-shape-known-forms 系列 class 排版（推薦框、規則清單、野獸清單），
 // 「查看其他動物」的野獸清單是另外整理的參考資料，不寫進內容檔：讀取 druid-wild-shape-beasts.js 的
 // DRUID_WILD_SHAPE_BEASTS／DRUID_WILD_SHAPE_CR_ORDER，照舊版範本產生。
 // 內容檔把小節標題寫成「#### 已知形態 {#wild-shape-known-forms}」，小節內為說明段落、推薦段落、規則清單；

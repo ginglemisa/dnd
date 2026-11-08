@@ -155,7 +155,7 @@ function renderTable(block, frame, options, where, attributes) {
 // options.blockNewlines：區塊、清單項目與小節內的標籤之間換行（超魔法附錄沿用舊版排版，跑團說明依換行分段）。
 // options.plainHeadings：「#### 」只輸出 <h4>，不另包小節（文字本身已在小節內，例如附錄小節「書之魔契」的「戲法與儀式」）。
 // options.view（見 renderInline）：跑團版不輸出表格（跑團說明不顯示表格）。
-// 分隔線「---」輸出 <hr class="class-rule-divider">（樣式由 styles.css 設定，不輸出行內 style）。
+// 分隔線「---」輸出 <hr class="class-rule-divider">（樣式在 css/base.css，不輸出行內 style）。
 // options.behavior：{ name, renderSubsection, nextSubsectionClass }（能力的 behavior）。標題寫成「#### 標題 {#名稱}」的小節
 // （名稱須等於 behavior 名稱）不照一般小節輸出，改由 renderSubsection(blocks, helpers) 依小節內解析好的區塊產生 HTML；
 // nextSubsectionClass 加在緊接其後的小節上（後面沒有小節時報錯）。
