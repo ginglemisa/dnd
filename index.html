@@ -3631,8 +3631,9 @@ function populateSelectWithSections(selectEl, sections, { slot = "", keepValue =
 
 // 要保留並標示的普通選項：目前（或存檔）選的是還在清單上的魔法款時不用保留，只有魔法款就不顯示普通選項。
 function getEquipmentKeepValue(select, slot) {
+  // 載入期間只看存檔的值：下拉這時還是上一個角色的選擇，存檔沒有裝備時不能退回它。
   const pending = pendingEquipmentValues?.[slot] || "";
-  const value = pending || select?.value || "";
+  const value = pendingEquipmentValues ? pending : select?.value || "";
   if (!value || !window.Inventory) return value;
   const uid = window.Inventory.getSlotMagicUid(slot, value) || (pending ? "" : readEquipmentSelection(select).uid);
   return uid && window.Inventory.getMagicEquipment(slot).some(entry => entry.uid === uid && entry.name === value) ? "" : value;

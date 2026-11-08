@@ -1613,6 +1613,17 @@ async function validateInventoryStacks(page) {
     split: [[5, ""], [2, ""], [1, "mainHand"]], reloaded: [[5, ""], [2, ""], [1, "mainHand"]]
   }, "old data is converted without changing totals; slots stay out of save and share files and come back from the equipment fields");
 
+  // 載入的存檔沒有裝備時，下拉不留上一個角色的「X（不在物品欄）」。
+  const leftover = await page.evaluate(([base]) => {
+    const withoutEquipment = Object.fromEntries(Object.entries(base).filter(([key]) => !["mainHand", "offHand", "armor"].includes(key)));
+    const notInInventory = id => [...document.getElementById(id).options].map(option => option.textContent).filter(text => text.includes("不在物品欄"));
+    applyStateObject({ ...base, mainHand: "長劍", armor: "皮甲", __inventory: { version: 1, items: [] } });
+    Inventory.restore({ version: 1, items: [] });
+    applyStateObject({ ...withoutEquipment, __inventory: { version: 1, items: [] } });
+    return ["mainHand", "armor"].flatMap(notInInventory);
+  }, [blank]);
+  assert.deepEqual(leftover, [], "loading a save without equipment does not keep the previous character's item as a not-in-inventory option");
+
   // 魔法款和同名普通款是不同的選項：value 都是基本款名稱，沒指定時一律拿普通款；只有魔法款時不列普通選項。重新載入不互換。
   const magicEquip = await page.evaluate(([base]) => {
     const sword = { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } };
