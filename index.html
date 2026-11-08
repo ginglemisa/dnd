@@ -4274,9 +4274,10 @@ function updateWeaponMasteryBadges() {
   ].forEach(({ hand, selectId, attackNameId }) => {
     const badge = document.getElementById(`atk-${hand}-mastery`);
     if (!badge) return;
-    const weaponName = isWeaponAttackAutomationEnabled()
-      ? document.getElementById(selectId)?.value || ""
-      : document.getElementById(attackNameId)?.value.trim() || "";
+    // 看裝備下拉的武器，自動化開關不影響；只有關閉自動化且下拉空白（或雙手佔用）時才退回手打的攻擊名稱。
+    const select = document.getElementById(selectId);
+    const equipped = select && !select.disabled ? select.value : "";
+    const weaponName = equipped || (isWeaponAttackAutomationEnabled() ? "" : document.getElementById(attackNameId)?.value.trim() || "");
     const weapon = getWeaponOrShieldByName(weaponName);
     const mastery = canUseMastery && getEquipmentRuleName(weapon) !== "盾牌" && hasMeaningfulEquipmentValue(weapon?.精通)
       && (!selectedMasteries.size || selectedMasteries.has(getEquipmentRuleName(weapon)))

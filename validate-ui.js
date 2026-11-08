@@ -4468,6 +4468,21 @@ async function verifyClassPicks(browser, url) {
     await choose(page, "fighter-weapon-mastery-pick-3", "長弓");
     assert.ok(!(await issues(page)).some(message => message.includes("武器精通")), "the reminder clears when every mastery is chosen");
 
+    // 關閉武器攻擊自動化時，精通標籤仍看裝備下拉，條件相同；下拉空白才退回手打的攻擊名稱。
+    const manualBadge = (weapon, typed) => page.evaluate(([weapon, typed]) => {
+      const select = document.getElementById("mainHand");
+      select.value = weapon;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      document.getElementById("atk-main-name").value = typed;
+      updateWeaponMasteryBadges();
+      const element = document.getElementById("atk-main-mastery");
+      return element.hidden ? "" : element.textContent;
+    }, [weapon, typed]);
+    await page.evaluate(() => { const toggle = document.getElementById("weapon-attack-automation"); toggle.checked = false; toggle.dispatchEvent(new Event("change", { bubbles: true })); });
+    assert.deepEqual([await manualBadge("長劍", "短劍"), await manualBadge("短劍", "長劍"), await manualBadge("", "長劍"), await manualBadge("", "短劍")], ["削弱", "", "削弱", ""],
+      "with automation off the mastery badge follows the equipped weapon and falls back to the typed name only when nothing is equipped");
+    await page.evaluate(() => { const toggle = document.getElementById("weapon-attack-automation"); toggle.checked = true; toggle.dispatchEvent(new Event("change", { bubbles: true })); });
+
     // Level 4 opens the fourth select; going back hides it but keeps its value.
     await page.locator("#level").selectOption("4");
     await choose(page, "fighter-weapon-mastery-pick-4", "戰錘");
