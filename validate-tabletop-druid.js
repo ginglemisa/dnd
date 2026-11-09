@@ -342,7 +342,8 @@ async function main() {
     assert.match(await page.locator("#tabletop-speed").innerText(), /^步行 40 呎 \(狼\)$/u);
     const abilityMarks = await page.evaluate(() => Array.from(document.querySelectorAll("#tabletop-ability-modifiers .tabletop-ability-modifier"), item => item.querySelector(".tabletop-ac-effect-label")?.textContent || ""));
     assert.deepEqual(abilityMarks, ["(狼)", "(狼)", "(狼)", "", "", ""], "only strength, dexterity and constitution are marked");
-    assert.equal(await overview.evaluate(card => card.classList.contains("is-shaped")), true);
+    // 狀態卡在下一個動畫影格才重畫，切回總覽後要等它更新。
+    await page.locator("#tabletop-druid-overview.is-shaped").waitFor({ timeout: 3000 });
     assert.match(await overview.innerText(), /狼\s*中型野獸[\s\S]*黑暗視覺 60 呎[\s\S]*群攻[\s\S]*臨時 HP 8[\s\S]*最長 4 小時・不能施法・專注保留/u);
     await overview.getByRole("button", { name: "野獸資料", exact: true }).click();
     await dialog.locator(".beast-card").getByText(/Wolf/).waitFor();
