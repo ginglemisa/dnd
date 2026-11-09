@@ -38,13 +38,13 @@
       <ul>
         <li>角色卡排版作者：<a href="https://x.com/AkaAAkaAka" target="_blank" rel="noopener">赤赤@AkaA</a></li>
         <li><a href="https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing" target="_blank" rel="noopener">無表格 PDF／原 PNG 檔下載</a></li>
-        <li>PDF 使用字型：<a href="https://fonts.google.com/download?family=Noto%20Sans%20TC" target="_blank" rel="noopener">Noto Sans TC</a>、<a href="https://github.com/adobe-fonts/source-han-serif/tree/release/OTF/TraditionalChinese" target="_blank" rel="noopener">思源宋體 SourceHanSerifTC-Bold.otf</a></li>
+        <li>PDF 使用字型：<a href="https://fonts.google.com/download?family=Noto%20Sans%20TC" target="_blank" rel="noopener">Noto Sans TC</a>、<a href="https://github.com/adobe-fonts/source-han-serif/tree/release/OTF/TraditionalChinese" target="_blank" rel="noopener">思源宋體</a></li>
       </ul>
       <p>歡迎下載、填寫、列印與分享角色紙。</p>
       <p>請尊重創作者，保留作者署名與原始排版，勿擅自刪除或修改。</p>
 
       <h2>網站作者</h2>
-      <p>Reggie Tsai / 瑞基</p>
+      <p>Reggie Tsai <a href="mailto:tsai.reggie428@gmail.com">tsai.reggie428@gmail.com</a></p>
       <p>twD20 是獨立製作的跑團工具，與 WotC 官方品牌無關。</p>
 
       <hr class="legal-divider">
@@ -83,7 +83,7 @@
         <p>This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.</p>
       </section>
       <footer class="legal-about-footer">
-        <p>Independent 5.5-compatible character builder.<br>
+        <p>twD20 — Independent 5.5-compatible character builder.<br>
           <a href="https://github.com/ginglemisa/dnd" target="_blank" rel="noopener">GitHub Repo</a></p>
         <p>MapFog — a fog-of-war map tool for tabletop RPGs.<br>
           Supports same-computer and online play, plus LAN play with a local server.<br>
