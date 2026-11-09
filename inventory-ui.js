@@ -453,10 +453,17 @@
     return `不在你的職業法術清單上，也不是你${spell.level === 0 ? "學會的戲法" : "始終準備的法術"}。`;
   }
 
-  function buildScrollRow(entry, scroll, ctx) {
+  // 卷軸的豁免 DC 與攻擊加值依環階（內容檔的表），魔法模式的卷軸到 5 環；目錄沒載入時用裝備資料的戲法與 1 環數值。
+  function getScrollNumbers(fallback, level) {
+    const choice = globalScope.MagicItemCatalog?.getByEquipmentName("法術卷軸")?.options.find(option => option.id === "spellLevel")?.choices.find(item => item.value === level);
+    return choice?.saveDc ? { saveDc: choice.saveDc, attackBonus: choice.attackBonus } : fallback;
+  }
+
+  function buildScrollRow(entry, fallback, ctx) {
     const spellId = api().getScrollSpellId(entry);
     const spell = spellId ? globalScope.SpellCatalog?.getSpell(spellId) : null;
     if (!spell) return null;
+    const scroll = getScrollNumbers(fallback, spell.level);
     const label = api().getLabel(entry);
     const access = globalScope.getSpellScrollAccess?.(spellId) || { allowed: false, reason: "" };
     const cast = actionButton("施法", (control) => {
@@ -624,12 +631,10 @@
       }, `塗抹${label}`);
       rows.push(actionRow(`命中時額外 ${actions.coating.damage} ${actions.coating.damageType}傷害。`, coat));
     }
-    if (actions.scroll) {
-      const scrollRow = buildScrollRow(entry, actions.scroll, ctx);
-      if (scrollRow) rows.push(scrollRow);
-    }
-    // 魔法物品的消耗品；既有的治療藥水在上面已經有「飲用」。
-    if (magicRule?.consumable && !actions.heal) {
+    const scrollRow = actions.scroll ? buildScrollRow(entry, actions.scroll, ctx) : null;
+    if (scrollRow) rows.push(scrollRow);
+    // 魔法物品的消耗品；既有的治療藥水在上面已經有「飲用」，能施法的卷軸有「施法」（只有 SRD 版的法術不能施法，才用「使用」）。
+    if (magicRule?.consumable && !actions.heal && !scrollRow) {
       const heal = entry.magic ? globalScope.MagicItemCatalog.getHeal(entry.magic.id, api().getMagicSelection(entry)) : null;
       if (heal) {
         rows.push(actionRow(`飲用後回復 ${heal} 生命值。`, actionButton("飲用", () => {

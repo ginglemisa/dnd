@@ -790,7 +790,7 @@ async function validateMagicItemShop(page) {
     { quantity: 1, magic: { id: "amulet-of-health" } },
     { quantity: 1, itemId: "治療藥水" },
     { quantity: 1, magic: { id: "potions-of-healing", potency: "greater" } },
-    { quantity: 1, itemId: "法術卷軸", name: "命令術法術卷軸" },
+    { quantity: 1, itemId: "法術卷軸", name: "命令術法術卷軸", spellId: "command" },
     { quantity: 20, itemId: "箭矢", magic: { id: "ammunition-plus", bonus: 1 } }
   ], "granted items use the agreed inventory shape");
 
@@ -850,7 +850,7 @@ async function validateMagicItemShop(page) {
 
   // 物品視窗：副標、說明、提示與使用；治療藥水有 getHeal() 時是飲用。
   await page.evaluate(() => Inventory.restore({ version: 1, items: [
-    { uid: "scroll", itemId: "法術卷軸", name: "命令術法術卷軸", quantity: 1 },
+    { uid: "scroll", itemId: "法術卷軸", name: "奧術之手法術卷軸", spellId: "arcane-hand", quantity: 1 },
     { uid: "greater", quantity: 2, magic: { id: "potions-of-healing", potency: "greater" } },
     { uid: "climbing", quantity: 2, magic: { id: "potion-of-climbing" } },
     { uid: "amulet", quantity: 1, magic: { id: "amulet-of-health" } },
@@ -888,7 +888,7 @@ async function validateMagicItemShop(page) {
   assert.match(await item.locator(".spell-version__site").innerText(), /記載一個戲法或 1 環法術/u, "spell scrolls open on the website version");
   await item.locator('[data-spell-version="srd"]').click();
   assert.match(await item.locator(".spell-version__srd-body").innerText(), /卷軸上寫有單一法術的文字/u, "the SRD version shows the translation");
-  await item.getByRole("button", { name: "使用命令術法術卷軸" }).click();
+  await item.getByRole("button", { name: "使用奧術之手法術卷軸" }).click();
   await item.waitFor({ state: "detached" });
   assert.equal(await page.evaluate(() => Inventory.getEntry("scroll")), null, "the last scroll closes the dialog");
   await openItem("lost");
@@ -2212,6 +2212,16 @@ async function validateInventoryItemActions(page) {
   await openItem("命令術法術卷軸");
   assert.deepEqual([await castButton("命令術").isDisabled(), await scrollRow().locator(".inventory-action-row__text").textContent()],
     [false, "命令術｜手動管理法術，請自行確認能否使用。豁免 DC 13・攻擊 +5，施法後卷軸消失。"], "manual spell management is not blocked");
+  await closeItem();
+  // 魔法模式的卷軸到 5 環：豁免 DC 與攻擊加值依環階，能施法時只有「施法」；只有 SRD 版的法術不能施法，只有「使用」。
+  await page.evaluate(items => Inventory.add(items), [scroll("火球術", 1, "fireball"), scroll("奧術之手", 1, "arcane-hand")]);
+  await openItem("火球術法術卷軸");
+  assert.match(await scrollRow().first().locator(".inventory-action-row__text").textContent(), /豁免 DC 15・攻擊 \+7/u, "a 3rd-level scroll uses its own numbers");
+  assert.equal(await item.getByRole("button", { name: "使用火球術法術卷軸" }).count(), 0, "a castable scroll has no separate use button");
+  await closeItem();
+  await openItem("奧術之手法術卷軸");
+  assert.equal(await castButton("奧術之手").count(), 0, "SRD-only spells cannot be cast from a scroll");
+  assert.equal(await item.getByRole("button", { name: "使用奧術之手法術卷軸" }).count(), 1, "SRD-only scrolls can still be used up");
   await closeItem();
   await page.evaluate(() => SpellManagement.setManual(false, { confirm: false }));
 

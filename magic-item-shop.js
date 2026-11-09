@@ -309,7 +309,7 @@
     const selection = Object.fromEntries(item.options.filter(option => !isScrollOption(option)).map(option => [option.id, values[option.id]]));
     if (spell) {
       const name = `${spell.nameZh}法術卷軸`;
-      return { label: name, quantity, request: { itemId: item.equipmentName, name, quantity } };
+      return { label: name, quantity, request: { itemId: item.equipmentName, name, quantity, spellId: spell.spellId } };
     }
     const label = catalog().getDisplayName(item.id, { ...selection, base });
     if (item.equipmentName && isOrdinarySelection(item, selection)) return { label, quantity, request: { itemId: item.equipmentName, quantity } };
