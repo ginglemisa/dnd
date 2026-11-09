@@ -15,4 +15,4 @@ actions:
   - mode: action
     label: 穩定療效
     key: dynamic-action-feat-curated-1g8q2rg
-pdf: [醫療兵(起源), 動作使用醫療包, "5呎內骰+熟練", 恢復骰1可重擲]
+pdf: [醫療兵(起源), 醫療包耗生命骰, "+熟/療1可重擲"]

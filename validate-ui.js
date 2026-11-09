@@ -466,7 +466,7 @@ async function verifyPdf(page, fieldsOnly) {
     for (const key of ["derived-feat-human-origin", "derived-feat-lessons-1", "derived-feat-lessons-2", "derived-feat-fighter-level-4", "derived-feat-warlock-level-8", "feat-0"]) {
       if (!buildPdfFieldPayload({ [key]: "強韌體魄" }).feats1.includes("HP上限+等級×2")) throw new Error(`PDF feat source: ${key}`);
     }
-    if (!buildPdfFieldPayload({ "derived-feat-fighting-style-fighter-2": "防禦" }).feats1.includes("穿護甲時AC+1")) throw new Error("PDF second fighting style");
+    if (!buildPdfFieldPayload({ "derived-feat-fighting-style-fighter-2": "防禦" }).feats1.includes("穿甲AC+1")) throw new Error("PDF second fighting style");
     const mirrored = buildPdfFieldPayload({
       "derived-feat-human-origin": "魔法學徒", "feat-choice-human-origin": "魔法學徒",
       "derived-feat-human-origin-magic-initiate-class": "wizard",
@@ -474,7 +474,11 @@ async function verifyPdf(page, fieldsOnly) {
       "derived-feat-human-origin-magic-initiate-cantrip-2": "mage-hand",
       "derived-feat-human-origin-magic-initiate-level-1": "shield"
     }).feats1;
-    if ((mirrored.match(/魔法學徒/gu) || []).length !== 1 || !mirrored.includes("法師魔法學徒") || !mirrored.includes("光亮術") || !mirrored.includes("護盾術")) throw new Error("PDF derived Magic Initiate choices and mirror exclusion");
+    if (mirrored !== "魔法學徒(起源)\n法師表2戲1環") throw new Error("PDF derived Magic Initiate class line and mirror exclusion");
+    for (const [classValue, line] of [["cleric", "牧師表2戲1環"], ["druid", "德魯伊表2戲1環"], ["wizard", "法師表2戲1環"]]) {
+      if (buildPdfFieldPayload({ "feat-0": "魔法學徒", "feat-0-magic-initiate-class": classValue }).feats1 !== `魔法學徒(起源)\n${line}`) throw new Error(`PDF Magic Initiate class line before spells are chosen: ${classValue}`);
+    }
+    if (buildPdfFieldPayload({ "feat-0": "魔法學徒" }).feats1 !== "魔法學徒(起源)\n選1法表2戲1環") throw new Error("PDF Magic Initiate prompt before a class is chosen");
     for (const manualFeats of [true, false]) {
       const text = buildPdfFieldPayload({
         "manual-feat-management": manualFeats,
@@ -485,7 +489,7 @@ async function verifyPdf(page, fieldsOnly) {
         "derived-feat-background-magic-initiate-cantrip-2": "mage-hand",
         "derived-feat-background-magic-initiate-level-1": "shield"
       }).feats1;
-      if (!/魔法學徒/.test(text) || /光亮術|魔法伎倆|護盾術|◇|選1職業法表|2戲法/.test(text)) {
+      if (text !== "魔法學徒(起源)" || /光亮術|魔法伎倆|護盾術|◇|法師表|選1法表|2戲1環/.test(text)) {
         throw new Error("manual spell PDFs retain the feat name without hidden automatic choices or free-use marks");
       }
     }
@@ -495,15 +499,19 @@ async function verifyPdf(page, fieldsOnly) {
       "feat-0-magic-initiate-cantrip-1": "light",
       "feat-0-magic-initiate-cantrip-2": "mage-hand",
       "feat-0-magic-initiate-level-1": "shield",
-      "feat-1": "警覺",
-      "feat-2": "強韌體魄",
-      "feat-3": "防禦"
+      "feat-1": "醫療兵",
+      "feat-2": "封鎖者",
+      "feat-3": "擒抱者"
     };
+    const tenLineFeats = { ...crowdedFeats, "feat-3": "警覺" };
     for (const outputMode of ["editable", "compact"]) {
       const shortened = buildPdfFieldPayload(crowdedFeats, { outputMode });
-      const featTitles = ["魔法學徒(起源)", "警覺(起源)", "強韌體魄(起源)", "防禦(戰鬥風格)"];
-      if (shortened.feats1 !== featTitles.join("\n") || /光亮術|護盾術|先攻可加熟練|另有專長未列出/u.test(shortened.feats1)) {
+      const featTitles = ["魔法學徒(起源)", "醫療兵(起源)", "封鎖者(通用)", "擒抱者(通用)"];
+      if (shortened.feats1 !== featTitles.join("\n") || /光亮術|護盾術|法師表|醫療包耗生命骰|撤離傷人可藉機|拳打抱|另有專長未列出/u.test(shortened.feats1)) {
         throw new Error(`PDF title-only feat fallback: ${outputMode}`);
+      }
+      if (buildPdfFieldPayload(tenLineFeats, { outputMode }).feats1.split("\n").length !== 10) {
+        throw new Error(`PDF feats at exactly ten lines keep their details: ${outputMode}`);
       }
       if (shortened.classFeatures2.includes("其餘專長:")) throw new Error("PDF titles all fit without overflow");
 
@@ -522,6 +530,19 @@ async function verifyPdf(page, fieldsOnly) {
           unwrappedExtra.indexOf("原有技能內容") > unwrappedExtra.indexOf("其餘專長:")) {
         throw new Error(`PDF feat spill preserves existing class features and appends all remaining titles: ${outputMode}`);
       }
+    }
+    const officialFeatNames = [["封鎖者", "哨兵"], ["尋物好手", "觀察力"], ["最佳旅伴", "領袖之證"], ["臨陣施法", "戰地施法者"], ["衝鋒猛擊", "衝鋒手"], ["迅捷步法", "快速移動"], ["重甲減傷", "重甲大師"], ["雙持追擊", "雙持客"]];
+    for (const [feat, officialName] of officialFeatNames) {
+      const official = buildPdfFieldPayload({ "feat-0": feat }, { sheetTemplate: "official" })["feat-trat"];
+      const thirdParty = buildPdfFieldPayload({ "feat-0": feat }).feats1;
+      if (!official.startsWith(`${officialName}(通用)`) || official.includes(feat)) throw new Error(`Official sheet feat name: ${feat}`);
+      if (!thirdParty.startsWith(`${feat}(通用)`) || thirdParty.includes(officialName)) throw new Error(`Other sheets keep the feat name: ${feat}`);
+    }
+    const officialTitles = buildPdfFieldPayload({ "feat-0": "醫療兵", "feat-1": "封鎖者", "feat-2": "擒抱者", "feat-3": "最佳旅伴", "feat-4": "迅捷步法", "feat-5": "衝鋒猛擊" }, { sheetTemplate: "official" })["feat-trat"];
+    if (officialTitles !== "醫療兵(起源)\n哨兵(通用)\n擒抱者(通用)\n領袖之證(通用)\n快速移動(通用)\n衝鋒手(通用)") throw new Error("Official sheet title-only feat names");
+    for (const [background, siteName, officialName] of [["fieldhand", "耕者", "農夫"], ["seeker", "孤芳", "隱士"]]) {
+      if (buildPdfFieldPayload({ background }, { sheetTemplate: "official" }).bg !== officialName) throw new Error(`Official sheet background name: ${background}`);
+      if (buildPdfFieldPayload({ background }).Background2 !== siteName) throw new Error(`Other sheets keep the background name: ${background}`);
     }
     const combined = buildPdfFieldPayload({ "derived-feat-background": "強韌體魄", "derived-feat-human-origin": "熟習", "derived-feat-fighting-style-fighter": "防禦", "feat-choice-human-origin": "熟習" }).feats1;
     if (!combined.includes("強韌體魄") || !combined.includes("熟習") || !combined.includes("防禦") || (combined.match(/熟習\(/gu) || []).length !== 1) throw new Error("PDF combined automatic feat sources");

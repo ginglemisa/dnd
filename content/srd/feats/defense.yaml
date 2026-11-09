@@ -5,4 +5,4 @@ type: style
 effects:
   - name: 銅牆鐵壁
     text: 穿輕／中／重甲時 AC +1。
-pdf: [防禦(戰鬥風格), 穿護甲時AC+1]
+pdf: [防禦(戰鬥風格), 穿甲AC+1]
