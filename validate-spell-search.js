@@ -996,7 +996,7 @@ async function validateMagicItemCatalog(page) {
   assert.deepEqual(result.names, ["長劍+1", "全身板甲+3", "盾牌+2", "戰法魔杖+2", "治療藥水", "治療藥水（高等）", "焰舌（長劍）", "陽炎劍", "抗性戒指（火焰）", "武器+1／+2／+3", ""], "magic item display names");
   assert.deepEqual(result.effects, [
     { attack: 2, damage: 2 }, {}, { ac: 1 }, { attack: 1, damage: 1 }, { attack: 1, damage: 1, saves: 1 }, { ac: 2, condition: "unarmored" },
-    { attack: 2, damage: 2, ac: 2, saves: 2, condition: "held" }, { ac: 1 }, {}, {}
+    { attack: 2, damage: 2, ac: 2, saves: 2, spellAttack: 2, condition: "held" }, { ac: 1 }, {}, {}
   ], "magic item fixed effects; conditional bonuses stay in the text");
   assert.deepEqual(result.bases, [["長劍"], ["長棍"], ["硬頭錘"], [], false, false], "magic item base choices");
   assert.deepEqual(result.rarity, ["legendary", null, "rare", "極稀有"]);

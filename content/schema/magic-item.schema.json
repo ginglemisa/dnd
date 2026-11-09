@@ -23,7 +23,9 @@
         "damage": { "$ref": "#/definitions/effectValue", "description": "武器傷害擲骰加值。" },
         "ac": { "$ref": "#/definitions/effectValue", "description": "護甲等級加值。" },
         "saves": { "$ref": "#/definitions/effectValue", "description": "豁免加值。" },
-        "condition": { "enum": ["unarmored", "held"], "description": "ac／saves 的生效條件。unarmored：未穿戴護甲且未使用盾牌；held：手持這件物品。" }
+        "spellAttack": { "$ref": "#/definitions/effectValue", "description": "法術攻擊檢定加值。" },
+        "spellSaveDc": { "$ref": "#/definitions/effectValue", "description": "法術豁免 DC 加值。" },
+        "condition": { "enum": ["unarmored", "held"], "description": "ac／saves／spellAttack／spellSaveDc 的生效條件。unarmored：未穿戴護甲且未使用盾牌；held：手持這件物品。" }
       }
     },
     "base": {

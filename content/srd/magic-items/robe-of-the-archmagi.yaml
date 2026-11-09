@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: legendary
 attunement: "由術士、契術師或法師"
+effects: { spellAttack: 2, spellSaveDc: 2 }
 manualEffect: true
 text: |-
   這件優雅的衣物以精緻的布料製成，並裝飾著符文。

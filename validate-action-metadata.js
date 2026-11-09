@@ -1298,6 +1298,42 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.equal(await page.inputValue("#ac-display"), "30", "manual AC stays manual");
     await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
 
+    // 施法數字（法師 5 級，智力 16：DC 14、命中 +6）：法杖要裝備在手上，魔杖、法袍同調就算；跟著所選的施法屬性重算。
+    const caster = { ...magicBase, class: "wizard", level: "5", int: "16", cha: "12", "spellcasting-ability": "int", mainHand: "", offHand: "", armor: "", "spell-save-dc": "14", "spell-attack-bonus": "+6" };
+    const spellNumbers = extra => page.evaluate(([caster, extra]) => {
+      applyStateObject({ ...caster, ...extra });
+      return [document.getElementById("spell-save-dc").value, document.getElementById("spell-attack-bonus").value];
+    }, [caster, extra]);
+    const spellFields = () => page.evaluate(() => [document.getElementById("spell-save-dc").value, document.getElementById("spell-attack-bonus").value]);
+    const wand = { uid: "wand", quantity: 1, magic: { id: "wand-of-the-war-mage-plus", bonus: 2 } };
+    const robe = { uid: "robe", quantity: 1, attuned: true, magic: { id: "robe-of-the-archmagi" } };
+    const heldStaff = id => ({ uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id } });
+    assert.deepEqual(await spellNumbers(inventoryOf(wand)), ["14", "+6"], "an unattuned wand adds nothing");
+    assert.deepEqual(await spellNumbers(inventoryOf({ ...wand, attuned: true })), ["14", "+8"], "an attuned wand counts without being equipped and only raises spell attacks");
+    await page.evaluate(value => { const select = document.getElementById("spellcasting-ability"); select.value = value; select.dispatchEvent(new Event("change", { bubbles: true })); }, "cha");
+    assert.deepEqual(await spellFields(), ["12", "+6"], "the bonus follows the selected spellcasting ability");
+    await page.evaluate(value => { const select = document.getElementById("spellcasting-ability"); select.value = value; select.dispatchEvent(new Event("change", { bubbles: true })); }, "int");
+    await page.evaluate(() => Inventory.setAttuned("wand", false));
+    await page.waitForFunction(() => document.getElementById("spell-attack-bonus").value === "+6");
+    await page.evaluate(() => Inventory.setAttuned("wand", true));
+    await page.waitForFunction(() => document.getElementById("spell-attack-bonus").value === "+8");
+    assert.deepEqual(await spellNumbers(inventoryOf(robe)), ["16", "+8"], "the robe raises both the save DC and spell attacks");
+    assert.deepEqual(await spellNumbers(inventoryOf({ ...wand, attuned: true }, robe)), ["16", "+10"], "different items stack");
+    for (const [name, id] of [["威力法杖", "staff-of-power"], ["叢林法杖", "staff-of-the-woodlands"], ["賢者法杖", "staff-of-the-magi"]]) {
+      assert.deepEqual(await spellNumbers(inventoryOf(heldStaff(id))), ["14", "+6"], `${name} does nothing in the pack`);
+      assert.deepEqual(await spellNumbers({ mainHand: name, ...inventoryOf(heldStaff(id)) }), ["14", "+8"], `${name} counts once held`);
+    }
+    assert.match(await page.locator("#equipment-loadout-summary-content").evaluate(element => element.textContent), /賢者法杖\s*法術命中\+2/u, "the loadout summary explains the bonus");
+    assert.deepEqual(await spellNumbers({ "spell-save-dc": "19", "spell-attack-bonus": "+9", ...inventoryOf({ uid: "plain", itemId: "長棍", quantity: 1 }) }), ["19", "+9"], "a character without magic bonuses keeps its saved numbers after a magic character");
+    await spellNumbers(inventoryOf({ ...wand, attuned: true }));
+    await page.evaluate(() => {
+      document.getElementById("auto-calculate-key-stats-toggle").checked = false;
+      document.getElementById("spell-attack-bonus").value = "+30";
+      Inventory.setAttuned("wand", false);
+    });
+    assert.deepEqual(await spellFields(), ["14", "+30"], "manual spell numbers stay manual");
+    await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
+
     // 刃之魔契：不再熟練全部軍用武器，只有標記為契約武器的那一把熟練、可用魅力；同時只有一把。
     // 傷害類型（預設黯蝕）存在 pactWeaponDamageType，裝備摘要視窗、刃之魔契卡片與跑團動作的下拉都是它的鏡像。
     const pactState = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "warlock", level: "3", str: "10", dex: "12", cha: "16", mainHand: "長劍", offHand: "", offHandAsMain: false, armor: "", pactWeaponDamageType: "",

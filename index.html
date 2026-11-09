@@ -138,7 +138,7 @@
   <script src="spell-list.js?v=20261107-companion-variant" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
-  <script src="character-rules.js?v=20261109-magic-defender" defer></script>
+  <script src="character-rules.js?v=20261109-magic-spell" defer></script>
   <script src="app-dialog.js?v=20261107-share-link" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
@@ -1332,7 +1332,7 @@
     </div>
     <div class="spell-casting-field">
       <div class="stat-label">豁免難度</div>
-      <input type="number" id="spell-save-dc" inputmode="numeric" aria-label="豁免難度" min="0" max="20" placeholder="">
+      <input type="number" id="spell-save-dc" inputmode="numeric" aria-label="豁免難度" min="0" max="30" placeholder="">
     </div>
     <div class="spell-casting-field">
       <div class="stat-label">命中加值</div>
@@ -1540,6 +1540,7 @@ function refreshAutomaticKeyStats() {
   updateAutomaticInitiative();
   updateSpeedDisplay();
   updatePassivePerceptionDisplay();
+  refreshMagicSpellCastingStats();
 }
 
 function syncAutomaticKeyStatsMode({ refresh = true } = {}) {
@@ -3170,11 +3171,21 @@ function updateSpellCastingStats() {
     const mod = getModifier(ability);
     const pb = getProficiencyBonus();
 
+    // 魔法物品的加值只在自動計算開啟時算進去，關閉時比照 AC，玩家自己填的數字不動。
+    const magic = isAutomaticKeyStatsEnabled() ? getActiveMagicEffects() : { spellAttack: 0, spellSaveDc: 0 };
+
     adjustmentInput.value = formatSignedValue(mod);
-    saveDcInput.value = String(8 + pb + mod);
-    attackInput.value = formatSignedValue(mod + pb);
+    saveDcInput.value = String(8 + pb + mod + magic.spellSaveDc);
+    attackInput.value = formatSignedValue(mod + pb + magic.spellAttack);
   }
   if (typeof populateHandAttacks === "function") populateHandAttacks();
+}
+
+// 載入存檔與開啟自動計算時：有魔法加值才重算，沒有魔法物品的角色維持存檔裡的數字。
+function refreshMagicSpellCastingStats() {
+  if (!isAutomaticKeyStatsEnabled()) return;
+  const magic = getActiveMagicEffects();
+  if (magic.spellAttack || magic.spellSaveDc) updateSpellCastingStats();
 }
 
 function bindSpellCastingStatsEvents() {
@@ -4494,7 +4505,8 @@ function updateEquipmentLoadoutSummary() {
     isOffHandAlternateMain() && isEffectiveEquippedShield() && buildEquipmentSummaryRow("盾牌", getMain2ShieldLabel(), shieldDetails()),
     armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warningKey: armorWarning }),
     magic.sources.length && buildEquipmentSummaryRow("魔法物品", "魔法物品", magic.sources.map(source => [
-      source.label, source.ac ? `AC${formatSigned(source.ac)}` : "", source.saves ? `豁免${formatSigned(source.saves)}` : ""
+      source.label, source.ac ? `AC${formatSigned(source.ac)}` : "", source.saves ? `豁免${formatSigned(source.saves)}` : "",
+      source.spellAttack ? `法術命中${formatSigned(source.spellAttack)}` : "", source.spellSaveDc ? `法術DC${formatSigned(source.spellSaveDc)}` : ""
     ].filter(Boolean).join(" ")))
   ].filter(Boolean);
   // 摘要重建時保留傷害按鈕的焦點（選擇視窗關閉後回到同一手的按鈕）。
@@ -5764,6 +5776,7 @@ function applyStateObjectNow(data) {
   syncMain2ShieldControl({ legalize: true });
   // 物品的裝備位置不進存檔：裝備欄位都還原後才重新對應（舊資料也從這裡把已裝備的物品拿出來）。
   window.InventoryUI?.syncEquippedSlots({ restoring: true });
+  refreshMagicSpellCastingStats();
   updateACDisplay();
   updateSpeedDisplay();
   updateClassFeatureChoiceReminder();
@@ -6808,7 +6821,9 @@ window.addEventListener("DOMContentLoaded", async function() {
     if (magicKey === activeMagicEffectsKey && event.detail?.reason !== "form") return;
     activeMagicEffectsKey = magicKey;
     updateACDisplay();
-    populateHandAttacks();
+    // 載入存檔時由 applyStateObjectNow 最後算一次；這裡算會用到還沒還原完的欄位。
+    if (isAutomaticKeyStatsEnabled() && !characterStateLoadDepth) updateSpellCastingStats();
+    else populateHandAttacks();
     refreshDerivedChecks();
   });
   // 裝備選擇改變時，物品跟著從物品欄拿出或放回；還原存檔時由 applyStateObjectNow 最後核對一次。

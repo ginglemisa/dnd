@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: legendary
 attunement: 由牧師或聖騎士
+effects: { spellAttack: 2 }
 manualEffect: true
 text: |-
   這個護符是善良的強大象徵。觸碰護符的邪魔或不死生物會受到8d6光耀傷害，且每次在其回合結束時仍握著或攜帶護符，就再次受到該傷害。

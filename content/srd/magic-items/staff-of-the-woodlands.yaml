@@ -7,7 +7,7 @@ category: staff
 rarity: rare
 attunement: 由德魯伊
 base: { fixed: 長棍 }
-effects: { attack: 2, damage: 2 }
+effects: { attack: 2, damage: 2, spellAttack: 2, condition: held }
 text: |-
   這根法杖有6次充能，可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+2加值。手持它時，你的法術攻擊檢定獲得+2加值。
 

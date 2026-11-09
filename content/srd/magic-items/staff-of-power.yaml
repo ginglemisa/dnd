@@ -7,7 +7,7 @@ category: staff
 rarity: very-rare
 attunement: "由術士、契術師或法師"
 base: { fixed: 長棍 }
-effects: { attack: 2, damage: 2, ac: 2, saves: 2, condition: held }
+effects: { attack: 2, damage: 2, ac: 2, saves: 2, spellAttack: 2, condition: held }
 text: |-
   這根法杖有20次充能，可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+2加值。手持它時，你的AC、豁免與法術攻擊檢定獲得+2加值。
 

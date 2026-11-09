@@ -65,7 +65,7 @@ function checkEffects(effects, at, { bonusOption, allowCondition }, errors) {
   if (!values.length) errors.push(`${at}：effects 沒有數值`);
   if (values.some(([, value]) => value === "bonus") && !bonusOption) errors.push(`${at}：effects 用 bonus 須有 bonus 選項`);
   if (effects.condition && !allowCondition) errors.push(`${at}：選項的 effects 不可寫 condition`);
-  if (effects.condition && effects.ac === undefined && effects.saves === undefined) errors.push(`${at}：effects.condition 只適用 ac、saves`);
+  if (effects.condition && ["ac", "saves", "spellAttack", "spellSaveDc"].every(key => effects[key] === undefined)) errors.push(`${at}：effects.condition 只適用 ac、saves、spellAttack、spellSaveDc`);
 }
 
 function checkOptions(item, at, damageLabels, errors) {

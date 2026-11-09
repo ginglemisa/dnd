@@ -698,7 +698,7 @@ text: |-
 | `attunement` | `false`、`true`，或限定條件文字（以「由」開頭，例如「由法師」，顯示為「需由法師同調」）。 |
 | `base` | 基本款，擇一：`{ fixed: 長劍 }`（固定一種）、`{ from: [長弓, 短弓] }`（列出品名）、`{ any: [melee-weapon], label: 任意近戰武器 }`（裝備分類：`simple-weapon`、`martial-weapon`、`melee-weapon`、`light-armor`、`medium-armor`、`heavy-armor`、`ammunition`；可加 `except` 排除品名）。品名須對得上 `equipment-data.js`。武器與護甲必寫，法杖、權杖可寫（可當作長棍或硬頭錘揮舞時），其他類別不寫。 |
 | `options` | 取得時要選的項目：`[{ id, label, choices: [{ value, label, ... }] }]`。`id` 與 `value` 會寫進物品欄存檔的 `magic` 物件，不可改名（列在基準檔），`id` 不可用 `id`、`base`。`id: bonus` 是 +N 加值，`id: damageType` 的值須是法術的傷害類型 ID。`choices` 可寫 `rarity`、`effects`（選了才有的固定數值，不可寫 `condition`）、`heal`（治療藥水骰式，例如 `4d4 + 4`）、`score`（巨人之力的力量值）、`saveDc`／`attackBonus`（法術卷軸）、`omitInName: true`（顯示名稱不加這個選項）。 |
-| `effects` | 只放角色卡會自動計算的恆定固定數值：`attack`、`damage`（武器攻擊與傷害）、`ac`、`saves`；值是正整數，或 `bonus`（取自 `bonus` 選項）。`condition` 是 `ac`／`saves` 的生效條件：`unarmored`（未穿戴護甲且未使用盾牌）、`held`（手持這件物品）。對特定目標才有的加值、只對遠程的 AC、可轉移的加值等條件式效果不寫，留在說明文字。 |
+| `effects` | 只放角色卡會自動計算的恆定固定數值：`attack`、`damage`（武器攻擊與傷害）、`ac`、`saves`、`spellAttack`（法術攻擊）、`spellSaveDc`（法術豁免 DC）；值是正整數，或 `bonus`（取自 `bonus` 選項）。`condition` 是 `ac`／`saves`／`spellAttack`／`spellSaveDc` 的生效條件：`unarmored`（未穿戴護甲且未使用盾牌）、`held`（手持這件物品）。對特定目標才有的加值、只對遠程的 AC、可轉移的加值等條件式效果不寫，留在說明文字。 |
 | `displayName` | 選定後的顯示名稱樣板，`{base}` 為基本款、`{選項 id}` 為該選項的 `label`，例如 `"{base}{bonus}"`。省略時為「名稱（可選的基本款、選項）」，例如「治療藥水（高等）」「焰舌（長劍）」；固定基本款不列入。 |
 | `consumable` | `true`：用掉就減 1（藥水、卷軸、彈藥、粉、珠等）。 |
 | `forms` | 可切換的形態（王者權杖）：`[{ id, label, base?, noEffects? }]`，物品視窗有「目前形態」下拉，存在這一筆的 `magic.form`（第一個是原本形態，不寫進存檔），`id` 列在基準檔。`base` 是這個形態當作哪一件武器；省略時沿用物品的基本款。`noEffects: true` 表示沒有物品的固定加值。裝備欄位的值不隨形態改變。只用於固定基本款的物品。 |

@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: legendary
 attunement: true
+effects: { spellAttack: 2 }
 manualEffect: true
 text: |-
   這件物品象徵不知悔改的邪惡。不是邪魔也不是不死生物的生物接觸護符時，受到8d6黯蝕傷害，之後每次在其握著或攜帶護符的情況下結束回合時，再次受到同樣的傷害。

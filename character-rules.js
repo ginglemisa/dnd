@@ -721,7 +721,8 @@
    * - ac.armor、ac.shield：魔法護甲穿著、魔法盾牌持用中才算（盾牌訓練等既有條件由呼叫端判斷）；ac.other 是戒指、斗篷等其他物品。
    * - saves：持有就算，武器也一樣（吉兆之刃不必手持）。
    * - condition held 要裝備在手上，unarmored 要沒穿護甲且沒用盾牌。
-   * - sources：不靠裝備位置的加值來源 [{ label, ac, saves }]，裝備摘要顯示用。
+   * - spellAttack、spellSaveDc：法術攻擊與法術豁免 DC 加值，條件同 saves（持有且同調；held 要裝備在手上）。
+   * - sources：不靠裝備位置的加值來源 [{ label, ac, saves, spellAttack, spellSaveDc }]，裝備摘要顯示用。
    * context 可傳 { wearingArmor, usingShield }，省略時讀目前的裝備欄位。
    */
   function getActiveMagicEffects(context = readMagicEffectContext()) {
@@ -729,6 +730,8 @@
       hands: { mainHand: { attack: 0, damage: 0, label: "" }, offHand: { attack: 0, damage: 0, label: "" } },
       ac: { armor: 0, shield: 0, other: 0 },
       saves: 0,
+      spellAttack: 0,
+      spellSaveDc: 0,
       sources: []
     };
     const catalog = globalScope.MagicItemCatalog;
@@ -752,7 +755,7 @@
         hand.damage += effects.damage || 0;
         hand.label = inventory.getLabel(entry);
       }
-      const source = { label: inventory.getLabel(entry), ac: transferred, saves: effects.saves || 0 };
+      const source = { label: inventory.getLabel(entry), ac: transferred, saves: effects.saves || 0, spellAttack: effects.spellAttack || 0, spellSaveDc: effects.spellSaveDc || 0 };
       result.ac.other += transferred;
       if (effects.ac) {
         const kind = inventory.getCatalogItem(entry.itemId)?.kind;
@@ -763,7 +766,9 @@
         else if (kind === "shield" && (entry.slot === "offHand" || entry.slot === "shield")) result.ac.shield += effects.ac;
       }
       result.saves += source.saves;
-      if (source.ac || source.saves) result.sources.push(source);
+      result.spellAttack += source.spellAttack;
+      result.spellSaveDc += source.spellSaveDc;
+      if (source.ac || source.saves || source.spellAttack || source.spellSaveDc) result.sources.push(source);
     });
     return result;
   }
