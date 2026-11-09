@@ -109,7 +109,7 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-shop-category-row">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-item-actions">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/utility.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/dice.css?v=20261109-tour-point-buy-focus">
@@ -145,7 +145,7 @@
   <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
   <script src="tabletop-actions.js?v=20261108-wild-shape-savage" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
-  <script src="tabletop-spells.js?v=20261108-companion-timing" defer></script>
+  <script src="tabletop-spells.js?v=20261109-item-actions" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261109-tour-point-buy-focus" defer></script>
   <script src="quick-build.js?v=20261108-css-refactor-b7" defer></script>
@@ -1439,7 +1439,7 @@
 
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261105-feat-categories"></script>
-  <script src="spell-sources.js?v=20261105-feat-categories"></script>
+  <script src="spell-sources.js?v=20261109-item-actions"></script>
   <script src="class-features-ui.js?v=20261106-background-skills"></script>
   <script>
 function openCarryCapacityRules(trigger) {
@@ -3115,11 +3115,11 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   globalThis.armors = globalThis.armors || [];
   globalThis.shield = globalThis.shield || [];
 </script>
-<script src="equipment-data.js?v=20261109-trap-pouch" defer></script>
+<script src="equipment-data.js?v=20261109-item-actions" defer></script>
 <script src="search.js?v=20261108-css-split" defer></script>
-<script src="equipment-shop.js?v=20261109-trap-pouch" defer></script>
-<script src="inventory.js?v=20261109-trap-pouch" defer></script>
-<script src="inventory-ui.js?v=20261109-first-load" defer></script>
+<script src="equipment-shop.js?v=20261109-item-actions" defer></script>
+<script src="inventory.js?v=20261109-item-actions" defer></script>
+<script src="inventory-ui.js?v=20261109-item-actions" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -4918,14 +4918,14 @@ function assertCharacterDataCount(value, maximum) {
 
 // 物品欄（inventory.js）的匯入預檢：版本 1、至多 300 筆，每筆只有約定欄位且型別正確；細部清理由 Inventory.restore() 負責。
 const INVENTORY_KEYS = new Set(["version", "textOnly", "items"]);
-const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses"]);
+const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses", "spellId"]);
 function isValidInventoryState(value) {
   if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1 || !Array.isArray(value.items)) return false;
   if (!Object.keys(value).every(key => INVENTORY_KEYS.has(key)) || (value.textOnly !== undefined && typeof value.textOnly !== "boolean")) return false;
   if (value.items.length > 300) return false;
   return value.items.every(entry => entry && typeof entry === "object" && !Array.isArray(entry)
     && Object.keys(entry).every(key => INVENTORY_ENTRY_KEYS.has(key))
-    && ["uid", "itemId", "name", "in", "source"].every(key => entry[key] === undefined || (typeof entry[key] === "string" && entry[key].length <= 64))
+    && ["uid", "itemId", "name", "in", "source", "spellId"].every(key => entry[key] === undefined || (typeof entry[key] === "string" && entry[key].length <= 64))
     && Number.isInteger(entry.quantity) && entry.quantity >= 1 && entry.quantity <= 9999
     && (entry.weight === undefined || (typeof entry.weight === "number" && Number.isFinite(entry.weight) && entry.weight >= 0 && entry.weight <= 9999))
     && (entry.container === undefined || typeof entry.container === "boolean")
@@ -6580,11 +6580,11 @@ function setupMoneyTracker() {
     .map(({ label, quantity }) => (quantity === 1 ? label : `${label} ×${quantity}`))
     .join("、");
   // 彈藥依每份數量換成單發，套組由 Inventory 拆成容器與內容物，法術卷軸保留「法術名稱法術卷軸」當名稱。
-  const toInventoryRequests = (items) => items.map(({ label, gearName, quantity }) => {
+  const toInventoryRequests = (items) => items.map(({ label, gearName, spellId, quantity }) => {
     const catalogItem = window.Inventory?.getCatalogItem(label);
     if (catalogItem) return { itemId: label, quantity: quantity * (catalogItem.bundle || 1) };
     const name = gearName || label;
-    return name.endsWith("法術卷軸") && window.Inventory?.getCatalogItem("法術卷軸") ? { itemId: "法術卷軸", name, quantity } : { name, quantity };
+    return name.endsWith("法術卷軸") && window.Inventory?.getCatalogItem("法術卷軸") ? { itemId: "法術卷軸", name, ...(spellId ? { spellId } : {}), quantity } : { name, quantity };
   });
   const purchaseItems = async (requestedItems, { free = false } = {}) => {
     const items = (Array.isArray(requestedItems) ? requestedItems : []).map((item) => {
@@ -6595,7 +6595,8 @@ function setupMoneyTracker() {
       if (!label || !currencyId || !Number.isSafeInteger(amount) || amount < 1
         || !Number.isInteger(quantity) || quantity < 1 || quantity > 999) return null;
       const gearName = String(item.gearName || "").trim();
-      return { label, gearName, quantity, currencyId, total: amount * quantity };
+      const spellId = String(item.spellId || "").trim();
+      return { label, gearName, spellId, quantity, currencyId, total: amount * quantity };
     });
     if (!items.length || items.includes(null) || !window.Inventory) return false;
     const textOnly = window.Inventory.isTextOnly();

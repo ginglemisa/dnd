@@ -4,9 +4,9 @@
  * - 掛在攜帶物品區的 #inventory-panel 與標題列的 #inventory-heading-tools（跑團模式時隨攜帶物品文字框一起搬移，見 tabletop-mode.js）。
  * - 標籤：[匕首 ×2]；容器標籤可展開，內容物排在下一層。點標籤開啟 `inventory-item` 視窗：目錄物品先顯示與商店相同的說明
  *   （search.js 的 renderEquipmentDetailInto()），下方「持有」區調整數量、位置或刪除。
- *   持有區標題行下方是互動列（buildItemActions()，資料取自 equipment-data.js 的 EQUIPMENT_ITEM_ACTIONS）：武器／護甲／盾牌的裝備與卸除
- *   （寫回裝備頁下拉，按下後視窗立即關閉）、工具與撬棍的檢定、醫療包的使用次數、治療藥水飲用回復生命值、投擲物與毒藥；檢定與傷害骰只在擲骰功能開啟時顯示。
- *   至少 2 件的物品在互動列最後一行多一顆「拆分」（沒有互動列時自成一行），開 `inventory-split` 視窗輸入兩堆的數量；拆開後是兩個獨立標籤。
+ *   持有區標題行下方是互動列（buildItemActions()，資料取自 equipment-data.js 的 EQUIPMENT_ITEM_ACTIONS）：武器／護甲／盾牌的裝備、換手與卸除
+ *   （寫回裝備頁下拉，按下後視窗立即關閉）、工具與撬棍的檢定、醫療包的使用次數、治療藥水飲用回復生命值、投擲物、毒藥與法術卷軸的施法；檢定骰只在擲骰功能開啟時顯示。
+ *   互動列的按鈕在左欄、與下方數量框同寬，說明在右欄。至少 2 件的物品在數量框與位置選單之間有「拆分」，開 `inventory-split` 視窗輸入兩堆的數量；拆開後是兩個獨立標籤。
  * - 裝備：物品經 Inventory.syncEquipped() 從物品欄拿 1 件出來，成為固定 ×1、排在「裝備中」的標籤（entry.slot）；角色卡的裝備選擇是唯一依據，
  *   index.html 在選擇改變與還原存檔後呼叫 syncEquippedSlots()。從標籤的「裝備」按鈕拿那個標籤，從下拉則由 Inventory 依規則找。卸除後在身上成為獨立的 ×1 標籤。
  *   目錄物品由商店（equipment-shop.js）購買或免費取得；這裡只建立自訂物品（`inventory-custom` 視窗，名稱、磅數、數量、位置、描述）。
@@ -416,6 +416,42 @@
     return used;
   }
 
+  // 法術卷軸：說明列出能否閱讀的原因；不符合時按鈕反灰。確認施法後才用掉卷軸，物品視窗關閉，焦點回到標籤（用完時回到物品欄）。
+  function scrollAccessText(access, spell, scroll) {
+    const effect = `豁免 DC ${scroll.saveDc}・攻擊 ${signed(scroll.attackBonus)}，施法後卷軸消失。`;
+    if (access.reason === "manual") return `手動管理法術，請自行確認能否使用。${effect}`;
+    if (access.reason === "source") return `${spell.level === 0 ? "你已學會這個戲法" : "你始終準備這個法術"}，來自${access.label}。${effect}`;
+    if (access.reason === "class") return effect;
+    return `不在你的職業法術清單上，也不是你${spell.level === 0 ? "學會的戲法" : "始終準備的法術"}。`;
+  }
+
+  function buildScrollRow(entry, scroll, ctx) {
+    const spellId = api().getScrollSpellId(entry);
+    const spell = spellId ? globalScope.SpellCatalog?.getSpell(spellId) : null;
+    if (!spell) return null;
+    const label = api().getLabel(entry);
+    const access = globalScope.getSpellScrollAccess?.(spellId) || { allowed: false, reason: "" };
+    const cast = actionButton("施法", (control) => {
+      globalScope.TabletopSpells?.castSpellScroll?.(spellId, {
+        scroll,
+        trigger: control,
+        commit() {
+          const used = api().consume(entry.uid);
+          if (!used) return null;
+          ctx.close();
+          return document.querySelector(`[data-inventory-uid="${entry.uid}"]`) || fallbackFocusTarget();
+        }
+      });
+    }, `施展${label}`);
+    cast.disabled = !access.allowed;
+    const row = actionRow(scrollAccessText(access, spell, scroll), cast);
+    const link = button("inventory-spell-link", spell.nameZh);
+    link.setAttribute("aria-label", `查看${spell.nameZh}的法術內容`);
+    link.addEventListener("click", () => globalScope.TabletopSpells?.showSpellDetail?.(spellId, link));
+    row.querySelector(".inventory-action-row__text").prepend(link, "｜");
+    return row;
+  }
+
   function actionButton(text, onClick, ariaLabel = "") {
     const control = button("inventory-action-button", text);
     if (ariaLabel) control.setAttribute("aria-label", ariaLabel);
@@ -436,7 +472,7 @@
   }
 
   /**
-   * 持有區的互動列：裝備／卸除、檢定、使用次數、飲用、投擲與塗抹。ctx.afterUse(result) 在數量或次數改變後同步視窗，ctx.close() 在裝備或卸除時關閉視窗。
+   * 持有區的互動列：裝備／換手／卸除、檢定、使用次數、飲用、投擲、塗抹與卷軸施法。ctx.afterUse(result) 在數量或次數改變後同步視窗，ctx.close() 在裝備或卸除時關閉視窗。
    * 檢定與傷害骰只在擲骰功能開啟時顯示。回傳 null 表示這件物品沒有互動。
    */
   function buildItemActions(entry, ctx) {
@@ -447,11 +483,13 @@
     const rows = [];
     const key = usageKey(entry);
     if (key) {
-      const equip = actionButton("裝備", (control) => {
+      // 已裝備的武器再按一次是換手或拿第二把。
+      const equipText = entry.slot ? "換手" : "裝備";
+      const equip = actionButton(equipText, (control) => {
         if (key === "shield") equipShield(control, entry.uid, ctx.close);
         else if (key.startsWith("armor:")) equipArmor(item.id, control, entry.uid, ctx.close);
         else openEquipWeaponDialog(entry, control, ctx.close);
-      }, `裝備${label}`);
+      }, `${equipText}${label}`);
       // 武器已裝備時仍可換手或拿第二把；同一件護甲或盾牌已穿戴時不再裝備。
       const showEquip = key.startsWith("weapon:") || !equippedUsage().get(key);
       const remove = entry.slot ? actionButton("卸除", () => {
@@ -505,30 +543,16 @@
         globalScope.AppDialog.notify(`已塗抹${label}，${used.removed ? `${label}已用完` : quantityText(entry, used.quantity)}。`, { tone: "info" });
         ctx.afterUse(used);
       }, `塗抹${label}`);
-      const damage = diceEnabled()
-        ? actionButton(`${actions.coating.damageType}傷害 ${actions.coating.damage}`, () => {
-          globalScope.DiceRoller?.rollExpression?.(actions.coating.damage, { label: `${label}${actions.coating.damageType}傷害` });
-        }, `擲${label}的${actions.coating.damageType}傷害`)
-        : null;
-      rows.push(actionRow(`命中時額外 ${actions.coating.damage} ${actions.coating.damageType}傷害。`, coat, damage));
+      rows.push(actionRow(`命中時額外 ${actions.coating.damage} ${actions.coating.damageType}傷害。`, coat));
+    }
+    if (actions.scroll) {
+      const scrollRow = buildScrollRow(entry, actions.scroll, ctx);
+      if (scrollRow) rows.push(scrollRow);
     }
     if (!rows.length) return null;
     const section = el("div", "inventory-item-actions");
     section.append(...rows);
     return section;
-  }
-
-  // 「拆分」放在互動列最後一行的右邊，沒有互動列時自成一行。
-  function withSplitAction(section, entry, onSplit) {
-    if (!api().canSplit(entry)) return section;
-    const label = api().getLabel(entry);
-    const control = actionButton("拆分", trigger => openSplitDialog(entry.uid, trigger, onSplit), `拆分${label}`);
-    control.classList.add("inventory-action-split");
-    const result = section || el("div", "inventory-item-actions");
-    const buttons = [...result.querySelectorAll(".inventory-action-row__buttons")].pop();
-    if (buttons) buttons.appendChild(control);
-    else result.appendChild(actionRow("", control));
-    return result;
   }
 
   async function openSplitDialog(uid, trigger, onSplit) {
@@ -785,9 +809,10 @@
           syncWeight(current);
           // 裝備中的物品固定 1 件，沒有數量與位置；其他時候數量真的變了才改輸入框，保留玩家還沒按「完成」的輸入。
           if (controls) controls.row.hidden = Boolean(current.slot);
+          if (controls?.split) controls.split.hidden = !api().canSplit(current);
           if (controls && current.quantity !== shownQuantity) controls.stepper.input.value = String(current.quantity);
           shownQuantity = current.quantity;
-          const next = withSplitAction(buildItemActions(current, {
+          const next = buildItemActions(current, {
             afterUse(used) {
               if (used.removed) {
                 dialog.close("removed");
@@ -796,7 +821,7 @@
               refreshActions();
             },
             close: () => dialog.close("equipment")
-          }), current, () => dialog.close("split"));
+          });
           // 重建前焦點在互動列時，改到新互動列的同一顆按鈕（不在了就是第一顆）。
           const focused = actionsSection?.contains(document.activeElement) ? document.activeElement.getAttribute("aria-label") : null;
           if (next) {
@@ -830,12 +855,22 @@
         if (api().isContainer(entry)) stepper.wrap.hidden = true;
         else row.appendChild(labelled("數量", stepper.wrap));
         const location = buildLocationSelect(uid, entry.in);
-        row.appendChild(labelled("位置", location));
+        // 「拆分」排在數量框與位置選單之間；容器不能拆分，也沒有數量框。
+        const place = el("div", "inventory-holding__place");
+        let split = null;
+        if (!api().isContainer(entry)) {
+          split = actionButton("拆分", control => openSplitDialog(uid, control, () => dialog.close("split")), `拆分${api().getLabel(entry)}`);
+          split.classList.add("inventory-action-split");
+          split.hidden = !api().canSplit(entry);
+          place.appendChild(split);
+        }
+        place.appendChild(labelled("位置", location));
+        row.appendChild(place);
         holding.appendChild(row);
         row.hidden = Boolean(entry.slot);
         if (fields) holding.append(fields.desc, fields.toggleLabel);
         body.appendChild(holding);
-        controls = { stepper, location, row, ...fields };
+        controls = { stepper, location, row, split, ...fields };
       },
       actions: [
         { label: "刪除", intent: "danger", resolve: async () => (await removeEntry(api().getEntry(uid) || entry, trigger)) ? "removed" : false },

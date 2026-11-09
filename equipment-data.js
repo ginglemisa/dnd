@@ -115,5 +115,6 @@ globalThis.EQUIPMENT_ITEM_ACTIONS = Object.freeze(Object.fromEntries(Object.entr
   "強酸": { thrown: { damage: "2d6", damageType: "強酸" } },
   "煉金火焰": { thrown: { damage: "1d4", damageType: "火焰", note: "並開始燃燒" } },
   "聖水": { thrown: { damage: "2d8", damageType: "光耀", note: "只對邪魔或不死生物" } },
-  "基礎毒藥": { coating: { damage: "1d4", damageType: "毒素" } }
+  "基礎毒藥": { coating: { damage: "1d4", damageType: "毒素" } },
+  "法術卷軸": { scroll: { saveDc: 13, attackBonus: 5 } }
 }).map(([name, actions]) => [name, Object.freeze(Object.fromEntries(Object.entries(actions).map(([key, value]) => [key, typeof value === "object" ? Object.freeze(value) : value])))])));

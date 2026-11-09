@@ -4300,11 +4300,13 @@ async function verifyInventoryPersistence(browser, url) {
       { uid: "sword", itemId: "長劍", quantity: 1 }, { uid: "shield", itemId: "盾牌", quantity: 1 }, { uid: "mail", itemId: "鎖子甲", quantity: 1 },
       { uid: "pack", itemId: "背包", quantity: 1 }, { uid: "pouch", itemId: "小包", quantity: 1, in: "pack" },
       { uid: "gem", name: unsafeName, quantity: 3, weight: 0.5, desc: "<b>藍寶石</b>\n很亮", in: "pouch" }, { uid: "rope", itemId: "繩索", quantity: 2, in: "pack" },
-      { uid: "kit", itemId: "醫療包", quantity: 1, source: "initial" }
+      { uid: "kit", itemId: "醫療包", quantity: 1, source: "initial" },
+      { uid: "scroll", itemId: "法術卷軸", name: "命令術法術卷軸", quantity: 2, spellId: "command" }
     ] } };
   const snapshot = target => target.evaluate(() => ({
     inventory: Inventory.formatText(), entries: Inventory.getState().items.length, weight: Inventory.getWeight().weight,
     desc: Inventory.entries().find(entry => entry.uid === "gem")?.desc,
+    scrollSpell: Inventory.entries().find(entry => entry.uid === "scroll")?.spellId,
     slots: ["mainHand", "offHand", "armor"].map(id => document.getElementById(id).value), notes: document.getElementById("gear-notes").value,
     unsafe: Boolean(window.__inv) || Boolean(document.querySelector("#inventory-panel img"))
   }));
@@ -4313,15 +4315,16 @@ async function verifyInventoryPersistence(browser, url) {
     await page.waitForFunction(() => window.Inventory && window.InventoryUI);
     await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, state);
     const expected = await snapshot(page);
-    assert.equal(expected.inventory, `長劍、盾牌、鎖子甲、背包（小包（${unsafeName} ×3）、繩索 ×2）、醫療包`);
+    assert.equal(expected.inventory, `長劍、盾牌、鎖子甲、背包（小包（${unsafeName} ×3）、繩索 ×2）、醫療包、命令術法術卷軸 ×2`);
     assert.deepEqual(expected.slots, ["長劍", "盾牌", "鎖子甲"]);
     assert.equal(expected.desc, "<b>藍寶石</b>\n很亮", "custom item descriptions are kept as text");
+    assert.equal(expected.scrollSpell, "command", "scrolls keep their spell id");
     assert.equal(expected.unsafe, false, "custom item names render as text");
     await page.goto(url);
     assert.deepEqual(await snapshot(page), expected, "autosave restores the inventory and its equipped items");
 
     const exported = await page.evaluate(() => collectStateObject());
-    assert.equal(exported.__inventory.items.length, 8, "JSON export carries the inventory");
+    assert.equal(exported.__inventory.items.length, 9, "JSON export carries the inventory");
     const hash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
     const shared = await newUiPage(browser);
     try {
@@ -4624,6 +4627,7 @@ async function verifyCharacterDataSafety(browser, url) {
         { __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 0 }] } },
         { __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 1.5 }] } },
         { __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 1, onclick: "x" }] } },
+        { __inventory: { version: 1, items: [{ itemId: "法術卷軸", quantity: 1, spellId: 7 }] } },
         { __inventory: { version: 1, items: [{ quantity: 1 }] } },
         { __inventory: { version: 1, items: [{ name: "x".repeat(65), quantity: 1 }] } },
         { __inventory: { version: 1, textOnly: "yes", items: [] } }, { __inventory: { version: 1, extra: true, items: [] } },

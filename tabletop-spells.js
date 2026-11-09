@@ -458,14 +458,15 @@
     return row;
   }
 
-  async function requestCastConfiguration(entry, trigger, cantrip = false) {
+  // scroll（法術卷軸的 { saveDc, attackBonus }）時唯一的施法方式是卷軸：不耗法術位、不升環，確認後由呼叫端用掉卷軸。
+  async function requestCastConfiguration(entry, trigger, cantrip = false, scroll = null) {
     const metadata = globalScope.SpellCatalog.getCastMetadata(entry.spellId);
     const selectableTypes = globalScope.SpellCatalog.getSelectableCastDamageTypes(entry.spellId);
     const canRestoreOtherCreatureHitPoints = globalScope.SpellCatalog.hasCastOutcomeTag(
       entry.spellId,
       "can-restore-other-creature-hit-points"
     );
-    const blessedHealerEligible = canRestoreOtherCreatureHitPoints && Boolean(buildBlessedHealerRecovery({
+    const blessedHealerEligible = !scroll && canRestoreOtherCreatureHitPoints && Boolean(buildBlessedHealerRecovery({
       className: document.getElementById("class")?.value || "",
       characterLevel: getCharacterLevel(),
       castMethod: "slot",
@@ -477,9 +478,17 @@
     let restoresOtherCreatureHitPoints = blessedHealerEligible;
     const persistentEffect = globalScope.TabletopMode?.getPersistentSpellEffects?.().find(effect => effect.spellId === entry.spellId);
     let effectSelf = true;
+    const scrollNumbers = scroll ? `豁免 DC ${scroll.saveDc}・攻擊 +${scroll.attackBonus}` : "";
     let castOptions = cantrip
       ? null
-      : globalScope.TabletopMode?.getSpellCastOptions?.(entry);
+      : scroll
+        ? Object.freeze({
+          methods: Object.freeze([Object.freeze({ id: "scroll", label: `法術卷軸（${scrollNumbers}）`, effectiveLevel: entry.spell.level, resourceId: "", resourceLabel: `法術卷軸，${scrollNumbers}` })]),
+          slots: Object.freeze([]),
+          defaultMethod: "scroll",
+          defaultSlotLevel: 0
+        })
+        : globalScope.TabletopMode?.getSpellCastOptions?.(entry);
     let methodId = cantrip ? "cantrip" : castOptions?.defaultMethod || "";
     let slotLevel = castOptions?.defaultSlotLevel || entry.spell.level;
     let errorMessage = "";
@@ -657,6 +666,7 @@
       if (methodId === "free") resource = method?.resourceLabel || "免費施法次數";
       else if (methodId === "slot") resource = slot ? `${slot.level} 環法術位（剩餘 ${slot.available}）` : "沒有可用法術位";
       else if (methodId === "ritual") resource = `不消耗法術位；${metadata.ritualExtraTime}`;
+      else if (methodId === "scroll") resource = "1 張卷軸（施法後消失）";
       const upcast = effectiveLevel > entry.spell.level
         ? metadata.hasUpcastEffect ? "有升環效果" : "無額外升環效果"
         : "基礎環位";
@@ -744,6 +754,18 @@
           render();
           return false;
         }
+        if (scroll) return Object.freeze({
+          ok: true,
+          method: "scroll",
+          effectiveLevel: entry.spell.level,
+          resourceId: "",
+          resourceLabel: getMethod().resourceLabel,
+          hasUpcastEffect: true,
+          effectSelf: Boolean(persistentEffect) && effectSelf,
+          damageType,
+          restoresOtherCreatureHitPoints: false,
+          scroll
+        });
         const selection = {
           method: methodId,
           slotLevel: methodId === "slot" ? Number(slotLevel) : 0,
@@ -808,14 +830,17 @@
       const modifierText = outcome.modifierLabels.length
         ? `；已套用：${outcome.modifierLabels.join("、")}`
         : "";
+      const scrollText = castResult.scroll
+        ? `；法術卷軸：豁免 DC ${castResult.scroll.saveDc}・攻擊 +${castResult.scroll.attackBonus}`
+        : "";
       const result = Object.freeze({
         expression: outcome.expression,
         fixed: outcome.fixed,
         label: `${entry.spell.nameZh}｜${formatCastLevel(castResult.effectiveLevel)}｜${kindLabel}${typeLabel}${repeatLabel ? `｜${repeatLabel}` : ""}`,
-        detail: `${castResult.fiendishVigor ? "邪魔活力：2d4 視為 8；" : ""}${outcome.context || "依術文處理"}${modifierText}`
+        detail: `${castResult.fiendishVigor ? "邪魔活力：2d4 視為 8；" : ""}${outcome.context || "依術文處理"}${modifierText}${scrollText}`
       });
       if (outcome.attack !== "spell") return [result];
-      const attackBonus = parseModifier(getFieldValue("spell-attack-bonus"));
+      const attackBonus = castResult.scroll ? castResult.scroll.attackBonus : parseModifier(getFieldValue("spell-attack-bonus"));
       if (attackBonus === null) throw new Error("Missing spell attack bonus");
       return [Object.freeze({
         expression: `1d20${attackBonus < 0 ? "" : "+"}${attackBonus}`,
@@ -964,6 +989,23 @@
       return;
     }
     await completeCast(entry, castResult, trigger);
+  }
+
+  // 物品欄的法術卷軸施法：資格由呼叫端檢查。commit() 在玩家確認後用掉卷軸，回傳之後要還焦點的元素；用不掉時回傳 null，不施法。
+  async function castSpellScroll(spellId, { scroll, trigger = null, commit } = {}) {
+    if (globalScope.TabletopMode?.getDruidForm?.()) {
+      globalScope.AppDialog?.notify("荒野形態期間不能施法；卷軸未消耗。");
+      return false;
+    }
+    const spell = globalScope.SpellCatalog.getSpell(spellId);
+    if (!spell || !scroll || typeof commit !== "function") return false;
+    const entry = Object.freeze({ spellId, spell, sourceKey: `spell-scroll:${spellId}`, sourceLabel: "法術卷軸", spellClass: "" });
+    const castResult = await requestCastConfiguration(entry, trigger, false, scroll);
+    if (!castResult?.ok) return false;
+    const focusTarget = commit();
+    if (!focusTarget) return false;
+    await completeCast(entry, castResult, focusTarget);
+    return true;
   }
 
   async function showSpellDetail(entryOrSpellId, trigger) {
@@ -1304,6 +1346,7 @@
     getSelectedSpellEntries,
     isSpellCurrentlySelected,
     showSpellDetail,
+    castSpellScroll,
     createSpellDescriptionView,
     refresh: scheduleRender,
     logic: Object.freeze({

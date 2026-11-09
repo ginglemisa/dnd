@@ -1,11 +1,12 @@
 /**
  * 物品欄資料（傳統 defer script，無額外 runtime dependency）。
  *
- * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses? }] }。
+ * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses?, spellId? }] }。
  *   itemId 是裝備說明的品名（與 mainHand／商店相同的中文名稱）；name 是顯示名稱，自訂物品必填，目錄品項只在寫法不同時保留
  *   （例如「書籍（禱文）」）。weight（每件磅數）、container 與 desc（描述）只用於自訂物品；in 是所在容器的 uid；
  *   source "initial" 標記快速創角匯入的初始裝備，"equipped" 標記因主手／副手／護甲已裝備而補上的物品（整理成標籤時先抵掉，不重複）。
  *   uses 是有使用次數的目錄物品（EQUIPMENT_ITEM_ACTIONS 的 uses，例如醫療包）目前這件的剩餘次數；沒有這個欄位表示全新，同一筆的其餘件數都是全新的。
+ *   spellId 只用於法術卷軸（{ itemId: "法術卷軸", name: "X法術卷軸", spellId }），記載的法術；舊資料沒有這個欄位，讀取時依完整名稱對回法術（getScrollSpellId()）。
  * - 執行時的 slot 是這件物品正裝備在哪個位置（mainHand、offHand、armor、shield）：固定 1 件、在最外層，由 syncEquipped() 依角色卡的裝備選擇維護。
  *   裝備選擇已經存在角色欄位，slot 不寫進存檔（getState() 拿掉、restore() 不讀），載入後重新對應：裝備中那件存檔時是身上的 1 件，下拉規則會再拿回同樣的物品。
  *   同名物品可以有很多筆（拆分、商店購買、卸除都會新增一筆），各自獨立；只有玩家拖曳合併（merge()）才合成一筆，自訂物品不能合併。
@@ -36,6 +37,8 @@
   // 改過名的目錄品名：舊存檔（autosave、JSON、分享）裡的 itemId 讀進來時換成新品名。
   const RENAMED_ITEM_IDS = Object.freeze({ "長袍": "祭袍", "槲寄生樹枝": "槲寄生枝條", "狩獵陷阱": "捕獸夾" });
   const BOOK_PATTERN = /^(?:書籍|書本|書)（[^（）]+）$/u;
+  const SPELL_SCROLL_ID = "法術卷軸";
+  const SPELL_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/u;
   // 「多種」標題可當通稱品項（例如職業裝備只寫「聖徽」）；彈藥一律選具體品項。
   const GROUP_EXCLUDED = new Set(["彈藥"]);
 
@@ -121,6 +124,10 @@
     return max && Number.isInteger(value) && value >= 1 && value < max ? value : 0;
   }
 
+  function cleanSpellId(itemId, value) {
+    return itemId === SPELL_SCROLL_ID && typeof value === "string" && SPELL_ID_PATTERN.test(value) ? value : "";
+  }
+
   function clampQuantity(value) {
     const number = Math.floor(Number(value));
     if (!Number.isFinite(number) || number < 1) return 1;
@@ -171,6 +178,8 @@
     if (SOURCES.has(raw.source)) entry.source = raw.source;
     const uses = cleanUses(itemId, raw.uses);
     if (uses) entry.uses = uses;
+    const spellId = cleanSpellId(itemId, raw.spellId);
+    if (spellId) entry.spellId = spellId;
     return entry;
   }
 
@@ -274,6 +283,7 @@
     const alias = ALIASES[name];
     if (alias) return { itemId: alias.itemId };
     if (BOOK_PATTERN.test(name)) return { itemId: "書籍", name };
+    if (name.length > SPELL_SCROLL_ID.length && name.endsWith(SPELL_SCROLL_ID) && catalog().has(SPELL_SCROLL_ID)) return { itemId: SPELL_SCROLL_ID, name };
     return { name };
   }
 
@@ -345,6 +355,8 @@
       const quantity = clampQuantity(request.quantity ?? resolved.quantity ?? 1) * (request.text && request.quantity ? resolved.quantity : 1);
       const base = { itemId: resolved.itemId || "", name: resolved.name && resolved.name !== resolved.itemId ? resolved.name : "" };
       if (!base.itemId && !base.name) return;
+      const spellId = cleanSpellId(base.itemId, request.spellId);
+      if (spellId) base.spellId = spellId;
       const pack = getCatalogItem(base.itemId)?.pack || staticKinds().packs[base.itemId];
       if (pack && !base.name) {
         for (let index = 0; index < quantity; index += 1) {
@@ -374,6 +386,7 @@
     if (request.desc) entry.desc = request.desc;
     if (request.into) entry.in = request.into;
     if (request.source) entry.source = request.source;
+    if (request.spellId) entry.spellId = request.spellId;
     const containerUnits = isContainerEntry(entry) ? entry.quantity : 0;
     if (!containerUnits) {
       const stack = newStack ? null : largestOf(next.filter(item => sameStack(item, entry)));
@@ -589,6 +602,14 @@
     next.splice(index + 1, 0, part);
     commit(next, "split");
     return part.uid;
+  }
+
+  /** 法術卷軸記載的法術 ID；舊資料依完整名稱對回法術，對不到或不是卷軸時回傳空字串。 */
+  function getScrollSpellId(entry) {
+    if (entry?.itemId !== SPELL_SCROLL_ID) return "";
+    const catalogApi = globalScope.SpellCatalog;
+    if (entry.spellId) return catalogApi?.getSpell(entry.spellId) ? entry.spellId : "";
+    return catalogApi?.getAllSpells().find(spell => `${spell.nameZh}${SPELL_SCROLL_ID}` === entry.name)?.spellId || "";
   }
 
   /** 物品剩餘次數：{ left, max }（left 是目前這件的剩餘次數）；沒有使用次數的物品回傳 null。 */
@@ -823,6 +844,7 @@
     clear,
     getState,
     getUses,
+    getScrollSpellId,
     ensureEquipped,
     setTextOnly,
     isTextOnly: () => textOnly,
