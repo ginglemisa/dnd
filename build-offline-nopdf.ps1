@@ -5,7 +5,7 @@ $null = Get-Command node -ErrorAction Stop
 
 $root = $PSScriptRoot
 $sourceHtmlPath = Join-Path $root "index.html"
-$outputFileName = "twD20-offline.html"
+$outputFileName = "twd20.html"
 $outputHtmlPath = Join-Path $root $outputFileName
 
 function Read-SourceText {
@@ -542,12 +542,12 @@ const end = html.indexOf("function downloadStateAsJson()", start);
 assert(start >= 0 && end > start, "offline lifecycle and sharing functions retained");
 const script = new vm.Script(html.slice(start, end));
 const paths = [
-  "file:///C:/Characters/TWD20-offline.html?analytics=owner",
-  "file:///home/player/TWD20-offline.html?analytics=owner",
-  "file:///Users/player/My%20Characters/TWD20-offline.html?analytics=owner",
-  "file:///storage/emulated/0/Download/TWD20-offline.html?analytics=owner",
-  "file:///private/var/mobile/Containers/Data/Application/example/TWD20-offline.html?analytics=owner",
-  "content://com.android.externalstorage.documents/document/primary%3ADownload%2FTWD20-offline.html?analytics=owner"
+  "file:///C:/Characters/twd20.html?analytics=owner",
+  "file:///home/player/twd20.html?analytics=owner",
+  "file:///Users/player/My%20Characters/twd20.html?analytics=owner",
+  "file:///storage/emulated/0/Download/twd20.html?analytics=owner",
+  "file:///private/var/mobile/Containers/Data/Application/example/twd20.html?analytics=owner",
+  "content://com.android.externalstorage.documents/document/primary%3ADownload%2Ftwd20.html?analytics=owner"
 ];
 
 (async () => {

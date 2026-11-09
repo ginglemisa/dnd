@@ -111,7 +111,7 @@
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-item-actions">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/utility.css?v=20261108-css-split">
+  <link rel="stylesheet" href="css/utility.css?v=20261109-footer-links">
   <link rel="stylesheet" href="css/dice.css?v=20261109-tour-point-buy-focus">
   <link rel="stylesheet" href="css/dialogs.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
@@ -5671,7 +5671,7 @@ function lockShareModeIdentitySelects() {
 }
 
 function getShortShareUnavailableReason(hash) {
-  if (location.origin !== "https://twd20.com" || /\/TWD20-offline\.html$/i.test(location.pathname)) {
+  if (location.origin !== "https://twd20.com" || /\/twd20\.html$/i.test(location.pathname)) {
     return "短網址僅能在正式網站使用；此環境請使用永久網址。";
   }
   if (!hash.startsWith("#s2=")) return "此分享格式無法建立短網址，請使用永久網址。";
@@ -6960,12 +6960,11 @@ window.addEventListener("DOMContentLoaded", async function() {
 
 <footer class="site-footer">
   <div class="site-footer-links" aria-label="網站資訊連結">
-    <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>
-    <a href="https://github.com/ginglemisa/dnd" target="_blank" rel="noopener">GitHub Repo</a>
-    <a href="https://kh-calendar.vercel.app/" target="_blank" rel="noopener">高雄跑團月曆</a>
+    <a href="#legal-about-modal" class="legal-about-trigger">授權聲明</a> |
+    <a href="https://kh-calendar.vercel.app/" target="_blank" rel="noopener">高雄跑團月曆</a> |
     <a href="https://linktr.ee/trpg.kh" target="_blank" rel="noopener">TRPG在高雄</a>
   </div>
-  <div><a href="https://twD20.com/">twD20.com</a> | <a href="ddals1.html">官方免費冒險劇本</a> | <a href="https://tinyurl.com/srd5etw" target="_blank" rel="noopener" data-analytics-event="blank_character_sheet_download">空白角卡下載</a> | <a href="mailto:tsai.reggie428@gmail.com">bug回報</a></div>
+  <div><a href="twd20.html" download="twd20.html">下載本站離線使用</a> | <a href="ddals1.html">官方免費冒險</a> | <a href="mailto:tsai.reggie428@gmail.com">bug回報</a></div>
 </footer>
 
 <button type="button" id="dice-roller-fab" class="is-hidden" aria-label="開啟擲骰功能" aria-controls="dice-roller-modal" aria-expanded="false">🎲</button>
@@ -7016,10 +7015,10 @@ window.addEventListener("DOMContentLoaded", async function() {
     <img class="sheet-download__image" data-ui-theme-image="classic" src="images/sheet_dl_qr.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
     <img class="sheet-download__image" data-ui-theme-image="warm" src="images/sheet_dl_qr_warm.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
     <!-- QR areas open the Drive page the QR encodes (the labels below link the short download URLs instead). -->
-    <a class="sheet-download__link sheet-download__link--official-qr" href="https://drive.google.com/file/d/1wUIh4xYY492I7htCnYAdNsYwyt7zJJbR/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版 QR Code：Google Drive 檔案頁" title="Google Drive：官方直式中文版"></a>
-    <a class="sheet-download__link sheet-download__link--akaa-qr" href="https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版 QR Code：Google Drive 檔案頁" title="Google Drive：赤赤AkaA設計橫版"></a>
-    <a class="sheet-download__link sheet-download__link--official" href="https://twd20.com/sheet" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版：twD20.com/sheet" title="twD20.com/sheet"></a>
-    <a class="sheet-download__link sheet-download__link--akaa" href="https://twd20.com/sheet-akaa" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版：twD20.com/sheet-akaa" title="twD20.com/sheet-akaa"></a>
+    <a class="sheet-download__link sheet-download__link--official-qr" data-analytics-event="blank_character_sheet_download" href="https://drive.google.com/file/d/1wUIh4xYY492I7htCnYAdNsYwyt7zJJbR/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版 QR Code：Google Drive 檔案頁" title="Google Drive：官方直式中文版"></a>
+    <a class="sheet-download__link sheet-download__link--akaa-qr" data-analytics-event="blank_character_sheet_download" href="https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版 QR Code：Google Drive 檔案頁" title="Google Drive：赤赤AkaA設計橫版"></a>
+    <a class="sheet-download__link sheet-download__link--official" data-analytics-event="blank_character_sheet_download" href="https://twd20.com/sheet" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版：twD20.com/sheet" title="twD20.com/sheet"></a>
+    <a class="sheet-download__link sheet-download__link--akaa" data-analytics-event="blank_character_sheet_download" href="https://twd20.com/sheet-akaa" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版：twD20.com/sheet-akaa" title="twD20.com/sheet-akaa"></a>
     <a class="sheet-download__link sheet-download__link--dndbeyond" href="https://www.dndbeyond.com/" target="_blank" rel="noopener noreferrer" aria-label="DnD Beyond 官網" title="DnD Beyond"></a>
     <a class="sheet-download__link sheet-download__link--wotc" href="https://company.wizards.com/" target="_blank" rel="noopener noreferrer" aria-label="WotC 官網" title="Wizards of the Coast"></a>
   </figure>
@@ -7161,14 +7160,13 @@ window.addEventListener("DOMContentLoaded", async function() {
       <p><strong>修改不會自動儲存，重新整理或離開頁面後就會消失。</strong></p>
       <p>若要保存這份角色卡，請使用<strong>「匯出 JSON」</strong>。</p>
       <p>注意：分享模式不提供 <strong>[分享角卡]、[匯入 JSON]、[快速創角]、[決定屬性]</strong>。</p>
-      <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>
+      <a href="#legal-about-modal" class="legal-about-trigger">授權聲明</a>
     </div>
     <div class="legal-modal-copy">
       <strong>快速建立角色<br>拿著手機直接開團</strong>
     </div>
     <div class="legal-modal-meta">
-      <div>5.5 / 5R 規則，以 SRD 5.2.1 為基礎改編。</div>
-      <div><a href="#legal-about-modal" class="legal-about-trigger">授權聲明：Legal &amp; About</a></div>
+      <div>5.5e 規則 | 採用 SRD 5.2.1 <a href="#legal-about-modal" class="legal-about-trigger">授權改編</a></div>
       <hr class="legal-modal-divider">
       <div class="legal-modal-copy"><strong>↙ 新手點這創角</strong></div>
     </div>
