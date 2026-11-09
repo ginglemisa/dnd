@@ -668,7 +668,40 @@ async function validateMagicItemShop(page) {
   await toggle.evaluate((element) => { element.style.transition = ""; });
   assert.equal(await shop.locator(".equipment-shop__item--magic").count(), 258, "all magic items are listed");
   assert.equal(await shop.locator(".equipment-shop__price, .equipment-shop__add").count(), 0, "magic rows have no price or add button");
-  assert.deepEqual(await shop.locator(".equipment-shop__group").allTextContents(), ["可選基本款", "固定基本款", "可選基本款", "固定基本款", "穿戴", "容器", "消耗品", "工具與載具", "書籍", "奇珍"]);
+  // 依稀有度分段，同一段再依種類；隨選項變動的物品排在最低的那一段，範圍由低寫到高。
+  const shopSections = () => shop.locator(".equipment-shop__section").evaluateAll(sections => sections.map(section => ({
+    title: section.querySelector(".equipment-shop__section-title").textContent,
+    groups: Array.from(section.querySelectorAll(".equipment-shop__group"), group => group.textContent),
+    ids: Array.from(section.querySelectorAll("[data-magic-item-id]"), row => row.dataset.magicItemId)
+  })));
+  const RARITIES = ["常見", "非常見", "稀有", "極稀有", "傳說", "神器"];
+  const KINDS = ["武器", "護甲", "藥水", "戒指", "卷軸", "權杖", "法杖", "魔杖", "奇物"];
+  const allSections = await shopSections();
+  assert.deepEqual(allSections.map(section => section.title), RARITIES, "magic items are grouped from common to artifact");
+  allSections.forEach(({ title, groups }) => assert.deepEqual(groups, KINDS.filter(kind => groups.includes(kind)), `${title} lists its items by kind`));
+  const sectionOf = id => allSections.find(section => section.ids.includes(id))?.title;
+  assert.deepEqual([sectionOf("potions-of-healing"), sectionOf("weapon-plus"), sectionOf("armor-plus"), sectionOf("flame-tongue")], ["常見", "非常見", "稀有", "稀有"], "items with several rarities sit under the lowest one");
+  const ranges = await shop.locator(".magic-shop__meta").evaluateAll(metas => metas.map(meta => meta.firstChild.textContent).filter(text => text.includes("～")));
+  assert.ok(ranges.length > 0, "some rows show a rarity range");
+  ranges.forEach((text) => {
+    const [low, high] = text.split("～");
+    assert.ok(RARITIES.indexOf(low) < RARITIES.indexOf(high), `${text} reads from low to high`);
+  });
+  const categoryToggle = shop.locator(".equipment-shop__category-toggle");
+  const categoryMenu = shop.locator(".equipment-shop__categories");
+  const chooseMagicCategory = async (name) => {
+    await categoryToggle.click();
+    await categoryMenu.getByRole("button", { name, exact: true }).click();
+    await categoryToggle.click();
+    await categoryMenu.waitFor({ state: "hidden" });
+  };
+  await chooseMagicCategory("武器");
+  const weaponSections = await shopSections();
+  assert.deepEqual(weaponSections.map(section => section.title), RARITIES.filter(rarity => weaponSections.some(section => section.title === rarity)), "one category keeps the rarity order");
+  assert.ok(weaponSections.length > 0 && weaponSections.every(section => section.groups.every(group => ["可選基本款", "固定基本款"].includes(group))), "weapons keep their own subheadings");
+  await chooseMagicCategory("奇物");
+  assert.ok((await shopSections()).flatMap(section => section.groups).includes("穿戴"), "wondrous items keep their subheadings");
+  await chooseMagicCategory("全部");
   assert.match(await row("flame-tongue").innerText(), /焰舌[\s\S]*稀有[\s\S]*需同調/u, "rows show rarity and attunement");
   await shop.locator(".equipment-shop__search").fill("flame tongue");
   assert.deepEqual(await shop.locator(".magic-shop__name").allTextContents(), ["焰舌"], "search matches English names");

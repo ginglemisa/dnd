@@ -17,6 +17,7 @@
   // 魔法模式的法術卷軸開放到 5 環；5 環法術只有 SRD 版，角色不能施放，但卷軸仍可取得。
   const MAX_SCROLL_LEVEL = 5;
   const SEGMENTED_MAX = 4;
+  const RARITY_ORDER = Object.freeze(["common", "uncommon", "rare", "very-rare", "legendary", "artifact"]);
   const DEFAULT_AMMO_QUANTITY = 20;
   const ICON = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="9.4" cy="13" rx="8" ry="3.7"/><ellipse cx="9.7" cy="12.9" rx="5" ry="1.4"/><path d="M4.2 15.9V19.6C4.2 21 6.8 22 9.7 22s5.5-1 5.5-2.4v-3.9"/><path d="M16.3 2.8c.8-.3 1.8-.1 2 .7l4.3 17c.2.8-.4 1.3-1.2 1.5s-1.5 0-1.7-.8l-4.3-17c-.2-.7.2-1.2.9-1.4ZM16.3 7.6l2.9-.75"/></g><path d="M4.4 3.7L5.27 5.93 7.5 6.8 5.27 7.67 4.4 9.9 3.53 7.67 1.3 6.8 3.53 5.93ZM9.4 1.1L10.04 2.76 11.7 3.4 10.04 4.04 9.4 5.7 8.76 4.04 7.1 3.4 8.76 2.76ZM13.3 5.2L13.78 6.42 15 6.9 13.78 7.38 13.3 8.6 12.82 7.38 11.6 6.9 12.82 6.42Z" fill="currentColor" stroke="currentColor" stroke-width=".7" stroke-linejoin="round"/></svg>';
 
@@ -61,22 +62,30 @@
     return [["", () => true]];
   }
 
+  // 這件物品可能的稀有度，由低到高；隨選項變動時有多個，都沒寫時是空的。
+  function getRarities(item) {
+    if (item.rarity !== "varies") return [item.rarity];
+    return RARITY_ORDER.filter(rarity => item.options.some(option => option.choices.some(choice => choice.rarity === rarity)));
+  }
+
+  // 依稀有度分段（隨選項變動的物品排在最低的那一段），同一段再依種類：「全部」用類別當小標，單一類別沿用類別內的小標。
   function getSections(categoryId, keyword) {
     const items = getSortedItems().filter(item => matchesKeyword(item, keyword));
-    return catalog().getCategories()
-      .filter(category => categoryId === "all" || category.id === categoryId)
-      .map((category) => {
-        const members = items.filter(item => item.category === category.id);
-        const groups = getGroupTests(category).map(([name, test]) => ({ name, items: members.filter(test) })).filter(group => group.items.length);
-        return { title: category.label, groups };
-      })
-      .filter(section => section.groups.length);
+    const categories = catalog().getCategories().filter(category => categoryId === "all" || category.id === categoryId);
+    const groupTests = categoryId === "all"
+      ? categories.map(category => [category.label, item => item.category === category.id])
+      : categories.flatMap(category => getGroupTests(category).map(([name, test]) => [name, item => item.category === category.id && test(item)]));
+    return [...RARITY_ORDER, null].map((rarity) => {
+      const members = items.filter(item => (getRarities(item)[0] ?? null) === rarity);
+      const groups = groupTests.map(([name, test]) => ({ name, items: members.filter(test) })).filter(group => group.items.length);
+      return { title: rarity ? catalog().getRarityLabel(rarity) : "稀有度不定", groups };
+    }).filter(section => section.groups.length);
   }
 
   // 清單上的稀有度：隨選項變動時寫範圍，例如「非常見～極稀有」。
   function getRarityText(item) {
     if (item.rarity !== "varies") return catalog().getRarityLabel(item.rarity);
-    const labels = [...new Set(item.options.flatMap(option => option.choices.map(choice => catalog().getRarityLabel(choice.rarity))).filter(Boolean))];
+    const labels = getRarities(item).map(rarity => catalog().getRarityLabel(rarity));
     if (!labels.length) return "稀有度不定";
     return labels.length > 1 ? `${labels[0]}～${labels[labels.length - 1]}` : labels[0];
   }
