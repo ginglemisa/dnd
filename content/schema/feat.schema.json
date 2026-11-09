@@ -73,7 +73,7 @@
       "type": "array",
       "minItems": 1,
       "items": { "type": "string", "minLength": 1 },
-      "description": "PDF 專長欄的各行（第一行是空間不夠時只列的標題）。省略時只有一行「名稱(類別)」，例如「封鎖者(通用)」。"
+      "description": "PDF 專長欄的各行（第一行是空間不夠時只列的標題）。省略時只有一行「名稱(類別)」。"
     }
   }
 }
