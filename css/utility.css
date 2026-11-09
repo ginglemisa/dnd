@@ -544,10 +544,6 @@ html[data-theme="dark"] .invocation-prereq {
 }
 
 .site-footer-links {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
   margin-bottom: 8px;
 }
 
