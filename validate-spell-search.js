@@ -701,10 +701,34 @@ async function validateMagicItemShop(page) {
   await finishGrant();
 
   // 治療藥水一般款與法術卷軸沿用既有寫法；高等是魔法物品。
+  // 只有一般款有「網站版｜SRD 版」；按等級時切換鈕跟著出現或消失，高等以上直接顯示譯文。
+  const potionTabs = grant.locator(".spell-version__tab");
+  const choosePotency = label => grant.locator(".magic-item-segmented__button", { hasText: label }).click();
+  const assertOrdinaryPotion = async (message) => {
+    assert.deepEqual(await potionTabs.allTextContents(), ["網站版", "SRD 版"], message);
+    assert.match(await grant.locator(".spell-version__site").innerText(), /50 金幣[\s\S]*飲用者恢復 2d4 \+ 2 生命值/u, `${message}: the website version is shown`);
+    assert.equal(await grant.locator(".magic-item-detail__text").count(), 0, `${message}: no SRD-only text`);
+  };
+  const assertSrdOnlyPotion = async (message) => {
+    assert.equal(await potionTabs.count(), 0, `${message}: no version tabs`);
+    assert.equal(await grant.locator(".spell-version__site").count(), 0, `${message}: no website version`);
+    await grant.locator(".magic-item-detail__text").getByText("恢復的生命值", { exact: true }).first().waitFor();
+    const text = await grant.locator(".magic-item-detail").innerText();
+    assert.match(text, /10d4 \+ 20/u, `${message}: the SRD translation is shown`);
+    assert.equal(/飲用者恢復|50 金幣/u.test(text), false, `${message}: the old description and its price are gone`);
+  };
   await openGrant("potions-of-healing");
+  await assertOrdinaryPotion("the ordinary potion offers both versions");
   await finishGrant();
   await openGrant("potions-of-healing");
-  await grant.locator(".magic-item-segmented__button", { hasText: "高等" }).click();
+  for (const label of ["高等", "強效", "極效"]) {
+    await choosePotency(label);
+    await assertSrdOnlyPotion(`${label} potion`);
+  }
+  await choosePotency("一般");
+  await assertOrdinaryPotion("going back to the ordinary potion brings the tabs back");
+  await choosePotency("高等");
+  await assertSrdOnlyPotion("switching to greater again");
   await finishGrant();
   await openGrant("spell-scroll");
   assert.deepEqual(await grant.locator("select").first().locator("option").allTextContents(), ["戲法", "1環", "2環", "3環", "4環", "5環"], "scrolls offer cantrips to 5th level");
@@ -818,6 +842,9 @@ async function validateMagicItemShop(page) {
   await closeItem();
   await openItem("greater");
   assert.equal(await item.getByRole("button", { name: "飲用治療藥水（高等）" }).count(), 1, "potions with a heal roll use the drink flow");
+  assert.equal(await item.locator(".spell-version__tab").count(), 0, "a greater potion in the inventory has no version tabs");
+  await item.locator(".magic-item-detail__text").getByText("恢復的生命值", { exact: true }).first().waitFor();
+  assert.equal((await item.locator(".magic-item-detail").innerText()).includes("飲用者恢復"), false, "a greater potion in the inventory shows only the SRD translation");
   await closeItem();
   await openItem("climbing");
   await item.getByRole("button", { name: "使用攀爬藥水" }).click();

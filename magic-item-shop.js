@@ -120,15 +120,26 @@
     });
   }
 
+  // 選的是一般款（選項都是不寫進名稱的那一項）；法術卷軸的環階不算選項。
+  function isOrdinarySelection(item, selection) {
+    return item.options.filter(option => !isScrollOption(option)).every(option => option.choices.find(choice => choice.value === selection[option.id])?.omitInName);
+  }
+
+  // 網站版是一般款的舊說明：還沒選選項時照常顯示，選到高等以上的藥水時沒有網站版。
+  function hasSiteVersion(item, selection) {
+    return Boolean(item.siteText) && (!selection || isOrdinarySelection(item, selection));
+  }
+
   /**
    * 把副標、說明（延遲載入，失敗可重試）與提示畫進 container；沒有這件物品時回傳 false。
-   * 有網站版的物品（治療藥水、法術卷軸）改畫「網站版｜SRD 版」；外層已經顯示價格時傳 { hideSitePrice: true }。
+   * 有網站版的物品（一般治療藥水、法術卷軸）改畫「網站版｜SRD 版」；外層已經顯示價格時傳 { hideSitePrice: true }。
+   * selection 是這一件所選的選項（物品欄的 magic、取得視窗目前的選擇），用來判斷是不是一般款；不傳時視為一般款。
    */
-  function renderDetail(container, id, { hideSitePrice = false } = {}) {
+  function renderDetail(container, id, { hideSitePrice = false, selection = null } = {}) {
     const item = catalog()?.get(id);
     if (!item) return false;
     const wrap = el("div", "magic-item-detail");
-    if (item.siteText) {
+    if (hasSiteVersion(item, selection)) {
       wrap.appendChild(createVersionView(item, !hideSitePrice));
       if (item.manualEffect) wrap.appendChild(el("p", "magic-item-detail__manual", hasAutomaticBonus(item) ? PARTIAL_MANUAL_NOTE : MANUAL_NOTE));
       container.appendChild(wrap);
@@ -189,8 +200,8 @@
     return { ...createField(label, select, () => select.value || undefined, missing), select };
   }
 
-  // 4 項以內的選項：預設第一項。
-  function createSegmentedField(option) {
+  // 4 項以內的選項：預設第一項；onChange(value) 在按下其他項時呼叫。
+  function createSegmentedField(option, onChange) {
     const group = el("div", "magic-item-segmented");
     group.setAttribute("role", "group");
     group.setAttribute("aria-label", option.label);
@@ -201,6 +212,7 @@
       control.addEventListener("click", () => {
         selected = choice;
         buttons.forEach((item, index) => item.setAttribute("aria-pressed", String(option.choices[index] === selected)));
+        onChange(selected.value);
       });
       return control;
     });
@@ -208,8 +220,9 @@
     return createField(option.label, group, () => selected.value, "", "div");
   }
 
-  function createOptionField(option) {
-    if (option.choices.length <= SEGMENTED_MAX) return createSegmentedField(option);
+  // 目前會影響說明的選項只有分段按鈕（治療藥水的等級），下拉不通知。
+  function createOptionField(option, onChange) {
+    if (option.choices.length <= SEGMENTED_MAX) return createSegmentedField(option, onChange);
     const field = createSelectField(option.label, `選擇${option.label}…`, option.choices.map((choice, index) => [String(index), choice.label]), `請先選擇${option.label}。`);
     return { ...field, read: () => { const index = field.read(); return index === undefined ? undefined : option.choices[Number(index)].value; } };
   }
@@ -256,13 +269,13 @@
     return option.id === "spellLevel";
   }
 
-  function buildFields(item) {
+  function buildFields(item, onOptionChange) {
     const fields = [];
     const choices = catalog().getBaseChoices(item.id);
     if (choices.length > 1) fields.push({ ...createSelectField("基本款", "選擇基本款…", choices.map(name => [name, name]), "請先選擇基本款。"), key: "base" });
     item.options.forEach((option) => {
       if (isScrollOption(option)) fields.push(...createScrollFields(option));
-      else fields.push({ ...createOptionField(option), key: option.id });
+      else fields.push({ ...createOptionField(option, value => onOptionChange(option.id, value)), key: option.id });
     });
     if (isAmmunition(item)) fields.push(createQuantityField());
     const element = fields.length ? el("div", "magic-item-fields") : null;
@@ -290,8 +303,7 @@
       return { label: name, quantity, request: { itemId: item.equipmentName, name, quantity } };
     }
     const label = catalog().getDisplayName(item.id, { ...selection, base });
-    const isOrdinary = item.equipmentName && item.options.every(option => option.choices.find(choice => choice.value === selection[option.id])?.omitInName);
-    if (isOrdinary) return { label, quantity, request: { itemId: item.equipmentName, quantity } };
+    if (item.equipmentName && isOrdinarySelection(item, selection)) return { label, quantity, request: { itemId: item.equipmentName, quantity } };
     return { label, quantity, request: { ...(base ? { itemId: base } : {}), quantity, magic: { id: item.id, ...selection } } };
   }
 
@@ -324,8 +336,26 @@
       // 手機上不要一開就跳出鍵盤或下拉，說明也才會從頭顯示。
       initialFocus: "primary",
       renderContent(body) {
-        renderDetail(body, item.id);
-        form = buildFields(item);
+        let selection = null;
+        let detail = null;
+        let showsSiteVersion = null;
+        // 說明跟著選項：有沒有網站版改變時才重畫，版本切換鈕跟著出現或消失。
+        const showDetail = () => {
+          const current = hasSiteVersion(item, selection);
+          if (current === showsSiteVersion) return;
+          showsSiteVersion = current;
+          const fragment = document.createDocumentFragment();
+          renderDetail(fragment, item.id, { selection });
+          const next = fragment.firstElementChild;
+          if (detail) detail.replaceWith(next);
+          else body.appendChild(next);
+          detail = next;
+        };
+        showDetail();
+        form = buildFields(item, (optionId, value) => {
+          selection = { ...selection, [optionId]: value };
+          showDetail();
+        });
         if (form.element) body.appendChild(form.element);
       },
       actions: [
