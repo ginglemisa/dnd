@@ -1061,6 +1061,7 @@ async function verifyFirstTableCharacterData(browser, url) {
 async function verifyTabletopDiceAndKeyStats(browser, url) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  await page.addInitScript(() => { try { if (localStorage.getItem("dnd.diceSystemEnabled.v1") === null) localStorage.setItem("dnd.diceSystemEnabled.v1", "false"); } catch {} });
   await page.goto(url);
   await page.waitForFunction(() => window.onboardingTour && window.TabletopMode && window.DiceRoller);
   await page.locator("#legal-ack-btn").click();

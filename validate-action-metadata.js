@@ -2919,6 +2919,7 @@ async function verifyMergedActionUi(browser, url) {
 async function verifyCustomSpellUi(browser, url) {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
+  await page.addInitScript(() => { try { if (localStorage.getItem("dnd.diceSystemEnabled.v1") === null) localStorage.setItem("dnd.diceSystemEnabled.v1", "false"); } catch {} });
   const errors = [];
   page.on("pageerror", error => errors.push(String(error)));
   try {

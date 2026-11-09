@@ -43,6 +43,7 @@ async function main() {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const page = await browser.newPage({ viewport: { width: 1100, height: 850 } });
     await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+    await page.addInitScript(() => { try { for (const key of ["dnd.diceSystemEnabled.v1", "dnd.inventoryWeightHidden.v1"]) if (localStorage.getItem(key) === null) localStorage.setItem(key, "false"); } catch {} });
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
     await page.goto(`http://127.0.0.1:${server.address().port}/?analytics=owner`);
@@ -622,18 +623,18 @@ async function validateInventory(page) {
   assert.deepEqual(catalog.ids.filter(id => !baseline.includes(id)), [], "new catalog items are added to equipment-id-baseline.json on purpose");
   for (const [pack, listed, sum] of catalog.packs) assert.equal(Math.round(sum * 100) / 100, listed, `${pack} contents weigh what the pack lists`);
   assert.deepEqual([catalog.containers, catalog.wielded], [[], []], "containers and wieldable focuses exist in the catalog");
-  // 改名的品項（長袍→祭袍、槲寄生樹枝→槲寄生枝條）：舊存檔的 itemId 與舊文字寫法都對到新品名。
+  // 改名的品項（長袍→祭袍、槲寄生樹枝→槲寄生枝條、狩獵陷阱→捕獸夾）：舊存檔的 itemId 與舊文字寫法都對到新品名。
   const renamed = await page.evaluate(() => {
     applyStateObject({ class: "druid", level: "1", __inventory: { version: 1, items: [
-      { uid: "robe", itemId: "長袍", name: "祭祀長袍", quantity: 1 }, { uid: "sprig", itemId: "槲寄生樹枝", quantity: 1 }, { uid: "plain", itemId: "長袍", quantity: 2 }] } });
+      { uid: "robe", itemId: "長袍", name: "祭祀長袍", quantity: 1 }, { uid: "sprig", itemId: "槲寄生樹枝", quantity: 1 }, { uid: "plain", itemId: "長袍", quantity: 2 }, { uid: "trap", itemId: "狩獵陷阱", quantity: 1 }] } });
     return {
       entries: Inventory.entries().map(({ itemId, name, quantity }) => [itemId, name || "", quantity]),
-      text: ["長袍", "祭祀長袍", "槲寄生樹枝", "德魯伊法器（槲寄生枝條）", "書籍（玄秘學識）", "書（玄秘學識）"].map(text => [Inventory.parseItemText(text).itemId, Inventory.parseItemText(text).name || ""])
+      text: ["長袍", "祭祀長袍", "槲寄生樹枝", "德魯伊法器（槲寄生枝條）", "狩獵陷阱", "書籍（玄秘學識）", "書（玄秘學識）"].map(text => [Inventory.parseItemText(text).itemId, Inventory.parseItemText(text).name || ""])
     };
   });
   assert.deepEqual(renamed, {
-    entries: [["祭袍", "", 1], ["槲寄生枝條", "", 1], ["祭袍", "", 2]],
-    text: [["祭袍", ""], ["祭袍", ""], ["槲寄生枝條", ""], ["槲寄生枝條", ""], ["書籍", "書籍（玄秘學識）"], ["書籍", "書（玄秘學識）"]]
+    entries: [["祭袍", "", 1], ["槲寄生枝條", "", 1], ["祭袍", "", 2], ["捕獸夾", "", 1]],
+    text: [["祭袍", ""], ["祭袍", ""], ["槲寄生枝條", ""], ["槲寄生枝條", ""], ["捕獸夾", ""], ["書籍", "書籍（玄秘學識）"], ["書籍", "書（玄秘學識）"]]
   }, "renamed items load from old saves and old text");
   // 職業與背景的起始裝備：每個品名都對得到目錄（自訂物品須有重量），擇一的選項也是；套組提示框列出內容物。
   const startingEquipment = await page.evaluate(() => {
@@ -916,7 +917,7 @@ async function validateInventory(page) {
   await more.click();
   await weightToggle.click();
   await page.mouse.click(5, 5);
-  assert.deepEqual([await weight.isVisible(), await more.getAttribute("aria-expanded"), await page.evaluate(() => dndStorage.getItem("dnd.inventoryWeightHidden.v1"))], [true, "false", null], "clicking outside closes the menu");
+  assert.deepEqual([await weight.isVisible(), await more.getAttribute("aria-expanded"), await page.evaluate(() => dndStorage.getItem("dnd.inventoryWeightHidden.v1"))], [true, "false", "false"], "clicking outside closes the menu");
 
   // 整理排列 (⋯ menu): tags jiggle and do not open dialogs; drag to reorder or into a container, arrow keys move within a group, 完成 or Esc ends it.
   const arrange = page.locator("#inventory-arrange");
@@ -1636,7 +1637,7 @@ async function validateEquipmentShop(page) {
   await toggle.click();
   assert.equal(await toggle.getAttribute("aria-expanded"), "true");
   assert.deepEqual(await categories.locator("button").allTextContents(),
-    ["全部", "武器", "護甲", "工具", "冒險用品", "照明", "容器", "服裝", "彈藥", "法器", "魔法", "套組"]);
+    ["全部", "武器", "護甲", "工具", "冒險用品", "照明", "容器", "服裝", "彈藥", "法器", "藥水卷軸", "套組"]);
   await categories.getByRole("button", { name: "武器", exact: true }).click();
   assert.equal((await shopSectionTitles(shop)).join(), "簡易武器,軍用武器");
   await toggle.click();
@@ -1655,7 +1656,7 @@ async function validateEquipmentShop(page) {
     ["容器", ["背包", "小包", "麻袋", "籃子", "箱子", "木桶", "手提桶", "鐵鍋", "壺", "水袋", "玻璃瓶", "扁瓶", "藥瓶", "地圖或捲軸盒"]],
     ["服裝", ["旅行者服裝", "高檔服裝", "戲服", "祭袍"]],
     ["彈藥", ["箭矢 (20)", "箭袋", "弩矢 (20)", "弩矢匣", "子彈，火器 (10)", "彈丸，投石索 (20)", "針 (50)", "小包"]],
-    ["魔法", ["法術卷軸", "治療藥水", "材料包"]]
+    ["藥水卷軸", ["法術卷軸", "治療藥水"]]
   ]) {
     await chooseCategory(category);
     assert.deepEqual(await shopItemNames(shop), names, `${category}: items and order`);
@@ -1668,7 +1669,7 @@ async function validateEquipmentShop(page) {
       "樂器", "風笛", "鼓", "揚琴", "長笛", "角號", "魯特琴", "里拉琴", "排簫", "蘆笛", "提琴"], "other tools: ungrouped items before groups");
   await chooseCategory("法器");
   assert.deepEqual(await shop.locator(".equipment-shop__group").allTextContents(), ["奧術法器", "德魯伊法器", "聖徽"]);
-  assert.equal((await shopItemNames(shop)).includes("材料包"), false, "the component pouch is not a focus");
+  assert.equal((await shopItemNames(shop))[0], "材料包", "the component pouch leads the focus category, outside any group");
   await chooseCategory("冒險用品");
   assert.deepEqual(await shop.locator(".equipment-shop__group").allTextContents(),
     ["野營與生活", "醫療與藥劑", "攀爬與探索", "戰鬥與陷阱", "束縛與上鎖", "觀察與信號", "書寫與學識"], "adventuring gear groups by use");
@@ -1679,9 +1680,9 @@ async function validateEquipmentShop(page) {
   await chooseCategory("全部");
   assert.equal(await shopCategoryText(toggle), "類別▾", "choosing all restores the category label");
   assert.deepEqual(await shopSectionTitles(shop), ["簡易武器", "軍用武器", "盾牌", "輕甲", "中甲", "重甲", "工匠工具", "其他工具",
-    "冒險用品", "照明", "容器", "服裝", "彈藥", "法器", "魔法", "套組"], "all follows the category order");
+    "冒險用品", "照明", "容器", "服裝", "彈藥", "法器", "藥水卷軸", "套組"], "all follows the category order");
   const allNames = await shopItemNames(shop);
-  for (const [name, section] of [["小包", "容器"], ["油", "照明"], ["火絨盒", "照明"], ["治療藥水", "魔法"]]) {
+  for (const [name, section] of [["小包", "容器"], ["油", "照明"], ["火絨盒", "照明"], ["治療藥水", "藥水卷軸"]]) {
     assert.equal(allNames.filter(item => item === name).length, 1, `${name} appears once in all`);
     assert.equal(await shop.locator(".equipment-shop__section", { has: page.getByRole("button", { name: `查看${name}的詳情`, exact: true }) })
       .locator(".equipment-shop__section-title").textContent(), section, `${name} lives in ${section} within all`);
@@ -1710,7 +1711,7 @@ async function validateEquipmentShop(page) {
   assert.equal(await badge.textContent(), "2");
   assert.equal(await shop.locator(".equipment-shop__footer-text").textContent(), "合計 2 金幣", "shop footer shows the total");
   await shop.locator(".equipment-shop__search").fill("");
-  await chooseCategory("魔法");
+  await chooseCategory("藥水卷軸");
   const scroll = shop.locator(".equipment-shop__item--scroll");
   const scrollAdd = scroll.getByRole("button", { name: "加入購物清單：法術卷軸" });
   assert.equal(await scrollAdd.isDisabled(), true, "scroll needs a spell");

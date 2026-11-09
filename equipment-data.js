@@ -54,7 +54,7 @@ globalThis.EQUIPMENT_ENGLISH_NAMES = Object.freeze({
   "材料包": "Component Pouch", "戲服": "Costume", "撬棍": "Crowbar", "大使套組": "Diplomat's Pack",
   "德魯伊法器": "Druidic Focus", "地城套組": "Dungeoneer's Pack", "藝人套組": "Entertainer's Pack",
   "探索套組": "Explorer's Pack", "扁瓶": "Flask", "抓鉤": "Grappling Hook", "醫療包": "Healer's Kit",
-  "聖徽": "Holy Symbol", "聖水": "Holy Water", "狩獵陷阱": "Hunting Trap", "墨水": "Ink", "墨水筆": "Ink Pen",
+  "聖徽": "Holy Symbol", "聖水": "Holy Water", "捕獸夾": "Hunting Trap", "墨水": "Ink", "墨水筆": "Ink Pen",
   "壺": "Jug", "爬梯": "Ladder", "油燈": "Lamp", "牛眼提燈": "Lantern, Bullseye", "附蓋提燈": "Lantern, Hooded",
   "鎖": "Lock", "放大鏡": "Magnifying Glass", "鐐銬": "Manacles", "地圖": "Map", "鏡子": "Mirror", "捕網": "Net",
   "油": "Oil", "紙": "Paper", "羊皮紙": "Parchment", "香水": "Perfume", "基礎毒藥": "Poison, Basic",

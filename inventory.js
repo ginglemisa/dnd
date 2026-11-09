@@ -31,10 +31,10 @@
     "德魯伊法器（長棍）": { itemId: "木製法杖（長棍）" }, "德魯伊法器（槲寄生枝條）": { itemId: "槲寄生枝條" },
     "油瓶": { itemId: "油" }, "子彈": { itemId: "子彈，火器" }, "彈丸": { itemId: "彈丸，投石索" },
     // 舊品名（攜帶物品文字與舊存檔）：Robe 統一為祭袍、Sprig of Mistletoe 統一為槲寄生枝條。
-    "長袍": { itemId: "祭袍" }, "祭祀長袍": { itemId: "祭袍" }, "槲寄生樹枝": { itemId: "槲寄生枝條" }
+    "長袍": { itemId: "祭袍" }, "祭祀長袍": { itemId: "祭袍" }, "槲寄生樹枝": { itemId: "槲寄生枝條" }, "狩獵陷阱": { itemId: "捕獸夾" }
   });
   // 改過名的目錄品名：舊存檔（autosave、JSON、分享）裡的 itemId 讀進來時換成新品名。
-  const RENAMED_ITEM_IDS = Object.freeze({ "長袍": "祭袍", "槲寄生樹枝": "槲寄生枝條" });
+  const RENAMED_ITEM_IDS = Object.freeze({ "長袍": "祭袍", "槲寄生樹枝": "槲寄生枝條", "狩獵陷阱": "捕獸夾" });
   const BOOK_PATTERN = /^(?:書籍|書本|書)（[^（）]+）$/u;
   // 「多種」標題可當通稱品項（例如職業裝備只寫「聖徽」）；彈藥一律選具體品項。
   const GROUP_EXCLUDED = new Set(["彈藥"]);
