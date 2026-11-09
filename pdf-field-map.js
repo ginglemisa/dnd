@@ -852,7 +852,17 @@
     return false;
   }
 
-  function getDamageCantripExportValues(config, spellId, state) {
+  // 勾選中的苦痛魔爆（eldritch-invocation-<序號>-<次數>）與它套用的戲法（同 ID 加 -cantrip）。
+  function getAgonizingBlastCantripIds(state) {
+    return new Set(Object.keys(state).flatMap((key) => {
+      const matched = key.match(/^(eldritch-invocation-\d+-\d+)-cantrip$/);
+      const spellId = matched && state[matched[1]] ? normalizeText(state[key]) : '';
+      return spellId ? [spellId] : [];
+    }));
+  }
+
+  function getDamageCantripExportValues(config, row, state) {
+    const { spellId } = row;
     const level = getSelectedLevelNumber(state.level);
     const isLevel5 = level !== null && level >= 5;
     const baseDamage = isLevel5 && config.dmg5 ? config.dmg5 : config.dmg;
@@ -872,6 +882,14 @@
       const wisdomModifier = getAbilityModifierNumber(state.wis);
       if (Number.isFinite(wisdomModifier)) {
         damage = damage.replace(/^(\d+d\d+)/, `$1${formatFormulaModifier(wisdomModifier)}`);
+      }
+    }
+
+    // 條件同跑團施法：只加在契術師來源的戲法上；同一戲法另有其他職業來源的列不加。
+    if (row.classKey === 'warlock' && getAgonizingBlastCantripIds(state).has(spellId)) {
+      const charismaModifier = getAbilityModifierNumber(state.cha);
+      if (Number.isFinite(charismaModifier) && charismaModifier !== 0) {
+        damage = damage.replace(/^(\d+d\d+)/, `$1${formatFormulaModifier(charismaModifier)}`);
       }
     }
 
@@ -922,7 +940,7 @@ function isWeaponRowEmpty(payload, slot) {
       if (slot > maxSlots) break;
       const config = DAMAGE_CANTRIP_EXPORT_MAP[row.spellId];
       if (!config) continue;
-      const exportValues = getDamageCantripExportValues(config, row.spellId, state);
+      const exportValues = getDamageCantripExportValues(config, row, state);
 
       payload[`attack-weap-name-${slot}`] = config.name;
       payload[`toHit${slot}`] = config.mode === 'save'

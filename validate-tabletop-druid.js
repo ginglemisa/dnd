@@ -337,6 +337,19 @@ async function main() {
     await bite.getByRole("button", { name: /命中/u }).click();
     await bite.getByRole("button", { name: /1d6\+2 穿刺傷害/u }).click();
     assert.deepEqual(await page.evaluate(() => window.__druidRolls), ["狼咬擊命中", "狼咬擊：1d6+2 穿刺傷害"]);
+    // 原初打擊：勾選時野獸攻擊卡的備註和武器卡同一段字，取消就消失。
+    const primalNote = "+1d8冷凍/火焰/閃電/雷鳴傷害";
+    const setPrimalStrike = checked => page.evaluate(value => {
+      const box = document.getElementById("druid-elemental-fury-primal-strike");
+      box.checked = value;
+      box.dispatchEvent(new Event("change", { bubbles: true }));
+    }, checked);
+    assert.equal(await bite.getByText(primalNote, { exact: true }).count(), 0, "no primal strike note unless the option is chosen");
+    await setPrimalStrike(true);
+    await bite.getByText(primalNote, { exact: true }).waitFor({ timeout: 3000 });
+    await actionStrip.getByRole("button", { name: "原初打擊 +1d8", exact: true }).waitFor({ timeout: 3000 });
+    await setPrimalStrike(false);
+    await bite.getByText(primalNote, { exact: true }).waitFor({ state: "detached", timeout: 3000 });
     await page.evaluate(() => TabletopMode.setPanel("overview"));
     assert.equal(await page.locator("#tabletop-ac").innerText(), "12 (狼)", "AC is marked like barkskin");
     assert.match(await page.locator("#tabletop-speed").innerText(), /^步行 40 呎 \(狼\)$/u);
