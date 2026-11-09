@@ -2867,11 +2867,46 @@ button.inventory-arrange-done {
   font-size: var(--fs-sm);
 }
 
+/* 互動列的按鈕與數量框同一個左欄，說明與位置選單在右欄。 */
+.inventory-holding__row,
+.inventory-action-row {
+  --inventory-holding-left: 11.8rem;
+}
+
 .inventory-holding__row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: var(--inventory-holding-left) minmax(0, 1fr);
   gap: 0 0.75rem;
   align-items: end;
+}
+
+.inventory-holding__row .inventory-stepper {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) 2.6rem;
+  width: 100%;
+}
+
+/* 「拆分」排在數量框與位置選單之間，和數量框的 + 上下對齊（.inventory-field 有下邊距，數量框比按鈕略高）。 */
+.inventory-holding__place {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.inventory-holding__place > .inventory-field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.inventory-holding__place > .inventory-action-split {
+  flex: 0 0 auto;
+  width: auto;
+  margin-bottom: 1rem;
+}
+
+.inventory-holding__place > .inventory-action-split[hidden] {
+  display: none;
 }
 
 .inventory-holding__row[hidden] {
@@ -2894,10 +2929,15 @@ button.inventory-arrange-done {
   grid-column: 1 / -1;
 }
 
-/* 數量與位置維持同一列，只有極窄時才上下排。 */
-@media (max-width: 339px) {
-  .inventory-holding__row {
-    grid-template-columns: minmax(0, 1fr);
+/* 手機上左欄跟著數量框縮小，數量與位置維持同一列。 */
+@media (max-width: 480px) {
+  .inventory-holding__row,
+  .inventory-action-row {
+    --inventory-holding-left: 8.8rem;
+  }
+
+  .inventory-holding__place > .inventory-action-split {
+    padding-inline: 0.5rem;
   }
 }
 
@@ -2981,7 +3021,7 @@ button.inventory-arrange-done {
   font-size: var(--fs-sm);
 }
 
-/* 持有區的互動列（裝備、檢定、使用次數、飲用、投擲）：說明文字在上，按鈕一列靠左，放不下才換行。 */
+/* 持有區的互動列（裝備、檢定、使用次數、飲用、投擲、卷軸）：按鈕在左欄，說明或標籤在右欄；第二顆按鈕放右欄、與左欄同寬。 */
 .inventory-item-actions {
   display: grid;
   gap: 0.6rem;
@@ -2990,10 +3030,14 @@ button.inventory-arrange-done {
 
 .inventory-action-row {
   display: grid;
-  gap: 0.35rem;
+  grid-template-columns: var(--inventory-holding-left) minmax(0, 1fr);
+  gap: 0.35rem 0.75rem;
+  align-items: center;
 }
 
 .inventory-action-row__text {
+  grid-column: 2;
+  grid-row: 1;
   margin: 0;
   color: var(--text-body);
   font-size: var(--fs-sm);
@@ -3001,27 +3045,68 @@ button.inventory-arrange-done {
 }
 
 .inventory-action-row__buttons {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
+  display: contents;
 }
 
 .inventory-action-button {
-  flex: 1 1 auto;
-  width: auto;
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
   min-height: 2.6rem;
   padding: 0.35rem 0.9rem;
 }
 
-/* 「拆分」排在同一行右邊，其他按鈕佔滿剩下的寬度；只有它一顆時才佔滿整行。 */
-.inventory-action-split:not(:only-child) {
-  flex: 0 0 auto;
+.inventory-action-button + .inventory-action-button {
+  grid-column: 2;
+  max-width: var(--inventory-holding-left);
 }
 
 .inventory-action-tag {
+  grid-column: 2;
+  grid-row: 1;
   color: var(--text-muted);
   font-size: var(--fs-sm);
+}
+
+.inventory-spell-link {
+  display: inline;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline solid currentColor;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+/* 極窄時左右欄改上下排。 */
+@media (max-width: 339px) {
+  .inventory-holding__row,
+  .inventory-action-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inventory-action-row__text,
+  .inventory-action-tag {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .inventory-action-button {
+    grid-row: auto;
+  }
+
+  .inventory-action-button + .inventory-action-button {
+    grid-column: 1;
+    max-width: none;
+  }
 }
 
 /* 裝備武器時的選手視窗：目前主手、副手。 */

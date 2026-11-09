@@ -575,6 +575,17 @@ function getCurrentSpellSourceEntries() {
   return getCurrentSpellSourceSpecs().map(spellEntryFromSourceSpec).filter(entry => entry.spellId);
 }
 
+// 法術卷軸能否閱讀：手動管理法術不檢查；否則法術要在角色職業的法術清單上，或來自魔法學徒、種族、職業、子職、祈喚等來源（戲法也算）。
+function getSpellScrollAccess(spellId) {
+  if (window.SpellManagement?.isManual()) return { allowed: true, reason: "manual" };
+  const classValue = document.getElementById("class")?.value || "";
+  if (classValue && SpellCatalog.getClassIds(spellId).includes(classValue)) return { allowed: true, reason: "class" };
+  const source = getCurrentSpellSourceEntries().find(entry => entry.spellId === spellId);
+  return source
+    ? { allowed: true, reason: "source", label: String(source.sourceLabel || "").replace(/^來源：/u, "") }
+    : { allowed: false, reason: "none" };
+}
+
 // 準備法術視窗的「戲法」篩選：來源能力（如受祝福的勇士）給予戲法即算，戲法尚未選定也算。
 function hasCurrentSpellSourceCantrips() {
   return getCurrentSpellSourceSpecs().some(spec => spellEntryFromSourceSpec(spec).level === 0);

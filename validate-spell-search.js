@@ -1515,17 +1515,20 @@ async function validateInventoryStacks(page) {
   assert.deepEqual(boundaries, { customTargets: 0, customMerge: false, customAdd: 3, separate: true, targets: ["r1", "r3"], capped: false, single: false, tooMany: false, joined: 6 },
     "only explicit merges combine stacks and limits leave the data unchanged");
 
-  // 「拆分」：有按鈕的物品排在同一行右邊，沒按鈕的自成一行，只有 1 件時沒有；輸入一堆另一堆跟著變。
+  // 「拆分」：排在數量框的 + 與位置選單之間，只有 1 件時沒有；輸入一堆另一堆跟著變。
   await reset([{ uid: "kit", itemId: "醫療包", quantity: 3, uses: 6 }, { uid: "rope", itemId: "繩索", quantity: 5 }, { uid: "torch", itemId: "火把", quantity: 1 }, { uid: "letter", name: "家書", quantity: 4 }]);
   const item = page.locator('.app-dialog[data-variant="inventory-item"]');
   const splitDialog = page.locator('.app-dialog[data-variant="inventory-split"]');
   const tag = uid => page.locator(`[data-inventory-uid="${uid}"]`);
   await tag("kit").click();
-  const sameRow = await item.evaluate((dialog) => {
-    const [use, split] = ["使用 1 次醫療包", "拆分醫療包"].map(name => dialog.querySelector(`[aria-label="${name}"]`));
-    return use.parentElement === split.parentElement && Math.abs(use.getBoundingClientRect().top - split.getBoundingClientRect().top) < 1 && split.getBoundingClientRect().left > use.getBoundingClientRect().left;
+  const betweenStepperAndLocation = dialog => dialog.evaluate((root) => {
+    const rect = element => element.getBoundingClientRect();
+    const split = rect(root.querySelector(".inventory-action-split"));
+    const plus = rect(root.querySelector('[aria-label="增加數量"]'));
+    const select = rect(root.querySelector(".inventory-holding__place select"));
+    return split.left >= plus.right && split.right <= select.left && Math.abs(split.top - plus.top) < 1 && Math.abs(split.bottom - plus.bottom) < 1;
   });
-  assert.equal(sameRow, true, "拆分 sits to the right of the existing button");
+  assert.equal(await betweenStepperAndLocation(item), true, "拆分 sits between the stepper and the location");
   await item.getByRole("button", { name: "拆分醫療包" }).click();
   await splitDialog.waitFor();
   const splitInputs = splitDialog.locator(".inventory-split-input");
@@ -1541,11 +1544,11 @@ async function validateInventoryStacks(page) {
   assert.deepEqual(await page.evaluate(() => Inventory.entries().filter(entry => entry.itemId === "醫療包").map(entry => [entry.quantity, entry.uses || 0])), [[1, 6], [2, 0]], "the used kit stays in the first stack");
   await page.waitForFunction(() => document.activeElement?.dataset?.inventoryUid === "kit", null, { timeout: 2000 });
   await tag("rope").click();
-  assert.deepEqual(await item.locator(".inventory-item-actions button").allTextContents(), ["拆分"], "items without buttons get 拆分 in that place");
+  assert.deepEqual([await item.locator(".inventory-item-actions").count(), await item.getByRole("button", { name: "拆分繩索" }).isVisible(), await betweenStepperAndLocation(item)], [0, true, true], "items without actions still get 拆分 in that place");
   await page.keyboard.press("Escape");
   await item.waitFor({ state: "detached" });
   await tag("torch").click();
-  assert.equal(await item.locator(".inventory-item-actions").count(), 0, "a single item has nothing to split");
+  assert.deepEqual([await item.locator(".inventory-item-actions").count(), await item.getByRole("button", { name: "拆分火把" }).count()], [0, 0], "a single item has nothing to split");
   await page.keyboard.press("Escape");
   await item.waitFor({ state: "detached" });
   await tag("letter").click();
@@ -1964,8 +1967,8 @@ async function validateInventoryItemActions(page) {
   assert.deepEqual(await slots(), ["長劍", "", ""]);
   await page.waitForFunction(() => document.activeElement?.closest?.("[data-inventory-uid]")?.textContent.includes("長劍"), null, { timeout: 2000 });
   await openItem("長劍");
-  assert.deepEqual([await actionButtons(), await item.locator(".inventory-item-meta .inventory-tag__badge").isVisible()], [["裝備", "卸除"], true], "equipped weapons show 卸除 and the badge");
-  await item.getByRole("button", { name: "裝備長劍" }).click();
+  assert.deepEqual([await actionButtons(), await item.locator(".inventory-item-meta .inventory-tag__badge").isVisible()], [["換手", "卸除"], true], "equipped weapons show 換手, 卸除 and the badge");
+  await item.getByRole("button", { name: "換手長劍" }).click();
   assert.equal(await equipDialog.getByRole("button", { name: "主手", exact: true }).isDisabled(), true, "the hand already holding it is disabled");
   assert.match(await equipDialog.locator(".inventory-item-note").first().textContent(), /已裝備在主手/u);
   await equipDialog.getByRole("button", { name: "副手", exact: true }).click();
@@ -2158,6 +2161,75 @@ async function validateInventoryItemActions(page) {
   await equipDialog.waitFor({ state: "detached" });
   await closeItem();
   await page.setViewportSize({ width: 1100, height: 850 });
+
+  // 法術卷軸：職業法術清單或來源法術（戲法也算）才能施法，不符合時反灰寫原因，手動管理不檢查；確認後才用掉卷軸，舊資料依名稱對回法術。
+  const scroll = (spellName, quantity = 1, spellId = "") => ({ itemId: "法術卷軸", name: `${spellName}法術卷軸`, quantity, ...(spellId ? { spellId } : {}) });
+  const setCharacter = (state, items) => page.evaluate(([state, items]) => {
+    applyStateObject({ str: "10", dex: "10", con: "10", int: "10", wis: "14", cha: "10", ...state, __inventory: { version: 1, items: [] } });
+    Inventory.add(items);
+  }, [state, items]);
+  const scrollRow = () => item.locator(".inventory-action-row");
+  const castButton = text => item.getByRole("button", { name: `施展${text}法術卷軸` });
+  await setCharacter({ class: "fighter", level: "5" }, [scroll("命令術", 1, "command")]);
+  await openItem("命令術法術卷軸");
+  assert.deepEqual([await castButton("命令術").isDisabled(), await scrollRow().locator(".inventory-action-row__text").textContent()],
+    [true, "命令術｜不在你的職業法術清單上，也不是你始終準備的法術。"], "scrolls off the class list are greyed out with the reason");
+  await closeItem();
+  await setCharacter({ class: "cleric", level: "5" }, [scroll("命令術", 2, "command")]);
+  await openItem("命令術法術卷軸");
+  assert.deepEqual([await castButton("命令術").isDisabled(), await scrollRow().locator(".inventory-action-row__text").textContent()],
+    [false, "命令術｜豁免 DC 13・攻擊 +5，施法後卷軸消失。"]);
+  const slotsBefore = await page.evaluate(() => [...document.querySelectorAll("#spellslot1-row input:checked")].length);
+  await castButton("命令術").click();
+  const confirmCast = page.getByRole("button", { name: "施法", exact: true });
+  await confirmCast.waitFor();
+  assert.match(await page.locator(".tabletop-cast-summary").textContent(), /方式法術卷軸（豁免 DC 13・攻擊 \+5）.*消耗1 張卷軸（施法後消失）/u);
+  await page.getByRole("button", { name: "取消", exact: true }).last().click();
+  await confirmCast.waitFor({ state: "detached" });
+  assert.deepEqual([await item.isVisible(), await page.evaluate(() => Inventory.entries()[0].quantity)], [true, 2], "cancelling the cast keeps the scroll");
+  await castButton("命令術").click();
+  await confirmCast.click();
+  await itemClosed();
+  assert.equal(await page.evaluate(() => Inventory.entries()[0].quantity), 1, "casting uses up one scroll");
+  assert.match(await lastToast(), /^已施放命令術（.*法術卷軸，豁免 DC 13・攻擊 \+5）/u);
+  assert.equal(await page.evaluate(() => [...document.querySelectorAll("#spellslot1-row input:checked")].length), slotsBefore, "scrolls do not spend spell slots");
+  await page.waitForFunction(() => document.activeElement?.closest?.("[data-inventory-uid]")?.textContent.includes("命令術"), null, { timeout: 2000 });
+
+  // 來源法術：職業清單外也能施法；舊資料沒有 spellId，依完整名稱對回法術。
+  await setCharacter({ class: "fighter", level: "5", race: "gnome", "gnome-lineage": "forest_gnome" }, [scroll("動物交談"), scroll("次級幻影", 1, "minor-illusion")]);
+  await openItem("動物交談法術卷軸");
+  assert.deepEqual([await castButton("動物交談").isDisabled(), await scrollRow().locator(".inventory-action-row__text").textContent()],
+    [false, "動物交談｜你始終準備這個法術，來自侏儒（森林侏儒）。豁免 DC 13・攻擊 +5，施法後卷軸消失。"], "always-prepared origin spells can be read");
+  await closeItem();
+  await openItem("次級幻影法術卷軸");
+  assert.deepEqual([await castButton("次級幻影").isDisabled(), await scrollRow().locator(".inventory-action-row__text").textContent()],
+    [false, "次級幻影｜你已學會這個戲法，來自侏儒（森林侏儒）。豁免 DC 13・攻擊 +5，施法後卷軸消失。"], "known cantrips count");
+  await closeItem();
+
+  // 手動管理法術不檢查。
+  await setCharacter({ class: "fighter", level: "5" }, [scroll("命令術", 1, "command")]);
+  await page.evaluate(() => SpellManagement.setManual(true, { confirm: false }));
+  await openItem("命令術法術卷軸");
+  assert.deepEqual([await castButton("命令術").isDisabled(), await scrollRow().locator(".inventory-action-row__text").textContent()],
+    [false, "命令術｜手動管理法術，請自行確認能否使用。豁免 DC 13・攻擊 +5，施法後卷軸消失。"], "manual spell management is not blocked");
+  await closeItem();
+  await page.evaluate(() => SpellManagement.setManual(false, { confirm: false }));
+
+  // 攻擊用卷軸的 +5，治療加的調整值用角色卡的；毒藥只留塗抹；文字清單的卷軸與目錄同款、手打的自訂物品沒有施法。
+  const rolls = await page.evaluate(() => {
+    const build = spellId => TabletopSpells.logic.buildRollEntries({ spellId, spell: SpellCatalog.getSpell(spellId), sourceKey: "test", spellClass: "" },
+      { method: "scroll", effectiveLevel: SpellCatalog.getSpell(spellId).level, damageType: "", scroll: { saveDc: 13, attackBonus: 5 } }).map(roll => roll.expression);
+    applyStateObject({ class: "cleric", level: "5", wis: "14", __inventory: { version: 1, items: [] } });
+    document.getElementById("spell-adjustment").value = "+3";
+    return { attack: build("guiding-bolt")[0], heal: build("cure-wounds")[0] };
+  });
+  assert.deepEqual(rolls, { attack: "1d20+5", heal: "2d8+3" }, "scrolls fix the attack bonus and keep the sheet's spellcasting modifier");
+  await page.evaluate(() => Inventory.add([{ itemId: "基礎毒藥" }, { name: "假法術卷軸" }, { text: "命令術法術卷軸" }]));
+  await openItem("基礎毒藥");
+  assert.deepEqual(await actionButtons(), ["塗抹"], "the poison has no separate damage button");
+  await closeItem();
+  assert.deepEqual(await page.evaluate(() => Inventory.entries().filter(entry => entry.name?.endsWith("法術卷軸")).map(entry => [entry.name, entry.itemId || "", Inventory.getScrollSpellId(entry)])),
+    [["假法術卷軸", "", ""], ["命令術法術卷軸", "法術卷軸", "command"]]);
   await page.evaluate(() => DiceRoller.setEnabled(false));
 }
 
@@ -2446,6 +2518,7 @@ async function validateEquipmentShop(page) {
   await shop.waitFor({ state: "detached" });
   assert.equal(await cartDialog.count(), 0, "checkout from the cart closes both windows");
   assert.equal(await page.evaluate(() => Inventory.formatText()), "繩索、繩索 ×2、命令術法術卷軸", "each checkout line becomes its own tag instead of joining the same item");
+  assert.deepEqual(await page.evaluate(() => Inventory.entries().filter(entry => entry.name === "命令術法術卷軸").map(entry => [entry.itemId, entry.spellId])), [["法術卷軸", "command"]], "bought scrolls remember the spell id");
   assert.equal(await page.locator("#gear-notes").inputValue(), "自由備註", "checkout leaves the free-text notes alone");
   assert.equal(await page.evaluate(() => JSON.parse(document.getElementById("money-log-data").value)[0].note), "免費取得繩索 ×2、命令術法術卷軸");
   assert.equal(await page.locator("#money-balance-gp").inputValue(), "10");

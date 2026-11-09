@@ -216,7 +216,7 @@
     const key = spell ? `${item.key}|${spell.spellId}` : item.key;
     const name = spell ? `${spell.nameZh}法術卷軸` : item.name;
     const existing = lines.get(key);
-    const line = existing || { key, itemKey: item.key, name, label: spell ? name : getItemLabel(item), gearName: spell ? name : "", amount: item.amount, currency: item.currency, copper: item.copper, weight: item.weight, quantity: 0 };
+    const line = existing || { key, itemKey: item.key, name, label: spell ? name : getItemLabel(item), gearName: spell ? name : "", spellId: spell?.spellId || "", amount: item.amount, currency: item.currency, copper: item.copper, weight: item.weight, quantity: 0 };
     line.quantity = Math.min(QUANTITY_MAX, line.quantity + quantity);
     lines.set(key, line);
     return line;
@@ -461,7 +461,7 @@
     const purchaseItems = wallet ? wallet.purchaseItems : globalScope.MoneyTracker?.purchaseItems;
     if (isCheckoutBlocked() || (wallet && free) || typeof purchaseItems !== "function") return false;
     const purchased = await purchaseItems(
-      lines.map(({ name, gearName, amount, currency, quantity }) => ({ name, gearName, amount, currency, quantity })),
+      lines.map(({ name, gearName, spellId, amount, currency, quantity }) => ({ name, gearName, spellId, amount, currency, quantity })),
       { free }
     );
     if (!purchased) {
