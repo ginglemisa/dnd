@@ -4277,6 +4277,8 @@ async function verifyFirstLoadDefaults(browser, url) {
     });
     await page.reload();
     assert.deepEqual(await state(page), [false, "true"], "the player's own choices survive a reload without an autosave");
+    await Promise.all([page.waitForNavigation(), page.evaluate(() => { setTimeout(clearAppStateAndReload, 0); })]);
+    assert.deepEqual(await state(page), [false, "true"], "clearing character records keeps both device switches");
     await returning.addInitScript(() => localStorage.setItem("dndchar_autosave_v1", JSON.stringify({ class: "fighter", level: "2" })));
     const existing = await returning.newPage();
     await existing.goto(url);
