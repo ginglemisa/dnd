@@ -127,7 +127,7 @@ async function main() {
     const input = page.locator("#spell-search");
     const results = page.locator("#spell-search-results");
     const buttons = page.locator("#spell-search-result-list button");
-    assert.equal(await input.getAttribute("placeholder"), '輸入"火球"或"牧師法術"、"詩人二環"');
+    assert.equal(await input.getAttribute("placeholder"), "ex:火球 牧師法術 法師三環");
     // 搜尋涵蓋全部 SRD 法術（只供查閱的法術只比對名稱）；職業分類是網站法表與 SRD 職業清單的聯集。
     const catalog = await page.evaluate(() => SpellCatalog.getAllReferenceSpells().map(spell => ({
       id: spell.spellId, level: spell.level, name: spell.nameEn, playable: spell.playable,
