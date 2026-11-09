@@ -768,7 +768,13 @@ async function validateMagicItemShop(page) {
   assert.deepEqual(await grant.locator("select").first().locator("option").allTextContents(), ["戲法", "1環", "2環", "3環", "4環", "5環"], "scrolls offer cantrips to 5th level");
   await get().click();
   assert.deepEqual(await grant.locator(".starting-equipment-error").allTextContents(), ["", "請先選擇法術。"], "a missing spell keeps the dialog open");
+  // 卷軸的網站版只描述戲法與 1 環：選 2 環以上時切換鈕消失、直接顯示譯文，選回來時切換鈕也回來。
+  await grant.locator("select").first().selectOption({ label: "3環" });
+  assert.equal(await potionTabs.count(), 0, "a 3rd-level scroll has no version tabs");
+  assert.equal(await grant.locator(".spell-version__site").count(), 0, "a 3rd-level scroll has no website version");
+  await grant.locator(".magic-item-detail__text").getByText(/卷軸上寫有單一法術的文字/u).first().waitFor();
   await grant.locator("select").first().selectOption({ label: "1環" });
+  assert.deepEqual(await potionTabs.allTextContents(), ["網站版", "SRD 版"], "going back to a 1st-level scroll brings the tabs back");
   await grant.locator("select").nth(1).selectOption({ label: "命令術" });
   await finishGrant();
 
@@ -851,6 +857,7 @@ async function validateMagicItemShop(page) {
   // 物品視窗：副標、說明、提示與使用；治療藥水有 getHeal() 時是飲用。
   await page.evaluate(() => Inventory.restore({ version: 1, items: [
     { uid: "scroll", itemId: "法術卷軸", name: "奧術之手法術卷軸", spellId: "arcane-hand", quantity: 1 },
+    { uid: "scroll1", itemId: "法術卷軸", name: "命令術法術卷軸", spellId: "command", quantity: 1 },
     { uid: "greater", quantity: 2, magic: { id: "potions-of-healing", potency: "greater" } },
     { uid: "climbing", quantity: 2, magic: { id: "potion-of-climbing" } },
     { uid: "amulet", quantity: 1, magic: { id: "amulet-of-health" } },
@@ -884,10 +891,14 @@ async function validateMagicItemShop(page) {
   await item.getByRole("button", { name: "使用攀爬藥水" }).click();
   assert.equal(await page.evaluate(() => Inventory.getEntry("climbing").quantity), 1, "using a consumable takes one");
   await closeItem();
-  await openItem("scroll");
+  await openItem("scroll1");
   assert.match(await item.locator(".spell-version__site").innerText(), /記載一個戲法或 1 環法術/u, "spell scrolls open on the website version");
   await item.locator('[data-spell-version="srd"]').click();
   assert.match(await item.locator(".spell-version__srd-body").innerText(), /卷軸上寫有單一法術的文字/u, "the SRD version shows the translation");
+  await closeItem();
+  await openItem("scroll");
+  assert.equal(await item.locator(".spell-version__tab").count(), 0, "scrolls above 1st level have no version tabs");
+  await item.locator(".magic-item-detail__text").getByText(/卷軸上寫有單一法術的文字/u).first().waitFor();
   await item.getByRole("button", { name: "使用奧術之手法術卷軸" }).click();
   await item.waitFor({ state: "detached" });
   assert.equal(await page.evaluate(() => Inventory.getEntry("scroll")), null, "the last scroll closes the dialog");
@@ -2218,6 +2229,7 @@ async function validateInventoryItemActions(page) {
   await openItem("火球術法術卷軸");
   assert.match(await scrollRow().first().locator(".inventory-action-row__text").textContent(), /豁免 DC 15・攻擊 \+7/u, "a 3rd-level scroll uses its own numbers");
   assert.equal(await item.getByRole("button", { name: "使用火球術法術卷軸" }).count(), 0, "a castable scroll has no separate use button");
+  assert.equal(await item.locator(".spell-version__tab").count(), 0, "a 3rd-level scroll in the inventory shows only the SRD version");
   await closeItem();
   await openItem("奧術之手法術卷軸");
   assert.equal(await castButton("奧術之手").count(), 0, "SRD-only spells cannot be cast from a scroll");

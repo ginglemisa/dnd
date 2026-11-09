@@ -888,9 +888,13 @@
       allowNested: true,
       renderContent(body, dialog) {
         // 魔法物品顯示與魔法商店相同的說明，目錄物品顯示與商店相同的說明（search.js），下方「持有」區調整數量與位置；自訂與通稱物品只有持有區。
+        const scrollLevel = api().getScrollSpellLevel(entry);
+        const srdOnlyScroll = globalScope.MagicItemShop?.isSrdOnlyScroll(scrollLevel) ? globalScope.MagicItemCatalog.getByEquipmentName(entry.itemId) : null;
         const hasDetail = entry.magic
           ? Boolean(globalScope.MagicItemShop?.renderDetail(body, entry.magic.id, { selection: entry.magic }))
-          : Boolean(item && !item.generic && globalScope.renderEquipmentDetailInto?.(body, entry.itemId));
+          : srdOnlyScroll
+            ? Boolean(globalScope.MagicItemShop.renderDetail(body, srdOnlyScroll.id, { selection: { spellLevel: scrollLevel } }))
+            : Boolean(item && !item.generic && globalScope.renderEquipmentDetailInto?.(body, entry.itemId));
         if (entry.magic && !hasDetail) body.appendChild(el("p", "inventory-item-note", "網站找不到這件魔法物品的資料，可能來自較新的版本或內容已移除；這一筆會保留在物品欄。"));
         const holding = el("section", "inventory-holding");
         holding.classList.toggle("has-detail", hasDetail);

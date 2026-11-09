@@ -16,6 +16,7 @@
   const SHOP_NOTE = "點物品查看效果後獲得，不花費金幣";
   // 魔法模式的法術卷軸開放到 5 環；5 環法術只有 SRD 版，角色不能施放，但卷軸仍可取得。
   const MAX_SCROLL_LEVEL = 5;
+  const SITE_SCROLL_MAX_LEVEL = 1;
   const SEGMENTED_MAX = 4;
   const RARITY_ORDER = Object.freeze(["common", "uncommon", "rare", "very-rare", "legendary", "artifact"]);
   const DEFAULT_AMMO_QUANTITY = 20;
@@ -134,9 +135,16 @@
     return item.options.filter(option => !isScrollOption(option)).every(option => option.choices.find(choice => choice.value === selection[option.id])?.omitInName);
   }
 
-  // 網站版是一般款的舊說明：還沒選選項時照常顯示，選到高等以上的藥水時沒有網站版。
+  // 卷軸的網站版只描述戲法與 1 環，2 環以上只有 SRD 版。
+  function isSrdOnlyScroll(spellLevel) {
+    return Number.isInteger(spellLevel) && spellLevel > SITE_SCROLL_MAX_LEVEL;
+  }
+
+  // 網站版是一般款的舊說明：還沒選選項時照常顯示，選到高等以上的藥水、2 環以上的卷軸時沒有網站版。
   function hasSiteVersion(item, selection) {
-    return Boolean(item.siteText) && (!selection || isOrdinarySelection(item, selection));
+    if (!item.siteText) return false;
+    if (!selection) return true;
+    return item.options.some(isScrollOption) ? !isSrdOnlyScroll(selection.spellLevel) : isOrdinarySelection(item, selection);
   }
 
   /**
@@ -229,7 +237,7 @@
     return createField(option.label, group, () => selected.value, "", "div");
   }
 
-  // 目前會影響說明的選項只有分段按鈕（治療藥水的等級），下拉不通知。
+  // 會影響說明的選項是分段按鈕（治療藥水的等級）與卷軸環階，一般下拉不通知。
   function createOptionField(option, onChange) {
     if (option.choices.length <= SEGMENTED_MAX) return createSegmentedField(option, onChange);
     const field = createSelectField(option.label, `選擇${option.label}…`, option.choices.map((choice, index) => [String(index), choice.label]), `請先選擇${option.label}。`);
@@ -246,7 +254,7 @@
   }
 
   // 法術卷軸：環階（戲法到 5 環）與該環階的法術。
-  function createScrollFields(option) {
+  function createScrollFields(option, onChange) {
     const choices = option.choices.filter(choice => choice.value <= MAX_SCROLL_LEVEL);
     const level = createSelectField("環階", "", choices.map((choice, index) => [String(index), choice.label]), "");
     const spells = () => getScrollSpells(choices[Number(level.select.value)].value);
@@ -254,7 +262,10 @@
     const renderSpells = () => {
       spell.select.replaceChildren(new Option("選擇法術…", ""), ...spells().map(candidate => new Option(candidate.nameZh, candidate.spellId)));
     };
-    level.select.addEventListener("change", renderSpells);
+    level.select.addEventListener("change", () => {
+      renderSpells();
+      onChange(choices[Number(level.select.value)].value);
+    });
     renderSpells();
     return [
       { ...level, key: option.id, read: () => choices[Number(level.select.value)].value },
@@ -283,7 +294,7 @@
     const choices = catalog().getBaseChoices(item.id);
     if (choices.length > 1) fields.push({ ...createSelectField("基本款", "選擇基本款…", choices.map(name => [name, name]), "請先選擇基本款。"), key: "base" });
     item.options.forEach((option) => {
-      if (isScrollOption(option)) fields.push(...createScrollFields(option));
+      if (isScrollOption(option)) fields.push(...createScrollFields(option, value => onOptionChange(option.id, value)));
       else fields.push({ ...createOptionField(option, value => onOptionChange(option.id, value)), key: option.id });
     });
     if (isAmmunition(item)) fields.push(createQuantityField());
@@ -376,6 +387,7 @@
 
   globalScope.MagicItemShop = Object.freeze({
     mode: Object.freeze({ title: "魔法物品", note: SHOP_NOTE, icon: ICON, getCategories, getSections, createRow }),
-    renderDetail
+    renderDetail,
+    isSrdOnlyScroll
   });
 })(window);

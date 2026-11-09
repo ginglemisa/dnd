@@ -679,6 +679,16 @@
     return part.uid;
   }
 
+  /** 法術卷軸記載的法術環階（含只有 SRD 版的法術）；舊資料依完整名稱對回法術，對不到或不是卷軸時回傳 null。 */
+  function getScrollSpellLevel(entry) {
+    if (entry?.itemId !== SPELL_SCROLL_ID) return null;
+    const catalogApi = globalScope.SpellCatalog;
+    const spell = entry.spellId
+      ? catalogApi?.getReferenceSpell(entry.spellId)
+      : catalogApi?.getAllReferenceSpells().find(candidate => `${candidate.nameZh}${SPELL_SCROLL_ID}` === entry.name);
+    return spell ? spell.level : null;
+  }
+
   /** 法術卷軸記載的法術 ID；舊資料依完整名稱對回法術，對不到或不是卷軸時回傳空字串。 */
   function getScrollSpellId(entry) {
     if (entry?.itemId !== SPELL_SCROLL_ID) return "";
@@ -1079,6 +1089,7 @@
     getState,
     getUses,
     getScrollSpellId,
+    getScrollSpellLevel,
     ensureEquipped,
     setTextOnly,
     isTextOnly: () => textOnly,
