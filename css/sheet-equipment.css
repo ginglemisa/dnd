@@ -2880,7 +2880,7 @@ button.inventory-arrange-done {
   align-items: end;
 }
 
-.inventory-holding__row .inventory-stepper {
+.inventory-holding__row .inventory-stepper, .inventory-bonus-transfer .inventory-stepper {
   display: grid;
   grid-template-columns: 2.6rem minmax(0, 1fr) 2.6rem;
   width: 100%;
