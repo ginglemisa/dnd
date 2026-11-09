@@ -1135,6 +1135,25 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.selectOption("#offHand", "盾牌");
     assert.equal(await page.inputValue("#ac-display"), "12");
 
+    // 雙手武器佔用副手時，副手列不是武器：選項的攻擊備註只加主手，舊存檔多寫的備註載入後清掉，戲法可用第 2 列。
+    for (const [className, optionId, attackNote] of [
+      ["cleric", "cleric-blessed-strikes-divine-strike", "+1d8光/黯傷害"],
+      ["druid", "druid-elemental-fury-primal-strike", "+1d8冷凍/火焰/閃電/雷鳴傷害"]
+    ]) {
+      const base = { __spellManagement: { version: 2, manual: true, entries: [{ spellId: "sacred-flame", spellClass: className }] }, class: className, level: "7", offHandAsMain: false, main2Shield: false, [optionId]: true };
+      const load = state => page.evaluate(state => {
+        applyStateObject(state);
+        const payload = buildPdfFieldPayload(collectStateObject());
+        return { mainNote: document.getElementById("atk-main-note").value, offNote: document.getElementById("atk-off-note").value, offName: document.getElementById("atk-off-name").value, pdfRow2: payload["attack-weap-name-2"], pdfNote2: payload["wp-note-2"] };
+      }, state);
+      const automated = await load({ ...base, "weapon-attack-automation": true, mainHand: "巨劍", offHand: "", "atk-off-note": attackNote });
+      assert.deepEqual(automated, { mainNote: attackNote, offNote: "", offName: "(雙手佔用)", pdfRow2: "聖火術", pdfNote2: "60呎/敏捷豁免" }, `${className}: two-handed off-hand placeholder is not a weapon`);
+      const manual = await load({ ...base, "weapon-attack-automation": false, mainHand: "巨劍", offHand: "", "atk-main-name": "巨劍", "atk-off-name": "(雙手佔用)", "atk-off-note": attackNote });
+      assert.equal(manual.offNote, "", `${className}: the placeholder kept in a manual attack row gets no note`);
+      const twoWeapons = await load({ ...base, "weapon-attack-automation": true, mainHand: "短劍", offHand: "匕首", "atk-off-note": "" });
+      assert.deepEqual([twoWeapons.mainNote, twoWeapons.offNote], [attackNote, attackNote], `${className}: a real off-hand weapon keeps the note`);
+    }
+
     // 未熟練盾牌不加 AC；警告依武器／盾牌／護甲開啟不同說明，隱匿與劣勢沿用技能說明。
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "wizard", mainHand: "長劍", offHand: "盾牌", offHandAsMain: false, armor: "環甲" }));
     assert.equal(await page.inputValue("#ac-display"), "14", "untrained shield adds no AC");

@@ -685,6 +685,20 @@ async function verifyPdf(page, fieldsOnly) {
     // Damage keeps half-width dice and one space between dice and type.
     const damageState = { "atk-main-name": "長劍", "atk-main-dmg": " 1d12  冷凍 " };
     if (buildPdfFieldPayload(damageState).dmg_type_1 !== "1d12 冷凍" || buildPdfFieldPayload(damageState, { sheetTemplate: "official" })["dmg-type1"] !== "1d12 冷凍") throw new Error("PDF damage keeps half-width text");
+    // Agonizing Blast adds Charisma to the chosen warlock cantrip's damage row only.
+    const agonizingState = {
+      class: "warlock", level: "5", cha: "16", "spell-attack-bonus": "+6",
+      "eldritch-invocation-3-1": true, "eldritch-invocation-3-1-cantrip": "eldritch-blast",
+      "eldritch-invocation-3-2": false, "eldritch-invocation-3-2-cantrip": "poison-spray",
+      __spellManagement: { version: 2, manual: true, entries: [{ spellId: "eldritch-blast", spellClass: "warlock" }, { spellId: "poison-spray", spellClass: "warlock" }] }
+    };
+    const agonizingRow = (state, options) => { const payload = buildPdfFieldPayload(state, options); return [payload.dmg_type_1 ?? payload["dmg-type1"], payload.dmg_type_2 ?? payload["dmg-type2"]]; };
+    if (agonizingRow(agonizingState).join() !== "1d10+3 力場,2d12 毒素") throw new Error(`PDF adds Charisma to the Agonizing Blast cantrip: ${agonizingRow(agonizingState)}`);
+    if (agonizingRow(agonizingState, { sheetTemplate: "official" }).join() !== "1d10+3 力場,2d12 毒素") throw new Error("Official PDF adds Charisma to the Agonizing Blast cantrip");
+    if (agonizingRow({ ...agonizingState, "eldritch-invocation-3-1": false })[0] !== "1d10 力場") throw new Error("Unchecked Agonizing Blast adds nothing");
+    if (agonizingRow({ ...agonizingState, cha: "8" })[0] !== "1d10-1 力場") throw new Error("Agonizing Blast writes a negative Charisma modifier");
+    if (agonizingRow({ ...agonizingState, cha: "10" })[0] !== "1d10 力場") throw new Error("Agonizing Blast omits a zero modifier");
+    if (agonizingRow({ ...agonizingState, __spellManagement: { version: 2, manual: true, entries: [{ spellId: "eldritch-blast", spellClass: "wizard" }] } })[0] !== "1d10 力場") throw new Error("Agonizing Blast only applies to warlock cantrip rows");
     // A long custom spell name stays one unbroken line in the single-line field.
     const longSpellName = "超長自創法術名稱測試用的完整名字";
     const longSpellPayload = buildPdfFieldPayload({ class: "wizard", level: "1" }, { customSpells: [{ spellId: "custom-spell-long", level: 1, nameZh: longSpellName, desc: "學派：塑能" }] });
@@ -2481,6 +2495,11 @@ async function verifyClassFeatureSupplementalChoices(browser, url) {
     await modal.getByLabel("苦痛魔爆：戲法 #1", { exact: true }).selectOption("eldritch-blast");
     assert.equal(await page.evaluate(() => getAgonizingBlastSelects()[0].value), "eldritch-blast", "invocation target can be completed inline");
     await close();
+    await page.addScriptTag({ url: "/pdf-field-map.js" });
+    assert.equal(await page.evaluate(() => {
+      document.getElementById("cha").value = "16";
+      return buildPdfFieldPayload(collectStateObject({ includeDerivedSpellRows: true })).dmg_type_1;
+    }), "1d10+3 力場", "the sheet's Agonizing Blast choice reaches the PDF damage row");
 
     const retainedChoices = { "class-paladin-blessed-warrior-cantrip-1": "guidance", "class-paladin-blessed-warrior-cantrip-2": "sacred-flame" };
     await page.evaluate(choices => {

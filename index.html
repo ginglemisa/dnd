@@ -141,7 +141,7 @@
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261108-wild-shape-ux" defer></script>
-  <script src="tabletop-druid.js?v=20261108-wild-shape-ux" defer></script>
+  <script src="tabletop-druid.js?v=20261109-primal-strike-note" defer></script>
   <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
   <script src="tabletop-actions.js?v=20261108-wild-shape-savage" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
@@ -1440,7 +1440,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261105-feat-categories"></script>
   <script src="spell-sources.js?v=20261109-item-actions"></script>
-  <script src="class-features-ui.js?v=20261106-background-skills"></script>
+  <script src="class-features-ui.js?v=20261109-two-handed-note"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -3465,7 +3465,7 @@ function finishDerivedChecksLoad(data) {
   syncAutomaticKeyStatsMode({ refresh: false });
 }
 </script>
-<script src="pdf-launcher.js?v=20261106-skills-auto"></script>
+<script src="pdf-launcher.js?v=20261109-agonizing-blast"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -3740,7 +3740,7 @@ function updateOffHandOptions(mainHandValue) {
   if (hasTwoHandedProperty(mainWeapon)) {
     offHandSelect.innerHTML = "";
     const opt = document.createElement("option");
-    opt.textContent = "(雙手佔用)";
+    opt.textContent = TWO_HANDED_OFF_HAND_PLACEHOLDER;
     opt.disabled = true;
     opt.selected = true;
     offHandSelect.appendChild(opt);
