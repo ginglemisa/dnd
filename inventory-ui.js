@@ -88,8 +88,8 @@
 
   function setWeightHidden(hidden) {
     try {
-      if (hidden) globalScope.dndStorage?.setItem(WEIGHT_HIDDEN_KEY, "true");
-      else globalScope.dndStorage?.removeItem(WEIGHT_HIDDEN_KEY);
+      // 打開時寫 "false" 而不是刪除：第一次開啟的預設只補還沒有值的情況，玩家打開過就要記住。
+      globalScope.dndStorage?.setItem(WEIGHT_HIDDEN_KEY, hidden ? "true" : "false");
     } catch { /* 存不了時只影響這次畫面。 */ }
     renderWeight();
   }

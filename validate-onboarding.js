@@ -19,11 +19,11 @@ const TABLETOP_COPY = [
 ];
 
 const SHEET_COPY = [
-  ["⚔️ 建立你的角色", "背景描述過往經歷，種族提供不同特性，\n職業則決定擅長的能力，以及在冒險中解決問題的方式。\n\n完成選擇後，速度、專長與其他角色資料會自動更新。", 1, ["背景", "種族", "職業"]],
+  ["⚔️ 建立你的角色", "你的角色由三個選擇組成\n職業：你在冒險中的打法，例如揮劍、施法或潛行。\n背景：你冒險前的人生，會帶來一些技能和屬性加分。\n種族：你天生的血統，帶來特殊能力，例如能在黑暗中視物。\n\n選好後，移動速度、ＨＰ等數值會自動填好，不用自己計算。", 1, ["職業", "背景", "種族"]],
   ["🎲 決定角色屬性", "六項屬性代表角色的基本能力，並會影響攻擊、技能與各種檢定。\n\n你可以直接輸入屬性數值，也可以從右上角選單開啟決定屬性功能。", 2, ["六項屬性", "決定屬性"]],
   ["🎲 選擇屬性產生方式", "接下來，選擇角色的屬性產生方式。\n\n點擊決定屬性開始設定。", 2, ["決定屬性"]],
   ["🎲 選擇購點或擲骰", "27 點購點讓你自行分配屬性，角色能力較為穩定。\n\n屬性擲骰則具有較高的隨機性，通常在 DM 同意使用時採用。\n\n選擇適合目前遊戲的方式後，即可開始配置屬性。", 3, ["27 點購點", "屬性擲骰", "DM 同意"]],
-  ["🎲 配置基礎屬性", "使用 27 點購點時，每項屬性可以設定在 8～15 之間。\n\n屬性越高，需要消耗的點數越多。調整數值時，可以從下方確認剩餘點數。\n\n完成配置前，總花費不得超過 27 點。", 4, ["27 點購點", "剩餘點數"]],
+  ["🎲 配置基礎屬性", "你有 27 點可以分配。每項屬性從 8 開始，最高到 15。\n\n升到 9～13：每升 1 花 1 點\n升到 14、15：每升 1 花 2 點\n\n剩餘點數顯示在下方，花費不能超過 27 點。", 4, ["27 點", "剩餘點數"]],
   ["🎲 套用背景加值", "選擇背景後，將提供的屬性加值分配至角色屬性。\n\n確認所有數值後，點擊套用完成屬性設定。", 5, ["背景", "套用"]],
   ["🛡️ 選擇武器與護甲", "選擇武器或護甲時，下方會顯示傷害、防禦與相關特性。選單只列出「攜帶物品」裡有的武器與護甲。\n\n遇到不熟悉的規則名詞，可以直接點擊摘要中的名稱查看詳細說明。", 6, []],
   ["✨ 選擇與管理法術", "選好職業、等級、背景與種族（會施法時再選施法屬性）後，可按「準備法術」管理法術清單。", 7, []],
@@ -100,6 +100,57 @@ async function ready(page, index) {
 async function pointBuyReady(page, phase) {
   await page.waitForFunction(phase => onboardingTour.active && !onboardingTour.isTransitioning
     && onboardingTour.currentIndex === 2 && onboardingTour.stepPhase === phase && onboardingTour.presentationFrame === null, phase);
+}
+
+// 4/8 temporarily leaves only STR and DEX, moves the points line under them and frames the base column.
+async function assertPointBuyFocus(page) {
+  const state = await page.evaluate(() => {
+    const visible = element => element.getClientRects().length > 0;
+    const hole = onboardingTour.activeHoles[0];
+    const inside = rect => hole.left <= rect.left && hole.right >= rect.right && hole.top <= rect.top && hole.bottom >= rect.bottom;
+    const modal = document.getElementById("point-buy-modal");
+    const row = ability => modal.querySelector(`.point-buy-row[data-ability="${ability}"]`);
+    const arrows = ["str", "dex"].map(ability => row(ability).querySelector('[data-action="base-inc"]').getBoundingClientRect());
+    const decrease = ["str", "dex"].map(ability => row(ability).querySelector('[data-action="base-dec"]').getBoundingClientRect());
+    const labels = ["str", "dex"].map(ability => row(ability).querySelector(".point-buy-ability").getBoundingClientRect());
+    const summary = modal.querySelector(".point-buy-summary");
+    const parts = [...summary.children].map(part => part.getBoundingClientRect());
+    const head = modal.querySelector(".point-buy-table-head");
+    const bonus = row("dex").querySelector(".point-buy-control-group--bonus");
+    const contentRight = Math.max(...arrows.map(rect => rect.right), ...parts.map(rect => rect.right));
+    return {
+      holes: onboardingTour.activeHoles.length,
+      rows: [...modal.querySelectorAll(".point-buy-row")].filter(visible).map(element => element.dataset.ability),
+      controlsInside: [...arrows, ...decrease, ...labels].every(inside),
+      pointsInside: parts.every(inside),
+      pointsUnderDex: Math.abs(summary.getBoundingClientRect().top - row("dex").getBoundingClientRect().bottom) <= 12,
+      stopsAtContent: Math.abs(hole.right - (contentRight + 6)) <= 1,
+      headCovered: !visible(head) || hole.top <= head.getBoundingClientRect().top,
+      bonusOutside: !visible(bonus) || bonus.querySelector("button").getBoundingClientRect().left >= hole.right,
+      bonusHiddenOnNarrow: innerWidth >= 500 || !visible(bonus),
+      totalOutside: row("dex").querySelector(".point-buy-total").getBoundingClientRect().left >= hole.right
+    };
+  });
+  assert.deepEqual(state, {
+    holes: 1, rows: ["str", "dex"], controlsInside: true, pointsInside: true, pointsUnderDex: true, stopsAtContent: true,
+    headCovered: true, bonusOutside: true, bonusHiddenOnNarrow: true, totalOutside: true
+  }, "4/8 shows only STR/DEX with the points line, framed up to the base-value arrows");
+}
+
+async function assertPointBuyFullLayout(page, message) {
+  assert.deepEqual(await page.evaluate(() => {
+    const visible = element => element.getClientRects().length > 0;
+    const modal = document.getElementById("point-buy-modal");
+    return {
+      focus: modal.classList.contains("onboarding-tour-point-buy-focus"),
+      rows: [...modal.querySelectorAll(".point-buy-row")].filter(visible).map(element => element.dataset.ability),
+      bonus: [...modal.querySelectorAll(".point-buy-control-group--bonus")].filter(visible).length
+    };
+  }), { focus: false, rows: ["str", "dex", "con", "int", "wis", "cha"], bonus: 6 }, message);
+}
+
+async function assertPointBuyFocusRemoved(page, message) {
+  assert.equal(await page.locator("#point-buy-modal.onboarding-tour-point-buy-focus").count(), 0, message);
 }
 
 async function identityDetailsReady(page) {
@@ -510,6 +561,51 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
   assert.equal(after.focus, complete ? "tabletop-tab-overview" : before.focus);
 }
 
+// Sections open their own isolated pages, so they run side by side and their
+// animation waits overlap. DND_ONBOARDING_WORKERS=1 runs them one at a time.
+const BACKGROUND_WORKERS = Math.max(1, Number(process.env.DND_ONBOARDING_WORKERS) || 4);
+
+// The 24 first-table tour combinations, grouped into lanes that each keep the original order.
+const TOUR_LANES = [{ width: 1280, height: 800 }, { width: 390, height: 844 }, { width: 320, height: 568 }]
+  .flatMap(viewport => [false, true].map(caster => ({ viewport, caster })));
+
+async function verifyTourLane(page, { viewport, caster }) {
+  for (const mode of ["sheet", "tabletop"]) {
+    for (const complete of [false, true]) await verifyTour(page, { ...viewport, caster, mode, complete });
+  }
+}
+
+async function verifySeparateTourLane(browser, url, lane) {
+  const page = await browser.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  await page.goto(url);
+  await page.waitForFunction(() => window.onboardingTour && window.quickBuild && window.TabletopMode);
+  await page.locator("#legal-ack-btn").click();
+  await verifyTourLane(page, lane);
+  assert.deepEqual(errors, []);
+  await page.close();
+}
+
+// Starts the tasks at once, at most `limit` at a time. After a failure no new task
+// starts; `done` rejects with the first error once the running ones have finished.
+function startTasks(tasks, limit) {
+  const queue = [...tasks];
+  let failed = false;
+  let firstError;
+  const worker = async () => {
+    while (queue.length && !failed) {
+      try { await queue.shift()(); }
+      catch (error) { if (!failed) firstError = error; failed = true; }
+    }
+  };
+  const done = Promise.all(Array.from({ length: limit }, worker)).then(() => { if (failed) throw firstError; });
+  // Reported when `done` is awaited; this only avoids an early unhandled rejection.
+  done.catch(() => {});
+  return { done, stop: () => { queue.length = 0; } };
+}
+
 async function main() {
   const server = http.createServer((req, res) => {
     const pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
@@ -523,6 +619,7 @@ async function main() {
   });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
   let browser;
+  let background = null;
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const page = await browser.newPage();
@@ -550,8 +647,23 @@ async function main() {
       await verifyTouch(browser, url);
       return;
     }
-    await verifyIdentityGuidance(browser, url);
-    await verifySheetExitSafety(browser, url);
+    background = startTasks([
+      ...TOUR_LANES.slice(0, -1).map(lane => () => verifySeparateTourLane(browser, url, lane)),
+      () => verifySheetExitSafety(browser, url),
+      () => verifyIdentityGuidance(browser, url),
+      () => verifyImports(browser, url),
+      () => verifyImports(browser, url, { width: 390, height: 844 }),
+      () => verifyTabletopDiceAndKeyStats(browser, url),
+      () => verifyAbilityGuidance(browser, url),
+      () => verifyPointBuyGuidance(browser, url),
+      () => verifyFirstTableCharacterData(browser, url),
+      () => verifyShareModeEntries(browser, url),
+      () => verifyTouch(browser, url),
+      () => verifyPdfLifecycle(browser, url),
+      () => verifyQuickBuildBackgroundCards(browser, url),
+      () => verifyQuickBuildRaceCards(browser, url),
+      () => verifyQuickBuildGuidanceCopy(browser, url)
+    ], BACKGROUND_WORKERS);
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.evaluate(() => onboardingTour.start());
     await ready(page, 0);
@@ -562,16 +674,8 @@ async function main() {
     }), true, "sheet introduction aligns below the origin row on desktop");
     await page.locator("#tour-skip-btn").click();
     await closed(page);
-    for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }, { width: 320, height: 568 }]) {
-      for (const caster of [false, true]) {
-        for (const mode of ["sheet", "tabletop"]) {
-          for (const complete of [false, true]) await verifyTour(page, { ...viewport, caster, mode, complete });
-        }
-      }
-    }
-    console.log("First-table tour: desktop/mobile, both modes, spell preview and real resource rows for all classes, examples, back/next, completion/Escape and data/storage/focus/scroll preservation passed.");
-    await verifyFirstTableCharacterData(browser, url);
-    await verifyTabletopDiceAndKeyStats(browser, url);
+    // The main page keeps the last lane, so the steps below start from the same state as before.
+    await verifyTourLane(page, TOUR_LANES.at(-1));
 
     const beforeSpellCancel = await snapshot(page);
     await page.evaluate(() => onboardingTour.start(5, "tabletop"));
@@ -661,10 +765,12 @@ async function main() {
     await page.locator("#ability-choice-point-buy").click();
     await pointBuyReady(page, 1);
     await assertSheetCopy(page, 4);
+    await assertPointBuyFocus(page);
     assert.equal(await page.locator("#tour-next-btn").textContent(), "下一步", "4/8 advances to 5/8");
     await page.locator("#tour-next-btn").click();
     await pointBuyReady(page, 2);
     await assertSheetCopy(page, 5);
+    await assertPointBuyFullLayout(page, "5/8 restores all six rows");
     assert.equal(await page.evaluate(() => {
       const [background, bonus] = onboardingTour.activeHoles;
       const contains = (hole, element) => {
@@ -735,19 +841,13 @@ async function main() {
     await page.evaluate(() => quickBuild.open());
     assert.deepEqual(await page.evaluate(() => quickBuild.getDraft()), draft);
     await page.evaluate(() => quickBuild.close());
-    await verifyQuickBuildBackgroundCards(browser, url);
-    await verifyQuickBuildRaceCards(browser, url);
-    await verifyQuickBuildGuidanceCopy(browser, url);
-    await verifyShareModeEntries(browser, url);
-    await verifyImports(browser, url);
-    await verifyImports(browser, url, { width: 390, height: 844 });
-    await verifyPdfLifecycle(browser, url);
-    await verifyAbilityGuidance(browser, url);
-    await verifyPointBuyGuidance(browser, url);
-    await verifyTouch(browser, url);
     assert.deepEqual(errors, []);
+    await background.done;
+    console.log("First-table tour: desktop/mobile, both modes, spell preview and real resource rows for all classes, examples, back/next, completion/Escape and data/storage/focus/scroll preservation passed.");
     console.log("Cancellation races, failed positioning, turn dialog, legacy ability/point-buy branches, target jump and quick-build draft reopen passed.");
   } finally {
+    // Let sections still running finish, so closing the browser cannot mask the real failure.
+    if (background) { background.stop(); await background.done.catch(() => {}); }
     await browser?.close();
     await new Promise(resolve => server.close(resolve));
   }
@@ -961,6 +1061,7 @@ async function verifyFirstTableCharacterData(browser, url) {
 async function verifyTabletopDiceAndKeyStats(browser, url) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  await page.addInitScript(() => { try { if (localStorage.getItem("dnd.diceSystemEnabled.v1") === null) localStorage.setItem("dnd.diceSystemEnabled.v1", "false"); } catch {} });
   await page.goto(url);
   await page.waitForFunction(() => window.onboardingTour && window.TabletopMode && window.DiceRoller);
   await page.locator("#legal-ack-btn").click();
@@ -1164,20 +1265,25 @@ async function verifySheetExitSafety(browser, url) {
       if (["points", "background"].includes(stage)) {
         await page.locator("#ability-choice-point-buy").click();
         await pointBuyReady(page, 1);
+        await assertPointBuyFocus(page);
       }
       if (stage === "background") {
         await page.locator("#tour-next-btn").click();
         await pointBuyReady(page, 2);
+        await assertPointBuyFullLayout(page, "next from 4/8 restores the rows");
         await page.locator("#tour-prev-btn").click();
         await pointBuyReady(page, 1);
+        await assertPointBuyFocus(page);
         await page.locator("#tour-prev-btn").click();
         await page.waitForFunction(() => onboardingTour.stepPhase === 0 && onboardingTour.presentationFrame === null);
+        await assertPointBuyFocusRemoved(page, "back from 4/8 removes the temporary layout");
       }
       if (exit === "Escape") await page.keyboard.press("Escape");
       else await page.locator(stage === "search" ? "#tour-next-btn" : "#tour-skip-btn").click();
       await closed(page);
       assert.equal(await page.locator("#ability-choice-modal").isVisible(), false, stage);
       assert.equal(await page.locator("#point-buy-modal").isVisible(), false, stage);
+      await assertPointBuyFocusRemoved(page, `${stage} exit removes the temporary layout`);
       await assertPageInteractive(page);
     }
   }
@@ -1276,7 +1382,7 @@ async function verifyAbilityGuidance(browser, url) {
 // 4/8 and 5/8 put their first target at the top and lock the card only when
 // both targets and the guidance fit; the demo background never persists.
 async function verifyPointBuyGuidance(browser, url) {
-  for (const viewport of [{ width: 375, height: 667, pointsLocked: false }, { width: 390, height: 844, pointsLocked: true }]) {
+  for (const viewport of [{ width: 375, height: 667 }, { width: 390, height: 844 }]) {
     const page = await browser.newPage({ viewport, isMobile: true, hasTouch: true });
     await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
     await page.goto(url);
@@ -1323,23 +1429,21 @@ async function verifyPointBuyGuidance(browser, url) {
     await page.waitForFunction(() => !onboardingTour.isTransitioning && !onboardingTour.abilityMenuGuideActive);
     await page.locator("#ability-choice-point-buy").tap();
     await pointBuyReady(page, 1);
+    await assertPointBuyFocus(page);
     const points = await layout();
     assert.deepEqual({ ...points, scrollTop: undefined }, {
-      locked: viewport.pointsLocked, firstAtTop: true, holes: viewport.pointsLocked ? 2 : 1,
-      between: viewport.pointsLocked, covers: false, scrollTop: undefined,
+      locked: true, firstAtTop: true, holes: 1,
+      between: false, covers: false, scrollTop: undefined,
       background: "soldier", choices: ["criminal", "soldier"]
     }, `4/8 layout at ${viewport.width}x${viewport.height}`);
     const pointsPoint = await cardPoint();
     await swipe(pointsPoint.x, pointsPoint.y, 120);
     const swiped = await layout();
-    if (viewport.pointsLocked) assert.equal(swiped.scrollTop, points.scrollTop, "4/8 does not scroll once both targets fit");
-    else {
-      assert(swiped.scrollTop > points.scrollTop, "4/8 scrolls when both targets cannot fit");
-      assert.equal(swiped.covers, false, "4/8 guidance moves away from the scrolled targets");
-    }
+    assert.equal(swiped.scrollTop, points.scrollTop, "4/8 does not scroll once its target and guidance fit");
 
     await page.locator("#tour-next-btn").tap();
     await pointBuyReady(page, 2);
+    await assertPointBuyFullLayout(page, "5/8 restores the rows and background bonus on phones");
     const bonus = await layout();
     assert.deepEqual({ ...bonus, scrollTop: undefined }, {
       locked: true, firstAtTop: true, holes: 2, between: true, covers: false, scrollTop: undefined,
@@ -1380,6 +1484,7 @@ async function verifyPointBuyGuidance(browser, url) {
       background: document.getElementById("point-buy-background").value,
       scrollTop: document.querySelector("#point-buy-modal .point-buy-modal-card").scrollTop
     })), { background: "", scrollTop: 0 }, "the next point buy opens without the demo choice");
+    await assertPointBuyFullLayout(page, "the next point buy shows all six rows");
     await page.close();
   }
   console.log("Point-buy guidance: targets at the top, fit-based scroll lock, guidance between highlights, demo backgrounds, DEX-only bonus and restore passed.");

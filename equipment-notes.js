@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
 屬性：敏捷
 重量：10 磅
 使用：用各種廢料拼湊組裝一個小玩意兒，這個東西會在 1 分鐘內散架（DC 20）
-製作：火繩槍，手槍，鈴鐺，牛眼提燈，扁瓶，附蓋提燈，狩獵陷阱，鎖，鐐銬，鏡子，鏟子，信號笛，火絨盒
+製作：火繩槍，手槍，鈴鐺，牛眼提燈，扁瓶，附蓋提燈，捕獸夾，鎖，鐐銬，鏡子，鏟子，信號笛，火絨盒
 
 裁縫工具（1 金幣）
 屬性：敏捷
@@ -524,9 +524,9 @@ DC 20 力量（運動）：掙斷鏈條
 重量：1 磅
 當你執行攻擊動作時，可以將其中一次攻擊改為投擲一瓶聖水。選擇 20 呎內你能看見的一名生物為目標。目標必須通過敏捷豁免（DC = 8 + 你的敏捷調整值 + 熟練加值）。若失敗且目標為邪魔或不死生物，則受到 2d8 光耀傷害。
 
-狩獵陷阱（5 金幣）
+捕獸夾（5 金幣）
 重量：25 磅
-作為使用動作，你可以設置一個狩獵陷阱。當生物踩到中央壓力板時，陷阱會關閉並由鏈條固定在靜止物體上（如樹或地釘）。
+作為使用動作，你可以設置一個捕獸夾。當生物踩到中央壓力板時，陷阱會關閉並由鏈條固定在靜止物體上（如樹或地釘）。
 踩中陷阱的生物必須通過 DC 13 敏捷豁免，否則受到 1d4 穿刺傷害，且速度降為 0，直到其下一回合開始。之後其移動受鏈條長度限制（通常 3 呎），直到掙脫。
 生物可用動作進行 DC 13 力量（運動）檢定來釋放自己或觸及內的生物。每次檢定失敗，受困生物受到 1 穿刺傷害。
 
@@ -805,6 +805,8 @@ DC 25 力量（運動）：掙斷鐐銬
     "冒險用品": { category: "gear", section: "冒險用品" }
   });
   const SHOP_GROUP_CATEGORIES = Object.freeze({ 彈藥: "ammo", 奧術法器: "focus", 德魯伊法器: "focus", 聖徽: "focus" });
+  // 不屬於「多種」群組、但列在指定類別的品項；法器類未分組的品項排在最上方。
+  const SHOP_ITEM_CATEGORIES = Object.freeze({ 材料包: "focus" });
   const COPPER_RATES = Object.freeze({ 銅幣: 1, 銀幣: 10, 金幣: 100 });
   const shopItems = [];
   const shopItemKeys = new Set();
@@ -826,7 +828,8 @@ DC 25 力量（運動）：掙斷鐐銬
     const section = name === "盾牌" ? "盾牌" : sectionInfo.section;
     let category = sectionInfo.category;
     if (category === "gear") {
-      category = SHOP_GROUP_CATEGORIES[group]
+      category = SHOP_ITEM_CATEGORIES[name]
+        || SHOP_GROUP_CATEGORIES[group]
         || (name.endsWith("套組") ? "pack" : "")
         || (variant ? "scroll" : "gear");
     }

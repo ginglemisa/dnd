@@ -34,6 +34,12 @@
 	      }
 	    });
 	    window.dndStorage = storage;
+	    // 這台裝置第一次開啟（還沒有角色存檔）：擲骰開啟、負重不顯示。已有存檔的玩家與已有的選擇都不動。
+	    if (!isSharePage && local.getItem("dndchar_autosave_v1") === null) {
+	      [["dnd.diceSystemEnabled.v1", "true"], ["dnd.inventoryWeightHidden.v1", "true"]].forEach(([key, value]) => {
+	        if (local.getItem(key) === null) local.setItem(key, value);
+	      });
+	    }
 	    const savedTheme = storage.getItem(themeKey);
 	    const theme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : "light";
 	    document.documentElement.dataset.theme = theme;
@@ -103,10 +109,10 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-magic-shield">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-merge-main">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/utility.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/dice.css?v=20261108-css-split">
+  <link rel="stylesheet" href="css/dice.css?v=20261109-tour-point-buy-focus">
   <link rel="stylesheet" href="css/dialogs.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/tabletop.css?v=20261108-css-split">
@@ -127,7 +133,7 @@
   <script src="background-content.generated.js?v=c9f6c95f6ead" defer></script>
   <script src="tool-data.js?v=20261104-class-picks" defer></script>
   <script src="feat-content.generated.js?v=472eb42de3f0" defer></script>
-  <script src="equipment-notes.js?v=20261108-magic-shop" defer></script>
+  <script src="equipment-notes.js?v=20261109-merge-main" defer></script>
   <script src="spell-content.generated.js?v=0" defer></script>
   <script src="spell-list.js?v=20261107-companion-variant" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
@@ -143,7 +149,7 @@
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261108-companion-timing" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
-  <script src="onboarding-tour.js?v=20261109-magic-names" defer></script>
+  <script src="onboarding-tour.js?v=20261109-merge-main" defer></script>
   <script src="quick-build.js?v=20261108-css-refactor-b7" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
   <script src="spell-management.js?v=20261107-share-readonly" defer></script>
@@ -256,7 +262,7 @@
     <div id="spell-tab-toolbar" class="spell-toolbar is-hidden" aria-label="法術搜尋工具列">
       <div class="spell-toolbar-row">
         <form id="spell-search-form" class="spell-search-controls" role="search" novalidate>
-          <input type="text" id="spell-search" inputmode="search" enterkeyhint="search" placeholder="輸入&quot;火球&quot;或&quot;牧師法術&quot;、&quot;詩人二環&quot;" aria-label="搜尋全部法術資料">
+          <input type="text" id="spell-search" inputmode="search" enterkeyhint="search" placeholder="ex:火球 牧師法術 法師三環" aria-label="搜尋全部法術資料">
           <button type="submit" id="spell-search-button" class="spell-search-button" aria-label="執行法術搜尋">搜尋</button>
           <button type="button" id="spell-browse-button" class="spell-search-button">查閱</button>
         </form>
@@ -3115,11 +3121,11 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   globalThis.armors = globalThis.armors || [];
   globalThis.shield = globalThis.shield || [];
 </script>
-<script src="equipment-data.js?v=20261105-starting-equipment" defer></script>
+<script src="equipment-data.js?v=20261109-trap-pouch" defer></script>
 <script src="search.js?v=20261109-magic-version" defer></script>
-<script src="equipment-shop.js?v=20261108-magic-shop" defer></script>
-<script src="inventory.js?v=20261109-magic-shield" defer></script>
-<script src="inventory-ui.js?v=20261109-magic-potion" defer></script>
+<script src="equipment-shop.js?v=20261109-merge-main" defer></script>
+<script src="inventory.js?v=20261109-merge-main" defer></script>
+<script src="inventory-ui.js?v=20261109-merge-main" defer></script>
 <script src="magic-item-shop.js?v=20261109-magic-potion" defer></script>
 
 <script>
@@ -5165,7 +5171,6 @@ const APP_STORAGE_KEYS = Object.freeze([
   FEAT_DISCLOSURE_STATE_KEY,
   SPELL_OVERVIEW_DISCLOSURE_STATE_KEY,
   CLASS_FEATURE_PROMPT_DISABLED_KEY,
-  "dnd.inventoryWeightHidden.v1",
   "dnd.quickBuildDraft.v1",
   POINT_BUY_LAST_APPLIED_KEY,
   TABLETOP_ACTION_PREFERENCES_STORAGE_KEY,

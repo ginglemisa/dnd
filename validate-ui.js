@@ -4262,6 +4262,35 @@ async function verifySubclassSelection(browser, url) {
   } finally { await page.close(); }
 }
 
+// 第一次開啟（沒有角色存檔）：擲骰開、負重收起，之後記住玩家的選擇；已有存檔的裝置維持原本的狀態。
+async function verifyFirstLoadDefaults(browser, url) {
+  const state = page => page.evaluate(() => [document.getElementById("dice-system-toggle").checked, document.getElementById("inventory-weight-toggle").getAttribute("aria-pressed")]);
+  const context = await browser.newContext();
+  const returning = await browser.newContext();
+  try {
+    const page = await context.newPage();
+    await page.goto(url);
+    assert.deepEqual(await state(page), [true, "false"], "a new device starts with dice on and the weight bar hidden");
+    await page.evaluate(() => {
+      document.getElementById("dice-system-toggle").click();
+      document.getElementById("inventory-weight-toggle").click();
+    });
+    await page.reload();
+    assert.deepEqual(await state(page), [false, "true"], "the player's own choices survive a reload without an autosave");
+    await Promise.all([page.waitForNavigation(), page.evaluate(() => { setTimeout(clearAppStateAndReload, 0); })]);
+    assert.deepEqual(await state(page), [false, "true"], "clearing character records keeps both device switches");
+    await returning.addInitScript(() => localStorage.setItem("dndchar_autosave_v1", JSON.stringify({ class: "fighter", level: "2" })));
+    const existing = await returning.newPage();
+    await existing.goto(url);
+    assert.deepEqual(await state(existing), [false, "true"], "a device that already has a character keeps its previous defaults");
+    assert.deepEqual(await existing.evaluate(() => [localStorage.getItem("dnd.diceSystemEnabled.v1"), localStorage.getItem("dnd.inventoryWeightHidden.v1")]), [null, null], "first-load defaults are not written for existing players");
+    console.log("First-load defaults: new device, remembered choices and existing players passed.");
+  } finally {
+    await context.close();
+    await returning.close();
+  }
+}
+
 // 物品欄（__inventory）經 autosave、JSON 與分享都能完整還原；舊資料把已裝備的物品補進物品欄，不清掉選擇。
 async function verifyInventoryPersistence(browser, url) {
   const page = await newUiPage(browser);
@@ -5013,7 +5042,7 @@ async function verifyShareReadonlyMode(browser, url) {
     await page.locator("#inventory-weight-toggle").evaluate(button => button.click());
     assert.equal(await page.evaluate(() => saveAllFields()), false, "share mode never autosaves");
     assert.equal(await localSnapshot(), before, "nothing reaches the viewer's localStorage");
-    assert.deepEqual(await page.evaluate(() => [dndStorage.getItem("dnd.diceSystemEnabled.v1"), dndStorage.getItem("dnd.scrollButtonsVisible.v1"), dndStorage.getItem("dnd.inventoryWeightHidden.v1")]), ["false", "true", null], "toggles stay on this page");
+    assert.deepEqual(await page.evaluate(() => [dndStorage.getItem("dnd.diceSystemEnabled.v1"), dndStorage.getItem("dnd.scrollButtonsVisible.v1"), dndStorage.getItem("dnd.inventoryWeightHidden.v1")]), ["false", "true", "false"], "toggles stay on this page");
     // 匯出帶當頁的跑團資料，不帶頭像。
     const sharedExport = await page.evaluate(() => JSON.parse(collectJsonExportText().text));
     assert.deepEqual([sharedExport.__tabletopActionPreferences.notes, sharedExport.__tabletopActionPreferences.customActions.map(action => action.label), sharedExport.__tabletopActionPreferences.customSpells.length, Object.hasOwn(sharedExport, "__tabletopAvatar")],
@@ -5311,7 +5340,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifyFirstLoadDefaults(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
     if (all || sections.has("--data-only") || sections.has("--share-only")) await verifyShareReadonlyMode(browser, url);
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });

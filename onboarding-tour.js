@@ -532,8 +532,8 @@
           tab: "basic",
           title: "⚔️ 建立你的角色",
           text: () => this.stepPhase === 1 ? "點此查看職業、種族等詳情。"
-            : "背景描述過往經歷，種族提供不同特性，\n職業則決定擅長的能力，以及在冒險中解決問題的方式。\n\n完成選擇後，速度、專長與其他角色資料會自動更新。",
-          highlights: () => this.stepPhase === 1 ? [] : ["背景", "種族", "職業"],
+            : "你的角色由三個選擇組成\n職業：你在冒險中的打法，例如揮劍、施法或潛行。\n背景：你冒險前的人生，會帶來一些技能和屬性加分。\n種族：你天生的血統，帶來特殊能力，例如能在黑暗中視物。\n\n選好後，移動速度、ＨＰ等數值會自動填好，不用自己計算。",
+          highlights: () => this.stepPhase === 1 ? [] : ["職業", "背景", "種族"],
           placement: "bottom",
           tooltipHoleIndex: 1,
           getHoles: () => {
@@ -581,7 +581,7 @@
           text: () => {
             if (this.abilityMenuGuideActive) return "接下來，選擇角色的屬性產生方式。\n\n點擊決定屬性開始設定。";
             if (this.stepPhase === 1) {
-              return "使用 27 點購點時，每項屬性可以設定在 8～15 之間。\n\n屬性越高，需要消耗的點數越多。調整數值時，可以從下方確認剩餘點數。\n\n完成配置前，總花費不得超過 27 點。";
+              return "你有 27 點可以分配。每項屬性從 8 開始，最高到 15。\n\n升到 9～13：每升 1 花 1 點\n升到 14、15：每升 1 花 2 點\n\n剩餘點數顯示在下方，花費不能超過 27 點。";
             }
             if (this.stepPhase === 2) {
               return "選擇背景後，將提供的屬性加值分配至角色屬性。\n\n確認所有數值後，點擊套用完成屬性設定。";
@@ -590,7 +590,7 @@
           },
           highlights: () => {
             if (this.abilityMenuGuideActive) return ["決定屬性"];
-            if (this.stepPhase === 1) return ["27 點購點", "剩餘點數"];
+            if (this.stepPhase === 1) return ["27 點", "剩餘點數"];
             if (this.stepPhase === 2) return ["背景", "套用"];
             return ["27 點購點", "屬性擲骰", "DM 同意"];
           },
@@ -602,6 +602,7 @@
                 this.getHoleForSelector("#set-default-abilities", 6)
               ].filter(Boolean);
             }
+            if (this.stepPhase === 1) return [this.getPointBuyBaseHole()].filter(Boolean);
             if (this.stepPhase > 0) {
               return this.getPointBuyTargetGroups(this.stepPhase)
                 .map((elements) => this.getPointBuyHole(elements, 6))
@@ -855,7 +856,7 @@
       this.tooltipDragPosition = null;
       try {
         const card = document.querySelector("#point-buy-modal.open .point-buy-modal-card");
-        const targetTop = this.getPointBuyTutorialLayout(phase)?.idealScrollTop;
+        const targetTop = this.measurePointBuyScrollTop(phase, card);
         if (card && Number.isFinite(targetTop)) {
           if (animateScroll) {
             await animateElementScrollTo(card, targetTop, SCROLL_DURATION, isCurrent, () => {
@@ -867,10 +868,28 @@
           if (!isCurrent()) return;
         }
         this.stepPhase = phase;
+        this.setPointBuyFocusLayout(phase === 1);
         await this.renderStep();
       } finally {
         if (transitionId === this.transitionId) this.isTransitioning = false;
       }
+    }
+
+    // Measured in the layout the phase will show; the card scrolls in the full
+    // layout and only switches when the spotlight does.
+    measurePointBuyScrollTop(phase, card) {
+      if (!card) return undefined;
+      const scrollTop = card.scrollTop;
+      this.setPointBuyFocusLayout(phase === 1);
+      const targetTop = this.getPointBuyTutorialLayout(phase)?.idealScrollTop;
+      this.setPointBuyFocusLayout(false);
+      card.scrollTop = scrollTop;
+      return targetTop;
+    }
+
+    // 4/8 only: display-only class, removed by every way of leaving the phase.
+    setPointBuyFocusLayout(enabled) {
+      document.getElementById("point-buy-modal")?.classList.toggle("onboarding-tour-point-buy-focus", enabled);
     }
 
     async goTo(index, { phase = 0 } = {}) {
@@ -892,6 +911,9 @@
         if (typeof step.beforeTab === "function") step.beforeTab();
         this.showTab(step.tab);
         await waitForLayoutStability();
+        // The tab's entrance animation shifts its content by a few pixels, so measure after it ends.
+        const entrance = document.querySelector(".tab-content.active")?.getAnimations() || [];
+        await Promise.all(entrance.map(animation => animation.finished.catch(() => {})));
         if (!this.active || transitionId !== this.transitionId) return;
         if (typeof step.beforePosition === "function") {
           await step.beforePosition();
@@ -1435,6 +1457,7 @@
     }
 
     restorePointBuyPreview() {
+      this.setPointBuyFocusLayout(false);
       const snapshot = this.pointBuyPreviewSnapshot;
       this.pointBuyPreviewSnapshot = null;
       this.pointBuyScrollLocked = false;
@@ -1645,7 +1668,13 @@
 
     getPointBuyTargetGroups(phase) {
       const row = (ability) => document.querySelector(`#point-buy-rows .point-buy-row[data-ability="${ability}"]`);
-      if (phase === 1) return [[row("str"), row("dex")], [document.querySelector("#point-buy-modal .point-buy-summary")]];
+      if (phase === 1) return [[
+        document.querySelector("#point-buy-modal .point-buy-table-head"),
+        row("str"),
+        row("dex"),
+        // Next to the rows only in the focus layout; outside it the spotlight leaves the line out.
+        document.querySelector("#point-buy-modal.onboarding-tour-point-buy-focus .point-buy-summary")
+      ]];
       if (phase === 2) return [
         [document.querySelector("#point-buy-modal .point-buy-background"), document.getElementById("point-buy-hint")],
         [row("dex")?.querySelector(".point-buy-control-group--bonus")]
@@ -1944,6 +1973,16 @@
         right: Math.max(...rects.map((rect) => rect.right)) + padding,
         bottom: Math.max(...rects.map((rect) => rect.bottom)) + padding
       };
+    }
+
+    // 4/8 frames the base-value column: up to its ▲ buttons, or the points line if that is wider.
+    getPointBuyBaseHole() {
+      const padding = 6;
+      const hole = this.getPointBuyHole(this.getPointBuyTargetGroups(1)[0], padding);
+      const content = getUnionRect(Array.from(document.querySelectorAll(
+        '#point-buy-rows [data-action="base-inc"], #point-buy-modal.onboarding-tour-point-buy-focus .point-buy-summary > span'
+      )));
+      return hole && content ? { ...hole, right: Math.min(hole.right, content.right + padding) } : hole;
     }
 
     getPointBuyHole(elements, padding = 8) {
