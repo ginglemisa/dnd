@@ -16,6 +16,7 @@
   line-height: 1.45;
   cursor: grab;
   touch-action: none;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -254,6 +255,7 @@ button.feature-rule-tip:focus-visible {
 #skillPopup.condition-reference-popup {
   cursor: auto;
   touch-action: auto;
+  -webkit-user-select: text;
   user-select: text;
 }
 
@@ -1692,6 +1694,20 @@ html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-format-note {
   font-size: var(--fs-sm);
   line-height: 1.2;
   text-align: center;
+}
+
+/* Safari 才顯示的備份提醒（legal-modal.js）。 */
+.legal-modal-storage-note {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  text-align: center;
+  text-wrap: balance;
 }
 
 .legal-modal-actions {

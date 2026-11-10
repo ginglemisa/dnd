@@ -24,6 +24,15 @@
       ackBtn.setAttribute("aria-label", "開始查看");
     }
 
+    // Safari 會清掉一段時間沒互動的網站資料（自動存檔與冒險日誌），只在 Safari 本身提醒備份。
+    // 分享模式不存檔、加到主畫面的 App 不受這條限制、iOS 上的其他瀏覽器不叫 Safari，都不顯示。
+    const safariNote = document.getElementById("legal-safari-note");
+    const userAgent = navigator.userAgent;
+    const isSafari = navigator.vendor === "Apple Computer, Inc."
+      && /\bVersion\/\S+.* Safari\//.test(userAgent)
+      && !/\b(?:CriOS|FxiOS|EdgiOS|OPiOS|OPT|DuckDuckGo)\//.test(userAgent);
+    if (safariNote && !isShareMode && isSafari && navigator.standalone !== true) safariNote.hidden = false;
+
     let aboutLoader = null;
     let aboutBody = null;
     const isAboutHash = () => ["#legal-about-modal", "#character-sheet-download"].includes(location.hash);

@@ -107,21 +107,21 @@
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/base.css?v=20261110-page-swipe">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-item-actions">
-  <link rel="stylesheet" href="css/sheet-spells.css?v=20261108-css-split">
+  <link rel="stylesheet" href="css/base.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/sheet-spells.css?v=20261110-safari">
   <link rel="stylesheet" href="css/utility.css?v=20261110-footer-one-line">
-  <link rel="stylesheet" href="css/dice.css?v=20261109-tour-point-buy-focus">
-  <link rel="stylesheet" href="css/dialogs.css?v=20261108-css-split">
+  <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/tabletop.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/tabletop-resources.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/late-overrides.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/quick-build.css?v=20261108-css-split">
+  <link rel="stylesheet" href="css/tabletop.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/tabletop-resources.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/quick-build.css?v=20261110-safari">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
-  <script src="dice-roller.js?v=20261103-roll-min" defer></script>
+  <script src="dice-roller.js?v=20261110-safari" defer></script>
   <script src="monster-content.generated.js?v=0" defer></script>
   <script src="monster.js?v=20261108-wild-shape-ux" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261108-new-forms" defer></script>
@@ -140,13 +140,13 @@
   <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261110-page-swipe" defer></script>
+  <script src="tabletop-mode.js?v=20261110-safari" defer></script>
   <script src="tabletop-druid.js?v=20261109-primal-strike-note" defer></script>
   <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
   <script src="tabletop-actions.js?v=20261108-wild-shape-savage" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261109-item-actions" defer></script>
-  <script src="legal-modal.js?v=20261109-font-label" defer></script>
+  <script src="legal-modal.js?v=20261110-safari" defer></script>
   <script src="onboarding-tour.js?v=20261109-tour-point-buy-focus" defer></script>
   <script src="quick-build.js?v=20261108-css-refactor-b7" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
@@ -1723,7 +1723,7 @@ function syncManualSpellSourceControls() {
       hide.textContent = "隱藏提醒";
       hide.addEventListener("click", () => {
         const focusTarget = Array.from(hint.parentElement.querySelectorAll("select, input, button"))
-          .find(control => !control.disabled && control !== hide && control.checkVisibility())
+          .find(control => !control.disabled && control !== hide && control.getClientRects().length > 0)
           || (id === "manual-spell-hint-tabletop" ? document.getElementById("tabletop-tab-spells") : null);
         manualSpellRemindersHidden = true;
         syncManualSpellSourceControls();
@@ -6039,7 +6039,8 @@ function downloadStateAsJson() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Safari 在點擊之後才開始讀取 blob，立刻撤銷網址會讓下載失敗。
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   if (SHARE_MODE) window.AppDialog.notify("分享模式匯出的檔案不含角色圖片。", { tone: "info" });
   else if (avatarOmitted) window.AppDialog.notify("角色資料加上角色圖片會超過 2 MiB，這次匯出未包含角色圖片。", { tone: "warning" });
   window.twAnalytics?.track?.("character_json_export");
@@ -7208,6 +7209,7 @@ window.addEventListener("DOMContentLoaded", async function() {
     <div class="legal-modal-dismiss">
       <label><input type="checkbox" id="legal-dismiss"> 不再顯示此視窗</label>
     </div>
+    <p id="legal-safari-note" class="legal-modal-storage-note" hidden>Safari 可能自動清除超過 7 天沒開的網站資料，請定期匯出 JSON 備份角色與冒險日誌。</p>
   </div>
 </div>
 

@@ -997,10 +997,12 @@
 
     // Read whole candidate tokens before validating: unsupported dice such as
     // 1d200 / 1d2 must never become a clickable prefix of a different roll.
+    // 不用 lookbehind：iOS 16.4 以前的 Safari 解析不了，整個檔案會載入失敗。
+    // 前一個字元改由群組 1 吃掉，骰式本身在群組 2。
     const findExpressions = text => Array.from(String(text || "").matchAll(
-      /(?<![A-Za-z0-9_.])\d+[ \t]*d[ \t]*\d+(?:[ \t]*[+−-][ \t]*(?:\d+[ \t]*d[ \t]*\d+|\d+))*(?![A-Za-z0-9_.])/gi
-    )).filter(match => parseExpression(match[0])).map(match => ({
-      index: match.index, text: match[0], expression: match[0].replace(/\s+/g, "").toLowerCase().replace(/−/g, "-")
+      /(^|[^A-Za-z0-9_.])(\d+[ \t]*d[ \t]*\d+(?:[ \t]*[+−-][ \t]*(?:\d+[ \t]*d[ \t]*\d+|\d+))*)(?![A-Za-z0-9_.])/gi
+    )).filter(match => parseExpression(match[2])).map(match => ({
+      index: match.index + match[1].length, text: match[2], expression: match[2].replace(/\s+/g, "").toLowerCase().replace(/−/g, "-")
     }));
 
     window.DiceRoller = Object.freeze({

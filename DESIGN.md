@@ -93,6 +93,12 @@
 
 - 四種外觀共用的屬性（版面、間距、字級、尺寸等）只寫一份，放在未限定的選擇器，不加主題限定。
 - 主題限定選擇器（`:where(html[data-ui-theme="warm"])`、`:where(html:not([data-ui-theme="warm"]))`、`html[data-theme="dark"]` 等）只寫該主題真正不同的屬性，不把共用屬性整塊複製一份。
+- 可輸入的控制項（文字／數字／搜尋輸入框、`<select>`、textarea）字級不低於 16px：iOS 聚焦較小的控制項時會自動放大畫面，而且不會縮回，放大期間滑動換頁也停用。版面需要較小的字時寫 `font-size: max(var(--ios-control-font-floor), 原字級)`（定義在 `base.css`），只有 iOS 會墊到 16px，其他平台維持原字級；唯讀欄位不會觸發放大，可以不墊。
+- `user-select`、`backdrop-filter` 同時寫 `-webkit-` 前綴版，前綴版寫在前面（舊版 Safari 只認前綴）。
+- 樣式要能在 iOS 15（Safari 15.4 以上）正常顯示，下列三種較新的寫法照這裡的方式處理：
+  - `@media` 的寬高條件用 `min-width`／`max-width`（「小於 540px」寫 `max-width: 539.98px`），不用 `(width < 540px)` 這種範圍語法。
+  - container query 可以用，但緊接著補一段 `@supports not (container-type: inline-size)`，把同樣的規則改用視窗寬的 `@media` 再寫一次（容器寬換算成視窗寬，註解寫出換算依據）。兩段內容相同，改動時一起改。
+  - `color-mix()` 和變數寫在同一條宣告時，不支援的瀏覽器會讓整條宣告失效（不是退回前一條宣告）。陰影或底色承載了狀態、選取或可操作提示時，緊接著補 `@supports not (color: color-mix(in srgb, red, blue))`，改用未混色的 token；純裝飾可以不補。
 - 顏色用 token（見上方 Token 家族），不寫死色碼。四種外觀的顏色、陰影與圓角差異已由 `tokens.css` 各外觀的 token 區定義，元件規則讀同一個 token 時通常不需要主題限定選擇器。現有 token 都不適用時才新增：經典與暖紙的亮色 token 區（兼作基礎值）各定義一次，暗色 token 區只覆蓋暗色真正不同的值。
 
 ```css
