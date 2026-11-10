@@ -2,6 +2,9 @@
   let activeDialog = null;
   const MAX_TOASTS = 3;
   const TOAST_MOTION_MS = 220;
+  const TOAST_SWIPE_SLOP = 8;
+  const TOAST_FLICK_SPEED = 0.45; // px/ms
+  const TOAST_FLICK_DISTANCE = 40;
   const toastTimers = new WeakMap();
 
   function getFocusableElements(root) {
@@ -89,6 +92,13 @@
     });
   }
 
+  // Speed over the last moments before release, in px/ms; 0 when the pointer rested first.
+  function toastReleaseVelocity(samples, releaseTime) {
+    const last = samples[samples.length - 1];
+    if (samples.length < 2 || releaseTime - last.t > 70) return 0;
+    return (last.x - samples[0].x) / Math.max(8, last.t - samples[0].t);
+  }
+
   function enableToastSwipe(toast) {
     let gesture = null;
     toast.addEventListener("pointerdown", event => {
@@ -98,18 +108,28 @@
         pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
+        travel: 0,
         deltaX: 0,
         moving: false,
+        // Mouse drags keep the distance-only rule.
+        flickable: event.pointerType !== "mouse",
+        samples: [{ t: event.timeStamp, x: event.clientX }],
         remaining: timer ? timer.expiresAt - performance.now() : 0
       };
       toast.setPointerCapture?.(event.pointerId);
     });
     toast.addEventListener("pointermove", event => {
       if (!gesture || event.pointerId !== gesture.pointerId) return;
-      const deltaX = event.clientX - gesture.startX;
+      const travel = event.clientX - gesture.startX;
       const deltaY = event.clientY - gesture.startY;
-      if (!gesture.moving && (Math.abs(deltaX) < 8 || Math.abs(deltaX) <= Math.abs(deltaY))) return;
+      if (!gesture.moving && (Math.abs(travel) < TOAST_SWIPE_SLOP || Math.abs(travel) <= Math.abs(deltaY))) return;
+      const { samples } = gesture;
+      samples.push({ t: event.timeStamp, x: event.clientX });
+      while (samples.length > 2 && event.timeStamp - samples[0].t > 100) samples.shift();
       gesture.moving = true;
+      gesture.travel = travel;
+      // Start from rest instead of jumping by the slop distance.
+      const deltaX = Math.abs(travel) > TOAST_SWIPE_SLOP ? travel - Math.sign(travel) * TOAST_SWIPE_SLOP : 0;
       gesture.deltaX = deltaX;
       toast.style.transform = `translateX(${deltaX}px)`;
       toast.style.opacity = String(Math.max(0.35, 1 - Math.abs(deltaX) / toast.offsetWidth));
@@ -117,21 +137,30 @@
     });
     const finish = event => {
       if (!gesture || event.pointerId !== gesture.pointerId) return;
-      const { deltaX, moving, remaining } = gesture;
+      const { travel, deltaX, moving, remaining, flickable, samples } = gesture;
       gesture = null;
       if (!toast.isConnected) return;
-      if (event.type === "pointerup" && moving && Math.abs(deltaX) >= Math.max(72, toast.offsetWidth * 0.25)) {
+      // A slow drag needs distance; a quick flick needs only a short one, and flicking back keeps the toast.
+      const velocity = flickable && event.type === "pointerup" ? toastReleaseVelocity(samples, event.timeStamp) : 0;
+      const quick = Math.abs(velocity) >= TOAST_FLICK_SPEED;
+      const outward = Math.sign(velocity) === Math.sign(travel);
+      const dismiss = quick
+        ? outward && Math.abs(travel) >= TOAST_FLICK_DISTANCE
+        : Math.abs(travel) >= Math.max(72, toast.offsetWidth * 0.25);
+      if (event.type === "pointerup" && moving && dismiss) {
         clearToastTimer(toast);
         toast.dataset.dismissing = "true";
         toast.setAttribute("aria-hidden", "true");
         if (prefersReducedToastMotion()) {
           removeToast(toast);
         } else {
-          const targetX = Math.sign(deltaX) * (window.innerWidth + toast.offsetWidth);
+          const targetX = Math.sign(travel) * (window.innerWidth + toast.offsetWidth);
+          // Leave at about the release speed, never slower than the usual exit.
+          const duration = Math.max(120, Math.min(TOAST_MOTION_MS, Math.abs(targetX - deltaX) / Math.max(Math.abs(velocity), 0.5)));
           toast.animate([
             { transform: `translateX(${deltaX}px)`, opacity: Number(toast.style.opacity) },
             { transform: `translateX(${targetX}px)`, opacity: 0 }
-          ], { duration: TOAST_MOTION_MS, easing: "ease-out" }).finished
+          ], { duration, easing: "ease-out" }).finished
             .then(() => removeToast(toast), () => removeToast(toast));
         }
         return;

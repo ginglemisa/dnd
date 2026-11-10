@@ -12,6 +12,19 @@ function getExtractedPageScriptFiles(html) {
   return [...html.matchAll(/<script\b(?![^>]*\b(?:defer|async)\b)[^>]*\bsrc="(?!https?:|\/\/|data:)([^"?#]+)[^"]*"[^>]*>\s*<\/script>/gi)].map(match => match[1]);
 }
 
+// iOS 15 的 Safari 不認得這些寫法：JS 遇到 lookbehind 整個檔案載入失敗，CSS 的範圍語法斷點整段被忽略。
+function verifyOldSafariSyntax(html) {
+  const siteScripts = fs.readdirSync(__dirname).filter(name => name.endsWith(".js") && !name.startsWith("validate-"));
+  for (const [file, source] of [["index.html", html], ...siteScripts.map(name => [name, fs.readFileSync(path.join(__dirname, name), "utf8")])]) {
+    assert(!/\(\?<[=!]/.test(source), `${file}: a regular-expression lookbehind stops the whole file from loading on iOS 15`);
+  }
+  const cssDir = path.join(__dirname, "css");
+  for (const file of fs.readdirSync(cssDir).filter(name => name.endsWith(".css"))) {
+    const css = fs.readFileSync(path.join(cssDir, file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    assert(!/@media[^{]*[<>]/.test(css), `${file}: iOS 15 ignores @media range syntax; write min-width/max-width instead`);
+  }
+}
+
 // Shared presentation, dialogs and PDF output. Domain rules stay in their suites.
 const browserErrors = [];
 function verifyAnalyticsIsolation(html) {
@@ -466,7 +479,7 @@ async function verifyPdf(page, fieldsOnly) {
     for (const key of ["derived-feat-human-origin", "derived-feat-lessons-1", "derived-feat-lessons-2", "derived-feat-fighter-level-4", "derived-feat-warlock-level-8", "feat-0"]) {
       if (!buildPdfFieldPayload({ [key]: "強韌體魄" }).feats1.includes("HP上限+等級×2")) throw new Error(`PDF feat source: ${key}`);
     }
-    if (!buildPdfFieldPayload({ "derived-feat-fighting-style-fighter-2": "防禦" }).feats1.includes("穿護甲時AC+1")) throw new Error("PDF second fighting style");
+    if (!buildPdfFieldPayload({ "derived-feat-fighting-style-fighter-2": "防禦" }).feats1.includes("穿甲AC+1")) throw new Error("PDF second fighting style");
     const mirrored = buildPdfFieldPayload({
       "derived-feat-human-origin": "魔法學徒", "feat-choice-human-origin": "魔法學徒",
       "derived-feat-human-origin-magic-initiate-class": "wizard",
@@ -474,7 +487,11 @@ async function verifyPdf(page, fieldsOnly) {
       "derived-feat-human-origin-magic-initiate-cantrip-2": "mage-hand",
       "derived-feat-human-origin-magic-initiate-level-1": "shield"
     }).feats1;
-    if ((mirrored.match(/魔法學徒/gu) || []).length !== 1 || !mirrored.includes("法師魔法學徒") || !mirrored.includes("光亮術") || !mirrored.includes("護盾術")) throw new Error("PDF derived Magic Initiate choices and mirror exclusion");
+    if (mirrored !== "魔法學徒(起源)\n法師表2戲1環") throw new Error("PDF derived Magic Initiate class line and mirror exclusion");
+    for (const [classValue, line] of [["cleric", "牧師表2戲1環"], ["druid", "德魯伊表2戲1環"], ["wizard", "法師表2戲1環"]]) {
+      if (buildPdfFieldPayload({ "feat-0": "魔法學徒", "feat-0-magic-initiate-class": classValue }).feats1 !== `魔法學徒(起源)\n${line}`) throw new Error(`PDF Magic Initiate class line before spells are chosen: ${classValue}`);
+    }
+    if (buildPdfFieldPayload({ "feat-0": "魔法學徒" }).feats1 !== "魔法學徒(起源)\n選1法表2戲1環") throw new Error("PDF Magic Initiate prompt before a class is chosen");
     for (const manualFeats of [true, false]) {
       const text = buildPdfFieldPayload({
         "manual-feat-management": manualFeats,
@@ -485,7 +502,7 @@ async function verifyPdf(page, fieldsOnly) {
         "derived-feat-background-magic-initiate-cantrip-2": "mage-hand",
         "derived-feat-background-magic-initiate-level-1": "shield"
       }).feats1;
-      if (!/魔法學徒/.test(text) || /光亮術|魔法伎倆|護盾術|◇|選1職業法表|2戲法/.test(text)) {
+      if (text !== "魔法學徒(起源)" || /光亮術|魔法伎倆|護盾術|◇|法師表|選1法表|2戲1環/.test(text)) {
         throw new Error("manual spell PDFs retain the feat name without hidden automatic choices or free-use marks");
       }
     }
@@ -495,15 +512,19 @@ async function verifyPdf(page, fieldsOnly) {
       "feat-0-magic-initiate-cantrip-1": "light",
       "feat-0-magic-initiate-cantrip-2": "mage-hand",
       "feat-0-magic-initiate-level-1": "shield",
-      "feat-1": "警覺",
-      "feat-2": "強韌體魄",
-      "feat-3": "防禦"
+      "feat-1": "醫療兵",
+      "feat-2": "封鎖者",
+      "feat-3": "擒抱者"
     };
+    const tenLineFeats = { ...crowdedFeats, "feat-3": "警覺" };
     for (const outputMode of ["editable", "compact"]) {
       const shortened = buildPdfFieldPayload(crowdedFeats, { outputMode });
-      const featTitles = ["魔法學徒(起源)", "警覺(起源)", "強韌體魄(起源)", "防禦(戰鬥風格)"];
-      if (shortened.feats1 !== featTitles.join("\n") || /光亮術|護盾術|先攻可加熟練|另有專長未列出/u.test(shortened.feats1)) {
+      const featTitles = ["魔法學徒(起源)", "醫療兵(起源)", "封鎖者(通用)", "擒抱者(通用)"];
+      if (shortened.feats1 !== featTitles.join("\n") || /光亮術|護盾術|法師表|醫療包耗生命骰|撤離傷人可藉機|拳打抱|另有專長未列出/u.test(shortened.feats1)) {
         throw new Error(`PDF title-only feat fallback: ${outputMode}`);
+      }
+      if (buildPdfFieldPayload(tenLineFeats, { outputMode }).feats1.split("\n").length !== 10) {
+        throw new Error(`PDF feats at exactly ten lines keep their details: ${outputMode}`);
       }
       if (shortened.classFeatures2.includes("其餘專長:")) throw new Error("PDF titles all fit without overflow");
 
@@ -522,6 +543,19 @@ async function verifyPdf(page, fieldsOnly) {
           unwrappedExtra.indexOf("原有技能內容") > unwrappedExtra.indexOf("其餘專長:")) {
         throw new Error(`PDF feat spill preserves existing class features and appends all remaining titles: ${outputMode}`);
       }
+    }
+    const officialFeatNames = [["封鎖者", "哨兵"], ["尋物好手", "觀察力"], ["最佳旅伴", "領袖之證"], ["臨陣施法", "戰地施法者"], ["衝鋒猛擊", "衝鋒手"], ["迅捷步法", "快速移動"], ["重甲減傷", "重甲大師"], ["雙持追擊", "雙持客"]];
+    for (const [feat, officialName] of officialFeatNames) {
+      const official = buildPdfFieldPayload({ "feat-0": feat }, { sheetTemplate: "official" })["feat-trat"];
+      const thirdParty = buildPdfFieldPayload({ "feat-0": feat }).feats1;
+      if (!official.startsWith(`${officialName}(通用)`) || official.includes(feat)) throw new Error(`Official sheet feat name: ${feat}`);
+      if (!thirdParty.startsWith(`${feat}(通用)`) || thirdParty.includes(officialName)) throw new Error(`Other sheets keep the feat name: ${feat}`);
+    }
+    const officialTitles = buildPdfFieldPayload({ "feat-0": "醫療兵", "feat-1": "封鎖者", "feat-2": "擒抱者", "feat-3": "最佳旅伴", "feat-4": "迅捷步法", "feat-5": "衝鋒猛擊" }, { sheetTemplate: "official" })["feat-trat"];
+    if (officialTitles !== "醫療兵(起源)\n哨兵(通用)\n擒抱者(通用)\n領袖之證(通用)\n快速移動(通用)\n衝鋒手(通用)") throw new Error("Official sheet title-only feat names");
+    for (const [background, siteName, officialName] of [["fieldhand", "耕者", "農夫"], ["seeker", "孤芳", "隱士"]]) {
+      if (buildPdfFieldPayload({ background }, { sheetTemplate: "official" }).bg !== officialName) throw new Error(`Official sheet background name: ${background}`);
+      if (buildPdfFieldPayload({ background }).Background2 !== siteName) throw new Error(`Other sheets keep the background name: ${background}`);
     }
     const combined = buildPdfFieldPayload({ "derived-feat-background": "強韌體魄", "derived-feat-human-origin": "熟習", "derived-feat-fighting-style-fighter": "防禦", "feat-choice-human-origin": "熟習" }).feats1;
     if (!combined.includes("強韌體魄") || !combined.includes("熟習") || !combined.includes("防禦") || (combined.match(/熟習\(/gu) || []).length !== 1) throw new Error("PDF combined automatic feat sources");
@@ -685,6 +719,20 @@ async function verifyPdf(page, fieldsOnly) {
     // Damage keeps half-width dice and one space between dice and type.
     const damageState = { "atk-main-name": "長劍", "atk-main-dmg": " 1d12  冷凍 " };
     if (buildPdfFieldPayload(damageState).dmg_type_1 !== "1d12 冷凍" || buildPdfFieldPayload(damageState, { sheetTemplate: "official" })["dmg-type1"] !== "1d12 冷凍") throw new Error("PDF damage keeps half-width text");
+    // Agonizing Blast adds Charisma to the chosen warlock cantrip's damage row only.
+    const agonizingState = {
+      class: "warlock", level: "5", cha: "16", "spell-attack-bonus": "+6",
+      "eldritch-invocation-3-1": true, "eldritch-invocation-3-1-cantrip": "eldritch-blast",
+      "eldritch-invocation-3-2": false, "eldritch-invocation-3-2-cantrip": "poison-spray",
+      __spellManagement: { version: 2, manual: true, entries: [{ spellId: "eldritch-blast", spellClass: "warlock" }, { spellId: "poison-spray", spellClass: "warlock" }] }
+    };
+    const agonizingRow = (state, options) => { const payload = buildPdfFieldPayload(state, options); return [payload.dmg_type_1 ?? payload["dmg-type1"], payload.dmg_type_2 ?? payload["dmg-type2"]]; };
+    if (agonizingRow(agonizingState).join() !== "1d10+3 力場,2d12 毒素") throw new Error(`PDF adds Charisma to the Agonizing Blast cantrip: ${agonizingRow(agonizingState)}`);
+    if (agonizingRow(agonizingState, { sheetTemplate: "official" }).join() !== "1d10+3 力場,2d12 毒素") throw new Error("Official PDF adds Charisma to the Agonizing Blast cantrip");
+    if (agonizingRow({ ...agonizingState, "eldritch-invocation-3-1": false })[0] !== "1d10 力場") throw new Error("Unchecked Agonizing Blast adds nothing");
+    if (agonizingRow({ ...agonizingState, cha: "8" })[0] !== "1d10-1 力場") throw new Error("Agonizing Blast writes a negative Charisma modifier");
+    if (agonizingRow({ ...agonizingState, cha: "10" })[0] !== "1d10 力場") throw new Error("Agonizing Blast omits a zero modifier");
+    if (agonizingRow({ ...agonizingState, __spellManagement: { version: 2, manual: true, entries: [{ spellId: "eldritch-blast", spellClass: "wizard" }] } })[0] !== "1d10 力場") throw new Error("Agonizing Blast only applies to warlock cantrip rows");
     // A long custom spell name stays one unbroken line in the single-line field.
     const longSpellName = "超長自創法術名稱測試用的完整名字";
     const longSpellPayload = buildPdfFieldPayload({ class: "wizard", level: "1" }, { customSpells: [{ spellId: "custom-spell-long", level: 1, nameZh: longSpellName, desc: "學派：塑能" }] });
@@ -954,6 +1002,308 @@ async function dragToast(page, index, distance) {
   await page.mouse.up();
 }
 
+// Real touch input over CDP, so touch-action, browser panning and pointercancel behave as on a phone.
+async function openTouch(page) {
+  const cdp = await page.context().newCDPSession(page);
+  const send = (type, points) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: points.map(([x, y], id) => ({ x, y, id })) });
+  return {
+    send,
+    // stepMs 0 is a flick; a hold before release drops the velocity to zero.
+    async drag([x0, y0], [x1, y1], { steps = 8, stepMs = 16, hold = 0, release = true } = {}) {
+      await send("touchStart", [[x0, y0]]);
+      for (let step = 1; step <= steps; step++) {
+        if (stepMs) await page.waitForTimeout(stepMs);
+        await send("touchMove", [[x0 + (x1 - x0) * step / steps, y0 + (y1 - y0) * step / steps]]);
+      }
+      if (hold) await page.waitForTimeout(hold);
+      if (release) await send("touchEnd", []);
+    },
+    end: () => send("touchEnd", []),
+    close: () => cdp.detach()
+  };
+}
+
+// Swiping the content changes the top-level tab in both modes; tab taps share the slide.
+async function verifyPageSwipe(browser, url) {
+  const mobile = { viewport: { width: 390, height: 844 }, hasTouch: true };
+  const open = async (options, target = url) => {
+    const page = await newUiPage(browser, { ...mobile, ...options });
+    await page.goto(target);
+    await page.locator(target === url ? "#legal-close-btn" : "#legal-ack-btn").click();
+    await page.evaluate(() => {
+      // Every page that was ever drawn beside the current one, as "side>current".
+      window.pageSwipeLog = [];
+      new MutationObserver(() => {
+        const current = document.querySelector(".page-swipe-current")?.id;
+        document.querySelectorAll(".page-swipe-side").forEach(side => {
+          const entry = `${side.id}>${current}`;
+          if (!window.pageSwipeLog.includes(entry)) window.pageSwipeLog.push(entry);
+        });
+      }).observe(document.getElementById("main-content"), { subtree: true, attributes: true, attributeFilter: ["class"] });
+    });
+    return page;
+  };
+  const read = page => page.evaluate(() => {
+    const box = el => { const rect = el.getBoundingClientRect(); return { id: el.id, left: rect.left, top: rect.top, hidden: el.hidden, clip: el.style.clipPath }; };
+    const current = document.querySelector(".page-swipe-current");
+    return {
+      tab: document.querySelector(".tab-content.active").id.replace("tab-", ""),
+      panel: TabletopMode.getPanel(),
+      scrollY: Math.round(window.scrollY),
+      current: current ? box(current) : null,
+      sides: [...document.querySelectorAll(".page-swipe-side")].map(box),
+      bodyScrollTop: document.body.scrollTop
+    };
+  });
+  const settle = async page => {
+    await page.waitForFunction(() => !document.querySelector(".page-swipe-host, .page-swipe-current, .page-swipe-side"));
+    assert.equal(await page.evaluate(() => [...document.querySelectorAll(".tab-content, .tabletop-panel")]
+      .filter(panel => ["display", "position", "left", "top", "width", "height", "transform", "clipPath", "overflow"].some(key => panel.style[key])).length), 0,
+    "a finished swipe leaves no inline layout styles on any page");
+  };
+  const log = page => page.evaluate(() => window.pageSwipeLog.splice(0));
+
+  let page = await open();
+  try {
+    const exported = await page.evaluate(() => collectJsonExportText().text);
+    // 觸控點分頁：新頁從按鈕順序的方向滑入；滑鼠點擊維持原本的切換。先測，之後的甩動會讓模擬器吞掉下一次點擊。
+    await page.locator('.tab-button[aria-controls="tab-equipment"]').tap();
+    assert.equal((await read(page)).tab, "equipment", "a tab tap switches at once");
+    await settle(page);
+    assert.deepEqual(await log(page), ["tab-basic>tab-equipment"], "a tab tap slides the old page out");
+    await page.locator('.tab-button[aria-controls="tab-basic"]').tap();
+    await settle(page);
+    await page.locator('.tab-button[aria-controls="tab-skills"]').click();
+    assert.equal((await read(page)).tab, "skills");
+    await page.locator("#basic-tab-button").click();
+    assert.deepEqual(await log(page), ["tab-equipment>tab-basic"], "mouse clicks keep the plain switch");
+
+    const touch = await openTouch(page);
+    const y = 500;
+    // 跟手：鄰頁貼在旁邊，資料與作用中的分頁在放手前都不變；拖回去放手就反悔。
+    await touch.drag([300, y], [150, y], { release: false });
+    await page.waitForFunction(() => document.querySelector(".page-swipe-current")?.getBoundingClientRect().left < -100, null, { timeout: 2000 })
+      .catch(() => assert.fail("the current page follows the finger"));
+    let state = await read(page);
+    assert.equal(state.tab, "basic", "dragging does not switch yet");
+    assert.equal(state.current.id, "tab-basic");
+    assert.deepEqual(state.sides.map(side => [side.id, side.hidden]), [["tab-skills", true]], "the next page by button order peeks in, still hidden to the app");
+    assert(Math.abs(state.sides[0].left - state.current.left - 390) < 1, "pages sit one screen apart");
+    await touch.send("touchMove", [[290, y]]);
+    await page.waitForTimeout(150);
+    await touch.end();
+    await settle(page);
+    assert.equal((await read(page)).tab, "basic", "dragging back cancels the switch");
+
+    // 慢慢拖過半頁放手會換頁；換頁順序照按鈕（技能之後是裝備，面板 DOM 順序則是動作）。
+    await touch.drag([320, y], [80, y], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "skills");
+    await touch.drag([320, y], [80, y], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "equipment", "swipes follow the tab button order");
+    assert.equal(await page.evaluate(() => window.dndStorage.getItem("activeTab")), "equipment", "the switch goes through showTab");
+    // 甩動：距離短但夠快就換頁；同樣距離慢慢拖則留在原頁。
+    await touch.drag([120, y], [240, y], { steps: 4, stepMs: 0 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "skills", "a short flick switches");
+    await touch.drag([120, y], [200, y], { stepMs: 40, hold: 150 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "skills", "a short slow drag stays");
+
+    // 垂直捲動照常；各頁的捲動位置照舊還原，滑進來的頁面一開始就畫在還原後的位置。
+    await touch.drag([200, 650], [200, 350], { hold: 150 });
+    await page.waitForTimeout(300);
+    const skillsScroll = (await read(page)).scrollY;
+    assert(skillsScroll > 100, `vertical drags still scroll the page: ${skillsScroll}`);
+    assert.equal((await read(page)).tab, "skills");
+    await touch.drag([80, y], [330, y], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.deepEqual([(await read(page)).tab, (await read(page)).scrollY], ["basic", 0]);
+    await touch.drag([330, y], [80, y], { stepMs: 30, hold: 150, release: false });
+    const peekTop = (await read(page)).sides[0].top;
+    await touch.end();
+    await settle(page);
+    state = await read(page);
+    assert.deepEqual([state.tab, state.scrollY], ["skills", skillsScroll], "each tab keeps its own scroll position");
+    assert(Math.abs(await page.evaluate(() => document.getElementById("tab-skills").getBoundingClientRect().top) - peekTop) < 1.5,
+      "the incoming page is drawn where it lands");
+    assert.equal(state.bodyScrollTop, 0);
+
+    // 第一頁往右沒有上一頁：帶阻力、放手彈回。
+    await page.evaluate(() => showTab("basic"));
+    await touch.drag([80, y], [340, y], { release: false });
+    await page.waitForFunction(() => document.querySelector(".page-swipe-current"));
+    await page.waitForTimeout(60);
+    state = await read(page);
+    assert(state.current.left > 20 && state.current.left < 140 && state.sides.length === 0, `edge drag resists: ${state.current.left}`);
+    await touch.end();
+    await settle(page);
+    assert.equal((await read(page)).tab, "basic");
+
+    // 還在滑的頁面可以接住再拖回去。
+    await touch.drag([330, y], [80, y], { stepMs: 30, hold: 150 });
+    await touch.send("touchStart", [[120, y]]);
+    await page.waitForTimeout(50);
+    state = await read(page);
+    assert.deepEqual([state.tab, state.current?.id], ["skills", "tab-skills"], "the switch happens on release and the page is still gliding");
+    await page.waitForTimeout(120);
+    const held = await read(page);
+    assert(held.current && Math.abs(held.current.left - state.current.left) < 0.5 && held.current.left > 20,
+      `a touch stops the gliding page: ${state.current.left} -> ${held.current?.left}`);
+    for (const x of [180, 240, 300, 360]) { await page.waitForTimeout(30); await touch.send("touchMove", [[x, y]]); }
+    await page.waitForTimeout(150);
+    await touch.end();
+    await settle(page);
+    assert.equal((await read(page)).tab, "basic", "a caught page can be dragged back");
+
+    // 不搶其他手勢：系統邊緣、對話框、橫向捲動區、內層分頁列、自己處理觸控的元件、第二根手指。
+    const stays = async (label, gesture, { started = false } = {}) => {
+      await log(page);
+      await gesture();
+      await page.waitForTimeout(250);
+      await settle(page);
+      assert.equal((await read(page)).tab, "basic", `${label} must not change the tab`);
+      assert.equal((await log(page)).length > 0, started, `${label} ${started ? "starts" : "never starts"} a page drag`);
+    };
+    await stays("an edge swipe", () => touch.drag([10, y], [300, y], { steps: 4, stepMs: 0 }));
+    await page.evaluate(() => { AppDialog.showMessage({ title: "滑動測試", message: "對話框開啟時不換頁" }); });
+    await stays("a swipe under a dialog", () => touch.drag([320, 760], [80, 760], { steps: 4, stepMs: 0 }));
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => {
+      const host = document.createElement("div");
+      host.id = "swipe-fixtures";
+      host.innerHTML = '<div id="swipe-scroller" style="overflow-x:auto;height:70px"><div style="width:1200px;height:50px"></div></div>'
+        + '<div id="swipe-tabs" role="tablist" style="height:70px"></div><div id="swipe-own" style="touch-action:none;height:70px"></div>';
+      document.getElementById("tab-basic").prepend(host);
+      window.scrollTo(0, 0);
+    });
+    const middle = async id => { const box = await page.locator(`#${id}`).boundingBox(); return box.y + box.height / 2; };
+    const scrollerY = await middle("swipe-scroller");
+    await stays("a horizontal scroller", () => touch.drag([320, scrollerY], [80, scrollerY], { hold: 150 }));
+    assert(await page.evaluate(() => document.getElementById("swipe-scroller").scrollLeft) > 100, "the scroller itself scrolls");
+    for (const id of ["swipe-tabs", "swipe-own"]) {
+      const fixtureY = await middle(id);
+      await stays(`#${id}`, () => touch.drag([320, fixtureY], [80, fixtureY], { steps: 4, stepMs: 0 }));
+    }
+    await page.evaluate(() => document.getElementById("swipe-fixtures").remove());
+    await stays("a second finger", async () => {
+      await touch.drag([320, y], [200, y], { release: false });
+      await touch.send("touchStart", [[200, y], [300, 300]]);
+      await touch.send("touchMove", [[40, y], [140, 300]]);
+      await touch.end();
+    }, { started: true });
+
+    // 隱藏或停用的分頁會跳過。
+    await page.evaluate(() => { document.querySelector('.tab-button[aria-controls="tab-skills"]').hidden = true; });
+    await touch.drag([320, y], [80, y], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "equipment", "hidden tabs are skipped");
+    await page.evaluate(() => { document.querySelector('.tab-button[aria-controls="tab-skills"]').hidden = false; });
+
+    // 雙指放大檢視時停用，水平平移還給瀏覽器。
+    const touchActions = () => page.evaluate(() => [document.body, document.getElementById("gear-notes")].map(el => getComputedStyle(el).touchAction));
+    assert.deepEqual(await touchActions(), ["pan-y pinch-zoom", "pan-y pinch-zoom"]);
+    const zoom = await page.context().newCDPSession(page);
+    await zoom.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
+    await page.waitForFunction(() => document.documentElement.classList.contains("page-swipe-zoomed"));
+    assert.deepEqual(await touchActions(), ["auto", "auto"], "a zoomed page pans freely");
+    await touch.drag([160, 300], [40, 300], { steps: 4, stepMs: 0 });
+    await page.waitForTimeout(200);
+    assert.equal((await read(page)).tab, "equipment", "a zoomed page does not swipe");
+    await zoom.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
+    await page.waitForFunction(() => !document.documentElement.classList.contains("page-swipe-zoomed"));
+    await zoom.detach();
+
+    // 跑團模式：照看得到的分頁順序換頁，切換走 TabletopMode.setPanel；各頁捲動位置不同時，滑進來的頁面不蓋住分頁列。
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("skills"); });
+    await page.waitForTimeout(100);
+    await page.evaluate(() => window.scrollTo(0, 150));
+    await page.waitForTimeout(100);
+    await touch.drag([80, y], [330, y], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.deepEqual([(await read(page)).panel, (await read(page)).scrollY], ["overview", 0]);
+    await touch.drag([330, y], [150, y], { release: false });
+    await page.waitForFunction(() => document.querySelector(".page-swipe-side"));
+    await page.waitForTimeout(60);
+    state = await read(page);
+    assert.deepEqual([state.panel, state.current.id, state.sides.map(side => side.id)], ["overview", "tabletop-panel-overview", ["tabletop-panel-skills"]]);
+    assert(Math.abs(parseFloat(state.sides[0].clip.replace("inset(", "")) - 150) < 2, `the incoming panel is cut off below the tab bar: ${state.sides[0].clip}`);
+    await touch.send("touchMove", [[60, y]]);
+    await page.waitForTimeout(150);
+    await touch.end();
+    await settle(page);
+    assert.deepEqual([(await read(page)).panel, (await read(page)).scrollY], ["skills", 150]);
+    await page.evaluate(() => { TabletopMode.setPanel("overview"); window.scrollTo(0, 0); });
+    const visiblePanels = await page.evaluate(() => [...document.querySelectorAll(".tabletop-primary-tabs [data-tabletop-tab]")].filter(tab => !tab.hidden).map(tab => tab.dataset.tabletopTab));
+    const visited = ["overview"];
+    for (let index = 1; index < visiblePanels.length; index++) {
+      await touch.drag([330, 760], [80, 760], { stepMs: 30, hold: 150 });
+      await settle(page);
+      visited.push((await read(page)).panel);
+    }
+    assert.deepEqual(visited, visiblePanels, "tabletop swipes walk the visible tabs in order, from the blank area below a short panel too");
+    await touch.drag([330, 760], [80, 760], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.equal((await read(page)).panel, visiblePanels.at(-1), "the last panel has no next page");
+
+    await page.evaluate(() => { TabletopMode.setMode("sheet"); showTab("basic"); });
+    assert.equal(await page.evaluate(() => collectJsonExportText().text), exported, "swiping never changes character data");
+    await touch.close();
+  } finally { await page.close(); }
+
+  // 減少動態效果：一樣能滑動換頁，但不跟手、不滑動。
+  page = await open({ reducedMotion: "reduce" });
+  try {
+    const touch = await openTouch(page);
+    await touch.drag([320, 500], [150, 500]);
+    await page.waitForFunction(() => document.querySelector(".tab-content.active").id === "tab-skills");
+    await touch.drag([320, 500], [280, 500], { stepMs: 30, hold: 150 });
+    await page.waitForTimeout(100);
+    assert.equal((await read(page)).tab, "skills", "a short drag stays under reduced motion too");
+    assert.deepEqual(await log(page), [], "reduced motion never draws a sliding page");
+    assert.equal(await page.evaluate(() => document.querySelectorAll("[class*='page-swipe']").length), 0);
+    await touch.close();
+  } finally { await page.close(); }
+
+  // 分享模式也能換頁（鎖定的欄位上也能起手）。
+  page = await newUiPage(browser, mobile);
+  let shareHash;
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.TabletopMode && window.Spellbook);
+    shareHash = await page.evaluate(() => encodeStateToHash({ class: "fighter", level: "3", race: "human", str: "15", __shareStateVersion: 1 }));
+  } finally { await page.close(); }
+  page = await open({}, url + shareHash);
+  try {
+    await page.waitForFunction(() => document.getElementById("auto-calculate-key-stats-toggle")?.dataset.shareLocked === "true");
+    const touch = await openTouch(page);
+    await page.evaluate(() => document.getElementById("str").scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(200);
+    const box = await page.locator("#str").boundingBox();
+    assert.equal(await page.evaluate(() => document.getElementById("str").closest("[inert]") !== null || document.getElementById("str").readOnly), true, "the swipe starts on a locked field");
+    await touch.drag([box.x + box.width / 2, box.y + box.height / 2], [box.x + box.width / 2 - 66, box.y + box.height / 2], { steps: 3, stepMs: 0 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "skills", "share mode pages can be swiped");
+    await touch.close();
+  } finally { await page.close(); }
+
+  // 桌機滑鼠拖曳不換頁。
+  page = await newUiPage(browser, { viewport: { width: 1280, height: 800 } });
+  try {
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await page.mouse.move(700, 500);
+    await page.mouse.down();
+    await page.mouse.move(300, 500, { steps: 6 });
+    const dragging = await page.evaluate(() => document.querySelectorAll("[class*='page-swipe']").length);
+    await page.mouse.up();
+    assert.deepEqual([dragging, await page.evaluate(() => document.querySelector(".tab-content.active").id)], [0, "tab-basic"], "mouse drags never swipe pages");
+  } finally { await page.close(); }
+
+  console.log("Page swipe: finger tracking, cancel, flick, tab order, scroll memory, edge resistance, catch, exclusions, zoom, tabletop, reduced motion, share mode, mouse and tab taps passed.");
+}
+
 // Share methods are whole choice cards; short URLs fail visibly and never retry.
 async function verifyShareDialog(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
@@ -1118,6 +1468,9 @@ async function verifyToasts(browser) {
   await desktop.waitForTimeout(250);
   assert.deepEqual(await toastMessages(desktop), ["第二則", "第四則"]);
   await assertStackOrder(desktop);
+  await dragToast(desktop, 0, 56);
+  await desktop.waitForTimeout(250);
+  assert.deepEqual(await toastMessages(desktop), ["第二則", "第四則"], "A quick short mouse drag still keeps the toast");
   assert.deepEqual(errors, []);
   await desktop.close();
 
@@ -1145,6 +1498,24 @@ async function verifyToasts(browser) {
   assert.deepEqual(await toastMessages(mobile), ["丙"]);
   await swipeToast(mobile, 0, 1, 30);
   assert.deepEqual(await toastMessages(mobile), ["丙"], "Short swipe must keep the toast");
+  // 甩動：距離短但夠快就滑除；同樣距離慢慢拖、或拖遠後甩回來則保留。
+  await mobile.evaluate(() => AppDialog.notify("甩動", { duration: 10000 }));
+  await mobile.waitForTimeout(250);
+  const touch = await openTouch(mobile);
+  const flickBox = await mobile.locator("#app-toast .app-toast").nth(1).boundingBox();
+  const [flickX, flickY] = [flickBox.x + 40, flickBox.y + flickBox.height / 2];
+  await touch.drag([flickX, flickY], [flickX + 56, flickY], { steps: 7, stepMs: 50 });
+  await mobile.waitForTimeout(250);
+  assert.deepEqual(await toastMessages(mobile), ["丙", "甩動"], "A slow short drag keeps the toast");
+  await touch.drag([flickX, flickY], [flickX + 220, flickY], { steps: 4, stepMs: 30, release: false });
+  for (const back of [190, 160, 130, 100]) { await mobile.waitForTimeout(25); await touch.send("touchMove", [[flickX + back, flickY]]); }
+  await touch.end();
+  await mobile.waitForTimeout(250);
+  assert.deepEqual(await toastMessages(mobile), ["丙", "甩動"], "Flicking back keeps the toast");
+  await touch.drag([flickX, flickY], [flickX + 56, flickY], { steps: 2, stepMs: 0 });
+  await mobile.waitForFunction(() => document.querySelectorAll("#app-toast .app-toast").length === 1);
+  assert.deepEqual(await toastMessages(mobile), ["丙"], "A quick short flick dismisses the toast");
+  await touch.close();
   await mobile.evaluate(() => AppDialog.notify("短暫", { duration: 80 }));
   await mobile.getByText("短暫").waitFor({ state: "visible" });
   await mobile.waitForFunction(() => !Array.from(document.querySelectorAll(".app-toast__message")).some(el => el.textContent === "短暫"));
@@ -2481,6 +2852,11 @@ async function verifyClassFeatureSupplementalChoices(browser, url) {
     await modal.getByLabel("苦痛魔爆：戲法 #1", { exact: true }).selectOption("eldritch-blast");
     assert.equal(await page.evaluate(() => getAgonizingBlastSelects()[0].value), "eldritch-blast", "invocation target can be completed inline");
     await close();
+    await page.addScriptTag({ url: "/pdf-field-map.js" });
+    assert.equal(await page.evaluate(() => {
+      document.getElementById("cha").value = "16";
+      return buildPdfFieldPayload(collectStateObject({ includeDerivedSpellRows: true })).dmg_type_1;
+    }), "1d10+3 力場", "the sheet's Agonizing Blast choice reaches the PDF damage row");
 
     const retainedChoices = { "class-paladin-blessed-warrior-cantrip-1": "guidance", "class-paladin-blessed-warrior-cantrip-2": "sacred-flame" };
     await page.evaluate(choices => {
@@ -4284,7 +4660,32 @@ async function verifyFirstLoadDefaults(browser, url) {
     await existing.goto(url);
     assert.deepEqual(await state(existing), [false, "true"], "a device that already has a character keeps its previous defaults");
     assert.deepEqual(await existing.evaluate(() => [localStorage.getItem("dnd.diceSystemEnabled.v1"), localStorage.getItem("dnd.inventoryWeightHidden.v1")]), [null, null], "first-load defaults are not written for existing players");
-    console.log("First-load defaults: new device, remembered choices and existing players passed.");
+
+    // 歡迎視窗的備份提醒只在 Safari 本身出現：其他瀏覽器、iOS 上的 Edge、加到主畫面的 App 與分享模式都不顯示。
+    const shareHash = await existing.evaluate(() => encodeStateToHash(collectShareState()));
+    const safariAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+    const noteShown = async ({ userAgent, vendor, standalone = false, target = url }) => {
+      const visitor = await browser.newContext(userAgent ? { userAgent } : {});
+      try {
+        if (vendor) await visitor.addInitScript(({ vendor, standalone }) => {
+          Object.defineProperty(Navigator.prototype, "vendor", { get: () => vendor });
+          Object.defineProperty(Navigator.prototype, "standalone", { get: () => standalone });
+        }, { vendor, standalone });
+        const visit = await visitor.newPage();
+        await visit.goto(target);
+        await visit.locator("#legal-ack-btn").waitFor();
+        return await visit.locator("#legal-safari-note").isVisible();
+      } finally { await visitor.close(); }
+    };
+    const apple = "Apple Computer, Inc.";
+    assert.equal(await page.locator("#legal-safari-note").isHidden(), true, "other browsers never see the Safari backup note");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple }), true, "Safari shows the backup note in the welcome dialog");
+    assert.equal(await noteShown({ userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15", vendor: apple }), true, "desktop Safari shows it too");
+    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "Version/17.0 EdgiOS/126.0.2592.56"), vendor: apple }), false, "other iOS browsers are not called Safari");
+    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "CriOS/126.0.6478.153"), vendor: apple }), false, "Chrome on iOS does not show it");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, standalone: true }), false, "a Home Screen web app does not show it");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, target: `${url}${shareHash}` }), false, "share mode saves nothing, so it has no backup note");
+    console.log("First-load defaults: new device, remembered choices, existing players and the Safari-only backup note passed.");
   } finally {
     await context.close();
     await returning.close();
@@ -5312,17 +5713,37 @@ async function verifyJsonImportTransaction(browser, url) {
     await page.getByRole("dialog", { name: "JSON 匯入失敗", exact: true }).getByRole("button", { name: "關閉", exact: true }).click();
     assert.equal(await page.locator("#gear-extra").inputValue(), "Exported");
     assert.equal(await page.evaluate(() => dndStorage.getItem("dnd.tabletopAvatar.v1")), avatar, "a non-image avatar is rejected before any cleanup");
-    console.log("JSON clean import: incoming precedence, cleanup, stage/apply/save failures, retained backups, retry, completion marker, denied session access and tabletop button/avatar round trip passed.");
+
+    // The cropper saves WebP; a canvas that cannot encode WebP (Safari hands back a PNG instead) falls back to JPEG.
+    const cropAvatar = async withoutWebp => {
+      await page.evaluate(withoutWebp => {
+        TabletopMode.setMode("tabletop");
+        if (!withoutWebp) return;
+        const encode = HTMLCanvasElement.prototype.toDataURL;
+        HTMLCanvasElement.prototype.toDataURL = function toDataURL(type, quality) { return encode.call(this, type === "image/webp" ? "image/png" : type, quality); };
+      }, withoutWebp);
+      await page.locator("#tabletop-avatar-file").setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: Buffer.from(avatar.split(",")[1], "base64") });
+      await page.waitForFunction(() => !document.getElementById("tabletop-avatar-modal").hidden && document.getElementById("tabletop-avatar-crop-image").naturalWidth > 0);
+      await page.locator("#tabletop-avatar-confirm").click();
+      return page.evaluate(() => {
+        const saved = dndStorage.getItem("dnd.tabletopAvatar.v1");
+        return { type: /^data:(image\/[a-z]+);base64,/.exec(saved)?.[1], valid: isValidTabletopAvatar(saved), exported: JSON.parse(collectJsonExportText().text).__tabletopAvatar === saved };
+      });
+    };
+    assert.deepEqual(await cropAvatar(false), { type: "image/webp", valid: true, exported: true }, "the cropper saves a WebP avatar");
+    assert.deepEqual(await cropAvatar(true), { type: "image/jpeg", valid: true, exported: true }, "without WebP encoding the cropper saves JPEG, not the PNG the browser falls back to");
+    console.log("JSON clean import: incoming precedence, cleanup, stage/apply/save failures, retained backups, retry, completion marker, denied session access, tabletop button/avatar round trip and avatar encoding fallback passed.");
   } finally { await page.close(); }
 }
 
 async function main() {
   const sections = new Set(process.argv.slice(2));
-  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--journal-only", "--pdf-only", "--pdf-fields-only", "--data-only", "--share-only"].includes(flag), `Unknown option: ${flag}`);
+  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--gestures-only", "--journal-only", "--pdf-only", "--pdf-fields-only", "--data-only", "--share-only"].includes(flag), `Unknown option: ${flag}`);
   assert(sections.size <= 1, "Choose at most one UI section");
   const all = sections.size === 0;
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   verifyAnalyticsIsolation(html);
+  verifyOldSafariSyntax(html);
   for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
     if (match[1].trim()) new vm.Script(match[1]);
   }
@@ -5351,6 +5772,8 @@ async function main() {
       try { await verifyAppearanceAndLayout(browser, page, url); }
       finally { await page.close(); }
     }
+    if (sections.has("--gestures-only")) await verifyToasts(browser);
+    if (all || sections.has("--gestures-only")) await verifyPageSwipe(browser, url);
     if (all || sections.has("--dialogs-only")) {
       await verifyToasts(browser);
       await verifyShareDialog(browser, url);

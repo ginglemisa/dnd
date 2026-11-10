@@ -381,12 +381,26 @@ async function main() {
     await bite.getByRole("button", { name: /命中/u }).click();
     await bite.getByRole("button", { name: /1d6\+2 穿刺傷害/u }).click();
     assert.deepEqual(await page.evaluate(() => window.__druidRolls), ["狼咬擊命中", "狼咬擊：1d6+2 穿刺傷害"]);
+    // 原初打擊：勾選時野獸攻擊卡的備註和武器卡同一段字，取消就消失。
+    const primalNote = "+1d8冷凍/火焰/閃電/雷鳴傷害";
+    const setPrimalStrike = checked => page.evaluate(value => {
+      const box = document.getElementById("druid-elemental-fury-primal-strike");
+      box.checked = value;
+      box.dispatchEvent(new Event("change", { bubbles: true }));
+    }, checked);
+    assert.equal(await bite.getByText(primalNote, { exact: true }).count(), 0, "no primal strike note unless the option is chosen");
+    await setPrimalStrike(true);
+    await bite.getByText(primalNote, { exact: true }).waitFor({ timeout: 3000 });
+    await actionStrip.getByRole("button", { name: "原初打擊 +1d8", exact: true }).waitFor({ timeout: 3000 });
+    await setPrimalStrike(false);
+    await bite.getByText(primalNote, { exact: true }).waitFor({ state: "detached", timeout: 3000 });
     await page.evaluate(() => TabletopMode.setPanel("overview"));
     assert.equal(await page.locator("#tabletop-ac").innerText(), "12 (狼)", "AC is marked like barkskin");
     assert.match(await page.locator("#tabletop-speed").innerText(), /^步行 40 呎 \(狼\)$/u);
     const abilityMarks = await page.evaluate(() => Array.from(document.querySelectorAll("#tabletop-ability-modifiers .tabletop-ability-modifier"), item => item.querySelector(".tabletop-ac-effect-label")?.textContent || ""));
     assert.deepEqual(abilityMarks, ["(狼)", "(狼)", "(狼)", "", "", ""], "only strength, dexterity and constitution are marked");
-    assert.equal(await overview.evaluate(card => card.classList.contains("is-shaped")), true);
+    // 狀態卡在下一個動畫影格才重畫，切回總覽後要等它更新。
+    await page.locator("#tabletop-druid-overview.is-shaped").waitFor({ timeout: 3000 });
     assert.match(await overview.innerText(), /狼\s*中型野獸[\s\S]*黑暗視覺 60 呎[\s\S]*群攻[\s\S]*臨時 HP 8[\s\S]*最長 4 小時・不能施法・專注保留/u);
     await overview.getByRole("button", { name: "野獸資料", exact: true }).click();
     await dialog.locator(".beast-card").getByText(/Wolf/).waitFor();

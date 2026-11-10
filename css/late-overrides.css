@@ -470,6 +470,8 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .inventory-more-swit
   }
 
   .tabletop-health-layout .tabletop-avatar {
+    /* 第一行給不認得 cqw 的瀏覽器（iOS 15）：容器寬是視窗寬減 52px。 */
+    max-width: max(5.75rem, calc(29vw - 15.08px));
     max-width: max(5.75rem, 29cqw);
     justify-self: center;
   }

@@ -277,9 +277,20 @@
     wizard: '法師'
   });
 
-  const MAGIC_INITIATE_PDF_SPELL_LABELS = Object.freeze({
-    'create-or-destroy-water': '造水/枯水',
-    'detect-poison-and-disease': '偵測毒與病'
+  // 只有官方角色紙的輸出使用這些名稱；網站畫面、存檔、分享與另一種角色紙都維持原本的名稱。
+  const OFFICIAL_SHEET_BACKGROUND_NAMES = Object.freeze({
+    fieldhand: '農夫',
+    seeker: '隱士'
+  });
+  const OFFICIAL_SHEET_FEAT_NAMES = Object.freeze({
+    封鎖者: '哨兵',
+    尋物好手: '觀察力',
+    最佳旅伴: '領袖之證',
+    臨陣施法: '戰地施法者',
+    衝鋒猛擊: '衝鋒手',
+    迅捷步法: '快速移動',
+    重甲減傷: '重甲大師',
+    雙持追擊: '雙持客'
   });
 
   // PDF 種族特質欄：種族內容檔的 pdf 行（raceText.pdf）。{choice} 為所選血統選項的 pdfLabel（PDF 匯出選項傳入），
@@ -853,7 +864,17 @@
     return false;
   }
 
-  function getDamageCantripExportValues(config, spellId, state) {
+  // 勾選中的苦痛魔爆（eldritch-invocation-<序號>-<次數>）與它套用的戲法（同 ID 加 -cantrip）。
+  function getAgonizingBlastCantripIds(state) {
+    return new Set(Object.keys(state).flatMap((key) => {
+      const matched = key.match(/^(eldritch-invocation-\d+-\d+)-cantrip$/);
+      const spellId = matched && state[matched[1]] ? normalizeText(state[key]) : '';
+      return spellId ? [spellId] : [];
+    }));
+  }
+
+  function getDamageCantripExportValues(config, row, state) {
+    const { spellId } = row;
     const level = getSelectedLevelNumber(state.level);
     const isLevel5 = level !== null && level >= 5;
     const baseDamage = isLevel5 && config.dmg5 ? config.dmg5 : config.dmg;
@@ -873,6 +894,14 @@
       const wisdomModifier = getAbilityModifierNumber(state.wis);
       if (Number.isFinite(wisdomModifier)) {
         damage = damage.replace(/^(\d+d\d+)/, `$1${formatFormulaModifier(wisdomModifier)}`);
+      }
+    }
+
+    // 條件同跑團施法：只加在契術師來源的戲法上；同一戲法另有其他職業來源的列不加。
+    if (row.classKey === 'warlock' && getAgonizingBlastCantripIds(state).has(spellId)) {
+      const charismaModifier = getAbilityModifierNumber(state.cha);
+      if (Number.isFinite(charismaModifier) && charismaModifier !== 0) {
+        damage = damage.replace(/^(\d+d\d+)/, `$1${formatFormulaModifier(charismaModifier)}`);
       }
     }
 
@@ -923,7 +952,7 @@ function isWeaponRowEmpty(payload, slot) {
       if (slot > maxSlots) break;
       const config = DAMAGE_CANTRIP_EXPORT_MAP[row.spellId];
       if (!config) continue;
-      const exportValues = getDamageCantripExportValues(config, row.spellId, state);
+      const exportValues = getDamageCantripExportValues(config, row, state);
 
       payload[`attack-weap-name-${slot}`] = config.name;
       payload[`toHit${slot}`] = config.mode === 'save'
@@ -1039,48 +1068,43 @@ function isWeaponRowEmpty(payload, slot) {
       ? state.__spellManagement.manual === true : state['manual-spell-management'] === true;
     if (manual) return [getFeatPdfTitle({ name: '魔法學徒' })];
     const classValue = normalizeText(state[`${featKey}-magic-initiate-class`]);
-    const cantrip1 = normalizeText(state[`${featKey}-magic-initiate-cantrip-1`]);
-    const cantrip2 = normalizeText(state[`${featKey}-magic-initiate-cantrip-2`]);
-    const level1 = normalizeText(state[`${featKey}-magic-initiate-level-1`]);
-
-    const cantrip1Spell = getCanonicalSpell(resolveStateSpellId(cantrip1));
-    const cantrip2Spell = getCanonicalSpell(resolveStateSpellId(cantrip2));
-    const level1Spell = getCanonicalSpell(resolveStateSpellId(level1));
-    // 還沒選完法表與法術時，列出內容檔的 PDF 行（選擇方式的提示）。
-    if (!classValue || !cantrip1Spell || !cantrip2Spell || !level1Spell) return getFeatPdfLines('魔法學徒');
+    // 還沒選法表時，列出內容檔的 PDF 行（選擇方式的提示）；所選法術另列在法術欄。
+    if (!classValue) return getFeatPdfLines('魔法學徒');
 
     const classLabel = MAGIC_INITIATE_CLASS_LABELS[classValue] || extractChineseDisplayLabel(classValue);
-    const level1Label = MAGIC_INITIATE_PDF_SPELL_LABELS[level1Spell.spellId] || level1Spell.nameZh;
-    return [
-      `${classLabel}魔法學徒`,
-      `${cantrip1Spell.nameZh}`,
-      `${cantrip2Spell.nameZh}`,
-      `${level1Label} ◇`
-    ];
+    return [getFeatPdfTitle({ name: '魔法學徒' }), `${classLabel}表2戲1環`];
+  }
+
+  function getOfficialSheetName(names, key, options) {
+    return isOfficialSheet(options) && Object.hasOwn(names, key) ? names[key] : '';
   }
 
   // PDF 專長欄的各行：專長內容檔的 pdf（featText.pdf，第一行是標題）；不認得的專長只列名稱。
-  function getFeatPdfLines(featName) {
-    return [...(globalScope.getFeatText?.(featName)?.pdf || [normalizeText(featName)])];
+  function getFeatPdfLines(featName, options = {}) {
+    const lines = [...(globalScope.getFeatText?.(featName)?.pdf || [normalizeText(featName)])];
+    const officialName = getOfficialSheetName(OFFICIAL_SHEET_FEAT_NAMES, featName, options);
+    if (officialName && lines[0].startsWith(featName)) {
+      lines[0] = `${officialName}${lines[0].slice(featName.length)}`;
+    }
+    return lines;
   }
 
-  function getFeatPdfLineGroup(state, entry) {
+  function getFeatPdfLineGroup(state, entry, options) {
     if (entry.name === '魔法學徒') {
       return getMagicInitiateFeatLines(state, entry.key);
     }
-    return getFeatPdfLines(entry.name);
+    return getFeatPdfLines(entry.name, options);
   }
 
-  // Magic Initiate's detailed heading includes the selected class; the
-  // title-only fallback must omit choices as well as the chosen spells.
-  function getFeatPdfTitle(entry) {
-    return getFeatPdfLines(entry.name)[0];
+  // The title-only fallback must omit Magic Initiate's chosen spell list.
+  function getFeatPdfTitle(entry, options) {
+    return getFeatPdfLines(entry.name, options)[0];
   }
 
   function buildFeatPdfText(state, options = {}) {
     const featSpec = getPdfTextSpecs(options).feats1;
     const entries = getSelectedFeatEntries(state);
-    const detailedLines = entries.flatMap((entry) => getFeatPdfLineGroup(state, entry));
+    const detailedLines = entries.flatMap((entry) => getFeatPdfLineGroup(state, entry, options));
     const detailedResult = wrapTextForPdfWithOverflow(
       detailedLines.join('\n'), featSpec
     );
@@ -1090,7 +1114,7 @@ function isWeaponRowEmpty(payload, slot) {
 
     // When any detailed feat would be omitted, switch the entire field to
     // titles before deciding whether anything needs the secondary field.
-    const titles = entries.map(getFeatPdfTitle);
+    const titles = entries.map((entry) => getFeatPdfTitle(entry, options));
     const titleResult = wrapTextForPdfWithOverflow(titles.join('\n'), featSpec);
     if (!titleResult.truncated) {
       return { text: titleResult.text, overflowTitles: [] };
@@ -1218,7 +1242,9 @@ function isWeaponRowEmpty(payload, slot) {
       : '';
     payload.Background2 = backgroundKey === 'custom'
       ? normalizeText(state.__customBackground?.名稱)
-      : (getBuiltInBackground(backgroundKey)?.rules.name || payload.Background2);
+      : (getOfficialSheetName(OFFICIAL_SHEET_BACKGROUND_NAMES, backgroundKey, options)
+        || getBuiltInBackground(backgroundKey)?.rules.name
+        || payload.Background2);
     payload.Specie1 = globalScope.getRaceRules?.(normalizeText(state.race))?.name || payload.Specie1;
     payload.alignment1 = ALIGNMENT_LABELS[normalizeText(state.alignment)] || payload.alignment1;
     payload.spell_cast_attri1 = SPELL_CAST_ABILITY_LABELS[normalizeText(state['spellcasting-ability'])] || payload.spell_cast_attri1;

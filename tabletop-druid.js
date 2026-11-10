@@ -676,8 +676,15 @@
     return control;
   }
 
-  // 野獸攻擊卡：和武器卡同一個骨架（名稱、命中、傷害、備註），備註是攻擊方式與動作自己的短效果句。
-  function createBeastAttackCard(beast, action) {
+  // 原初打擊勾選且可用時的攻擊備註：取自內容檔的 attackNote，和武器卡備註同一段字。
+  function primalStrikeNote() {
+    const id = "druid-elemental-fury-primal-strike";
+    if (!globalScope.isClassOptionControlAvailable?.(id) || !document.getElementById(id)?.checked) return "";
+    return globalScope.getClassOptionRules?.().attackNotes.find(item => item.id === id)?.note || "";
+  }
+
+  // 野獸攻擊卡：和武器卡同一個骨架（名稱、命中、傷害、備註），備註是攻擊方式、動作自己的短效果句與原初打擊。
+  function createBeastAttackCard(beast, action, primalNote) {
     const used = Boolean(action.recovery && isUsed(beast, action));
     const card = el("section", "", "weapon-attack-card tabletop-weapon-attack-card druid-beast-attack-card");
     card.dataset.beastAction = action.id;
@@ -693,6 +700,7 @@
     const note = el("div", "", "druid-beast-attack-card__note");
     note.append(el("span", attackReachText(action), "druid-beast-attack-card__reach"));
     if (action.text) note.append(el("span", action.text, "druid-beast-attack-card__effect"));
+    if (primalNote) note.append(el("span", primalNote, "druid-beast-attack-card__effect"));
     const extras = [];
     for (const item of action.conditional || []) {
       const row = el("div", "", "druid-button-row");
@@ -713,7 +721,8 @@
     const wrap = el("div", "", "druid-beast-attacks");
     wrap.append(el("h3", `${nameOf(beast.key)}的攻擊`, "druid-beast-attacks__title"));
     if (!diceEnabled()) wrap.append(diceOffNote());
-    wrap.append(...beast.actions.filter(item => Number.isFinite(item.hit)).map(action => createBeastAttackCard(beast, action)));
+    const primalNote = primalStrikeNote();
+    wrap.append(...beast.actions.filter(item => Number.isFinite(item.hit)).map(action => createBeastAttackCard(beast, action, primalNote)));
     if (beast.traitList?.length) {
       const traits = el("div", "", "druid-beast-traits");
       traits.setAttribute("aria-label", `${nameOf(beast.key)}的特性`);

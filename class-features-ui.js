@@ -385,13 +385,17 @@ function setManagedAttackNoteFragment(input, fragment, enabled) {
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+// 雙手武器佔用副手時，副手下拉的值與攻擊列名稱都是這段佔位文字，不是武器。
+const TWO_HANDED_OFF_HAND_PLACEHOLDER = "(雙手佔用)";
+
 function isApplicableWeaponAttack(hand) {
   if (!isWeaponAttackAutomationEnabled()) {
-    return Boolean(document.getElementById(`atk-${hand}-name`)?.value.trim());
+    const attackName = document.getElementById(`atk-${hand}-name`)?.value.trim() || "";
+    return Boolean(attackName) && attackName !== TWO_HANDED_OFF_HAND_PLACEHOLDER;
   }
   const selectionId = hand === "main" ? "mainHand" : "offHand";
   const weaponName = document.getElementById(selectionId)?.value || "";
-  return Boolean(weaponName) && !window.isShieldItem?.(weaponName);
+  return Boolean(weaponName) && !window.isShieldItem?.(weaponName) && weaponName !== TWO_HANDED_OFF_HAND_PLACEHOLDER;
 }
 
 // 選項的攻擊備註（內容檔 options[].attackNote，例如神聖打擊的「+1d8光/黯傷害」）：勾選且可用時加進武器攻擊備註。

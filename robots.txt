@@ -1,4 +1,5 @@
 User-agent: *
+Disallow: /al/
 Allow: /
 
 Sitemap: https://twd20.com/sitemap.xml

@@ -227,7 +227,7 @@
 }
 
 /* 窄螢幕：「查看」移到標籤右側，選單佔滿整欄。 */
-@media (width < 540px) {
+@media (max-width: 539.98px) {
   .class-pick-slots {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 0.5rem;
@@ -456,6 +456,29 @@
   .character-features-picker .character-features-picker__group--background .character-features-picker__option:nth-child(n + 4),
   .character-features-picker .character-features-picker__group--race .character-features-picker__option:nth-child(n + 5) {
     border-top: 1px solid var(--border);
+  }
+}
+
+/* 不支援 container query 的瀏覽器（iOS 15）：選擇列的寬度是視窗寬減 28px；內容與上面那一段相同，改動時兩段一起改。 */
+@supports not (container-type: inline-size) {
+  @media (max-width: 367.98px) {
+    .character-features-picker__group--background { --picker-columns: 12; }
+    .character-features-picker__group--race { --picker-columns: 20; }
+
+    .character-features-picker .character-features-picker__group--background .character-features-picker__option:nth-child(-n + 3) { grid-column: span 4; }
+    .character-features-picker .character-features-picker__group--background .character-features-picker__option:nth-child(n + 4) { grid-column: span 3; }
+    .character-features-picker .character-features-picker__group--race .character-features-picker__option:nth-child(-n + 4) { grid-column: span 5; }
+    .character-features-picker .character-features-picker__group--race .character-features-picker__option:nth-child(n + 5) { grid-column: span 4; }
+
+    .character-features-picker .character-features-picker__group--background .character-features-picker__option:nth-child(4),
+    .character-features-picker .character-features-picker__group--race .character-features-picker__option:nth-child(5) {
+      border-left: 0;
+    }
+
+    .character-features-picker .character-features-picker__group--background .character-features-picker__option:nth-child(n + 4),
+    .character-features-picker .character-features-picker__group--race .character-features-picker__option:nth-child(n + 5) {
+      border-top: 1px solid var(--border);
+    }
   }
 }
 
@@ -1289,7 +1312,7 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-mastery-badg
   grid-column: 1 / -1;
 }
 
-@media (width < 320px) {
+@media (max-width: 319.98px) {
   .weapon-attack-fields {
     grid-template-columns: 3.7rem minmax(0, 1fr);
   }
@@ -1299,7 +1322,7 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-mastery-badg
   }
 }
 
-@media (width < 280px) {
+@media (max-width: 279.98px) {
   .weapon-attack-fields {
     grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
   }
@@ -1313,6 +1336,14 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-mastery-badg
   font-size: var(--fs-sm);
   font-weight: 800;
   text-align: center;
+}
+
+/* 可以輸入的欄位（備註、停止自動更新後的欄位）在 iOS 墊到 16px；自動更新的欄位唯讀、不會觸發放大，
+   維持小字才放得下武器名稱。500px 以上本來就是 16px（dialogs.css）。 */
+@media (max-width: 499.98px) {
+  .weapon-attack-fields input:not(.is-automated) {
+    font-size: max(var(--ios-control-font-floor), var(--fs-sm));
+  }
 }
 
 :where(html:not([data-ui-theme="warm"])) .weapon-attack-fields input {
@@ -1433,7 +1464,7 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-mastery-badg
   min-width: 0;
   min-height: 3rem;
   padding: 0.65rem 0.75rem;
-  font-size: var(--fs-sm);
+  font-size: max(var(--ios-control-font-floor), var(--fs-sm));
 }
 
 /* 主手／副手標題列：「☐契約」「☐橡棍」緊接在標題後面，字級與標題相同，欄寬不夠時換到下一列。 */

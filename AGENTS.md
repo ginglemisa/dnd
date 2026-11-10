@@ -30,6 +30,7 @@
 * 「規則以內容檔為準」的唯一例外是分享模式換法術的職業表：只有分享模式用得到，寫在 `share-readonly.js` 的 `SPELL_CHANGE`，不進內容檔；只有分享模式的法術頁、準備視窗與寫入防護讀這張表，一般角色卡的規則不得引用它。
 * 職業機制以 `classRules` 為準，`classFeatures` HTML 與能力名稱、標題只供顯示：程式不得從中反推規則，判斷特定能力時用能力 id。職業頁上找能力的位置用 `data-feature-id`；建置工具不以正則解析產生後的 HTML 或網站原始碼。
 * 樣式以 `css/` 的樣式檔為準（`index.html` 依序載入，順序即覆蓋順序；各檔分工見 DESIGN.md「樣式檔」），外觀與互動先查 [DESIGN.md](DESIGN.md)，各功能刻意的行為決定與舊資料處理見 [BEHAVIOR.md](BEHAVIOR.md)。新 dialog／toast 用 `app-dialog.js`，不用原生 `alert`／`confirm`／`prompt`。圖片放 `images/`、字型放 `fonts/`；`og-image.jpg` 必須留在根目錄（短網址 Worker 固定引用）。
+* 瀏覽器支援到 iOS 15（Safari 15.4 以上）。JS 不用正則 lookbehind、class static block 這類 Safari 16 以後才認得的語法（舊版會整個檔案載入失敗），較新的 API 先偵測再用；CSS 的對應寫法見 DESIGN.md「新樣式寫法」。唯一的例外是開啟 `#s2=` 分享連結需要 `DecompressionStream`（iOS 16.4 以上），舊版顯示不支援的訊息。
 * 修改正式部署載入的 CSS／JS 時，只更新該資源在 `index.html` 的 `?v=`；各 `*.generated.js` 的 `?v=` 由上線建置（`npm run build -- --stamp-version`）自動產生，不手改。
 
 ## 資料相容（不可破壞）
@@ -70,6 +71,7 @@
 | 跑團模式 | `tabletop-mode.js`（`TabletopMode` 共用狀態與公開 API），子模組 `tabletop-*.js` 經 `TabletopMode`、`SpellCatalog`、`character-rules.js`、`DiceRoller` 協作 |
 | 擲骰 | `dice-roller.js`（`DiceRoller` 是擲骰與歷史的唯一入口） |
 | 導覽 | `onboarding-tour.js` |
+| 分頁滑動換頁、觸控點分頁的轉場 | `page-swipe.js`（只管畫面，切換仍走 `showTab()`／`TabletopMode.setPanel()`） |
 | PDF | `pdf-launcher.js`、`pdf-export.js`、`pdf-field-map.js` |
 | Legal／About | `legal-about.js`、`legal-modal.js` |
 
@@ -81,6 +83,10 @@
 * 回歸測試只在本機推送前執行。GitHub Actions（`.github/workflows/site.yml`）在 push 到 `main` 時建置、產生離線角色卡並部署 GitHub Pages，不跑回歸測試。
 * `twd20.html` 是 Actions 產生的衍生產物，不提交、不手改。離線版除了停用 PDF 匯出，功能應與網頁版相同；不含私人內容，分享只產生正式站的永久網址。
 * 改動可能影響離線版（載入順序、內嵌的 script／CSS／圖片、新增產物檔、路徑或離線分享）時，自行在本機執行 `npm run build:offline`（先 `npm run build`；腳本內含自身驗證），測完刪除產物。
+* **部署時併入的額外頁面**：`site.yml` 有一段會在部署時從另一個 repo 取得少量靜態頁面，細節看該段流程。這些頁面不進本 repo；來源有變動時不會自動部署，變動後要到 GitHub Actions 手動執行「網站上線」。
+  * 移除頁面但保留來源 repo：刪掉來源 repo 裡的檔案，再手動執行一次。
+  * 永久停用：先刪該段流程使用的 secret，手動執行一次並確認頁面消失，最後才刪來源 repo。
+  * secret 還在時不要直接刪來源 repo：取檔失敗會讓每次部署都失敗，整個網站無法更新，這些頁面也會停留在上一版。
 
 ## 驗證
 
@@ -104,7 +110,7 @@
 | `validate-ability-roll.js` | 屬性產生、購點、擲骰（`--point-buy-only`／`--dice-only`） |
 | `validate-onboarding.js` | 導覽、創角匯入、PDF 載入取消（`--touch-only`／`--imports-only`） |
 | `validate-tabletop-rest.js` | 短休／長休、資源恢復、休息後選項 |
-| `validate-ui.js` | `--data-only` 存檔／分享／匯入安全、分享模式唯讀（也可用 `--share-only` 單跑）、職業選項記憶、子職、物品欄；`--dialogs-only` 對話框、角色能力視窗、缺項提示；`--appearance-only` 主題外觀；`--pdf-only`／`--pdf-fields-only` PDF；`--journal-only` 日誌；不帶參數另含 GA4 隔離模擬 |
+| `validate-ui.js` | `--data-only` 存檔／分享／匯入安全、分享模式唯讀（也可用 `--share-only` 單跑）、職業選項記憶、子職、物品欄；`--dialogs-only` 對話框、角色能力視窗、缺項提示；`--gestures-only` 分頁滑動換頁與 Toast 滑除；`--appearance-only` 主題外觀；`--pdf-only`／`--pdf-fields-only` PDF；`--journal-only` 日誌；不帶參數另含 GA4 隔離模擬 |
 
 * 環境為 Node.js 20 以上，在專案根目錄執行。Playwright 腳本會自行啟動伺服器與 Chromium（`DND_BROWSER_CHANNEL=msedge` 可改用 Edge）。新環境先執行 `npm ci` 與 `npx --no-install playwright install chromium`。新的 worktree 沒有 `content/private/`，建置結果只含公開內容。
 * **測試流量**：任何方式載入本站（本機、正式站、`file://`、新分頁、新 context、分享網址），網址都必須帶 `analytics=owner`，並放在 `#` 之前；禁止向真實 GA4 送測試事件。

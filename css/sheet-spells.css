@@ -303,6 +303,7 @@ html.equipment-detail-open body {
 
 :where(html:not([data-ui-theme="warm"])) #equipment-detail-modal {
   background: rgba(8, 18, 40, 0.72);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
@@ -901,6 +902,7 @@ button.spell-prepared-browse:focus-visible { outline: 2px solid var(--focus-ring
 .spellbook-toolbar.spell-picker-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
 .spell-picker-search-field { position: relative; min-width: 0; }
 .spell-picker-toolbar :is(input[type="search"], select, .spell-picker-selected-toggle) { box-sizing: border-box; height: 36px; min-height: 36px; min-width: 0; margin: 0; padding: 5px 6px; font-size: .85rem; line-height: 1.4; }
+.spell-picker-toolbar :is(input[type="search"], select) { font-size: max(var(--ios-control-font-floor), .85rem); }
 .spell-picker-toolbar input[type="search"] { width: 100%; padding-right: 28px; }
 .spell-picker-search-field .spell-picker-clear { position: absolute; inset: 0 0 0 auto; width: 28px; min-height: 36px; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text-muted); box-shadow: none; }
 .spell-picker-toolbar .spell-picker-selected-toggle { width: auto; white-space: nowrap; }
@@ -1444,6 +1446,12 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
 .feat-row-selects > select { width: 100%; min-width: 0; margin: 0; }
 @container (width >= 26rem) {
   .feat-row-selects { grid-template-columns: auto minmax(0, 1fr); }
+}
+/* 不支援 container query 的瀏覽器（iOS 15）：專長列的內寬是視窗寬減 62px。 */
+@supports not (container-type: inline-size) {
+  @media (min-width: 478px) {
+    .feat-row-selects { grid-template-columns: auto minmax(0, 1fr); }
+  }
 }
 @media (max-width: 400px) {
   .feat-row-head { gap: 5px; }

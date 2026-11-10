@@ -107,21 +107,21 @@
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/base.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-bonus-transfer-row">
-  <link rel="stylesheet" href="css/sheet-spells.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/utility.css?v=20261109-footer-links">
-  <link rel="stylesheet" href="css/dice.css?v=20261109-tour-point-buy-focus">
-  <link rel="stylesheet" href="css/dialogs.css?v=20261108-css-split">
+  <link rel="stylesheet" href="css/base.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261111-merge-main">
+  <link rel="stylesheet" href="css/sheet-spells.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/utility.css?v=20261110-footer-one-line">
+  <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/tabletop.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/tabletop-resources.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/late-overrides.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/quick-build.css?v=20261108-css-split">
+  <link rel="stylesheet" href="css/tabletop.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/tabletop-resources.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/quick-build.css?v=20261110-safari">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
-  <script src="dice-roller.js?v=20261103-roll-min" defer></script>
+  <script src="dice-roller.js?v=20261110-safari" defer></script>
   <script src="magic-item-content.generated.js?v=0" defer></script>
   <script src="magic-items.js?v=20261109-magic-rod" defer></script>
   <script src="monster-content.generated.js?v=0" defer></script>
@@ -139,22 +139,23 @@
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
   <script src="character-rules.js?v=20261109-magic-spell" defer></script>
-  <script src="app-dialog.js?v=20261107-share-link" defer></script>
+  <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261109-magic-names" defer></script>
-  <script src="tabletop-druid.js?v=20261109-magic-shield" defer></script>
+  <script src="tabletop-mode.js?v=20261111-merge-main" defer></script>
+  <script src="tabletop-druid.js?v=20261111-merge-main" defer></script>
   <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
   <script src="tabletop-actions.js?v=20261109-magic-defender" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261109-item-actions" defer></script>
-  <script src="legal-modal.js?v=20261109-font-label" defer></script>
+  <script src="legal-modal.js?v=20261110-safari" defer></script>
   <script src="onboarding-tour.js?v=20261109-merge-main" defer></script>
   <script src="quick-build.js?v=20261108-css-refactor-b7" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
   <script src="spell-management.js?v=20261107-share-readonly" defer></script>
   <script src="share-readonly.js?v=20261107-share-menu" defer></script>
   <script src="class-option-memory.js?v=20261106-background-memory" defer></script>
+  <script src="page-swipe.js?v=20261110-page-swipe" defer></script>
   <script src="deity-info.js" defer></script>
 
 </head>
@@ -1443,7 +1444,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261105-feat-categories"></script>
   <script src="spell-sources.js?v=20261109-item-actions"></script>
-  <script src="class-features-ui.js?v=20261109-magic-names"></script>
+  <script src="class-features-ui.js?v=20261111-merge-main"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -1726,7 +1727,7 @@ function syncManualSpellSourceControls() {
       hide.textContent = "隱藏提醒";
       hide.addEventListener("click", () => {
         const focusTarget = Array.from(hint.parentElement.querySelectorAll("select, input, button"))
-          .find(control => !control.disabled && control !== hide && control.checkVisibility())
+          .find(control => !control.disabled && control !== hide && control.getClientRects().length > 0)
           || (id === "manual-spell-hint-tabletop" ? document.getElementById("tabletop-tab-spells") : null);
         manualSpellRemindersHidden = true;
         syncManualSpellSourceControls();
@@ -3067,6 +3068,9 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
       });
     }
 
+    // 滑動換頁（page-swipe.js）要把鄰頁畫在它還原後的捲動位置。
+    window.getSheetTabScroll = tab => tabScrollPositions[tab] ?? 0;
+
     if (hasSavedTab) {
       showTab(savedTab, null, { activateSheet: false });
     }
@@ -3483,7 +3487,7 @@ function finishDerivedChecksLoad(data) {
   syncAutomaticKeyStatsMode({ refresh: false });
 }
 </script>
-<script src="pdf-launcher.js?v=20261109-magic-names"></script>
+<script src="pdf-launcher.js?v=20261111-merge-main"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -3857,7 +3861,7 @@ function updateOffHandOptions(mainHandValue) {
   if (hasTwoHandedProperty(mainWeapon)) {
     offHandSelect.innerHTML = "";
     const opt = document.createElement("option");
-    opt.textContent = "(雙手佔用)";
+    opt.textContent = TWO_HANDED_OFF_HAND_PLACEHOLDER;
     opt.disabled = true;
     opt.selected = true;
     offHandSelect.appendChild(opt);
@@ -3945,9 +3949,22 @@ function getWeaponVersatileDie(weapon) {
   for (const prop of props) {
     if (!String(prop).includes("兩用")) continue;
     const die = parseDiceExpression(prop)?.text;
-    if (die === "1d8") return die;
+    if (die) return die;
   }
   return null;
+}
+
+// 這一手的兩用武器是否算雙手持用：主手2模式下兩手都是主手，沒持盾就算；
+// 一般模式只有主手適用，副手要空著或是武藝（武藝等於沒拿東西）。
+function isHandFreeForVersatile(hand) {
+  if (isOffHandAlternateMain()) return !isEffectiveEquippedShield();
+  if (hand !== "main") return false;
+  const offHandName = getHandWeaponName("off");
+  return !offHandName || offHandName === "武藝";
+}
+
+function getHandVersatileDie(weapon, hand) {
+  return isHandFreeForVersatile(hand) ? getWeaponVersatileDie(weapon) : null;
 }
 
 function hasPreparedSpell(spellId) {
@@ -4446,10 +4463,11 @@ function updateEquipmentLoadoutSummary() {
   // 可改傷害類型時（契約武器、真力駐拳、角色卡勾選的橡棍術）傷害是按鈕，點了開啟選擇視窗。
   const weaponDamageDetail = (weapon, hand) => {
     const kind = getHandDamageTypeChoiceKind(hand);
-    if (!kind) return weapon.傷害;
+    const handDie = getHandVersatileDie(weapon, hand) || weapon.傷害.split(/\s+/u)[0];
+    if (!kind) return `${handDie} ${getWeaponOwnDamageType(weapon)}`;
     const die = kind === "shillelagh"
       ? getPreparedShillelaghEffect(weapon.名稱, 0)?.damageDie
-      : weapon.傷害.split(/\s+/u)[0];
+      : handDie;
     const text = `${die} ${getWeaponDamageTypeLabel(kind, getWeaponOwnDamageType(weapon))}`;
     const button = document.createElement("button");
     button.type = "button";
@@ -4549,7 +4567,9 @@ function calculateHandAttacks(options = {}) {
     const originalDamageType = getWeaponOwnDamageType(weapon);
     const damageTypeChoice = getHandDamageTypeChoiceKind(hand.key, { shillelaghHand: shillelaghTargetHand });
     const damageType = damageTypeChoice ? getWeaponDamageTypeLabel(damageTypeChoice, originalDamageType) : originalDamageType;
-    const weaponDamage = `${weapon.傷害.split(/\s+/u)[0]} ${damageType}`;
+    const oneHandedDie = weapon.傷害.split(/\s+/u)[0];
+    const versatileDie = getHandVersatileDie(weapon, hand.key);
+    const weaponDamage = `${versatileDie || oneHandedDie} ${damageType}`;
     const proficient = isMonkMartialArts || pactWeapon ? true : isWeaponProficient(weapon);
     const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive(weaponName) && isMonkWeapon(weapon);
     const shillelaghEffect = hand.key === shillelaghTargetHand
@@ -4583,17 +4603,23 @@ function calculateHandAttacks(options = {}) {
     // 傷害部分
     const shouldApplyDamageMod = shouldApplyDamageModForSummary(hand.key, hasTwoWeaponFighting, attackAbilityMod, hand.usesMainHandRules);
     let damage = "";
+    // 投擲不是雙手近戰，傷害骰不採兩用；武僧仍比較武藝骰。
+    let thrownDie = oneHandedDie;
+    let usesVersatileDie = Boolean(versatileDie) && !shillelaghEffect;
     if (shillelaghEffect) {
       damage = formatWeaponDamage(
         `${shillelaghEffect.damageDie} ${shillelaghEffect.damageType}`,
         (shouldApplyDamageMod ? attackAbilityMod : 0) + magicHand.damage
       );
     } else if (useMonkProficientFormula) {
+      const martialArtsDie = getMonkMartialArtsDie();
       const selectedDie = getHighestDiceExpression([
-        getMonkMartialArtsDie(),
+        martialArtsDie,
         getWeaponBaseDamageDie(weapon),
-        getWeaponVersatileDie(weapon)
-      ]) || getMonkMartialArtsDie();
+        versatileDie
+      ]) || martialArtsDie;
+      thrownDie = getHighestDiceExpression([martialArtsDie, getWeaponBaseDamageDie(weapon)]) || martialArtsDie;
+      usesVersatileDie &&= selectedDie !== thrownDie;
       damage = formatWeaponDamage(`${selectedDie} ${damageType}`, attackAbilityMod + magicHand.damage);
     } else {
       // 副手不加屬性調整值時，魔法傷害加值仍要加，所以不併進 attackAbilityMod。
@@ -4623,7 +4649,9 @@ function calculateHandAttacks(options = {}) {
         magicDamageBonus: magicHand.damage,
         baseDamage: shillelaghEffect
           ? shillelaghEffect.damageDie
-          : (useMonkProficientFormula ? damage.match(/^\d+d\d+/u)?.[0] || weapon.傷害.split(/\s+/u)[0] : weapon.傷害.split(/\s+/u)[0]),
+          : (useMonkProficientFormula ? damage.match(/^\d+d\d+/u)?.[0] || oneHandedDie : versatileDie || oneHandedDie),
+        usesVersatileDie,
+        thrownDie: usesVersatileDie && weaponHasProp(weapon, "投擲") ? thrownDie : "",
         damageModifier: useMonkProficientFormula || shouldApplyDamageMod ? attackAbilityMod : null,
         omittedOffHandModifier: !useMonkProficientFormula && hand.key === "off" && !hand.usesMainHandRules && !hasTwoWeaponFighting && attackAbilityMod > 0,
         damageType: shillelaghEffect?.damageType || damageType,
@@ -4708,7 +4736,8 @@ function renderAttackCalculationPopup(details, calculationType) {
     if (details.archeryBonus) rows.push(["箭術戰鬥風格", "+2"]);
     if (details.magicAttackBonus) rows.push([details.magicLabel, formatSigned(details.magicAttackBonus)]);
   } else {
-    rows.push(["武器傷害", details.baseDamage]);
+    rows.push([details.usesVersatileDie ? "武器傷害（兩用，雙手）" : "武器傷害", details.baseDamage]);
+    if (details.thrownDie) rows.push(["投擲時武器傷害", details.thrownDie]);
     if (details.damageModifier !== null) {
       rows.push([`${details.abilityLabel}調整值`, formatSigned(details.damageModifier)]);
     } else if (details.omittedOffHandModifier) {
@@ -6164,7 +6193,8 @@ function downloadStateAsJson() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Safari 在點擊之後才開始讀取 blob，立刻撤銷網址會讓下載失敗。
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   if (SHARE_MODE) window.AppDialog.notify("分享模式匯出的檔案不含角色圖片。", { tone: "info" });
   else if (avatarOmitted) window.AppDialog.notify("角色資料加上角色圖片會超過 2 MiB，這次匯出未包含角色圖片。", { tone: "warning" });
   window.twAnalytics?.track?.("character_json_export");
@@ -7133,11 +7163,13 @@ window.addEventListener("DOMContentLoaded", async function() {
 
 <footer class="site-footer">
   <div class="site-footer-links" aria-label="網站資訊連結">
-    <a href="#legal-about-modal" class="legal-about-trigger">授權聲明</a> |
-    <a href="https://kh-calendar.vercel.app/" target="_blank" rel="noopener">高雄跑團月曆</a> |
+    <a href="twd20.html" download="twd20.html">下載本站離線使用</a>
+    <a href="#legal-about-modal" class="legal-about-trigger">授權聲明</a>
+    <a href="https://kh-calendar.vercel.app/" target="_blank" rel="noopener">跑團月曆</a>
     <a href="https://linktr.ee/trpg.kh" target="_blank" rel="noopener">TRPG在高雄</a>
+    <a href="ddals1.html">官方免費冒險</a>
+    <a href="mailto:tsai.reggie428@gmail.com">bug回報</a>
   </div>
-  <div><a href="twd20.html" download="twd20.html">下載本站離線使用</a> | <a href="ddals1.html">官方免費冒險</a> | <a href="mailto:tsai.reggie428@gmail.com">bug回報</a></div>
 </footer>
 
 <button type="button" id="dice-roller-fab" class="is-hidden" aria-label="開啟擲骰功能" aria-controls="dice-roller-modal" aria-expanded="false">🎲</button>
@@ -7350,6 +7382,7 @@ window.addEventListener("DOMContentLoaded", async function() {
     <div class="legal-modal-dismiss">
       <label><input type="checkbox" id="legal-dismiss"> 不再顯示此視窗</label>
     </div>
+    <p id="legal-safari-note" class="legal-modal-storage-note" hidden>Safari 可能自動清除超過 7 天沒開的網站資料，請定期匯出 JSON 備份角色與冒險日誌。</p>
   </div>
 </div>
 

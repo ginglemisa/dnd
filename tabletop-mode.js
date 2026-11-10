@@ -5460,6 +5460,8 @@
     getMode: () => currentMode,
     setPanel: setActivePanel,
     getPanel: () => currentPanel,
+    // 滑動換頁（page-swipe.js）要把鄰頁畫在它還原後的捲動位置。
+    getPanelScroll: panel => panelScrollPositions[panel] || 0,
     getTabletopActionPreferences,
     restoreSharedActionPreferences,
     setTabletopActionNotes,
@@ -5721,7 +5723,9 @@
       context.translate(OUTPUT_SIZE / 2 + state.x * ratio, OUTPUT_SIZE / 2 + state.y * ratio);
       context.scale(state.scale * ratio, state.scale * ratio);
       context.drawImage(elements.cropImage, -elements.cropImage.naturalWidth / 2, -elements.cropImage.naturalHeight / 2);
-      const dataUrl = canvas.toDataURL("image/webp", 0.82);
+      // Safari 的 canvas 不能輸出 WebP，會改給大很多的 PNG；畫布已鋪白底，這時改存 JPEG。
+      const webp = canvas.toDataURL("image/webp", 0.82);
+      const dataUrl = webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", 0.85);
       if (!globalScope.dndStorage?.setItem(STORAGE_KEY, dataUrl)) {
         globalScope.AppDialog?.notify?.("圖片無法儲存，本機空間可能已滿。", { tone: "danger" });
         return;
