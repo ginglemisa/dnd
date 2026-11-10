@@ -143,6 +143,19 @@ async function checkArmorStrengthSpeed(page) {
   await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("overview"); });
   assert.equal(await page.locator("#tabletop-speed").innerText(), "20 呎", "tabletop speed follows the sheet");
   await page.evaluate(() => TabletopMode.setMode("sheet"));
+  // 迅捷步法：PDF 用匯出流程傳入的 hasSelectedFeat 結果，速度和角色卡一致（也和護甲降速一起算）。
+  await page.selectOption("#derived-feat-druid-level-4", "迅捷步法");
+  const speedyPdf = () => page.evaluate(() => ({
+    usable: hasSelectedFeat("迅捷步法"),
+    sheet: document.getElementById("speed-display").value,
+    pdf: buildPdfFieldPayload(collectStateObject(), { hasSpeedyFeat: hasSelectedFeat("迅捷步法") }).speed1
+  }));
+  await speedFor("", "8");
+  assert.deepEqual(await speedyPdf(), { usable: true, sheet: "40", pdf: "40" }, "PDF speed includes Speedy like the sheet");
+  await speedFor("鎖子甲", "12");
+  assert.deepEqual(await speedyPdf(), { usable: true, sheet: "30", pdf: "30" }, "Speedy and the armor penalty stack in both");
+  await page.selectOption("#derived-feat-druid-level-4", "");
+  await speedFor("", "8");
   // 關閉自動計算：保留玩家手填的速度，PDF 也照填。
   await page.evaluate(() => {
     const toggle = document.getElementById("auto-calculate-key-stats-toggle");

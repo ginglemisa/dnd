@@ -1165,6 +1165,8 @@ function isWeaponRowEmpty(payload, slot) {
     return normalizeText(options[globalScope.getRaceChoiceOptionKey(choiceId)] || state[choiceId]);
   }
 
+  // 專長能否生效（條件、重複取得、手動管理）只有角色卡的 hasSelectedFeat 判斷得出來，
+  // 由匯出流程以 options.hasSpeedyFeat 傳入，這裡不從存檔另推一套。
   function resolveSpeedForPdf(state, options = {}) {
     if (state['auto-calculate-key-stats-toggle'] === false) {
       return normalizeText(state['speed-display']);
@@ -1188,7 +1190,8 @@ function isWeaponRowEmpty(payload, slot) {
       isWearingHeavyArmor: armor?.分類 === '重甲',
       armorStrengthRequirement: armor?.力量需求,
       strengthScore: state.str,
-      hasShield: isShield(armorName) || hasEffectiveShieldForPdf(state)
+      hasShield: isShield(armorName) || hasEffectiveShieldForPdf(state),
+      hasSpeedyFeat: options.hasSpeedyFeat === true
     });
   }
 
