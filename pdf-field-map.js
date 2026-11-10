@@ -1186,6 +1186,8 @@ function isWeaponRowEmpty(payload, slot) {
       level: state.level,
       isWearingArmor: Boolean(armorName) && !isShield(armorName),
       isWearingHeavyArmor: armor?.分類 === '重甲',
+      armorStrengthRequirement: armor?.力量需求,
+      strengthScore: state.str,
       hasShield: isShield(armorName) || hasEffectiveShieldForPdf(state)
     });
   }

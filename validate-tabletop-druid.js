@@ -106,6 +106,59 @@ async function checkPersistentSpells(page) {
   console.log("Persistent spells: casting, targets, cancellation, stacking, themes, persistence, dismissal and beast stats passed.");
 }
 
+// 護甲的力量需求：力量低於需求時自動計算的速度 -10 呎；盾牌與無甲不扣，跑團與 PDF 用同一個速度，關閉自動計算時不動手填速度。
+async function checkArmorStrengthSpeed(page) {
+  await page.evaluate(() => {
+    TabletopMode.applyState({});
+    TabletopMode.setMode("sheet");
+    Inventory.add([{ itemId: "鎖子甲" }, { itemId: "條板甲" }, { itemId: "盾牌" }]);
+  });
+  await page.addScriptTag({ path: path.join(__dirname, "pdf-field-map.js") });
+  const speedFor = (armor, str, offHand = "") => page.evaluate(({ armor, str, offHand }) => {
+    for (const [id, value] of [["armor", armor], ["offHand", offHand]]) {
+      const select = document.getElementById(id);
+      select.value = value;
+      if (select.value !== value) throw new Error(`${id} option missing: ${value}`);
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    const strInput = document.getElementById("str");
+    strInput.value = str;
+    strInput.dispatchEvent(new Event("input", { bubbles: true }));
+    const sheet = document.getElementById("speed-display").value;
+    return { sheet, pdf: buildPdfFieldPayload(collectStateObject()).speed1 };
+  }, { armor, str, offHand });
+  for (const [armor, str, expected, message, offHand] of [
+    ["鎖子甲", "12", "20", "chain mail below STR 13 slows by 10"],
+    ["鎖子甲", "13", "30", "chain mail at STR 13 keeps speed"],
+    ["條板甲", "14", "20", "splint below STR 15 slows by 10"],
+    ["條板甲", "15", "30", "splint at STR 15 keeps speed"],
+    ["", "8", "30", "a shield is not armor", "盾牌"],
+    ["", "8", "30", "no armor keeps speed"]
+  ]) {
+    assert.deepEqual(await speedFor(armor, str, offHand), { sheet: expected, pdf: expected }, message);
+  }
+  // 只改力量也要重算：同一件鎖子甲從 13 降到 12。
+  await speedFor("鎖子甲", "13");
+  assert.equal((await speedFor("鎖子甲", "12")).sheet, "20", "STR input alone recalculates speed");
+  await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("overview"); });
+  assert.equal(await page.locator("#tabletop-speed").innerText(), "20 呎", "tabletop speed follows the sheet");
+  await page.evaluate(() => TabletopMode.setMode("sheet"));
+  // 關閉自動計算：保留玩家手填的速度，PDF 也照填。
+  await page.evaluate(() => {
+    const toggle = document.getElementById("auto-calculate-key-stats-toggle");
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    document.getElementById("speed-display").value = "35";
+  });
+  assert.deepEqual(await speedFor("條板甲", "8"), { sheet: "35", pdf: "35" }, "manual speed is left alone");
+  await page.evaluate(() => {
+    document.getElementById("auto-calculate-key-stats-toggle").checked = true;
+    syncAutomaticKeyStatsMode();
+  });
+  assert.deepEqual(await speedFor("", "8"), { sheet: "30", pdf: "30" }, "automatic speed restored");
+  console.log("Armor strength requirement: speed penalty, shield/no armor, STR recalculation, tabletop, PDF and manual speed passed.");
+}
+
 async function main() {
   const root = __dirname;
   const server = http.createServer((req, res) => {
@@ -629,6 +682,7 @@ async function main() {
     await dialog.getByRole("button", { name: "取消", exact: true }).click();
     await setLevel("8");
     await checkPersistentSpells(page);
+    await checkArmorStrengthSpeed(page);
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Druid status card, strips, known forms, shape cards, attack cards, recharge, resources, cancellation, alternate payment, autosave and responsive layout passed.");
   } finally {

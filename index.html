@@ -136,7 +136,7 @@
   <script src="spell-list.js?v=20261107-companion-variant" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
-  <script src="character-rules.js?v=20261106-skills-auto" defer></script>
+  <script src="character-rules.js?v=20261111-armor-str-speed" defer></script>
   <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
@@ -1660,7 +1660,7 @@ function bindCoreCharacterEvents() {
     scheduleStructuralSaveAllFields();
   });
   bindEventById("armor", "change", () => { updateACDisplay(); updateSpeedDisplay(); populateHandAttacks(); });
-  bindEventById("str", "input", populateHandAttacks);
+  bindEventById("str", "input", () => { updateSpeedDisplay(); populateHandAttacks(); });
   bindEventById("dex", "input", () => { updateACDisplay(); updateAutomaticInitiative(); populateHandAttacks(); });
   bindEventById("con", "input", updateACDisplay);
   bindEventById("wis", "input", updateACDisplay);
@@ -1804,6 +1804,8 @@ function updateSpeedDisplay() {
     level: document.getElementById("level")?.value,
     isWearingArmor: Boolean(armorName) && !isShieldItem(armorName),
     isWearingHeavyArmor: armor?.分類 === "重甲",
+    armorStrengthRequirement: armor?.力量需求,
+    strengthScore: document.getElementById("str")?.value,
     hasShield,
     hasSpeedyFeat: hasSelectedFeat("迅捷步法")
   }) || "--";
@@ -3469,7 +3471,7 @@ function finishDerivedChecksLoad(data) {
   syncAutomaticKeyStatsMode({ refresh: false });
 }
 </script>
-<script src="pdf-launcher.js?v=20261110-feat-pdf-lines"></script>
+<script src="pdf-launcher.js?v=20261111-armor-str-speed"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======

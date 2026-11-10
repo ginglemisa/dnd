@@ -773,7 +773,18 @@
   // 角色卡的基礎速度欄（speed-input）預設 30，適用速度 30 呎的種族；種族或所選血統的速度不是 30 時以內容檔為準。
   const DEFAULT_BASE_SPEED = 30;
 
-  /** 計算角色速度，包含種族（options.raceChoice 為所選血統）速度及武僧、野蠻人、遊俠的職業加值條件。 */
+  /** 護甲資料的「力量需求」（例如「力量 13」）轉成需求數值；「--」、「-」、空白等沒有數字的寫法回傳 0（沒有需求）。 */
+  function parseArmorStrengthRequirement(value) {
+    if (Number.isFinite(value)) return value > 0 ? value : 0;
+    const match = normalizeSignedValueText(value).match(/\d+/);
+    return match ? Number(match[0]) : 0;
+  }
+
+  /**
+   * 計算角色速度，包含種族（options.raceChoice 為所選血統）速度及武僧、野蠻人、遊俠的職業加值條件。
+   * 穿著護甲（options.isWearingArmor）且力量（options.strengthScore）低於護甲的力量需求
+   * （options.armorStrengthRequirement，可傳護甲資料的原始文字）時速度降低 10 呎；力量無法判讀時不扣。
+   */
   function calculateCharacterSpeed(options = {}) {
     const baseSpeedValue = Number.parseFloat(options.baseSpeed);
     const race = String(options.race || "").trim();
@@ -802,7 +813,10 @@
     if (monkBonusApplies) classSpeedBonus = getClassProgressionValue("monk", "unarmoredMovement", level) || 0;
     else if (barbarianBonusApplies || rangerBonusApplies) classSpeedBonus = 10;
     const featSpeedBonus = options.hasSpeedyFeat ? 10 : 0;
-    return String(baseSpeed + classSpeedBonus + featSpeedBonus);
+    const strengthRequirement = options.isWearingArmor ? parseArmorStrengthRequirement(options.armorStrengthRequirement) : 0;
+    const strengthScore = parseExactSignedValue(options.strengthScore);
+    const armorStrengthPenalty = strengthRequirement > 0 && strengthScore !== null && strengthScore < strengthRequirement ? 10 : 0;
+    return String(Math.max(0, baseSpeed + classSpeedBonus + featSpeedBonus - armorStrengthPenalty));
   }
 
   // 已知形態、最大 CR 與飛行以職業文本的 2／4／8 級野獸形態表為準；使用次數與時數取自德魯伊內容檔。
