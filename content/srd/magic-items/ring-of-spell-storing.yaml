@@ -6,6 +6,7 @@ source: srd
 category: ring
 rarity: rare
 attunement: true
+use: worn
 text: |-
   這枚戒指會儲存被施放進其中的法術，並保存它們，直到同調的穿戴者使用它們。這枚戒指一次最多可儲存總計5環的法術。被發現時，它內含由DM選擇、總計1d6 − 1環的已儲存法術。
 

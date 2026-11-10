@@ -6,6 +6,7 @@ source: srd
 category: rod
 rarity: legendary
 attunement: true
+use: held
 text: |-
   這根權杖有5次充能。你手持它時，可以從中施放下列法術之一：_醫療術_（消耗1次充能）或_復生術_（消耗5次充能）。
 

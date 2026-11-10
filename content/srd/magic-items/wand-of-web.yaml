@@ -6,6 +6,7 @@ source: srd
 category: wand
 rarity: uncommon
 attunement: 由施法者
+use: held
 text: |-
   這根魔杖有7次充能。手持它時，你可以消耗1次充能，從中施放_蛛網術_（豁免DC 13）。
 

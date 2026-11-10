@@ -7,5 +7,6 @@ category: wondrous
 group: wearable
 rarity: uncommon
 attunement: true
+use: worn
 text: |-
   穿戴這條項鍊時，你可以在任何環境中正常呼吸，且你進行豁免以避免或結束中毒狀態時具有優勢。

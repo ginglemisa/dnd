@@ -6,6 +6,7 @@ source: srd
 category: ring
 rarity: rare
 attunement: false
+use: worn
 options:
   - id: damageType
     label: 傷害類型

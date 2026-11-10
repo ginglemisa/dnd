@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: uncommon
 attunement: true
+use: worn
 effects: { ac: 1, saves: 1 }
 text: |-
   穿戴這件斗篷時，你的護甲等級與豁免獲得+1加值。

@@ -696,9 +696,10 @@ text: |-
 | `category`、`group` | 類別：`weapon` 武器、`armor` 護甲、`potion` 藥水、`ring` 戒指、`scroll` 卷軸、`rod` 權杖、`staff` 法杖、`wand` 魔杖、`wondrous` 奇物。奇物必寫小標 `group`：`wearable` 穿戴、`container` 容器、`consumable` 消耗品、`tool` 工具與載具、`book` 書籍、`curio` 奇珍。 |
 | `rarity`、`rarityText` | `common`、`uncommon`、`rare`、`very-rare`、`legendary`、`artifact`。隨選項變動時寫 `varies`，並在剛好一組選項的每個 choice 寫 `rarity`；副標不是「稀有度不定」時另寫 `rarityText`（例如「非常見（+1）、稀有（+2）或極稀有（+3）」）。 |
 | `attunement` | `false`、`true`，或限定條件文字（以「由」開頭，例如「由法師」，顯示為「需由法師同調」）。 |
+| `use` | 使用方式，沒有 `base` 的物品才寫，依說明文字判斷：`worn`（寫「穿戴…時」，艾恩石的「視為你所穿戴」也算）、`held`（寫「手持…時」）、`wornOrHeld`（寫「穿戴或手持」）、`carried`（寫「帶在身上」「在你身上」）。效果只在符合時生效：穿戴要在物品詳情按「裝備」、手持要放在主手或副手、帶在身上持有就算，需要同調的仍要同調。有 `effects`（含選項的 `effects`）的物品必寫；說明只講啟動方式、看不出有沒有持續效果的物品（例如火球項鍊、支配權杖）可以不寫。有 `base` 的武器、護甲、盾牌、法杖用裝備欄位，不寫這欄。 |
 | `base` | 基本款，擇一：`{ fixed: 長劍 }`（固定一種）、`{ from: [長弓, 短弓] }`（列出品名）、`{ any: [melee-weapon], label: 任意近戰武器 }`（裝備分類：`simple-weapon`、`martial-weapon`、`melee-weapon`、`light-armor`、`medium-armor`、`heavy-armor`、`ammunition`；可加 `except` 排除品名）。品名須對得上 `equipment-data.js`。武器與護甲必寫，法杖、權杖可寫（可當作長棍或硬頭錘揮舞時），其他類別不寫。 |
 | `options` | 取得時要選的項目：`[{ id, label, choices: [{ value, label, ... }] }]`。`id` 與 `value` 會寫進物品欄存檔的 `magic` 物件，不可改名（列在基準檔），`id` 不可用 `id`、`base`。`id: bonus` 是 +N 加值，`id: damageType` 的值須是法術的傷害類型 ID。`choices` 可寫 `rarity`、`effects`（選了才有的固定數值，不可寫 `condition`）、`heal`（治療藥水骰式，例如 `4d4 + 4`）、`score`（巨人之力的力量值）、`saveDc`／`attackBonus`（法術卷軸）、`omitInName: true`（顯示名稱不加這個選項）。 |
-| `effects` | 只放角色卡會自動計算的恆定固定數值：`attack`、`damage`（武器攻擊與傷害）、`ac`、`saves`、`spellAttack`（法術攻擊）、`spellSaveDc`（法術豁免 DC）；值是正整數，或 `bonus`（取自 `bonus` 選項）。`condition` 是 `ac`／`saves`／`spellAttack`／`spellSaveDc` 的生效條件：`unarmored`（未穿戴護甲且未使用盾牌）、`held`（手持這件物品）。對特定目標才有的加值、只對遠程的 AC、可轉移的加值等條件式效果不寫，留在說明文字。 |
+| `effects` | 只放角色卡會自動計算的恆定固定數值：`attack`、`damage`（武器攻擊與傷害）、`ac`、`saves`、`spellAttack`（法術攻擊）、`spellSaveDc`（法術豁免 DC）；值是正整數，或 `bonus`（取自 `bonus` 選項）。`condition` 是 `ac`／`saves`／`spellAttack`／`spellSaveDc` 的生效條件：`unarmored`（未穿戴護甲且未使用盾牌）、`held`（這件武器裝備在主手或副手；只用於有 `base` 的物品，沒有 `base` 的物品改寫 `use`）。對特定目標才有的加值、只對遠程的 AC、可轉移的加值等條件式效果不寫，留在說明文字。 |
 | `displayName` | 選定後的顯示名稱樣板，`{base}` 為基本款、`{選項 id}` 為該選項的 `label`，例如 `"{base}{bonus}"`。省略時為「名稱（可選的基本款、選項）」，例如「治療藥水（高等）」「焰舌（長劍）」；固定基本款不列入。 |
 | `consumable` | `true`：用掉就減 1（藥水、卷軸、彈藥、粉、珠等）。 |
 | `forms` | 可切換的形態（王者權杖）：`[{ id, label, base?, noEffects? }]`，物品視窗有「目前形態」下拉，存在這一筆的 `magic.form`（第一個是原本形態，不寫進存檔），`id` 列在基準檔。`base` 是這個形態當作哪一件武器；省略時沿用物品的基本款。`noEffects: true` 表示沒有物品的固定加值。裝備欄位的值不隨形態改變。只用於固定基本款的物品。 |
@@ -709,9 +710,9 @@ text: |-
 | `weight` | 每件磅數，只有譯文明寫時才填。 |
 | `text` | 說明本文，不含類別與稀有度的副標（副標由上面的欄位組成）。段落之間空一行，支援 `_斜體_`、`**粗體**`、「- 」清單、`####` 小標與 GFM 表格；不可有 HTML。註腳的星號寫成 `*`。 |
 
-- 建置檢查：格式、`id` 與 `nameEn` 對應、中英文名不重複、奇物的 `group`、`base` 的品名與分類、選項與稀有度的對應、`bonus` 與傷害類型、`effects`、`displayName` 的代入標記、魔法武器與護甲的可能名稱彼此唯一且不與普通品名相撞、說明沒有英文內文，以及 `magic-item-id-baseline.json`（`items` 為物品 id，`options` 為「物品 id:選項 id:選項值」）。
+- 建置檢查：格式、`id` 與 `nameEn` 對應、中英文名不重複、奇物的 `group`、`base` 的品名與分類、選項與稀有度的對應、`bonus` 與傷害類型、`effects`、`use`（有 `base` 不寫、有 `effects` 必寫）、`displayName` 的代入標記、魔法武器、護甲與手持物品的可能名稱彼此唯一且不與普通品名相撞、說明沒有英文內文，以及 `magic-item-id-baseline.json`（`items` 為物品 id，`options` 為「物品 id:選項 id:選項值」）。
 - `npm run build` 產生根目錄的 `magic-item-content.generated.js`（規則與名稱，網頁一開始就載入）與 `magic-item-text.generated.js`（說明本文的 HTML，第一次需要時才載入，離線版內嵌）。Markdown 在建置時轉成 HTML，執行時不解析。
-- 網站經 `magic-items.js` 的 `MagicItemCatalog` 讀取，不從顯示文字反推規則：`getAll()`、`get(id)`、`getByEquipmentName(name)`、`getCategories()`、`getBaseChoices(id)`、`getDisplayName(id, selection)`、`getEquipmentVariants()`、`resolveEquipmentName(name)`（裝備欄位的魔法款名稱查回 `{ name, id, selection, base }`）、`getEffects(id, selection)`、`getForm(id, selection)`、`getRarity(id, selection)`、`getRarityLabel(rarity)`、`getSubtitle(id)`、`getHeal(id, selection)`、`loadText()`、`getText(id)`（回傳 `{ html }` 的 Promise）。`selection` 是 `{ base: 基本款品名, <選項 id>: 選項值 }`。
+- 網站經 `magic-items.js` 的 `MagicItemCatalog` 讀取，不從顯示文字反推規則：`getAll()`、`get(id)`、`getByEquipmentName(name)`、`getCategories()`、`getBaseChoices(id)`、`getDisplayName(id, selection)`、`getEquipmentVariants()`、`resolveEquipmentName(name)`（裝備欄位的魔法款名稱查回 `{ name, id, selection, base }`；手持類物品的 `base` 是空字串）、`getEffects(id, selection)`、`getForm(id, selection)`、`getRarity(id, selection)`、`getRarityLabel(rarity)`、`getSubtitle(id)`、`getHeal(id, selection)`、`loadText()`、`getText(id)`（回傳 `{ html }` 的 Promise）。`selection` 是 `{ base: 基本款品名, <選項 id>: 選項值 }`。
 
 ## 檢查與預覽
 

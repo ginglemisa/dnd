@@ -86,18 +86,37 @@
     return parts.length ? `${item.name}（${parts.join("、")}）` : item.name;
   }
 
-  // 可裝備的魔法武器、護甲與盾牌的全部可能（彈藥不算）：[{ name, id, selection, base }]，name 就是裝備欄位的值。
+  // 使用方式（YAML 的 use）：worn 穿戴、held 手持、wornOrHeld 穿戴或手持、carried 帶在身上；有基本款或沒寫的物品為空字串。
+  function getUse(id) {
+    return rule(id)?.use || "";
+  }
+
+  // 可以放進主手或副手的非武器物品（手持、穿戴或手持）。
+  function isHandHeld(id) {
+    return ["held", "wornOrHeld"].includes(getUse(id));
+  }
+
+  // 可以穿戴的物品（物品詳情的「裝備／卸下」）。
+  function isWearable(id) {
+    return ["worn", "wornOrHeld"].includes(getUse(id));
+  }
+
+  // 可裝備在裝備欄位的魔法物品的全部可能：[{ name, id, selection, base }]，name 就是裝備欄位的值。
+  // 武器、護甲與盾牌（彈藥不算）的 base 是基本款品名；手持類的非武器物品（魔杖等，isHandHeld）沒有基本款，base 是空字串，只放主手或副手。
   // 由目錄枚舉，不解析名稱字串、不依賴物品欄；建置檢查 name 彼此唯一、也不與普通品名相撞（tools/magic-item-content/load.js）。
   function getEquipmentVariants() {
     return getAll().flatMap((item) => {
-      const bases = getBaseChoices(item.id).filter(base => !magicItemBaseLists.ammunition.includes(base));
+      const bases = item.base ? getBaseChoices(item.id).filter(base => !magicItemBaseLists.ammunition.includes(base)) : isHandHeld(item.id) ? [""] : [];
       const choices = item.options.reduce((selections, option) => selections.flatMap(selection => option.choices.map(choice => ({ ...selection, [option.id]: choice.value }))), [{}]);
-      return bases.flatMap(base => choices.map(choice => ({ name: getDisplayName(item.id, { ...choice, base }), id: item.id, selection: { ...choice, base }, base })));
+      return bases.flatMap(base => choices.map((choice) => {
+        const selection = base ? { ...choice, base } : choice;
+        return { name: getDisplayName(item.id, selection), id: item.id, selection, base };
+      }));
     });
   }
 
   let equipmentIndex = null;
-  // 由裝備欄位的值查回魔法款 { name, id, selection, base }；普通品名與對不上的名稱為 null。
+  // 由裝備欄位的值查回魔法款 { name, id, selection, base }（手持類的 base 是空字串）；普通品名與對不上的名稱為 null。
   function resolveEquipmentName(name) {
     equipmentIndex ||= new Map(getEquipmentVariants().map(variant => [variant.name, Object.freeze(variant)]));
     return equipmentIndex.get(name) || null;
@@ -196,6 +215,9 @@
     getCategories,
     getBaseChoices,
     getDisplayName,
+    getUse,
+    isHandHeld,
+    isWearable,
     getEquipmentVariants,
     resolveEquipmentName,
     getEffects,

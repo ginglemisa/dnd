@@ -6,5 +6,6 @@ source: srd
 category: wand
 rarity: uncommon
 attunement: false
+use: held
 text: |-
   這根魔杖有3次充能。手持它時，你可以消耗1次充能，從中施放_偵測魔法_。魔杖每天黎明恢復1d3次已消耗的充能。

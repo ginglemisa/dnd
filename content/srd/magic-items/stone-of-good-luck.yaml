@@ -7,6 +7,7 @@ category: wondrous
 group: curio
 rarity: uncommon
 attunement: true
+use: carried
 effects: { saves: 1 }
 text: |-
   這塊拋光的瑪瑙帶在你身上時，你的屬性檢定與豁免獲得+1加值。

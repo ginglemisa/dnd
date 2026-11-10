@@ -6,6 +6,7 @@ source: srd
 category: rod
 rarity: very-rare
 attunement: true
+use: held
 manualEffect: true
 text: |-
   這根權杖具有下列特性。

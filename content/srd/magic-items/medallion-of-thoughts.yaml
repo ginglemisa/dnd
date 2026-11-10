@@ -7,5 +7,6 @@ category: wondrous
 group: wearable
 rarity: uncommon
 attunement: true
+use: worn
 text: |-
   這枚勳章有5次充能。穿戴它時，你可以消耗1次充能，從中施放_偵測思想_（豁免DC 13）。勳章每天黎明恢復1d4次已消耗的充能。

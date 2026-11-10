@@ -6,6 +6,7 @@ source: srd
 category: ring
 rarity: legendary
 attunement: true
+use: worn
 text: |-
   穿戴這枚戒指時，你可以進行魔法動作，從風元素位面召喚一隻特定的**風巨靈**。風巨靈會出現在距離你自身120呎內、由你選擇的一個未被佔據的空間。只要你維持專注，它就會持續存在，最長1小時，或直到它的生命值降至0為止。
 

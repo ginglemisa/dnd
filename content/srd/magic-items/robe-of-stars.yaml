@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: very-rare
 attunement: true
+use: worn
 effects: { saves: 1 }
 text: |-
   這件黑色或深藍色的法袍上繡有白色或銀色的小星星。你穿戴它時，豁免獲得+1加值。

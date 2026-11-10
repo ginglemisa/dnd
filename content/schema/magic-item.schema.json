@@ -25,7 +25,7 @@
         "saves": { "$ref": "#/definitions/effectValue", "description": "豁免加值。" },
         "spellAttack": { "$ref": "#/definitions/effectValue", "description": "法術攻擊檢定加值。" },
         "spellSaveDc": { "$ref": "#/definitions/effectValue", "description": "法術豁免 DC 加值。" },
-        "condition": { "enum": ["unarmored", "held"], "description": "ac／saves／spellAttack／spellSaveDc 的生效條件。unarmored：未穿戴護甲且未使用盾牌；held：手持這件物品。" }
+        "condition": { "enum": ["unarmored", "held"], "description": "ac／saves／spellAttack／spellSaveDc 的生效條件。unarmored：未穿戴護甲且未使用盾牌；held：這件武器裝備在主手或副手（只用於有基本款的物品；沒有基本款的物品用 use）。" }
       }
     },
     "base": {
@@ -96,6 +96,10 @@
         "rarity": { "enum": ["common", "uncommon", "rare", "very-rare", "legendary", "artifact", "varies"], "description": "稀有度；隨選項變動時寫 varies，並在選項寫各自的 rarity。" },
         "rarityText": { "type": "string", "minLength": 1, "description": "varies 的副標文字（省略時為「稀有度不定」）。" },
         "attunement": { "type": ["boolean", "string"], "minLength": 1, "description": "false 不需同調、true 需同調，或限定條件文字（例如「由法師」，顯示為「需由法師同調」）。" },
+        "use": {
+          "enum": ["worn", "held", "wornOrHeld", "carried"],
+          "description": "使用方式（沒有基本款的物品才寫，依說明文字）：worn 穿戴時（物品詳情的「裝備」按鈕）、held 手持時（放進主手或副手）、wornOrHeld 穿戴或手持時（任一即可）、carried 帶在身上就算。效果只在符合使用方式時生效。有 effects 的物品必填；說明只講啟動方式的物品可以不寫。"
+        },
         "base": { "$ref": "#/definitions/base" },
         "options": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/option" }, "description": "取得時要選的項目。沒有自訂項時省略。" },
         "effects": { "$ref": "#/definitions/effects" },

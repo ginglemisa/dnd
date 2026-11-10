@@ -7,5 +7,6 @@ category: wondrous
 group: wearable
 rarity: uncommon
 attunement: false
+use: worn
 text: |-
   穿戴這副深色鏡片時，你擁有60呎的黑暗視覺。若你本來就擁有黑暗視覺，穿戴夜視鏡會使其距離增加60呎。

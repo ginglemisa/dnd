@@ -7,5 +7,6 @@ category: wondrous
 group: wearable
 rarity: rare
 attunement: true
+use: worn
 text: |-
   你穿戴這件披肩時，對法術的豁免具有優勢。

@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: legendary
 attunement: "由術士、契術師或法師"
+use: worn
 effects: { spellAttack: 2, spellSaveDc: 2 }
 manualEffect: true
 text: |-

@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: uncommon
 attunement: false
+use: worn
 text: |-
   這件法袍上覆蓋著各種形狀與顏色的布片。穿戴法袍時，你可以進行魔法動作，撕下其中一塊布片，使它變成它所代表的物體或生物。一旦最後一塊布片被撕下，法袍就會變成一件普通衣物。
 

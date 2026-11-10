@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: rare
 attunement: true
+use: worn
 text: |-
   這件法袍裝飾著眼睛狀的圖案。你穿戴這件法袍時，會獲得下列益處：
 

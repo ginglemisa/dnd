@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: rare
 attunement: true
+use: worn
 effects: { ac: 2, condition: unarmored }
 text: |-
   穿戴這對護腕時，若你未穿戴護甲且未使用盾牌，你的護甲等級獲得+2加值。

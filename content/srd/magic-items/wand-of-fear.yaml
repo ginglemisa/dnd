@@ -6,6 +6,7 @@ source: srd
 category: wand
 rarity: rare
 attunement: true
+use: held
 text: |-
   這根魔杖有7次充能。
 

@@ -95,6 +95,11 @@ function checkItem(item, { lists, known, damageLabels, equipmentNames }, errors)
   if (item.category !== "wondrous" && item.group) errors.push(`${at}：只有奇物寫 group`);
   if (typeof item.attunement === "string" && !item.attunement.startsWith("由")) errors.push(`${at}：attunement 的限定條件以「由」開頭（顯示為「需由…同調」）`);
   checkBase(item, at, lists, known, errors);
+  // 有基本款的物品（武器、護甲、盾牌、法杖等）用裝備欄位，不寫使用方式；其他有固定數值的物品要寫，才知道什麼時候生效。
+  if (item.use && item.base) errors.push(`${at}：有 base 的物品用裝備欄位，不寫 use`);
+  const hasEffects = Boolean(item.effects) || (item.options || []).some(option => option.choices.some(choice => choice.effects));
+  if (!item.use && !item.base && hasEffects) errors.push(`${at}：有 effects 的物品須寫 use`);
+  if (item.use && item.effects?.condition === "held") errors.push(`${at}：寫了 use 的物品不用 effects.condition: held`);
   checkOptions(item, at, damageLabels, errors);
   checkEffects(item.effects, at, { bonusOption: (item.options || []).some(option => option.id === "bonus"), allowCondition: true }, errors);
   const tokens = (item.displayName || "").match(/\{[^}]*\}/g) || [];
@@ -118,14 +123,14 @@ function checkUnique(items, field, errors) {
   });
 }
 
-// 裝備欄位直接存魔法款的名稱，所以所有魔法武器、護甲、盾牌的可能名稱要彼此唯一，也不能與普通品名相撞。
+// 裝備欄位直接存魔法款的名稱，所以所有魔法武器、護甲、盾牌與手持物品（魔杖等）的可能名稱要彼此唯一，也不能與普通品名相撞。
 function checkEquipmentNames(items, lists, equipmentNames) {
   const rules = Object.fromEntries(items.map(({ id, file, text, ...rule }) => [id, rule]));
   const owners = new Map();
   const errors = [];
   for (const { name, id, base } of loadMagicItemCatalog(rules, lists).getEquipmentVariants()) {
-    if (equipmentNames.has(name)) errors.push(`${id}（${base}）：裝備名稱「${name}」與普通品名相撞`);
-    const owner = `${id}（${base}）`;
+    const owner = base ? `${id}（${base}）` : id;
+    if (equipmentNames.has(name)) errors.push(`${owner}：裝備名稱「${name}」與普通品名相撞`);
     if (owners.has(name) && owners.get(name) !== owner) errors.push(`${owner}：裝備名稱「${name}」與 ${owners.get(name)} 重複`);
     else if (owners.has(name)) errors.push(`${owner}：不同選項的裝備名稱都是「${name}」`);
     owners.set(name, owner);

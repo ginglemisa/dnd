@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: uncommon
 attunement: true
+use: worn
 manualEffect: true
 text: |-
   穿戴這雙靴子時，你的速度變為30呎（除非你的速度原本更高），且你的速度不會因為你攜帶超過負重能力的重量或穿戴重甲而降低。

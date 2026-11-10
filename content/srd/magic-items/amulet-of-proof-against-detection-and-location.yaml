@@ -7,5 +7,6 @@ category: wondrous
 group: wearable
 rarity: uncommon
 attunement: true
+use: worn
 text: |-
   穿戴這個護符時，除非你允許，否則你無法成為預言法術的目標，也無法被魔法探知感應器感知。

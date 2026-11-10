@@ -6,5 +6,6 @@ source: srd
 category: ring
 rarity: legendary
 attunement: false
+use: worn
 text: |-
   穿戴這枚戒指時，你可以消耗它3次充能中的1次，從中施放_祈願術_。當你使用最後一次充能時，戒指會變成非魔法物品。

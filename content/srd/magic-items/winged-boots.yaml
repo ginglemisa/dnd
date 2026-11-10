@@ -7,5 +7,6 @@ category: wondrous
 group: wearable
 rarity: uncommon
 attunement: true
+use: worn
 text: |-
   這雙靴子有4次充能，每天黎明恢復1d4次已消耗的充能。穿戴靴子時，你可以進行魔法動作，消耗1次充能，獲得30呎的飛行速度，持續1小時。若持續時間到期時你正在飛行，你以每輪30呎的速度下降，直到著地。

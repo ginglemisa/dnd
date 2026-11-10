@@ -6,6 +6,7 @@ source: srd
 category: ring
 rarity: uncommon
 attunement: true
+use: worn
 text: |-
   穿戴這枚戒指時，你對讓其他生物能讀取你的思想、判定你是否說謊、得知你的陣營或得知你的生物類型的魔法免疫。只有在你允許時，生物才能以心靈感應與你溝通。
 

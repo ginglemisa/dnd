@@ -6,5 +6,6 @@ source: srd
 category: ring
 rarity: rare
 attunement: true
+use: worn
 text: |-
   穿戴這枚戒指時墜落，你每輪下降60呎，且不會受到墜落傷害。

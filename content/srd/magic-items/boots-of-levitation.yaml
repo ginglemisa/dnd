@@ -7,5 +7,6 @@ category: wondrous
 group: wearable
 rarity: rare
 attunement: true
+use: worn
 text: |-
   穿戴這雙靴子時，你可以對自己施放_浮空術_。

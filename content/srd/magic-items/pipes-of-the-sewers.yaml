@@ -7,6 +7,7 @@ category: wondrous
 group: tool
 rarity: uncommon
 attunement: true
+use: carried
 text: |-
   這支排笛帶在你身上時，一般老鼠與巨鼠對你保持冷漠，除非你威脅或傷害牠們，否則不會攻擊你。
 

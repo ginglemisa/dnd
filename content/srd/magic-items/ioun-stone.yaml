@@ -7,6 +7,7 @@ category: wondrous
 group: curio
 rarity: varies
 attunement: true
+use: worn
 options:
   - id: kind
     label: 種類

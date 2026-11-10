@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: rare
 attunement: "由牧師、德魯伊或聖騎士"
+use: worn
 text: |-
   這條項鍊有1d4 + 2顆以海藍寶、黑珍珠或黃玉製成的魔法珠子。它還有許多以琥珀、血石、黃水晶、珊瑚、玉、珍珠或石英等石材製成的非魔法珠子。若將魔法珠子從項鍊上取下，該珠子就會失去魔力。
 

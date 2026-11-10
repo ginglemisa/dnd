@@ -7,5 +7,6 @@ category: wondrous
 group: tool
 rarity: uncommon
 attunement: false
+use: held
 text: |-
   手持這把扇子時，你可以從中施放_造風術_（豁免DC 13）。在下次黎明前，每次再度使用這把扇子時，它都有累積20%的機率失效；若扇子失效，它會撕裂成無用的非魔法碎片。

@@ -6,6 +6,7 @@ source: srd
 category: ring
 rarity: very-rare
 attunement: true
+use: worn
 text: |-
   你可以從這枚戒指施放_舞光術_或_光亮術_。
 

@@ -7,6 +7,7 @@ category: wondrous
 group: curio
 rarity: uncommon
 attunement: false
+use: held
 text: |-
   這顆稜柱寶石有50次充能。手持它時，你可以進行魔法動作並使用三個命令詞之一，造成下列效果之一：
 

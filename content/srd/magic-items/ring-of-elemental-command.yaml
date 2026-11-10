@@ -6,6 +6,7 @@ source: srd
 category: ring
 rarity: legendary
 attunement: true
+use: worn
 options:
   - id: element
     label: 元素位面

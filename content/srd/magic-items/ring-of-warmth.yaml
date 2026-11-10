@@ -6,6 +6,7 @@ source: srd
 category: ring
 rarity: uncommon
 attunement: true
+use: worn
 text: |-
   如果你在穿戴這枚戒指時受到冷凍傷害，戒指會使你受到的傷害減少2d8。
 

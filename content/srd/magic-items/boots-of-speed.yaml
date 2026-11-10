@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: rare
 attunement: true
+use: worn
 manualEffect: true
 text: |-
   穿戴這雙靴子時，你可以進行附贈動作，將靴跟互相敲擊。若你這麼做，靴子會使你的速度加倍，且任何對你進行藉機攻擊的生物，其攻擊檢定具有劣勢。若你再次敲擊靴跟，就會結束此效果。

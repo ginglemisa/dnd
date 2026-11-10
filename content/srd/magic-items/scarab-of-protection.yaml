@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: legendary
 attunement: true
+use: carried
 effects: { ac: 1 }
 text: |-
   這枚甲蟲形狀的徽章帶在你身上時，提供三種益處。

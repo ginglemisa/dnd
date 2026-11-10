@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: very-rare
 attunement: true
+use: worn
 text: |-
   穿戴這個護符時，你可以進行魔法動作，說出另一個位面上你熟悉的地點。然後進行一次DC 15的智力（奧秘）檢定。檢定成功時，你施放_異界傳送_。檢定失敗時，你以及你15呎內的每個生物與物體，會前往一個隨機的目的地，該目的地由擲1d100並查閱下表決定。
 

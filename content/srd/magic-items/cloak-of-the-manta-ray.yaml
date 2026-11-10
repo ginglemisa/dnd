@@ -7,5 +7,6 @@ category: wondrous
 group: wearable
 rarity: uncommon
 attunement: true
+use: worn
 text: |-
   穿戴這件斗篷時，你可以在水下呼吸，並具有60呎的游泳速度。

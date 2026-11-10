@@ -7,6 +7,7 @@ category: wondrous
 group: wearable
 rarity: very-rare
 attunement: true
+use: worn
 text: |-
   這件精緻的衣物以黑色絲綢織成，其中交織著淡淡的銀色絲線。穿戴時，你獲得以下益處。
 

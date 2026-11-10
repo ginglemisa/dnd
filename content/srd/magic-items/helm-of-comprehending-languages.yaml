@@ -7,5 +7,6 @@ category: wondrous
 group: wearable
 rarity: uncommon
 attunement: false
+use: worn
 text: |-
   穿戴這頂頭盔時，你可以從中施放_通曉語言_。
