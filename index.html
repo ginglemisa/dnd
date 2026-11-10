@@ -109,7 +109,7 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261110-safari">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261111-merge-main">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261111-magic-wear-held">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261110-safari">
   <link rel="stylesheet" href="css/utility.css?v=20261110-footer-one-line">
   <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
@@ -123,7 +123,7 @@
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261110-safari" defer></script>
   <script src="magic-item-content.generated.js?v=0" defer></script>
-  <script src="magic-items.js?v=20261109-magic-rod" defer></script>
+  <script src="magic-items.js?v=20261111-magic-wear-held" defer></script>
   <script src="monster-content.generated.js?v=0" defer></script>
   <script src="monster.js?v=20261108-wild-shape-ux" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261108-new-forms" defer></script>
@@ -138,14 +138,14 @@
   <script src="spell-list.js?v=20261107-companion-variant" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
-  <script src="character-rules.js?v=20261109-magic-spell" defer></script>
+  <script src="character-rules.js?v=20261111-magic-wear-held" defer></script>
   <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261111-merge-main" defer></script>
   <script src="tabletop-druid.js?v=20261111-merge-main" defer></script>
   <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
-  <script src="tabletop-actions.js?v=20261109-magic-defender" defer></script>
+  <script src="tabletop-actions.js?v=20261111-magic-wear-held" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261109-item-actions" defer></script>
   <script src="legal-modal.js?v=20261110-safari" defer></script>
@@ -1444,7 +1444,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261105-feat-categories"></script>
   <script src="spell-sources.js?v=20261109-item-actions"></script>
-  <script src="class-features-ui.js?v=20261111-merge-main"></script>
+  <script src="class-features-ui.js?v=20261111-magic-wear-held"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -3129,8 +3129,8 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="equipment-data.js?v=20261109-item-actions" defer></script>
 <script src="search.js?v=20261109-magic-version" defer></script>
 <script src="equipment-shop.js?v=20261109-merge-main2" defer></script>
-<script src="inventory.js?v=20261109-scroll-srd-only" defer></script>
-<script src="inventory-ui.js?v=20261109-scroll-srd-only" defer></script>
+<script src="inventory.js?v=20261111-magic-wear-held" defer></script>
+<script src="inventory-ui.js?v=20261111-magic-wear-held" defer></script>
 <script src="magic-item-shop.js?v=20261109-scroll-srd-only" defer></script>
 
 <script>
@@ -3533,10 +3533,18 @@ function getMonkMartialArtsWeapon() {
   };
 }
 // 裝備欄位的值對應的基本款品名：魔法款（例如「長劍+2」）回基本款，其他名稱原樣回傳。可變形的物品（王者權杖）回目前形態的武器。
+// 手持的非武器魔法物品（魔杖等）沒有基本款，原樣回傳。
 function getEquipmentBaseName(name) {
   const magic = window.MagicItemCatalog?.resolveEquipmentName(name);
   if (!magic) return name;
-  return window.Inventory?.getMagicFormBase(magic.id) || magic.base;
+  return window.Inventory?.getMagicFormBase(magic.id) || magic.base || name;
+}
+
+// 裝備欄位的值是手持的非武器魔法物品（魔杖、權杖等，MagicItemCatalog.isHandHeld）時回傳目錄的那一筆 { name, id, selection, base: "" }，否則為 null。
+// 放在手上只佔用那隻手：不是武器（getWeaponByName() 查不到），沒有攻擊列，熟練、精通、武僧武器、雙持等判斷都不把它當武器。
+function getHeldMagicItem(name) {
+  const magic = name ? window.MagicItemCatalog?.resolveEquipmentName(name) : null;
+  return magic && !magic.base ? magic : null;
 }
 
 // 由裝備欄位的值查定義：魔法款是基本款的定義換上自己的名稱，多一個「基本款」，傷害、屬性、精通、AC、分類都繼承基本款。判斷規則時用 getEquipmentRuleName()。
@@ -3583,7 +3591,10 @@ function filterEquipmentSectionsByInventory(sections, slot, keepValue) {
   const notOwnedText = name => `${name}（${owned(name) ? `物品欄只有 ${owned(name)} 件` : "不在物品欄"}）`;
   const magicEquipment = window.Inventory.getMagicEquipment(slot);
   const keptMagic = keepValue ? window.MagicItemCatalog?.resolveEquipmentName(keepValue) : null;
-  return sections.map(section => ({
+  // 手持的非武器魔法物品（魔杖等）排在最後一組，只有主手與副手；數量與保留規則和武器相同（下方的 owned、needed）。
+  const heldNames = pactHand ? magicEquipment.filter(entry => !entry.base).map(entry => entry.name) : [];
+  if (pactHand && getHeldMagicItem(keepValue) && !heldNames.includes(keepValue)) heldNames.push(keepValue);
+  return [...sections, { label: "手持魔法物品", items: heldNames.map(name => ({ 名稱: name })) }].map(section => ({
     ...section,
     items: section.items.flatMap((item) => {
       const name = item.名稱;
@@ -3606,6 +3617,7 @@ function filterEquipmentSectionsByInventory(sections, slot, keepValue) {
 function withKeptMagicOption(sections, keepValue, suffix) {
   const kept = keepValue ? window.MagicItemCatalog?.resolveEquipmentName(keepValue) : null;
   if (!kept) return sections;
+  if (!kept.base) return [...sections, { label: "手持魔法物品", items: [{ 名稱: keepValue, 選項文字: `${keepValue}${suffix}` }] }];
   return sections.map(section => ({
     ...section,
     items: section.items.flatMap(item => item.名稱 === kept.base
@@ -4006,13 +4018,14 @@ function isMonkMartialArtsActive(weaponName = "") {
 
   if (isOffHandAlternateMain()) {
     const currentWeapon = getWeaponOrShieldByName(weaponName);
-    return !weaponName || isMonkWeapon(currentWeapon);
+    return !weaponName || Boolean(getHeldMagicItem(weaponName)) || isMonkWeapon(currentWeapon);
   }
 
   const mainWeapon = getWeaponOrShieldByName(mainHandName);
   const offWeapon = getWeaponOrShieldByName(offHandName);
-  const mainIsValid = !mainHandName || isMonkWeapon(mainWeapon);
-  const offIsValid = !offHandName || isMonkWeapon(offWeapon);
+  // 手持的非武器魔法物品不是武器，不影響武藝。
+  const mainIsValid = !mainHandName || Boolean(getHeldMagicItem(mainHandName)) || isMonkWeapon(mainWeapon);
+  const offIsValid = !offHandName || Boolean(getHeldMagicItem(offHandName)) || isMonkWeapon(offWeapon);
   return mainIsValid && offIsValid;
 }
 
@@ -4479,7 +4492,10 @@ function updateEquipmentLoadoutSummary() {
     button.addEventListener("click", () => openWeaponDamageTypeDialog(kind, button));
     return button;
   };
-  const weaponDetails = (weapon, hand) => {
+  const weaponDetails = (weapon, hand, name) => {
+    // 手持的非武器魔法物品：只寫類別（例如「魔杖」），加值列在下方「魔法物品」。
+    const held = getHeldMagicItem(name);
+    if (held) return [window.MagicItemCatalog.getCategories().find(category => category.id === window.MagicItemCatalog.get(held.id)?.category)?.label || "魔法物品"];
     if (!weapon) return [];
     if (getEquipmentRuleName(weapon) === "盾牌") return shieldDetails();
     const details = [
@@ -4518,8 +4534,8 @@ function updateEquipmentLoadoutSummary() {
   const armorWarning = armor && !isArmorProficient(armor) ? "護甲未熟練" : "";
 
   const summaryRows = [
-    mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon, "main"), { warningKey: mainWeaponWarning }),
-    offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", offName, weaponDetails(offWeapon, "off"), { warningKey: offWeaponWarning }),
+    mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon, "main", mainName), { warningKey: mainWeaponWarning }),
+    offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", offName, weaponDetails(offWeapon, "off", offName), { warningKey: offWeaponWarning }),
     isOffHandAlternateMain() && isEffectiveEquippedShield() && buildEquipmentSummaryRow("盾牌", getMain2ShieldLabel(), shieldDetails()),
     armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warningKey: armorWarning }),
     magic.sources.length && buildEquipmentSummaryRow("魔法物品", "魔法物品", magic.sources.map(source => [
@@ -4553,6 +4569,8 @@ function calculateHandAttacks(options = {}) {
   return hands.map(hand => {
     const weaponName = document.getElementById(hand.selectId).value;
     const weapon = getWeaponOrShieldByName(weaponName);
+    // 手持的非武器魔法物品（魔杖等）沒有攻擊列。
+    if (getHeldMagicItem(weaponName)) return { ...hand, name: "", hit: "", damage: "", details: null };
     if (!weapon || getEquipmentRuleName(weapon) === "盾牌") {
       return { ...hand, name: weaponName || "", hit: "", damage: "", details: null };
     }
@@ -5090,7 +5108,7 @@ function assertCharacterDataCount(value, maximum) {
 
 // 物品欄（inventory.js）的匯入預檢：版本 1、至多 300 筆，每筆只有約定欄位且型別正確；細部清理由 Inventory.restore() 負責。
 const INVENTORY_KEYS = new Set(["version", "textOnly", "items"]);
-const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses", "magic", "attuned", "spellId"]);
+const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses", "magic", "attuned", "worn", "spellId"]);
 // 魔法物品：{ id, <選項 id>: 字串或數字 }。
 function isValidInventoryMagic(magic) {
   if (!magic || typeof magic !== "object" || Array.isArray(magic) || typeof magic.id !== "string" || !magic.id || magic.id.length > 64) return false;
@@ -5112,6 +5130,7 @@ function isValidInventoryState(value) {
     && (entry.desc === undefined || (typeof entry.desc === "string" && entry.desc.length <= 400))
     && (entry.magic === undefined || isValidInventoryMagic(entry.magic))
     && (entry.attuned === undefined || typeof entry.attuned === "boolean")
+    && (entry.worn === undefined || typeof entry.worn === "boolean")
     && (typeof entry.itemId === "string" || typeof entry.name === "string" || entry.magic !== undefined));
 }
 

@@ -15,6 +15,9 @@
  * - 魔法武器、護甲與盾牌裝備時，角色卡的裝備欄位存魔法款自己的名稱（MagicItemCatalog.getDisplayName()，例如「長劍+2」），載入時依名稱到物品欄拿同名的那一件，沒有就補上一筆（source "equipped"）。
  *   普通款只配普通款，魔法款只配同名魔法款；名稱彼此唯一由建置檢查。
  * - attuned 是魔法物品的同調狀態（只有 magic 的筆、固定 1 件才有），由玩家以 setAttuned() 開關：同時最多 LIMITS.attunement 件，同一種魔法物品（同 magic.id）不能同調第二件。同調中的物品不能合併或拆分，移除後同調自然消失。
+ * - worn 是可以穿戴的魔法物品（MagicItemCatalog.isWearable：戒指、斗篷等）正穿在身上（只有 magic 的筆、固定 1 件、在最外層才有），由玩家以 setWorn() 開關，件數不設上限；
+ *   開始同調時自動穿上，卸下時保留同調。穿戴中的物品不能合併、拆分或放進容器，也不會被拿去放進主手或副手。普通物品的存檔格式不變。
+ * - 手持類的非武器魔法物品（魔杖等，MagicItemCatalog.isHandHeld）沒有基本款，也可以放進主手或副手：裝備欄位存它的顯示名稱，同樣以 slot 標記。
  * - magic.form 是可切換形態的物品（王者權杖）目前的形態（MagicItemCatalog.getForm），原本形態不寫；裝備欄位的值不隨形態改變，傷害、屬性、精通看 getMagicFormBase()。
  *   同名物品可以有很多筆（拆分、商店購買、卸除都會新增一筆），各自獨立；只有玩家拖曳合併（merge()）才合成一筆，自訂物品不能合併。
  *   textOnly 為 true 時玩家選擇只以文字管理物品：物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
@@ -206,17 +209,23 @@
     if (uses) entry.uses = uses;
     // 同調是單一件物品的狀態，只有魔法物品才有（repairMagicState 再檢查彼此衝突）。
     if (magic && entry.quantity === 1 && raw.attuned === true) entry.attuned = true;
+    // 穿戴中也是單一件物品的狀態，在身上（最外層）；不能穿戴的物品由 repairMagicState 拿掉。
+    if (magic && entry.quantity === 1 && raw.worn === true) {
+      entry.worn = true;
+      delete entry.in;
+    }
     const spellId = cleanSpellId(itemId, raw.spellId);
     if (spellId) entry.spellId = spellId;
     return entry;
   }
 
-  // 同調要是需要同調的物品、同一種只算第一件、總數不超過上限。
+  // 同調要是需要同調的物品、同一種只算第一件、總數不超過上限；穿戴要是可以穿戴的物品（目錄找不到時保留）。
   function repairMagicState(list) {
     const attuned = new Set();
     list.forEach((entry) => {
-      if (!entry.attuned) return;
       const rule = magicRule(entry);
+      if (entry.worn && rule && !globalScope.MagicItemCatalog.isWearable(rule.id)) delete entry.worn;
+      if (!entry.attuned) return;
       if ((rule && !rule.attunement) || attuned.has(entry.magic.id) || attuned.size >= LIMITS.attunement) delete entry.attuned;
       else attuned.add(entry.magic.id);
     });
@@ -393,6 +402,7 @@
       && (entry.name || "") === (other.name || "")
       && !entry.slot && !other.slot
       && !entry.attuned && !other.attuned
+      && !entry.worn && !other.worn
       && !isContainerEntry(entry) && !isContainerEntry(other);
   }
 
@@ -565,13 +575,13 @@
       && depthOf(entry.uid) + 1 + ownDepth <= LIMITS.depth);
   }
 
-  /** 更新一筆物品：{ quantity?, in?, name?, weight?, container? }；name／weight／container 只套用於自訂物品；裝備中的物品固定 1 件、在最外層，同調中的物品固定 1 件。不會合併同名物品。 */
+  /** 更新一筆物品：{ quantity?, in?, name?, weight?, container? }；name／weight／container 只套用於自訂物品；裝備中與穿戴中的物品固定 1 件、在最外層，同調中的物品固定 1 件。不會合併同名物品。 */
   function update(uid, changes = {}) {
     const next = entries.map(copyEntry);
     const entry = next.find(item => item.uid === uid);
     if (!entry) return false;
-    if (changes.quantity !== undefined && !entry.slot && !entry.attuned) entry.quantity = clampQuantity(changes.quantity);
-    if (changes.in !== undefined && !entry.slot) {
+    if (changes.quantity !== undefined && !entry.slot && !entry.attuned && !entry.worn) entry.quantity = clampQuantity(changes.quantity);
+    if (changes.in !== undefined && !entry.slot && !entry.worn) {
       const target = changes.in ? getContainerTargets(uid).find(item => item.uid === changes.in) : null;
       if (target) entry.in = target.uid;
       else if (!changes.in) delete entry.in;
@@ -603,11 +613,11 @@
 
   /**
    * 調整物品的排列順序與所在處（物品欄介面的整理模式）：into 是容器 uid（空字串為身上），before 是同一處要排在它前面的物品 uid（空為最後）。
-   * 放不進的容器或裝備中的物品回傳 false 且不變動。不會合併同名物品，要合併用 merge()。
+   * 放不進的容器、裝備中或穿戴中的物品回傳 false 且不變動。不會合併同名物品，要合併用 merge()。
    */
   function move(uid, { into = "", before = "" } = {}) {
     const index = entries.findIndex(entry => entry.uid === uid);
-    if (index < 0 || entries[index].slot) return false;
+    if (index < 0 || entries[index].slot || entries[index].worn) return false;
     if (into && !getContainerTargets(uid).some(item => item.uid === into)) return false;
     const next = entries.map(copyEntry);
     const [entry] = next.splice(index, 1);
@@ -655,9 +665,9 @@
     return commit(next.filter(item => item !== entry), "merge");
   }
 
-  /** 可以拆分：至少 2 件，容器、裝備中與同調中的物品不拆。 */
+  /** 可以拆分：至少 2 件，容器、裝備中、穿戴中與同調中的物品不拆。 */
   function canSplit(entry) {
-    return Boolean(entry) && entry.quantity >= 2 && !entry.slot && !entry.attuned && !isContainerEntry(entry);
+    return Boolean(entry) && entry.quantity >= 2 && !entry.slot && !entry.attuned && !entry.worn && !isContainerEntry(entry);
   }
 
   /**
@@ -764,14 +774,16 @@
     return textOnly ? { version: VERSION, textOnly: true, items: [] } : { version: VERSION, items: entries.map(savedEntry) };
   }
 
-  // 可裝備的魔法物品對應的目錄資料 { name, id, selection, base }；name 是裝備欄位的值。不能裝備（彈藥、戒指、目錄找不到）時為 null。
+  // 可裝備的魔法物品對應的目錄資料 { name, id, selection, base }；name 是裝備欄位的值。
+  // 有基本款的武器、護甲、盾牌，以及沒有基本款、可以手持的物品（魔杖等，base 是空字串）；不能裝備（彈藥、戒指、目錄找不到）時為 null。
   function magicEquipmentOf(entry) {
-    if (!entry?.magic || !entry.itemId || !magicRule(entry)) return null;
+    if (!entry?.magic || !magicRule(entry)) return null;
+    if (!entry.itemId && !globalScope.MagicItemCatalog.isHandHeld(entry.magic.id)) return null;
     const resolved = globalScope.MagicItemCatalog.resolveEquipmentName(getLabel(entry));
     return resolved && resolved.id === entry.magic.id ? resolved : null;
   }
 
-  /** 物品欄可供裝備的數量：weapons／armors 以裝備欄位的值計數（普通款是品名，魔法款是自己的名稱），shields 為普通盾牌數量，magicShields 以名稱計數魔法盾牌。 */
+  /** 物品欄可供裝備的數量：weapons／armors 以裝備欄位的值計數（普通款是品名，魔法款是自己的名稱；手持的非武器魔法物品也算在 weapons），shields 為普通盾牌數量，magicShields 以名稱計數魔法盾牌。 */
   function getEquippableCounts() {
     const kinds = staticKinds();
     const weapons = new Map();
@@ -780,7 +792,8 @@
     let shields = 0;
     entries.forEach((entry) => {
       if (entry.magic) {
-        const equipment = magicEquipmentOf(entry);
+        // 穿在身上的護符不能同時拿在手上。
+        const equipment = entry.worn ? null : magicEquipmentOf(entry);
         if (!equipment) return;
         const kind = kindOf(equipment.base, kinds);
         const counts = kind === "shield" ? magicShields : kind === "armor" ? armors : weapons;
@@ -810,12 +823,12 @@
     return !kinds.armors.has(name);
   }
 
-  /** 物品欄裡可以放進這個位置的魔法款：[{ name（裝備欄位的值）, base（基本款品名）}]，同名只列一次。 */
+  /** 物品欄裡可以放進這個位置的魔法款：[{ name（裝備欄位的值）, base（基本款品名；手持的非武器物品是空字串，只放主手或副手）}]，同名只列一次。 */
   function getMagicEquipment(slot) {
     const kinds = staticKinds();
     const names = new Map();
     entries.forEach((entry) => {
-      const equipment = magicEquipmentOf(entry);
+      const equipment = entry.worn ? null : magicEquipmentOf(entry);
       if (equipment && !isContainerEntry(entry, kinds) && fitsSlot(equipment.base, slot, kinds)) names.set(equipment.name, equipment.base);
     });
     return [...names].map(([name, base]) => ({ name, base }));
@@ -848,8 +861,9 @@
     const needed = new Map();
     const bump = (name) => { if (name) needed.set(name, (needed.get(name) || 0) + 1); };
     const baseOf = name => magicEquipmentByName(name)?.base || name;
+    const handHeld = name => magicEquipmentByName(name)?.base === "";
     [mainHand, offHand].forEach((name) => {
-      if (kinds.weapons.has(baseOf(name)) || kinds.shields.has(baseOf(name))) bump(name);
+      if (kinds.weapons.has(baseOf(name)) || kinds.shields.has(baseOf(name)) || handHeld(name)) bump(name);
     });
     if (kinds.armors.has(baseOf(armor))) bump(armor);
     // 副手當主手的盾牌：存檔指定的那面不在物品欄時補上；沒有指定時物品欄有任何一面就夠了，沒有時補普通盾牌。
@@ -864,7 +878,7 @@
     const requests = [...needed].map(([name, quantity]) => {
       const magic = magicEquipmentByName(name);
       return magic
-        ? { itemId: magic.base, magic: { ...magic.selection, id: magic.id }, quantity: quantity - owned(name) }
+        ? { ...(magic.base ? { itemId: magic.base } : {}), magic: { ...magic.selection, id: magic.id }, quantity: quantity - owned(name) }
         : { itemId: name, quantity: quantity - owned(name) };
     }).filter(request => request.quantity > 0);
     if (!requests.length || !add(requests, { source: "equipped" })) emit("restore");
@@ -901,7 +915,7 @@
 
   // 裝備時拿哪一筆：玩家點的那筆優先；同名的魔法物品有多筆時先拿已同調的，重新載入後加值才不會不見。
   function pickEquipmentSource(list, name, kinds, { prefer = "" } = {}) {
-    const candidates = list.filter(entry => !entry.slot && !isContainerEntry(entry, kinds) && matchesEquipment(entry, name, kinds));
+    const candidates = list.filter(entry => !entry.slot && !entry.worn && !isContainerEntry(entry, kinds) && matchesEquipment(entry, name, kinds));
     const preferred = candidates.find(entry => entry.uid === prefer);
     if (preferred) return preferred;
     const attuned = candidates.filter(entry => entry.attuned);
@@ -996,11 +1010,46 @@
       if (others.some(item => item.magic.id === entry.magic.id)) return "duplicate";
       if (others.length >= LIMITS.attunement) return "limit";
       entry.attuned = true;
+      // 開始同調時，可以穿戴的物品一併穿上（正拿在手上的不動）。
+      if (globalScope.MagicItemCatalog.isWearable(entry.magic.id) && !entry.slot) {
+        entry.worn = true;
+        delete entry.in;
+      }
     } else {
       delete entry.attuned;
       bonusTransfers.delete(entry.uid);
     }
     commit(next, "attune");
+    return "ok";
+  }
+
+  /**
+   * 穿上或卸下可以穿戴的魔法物品（MagicItemCatalog.isWearable）。回傳 "ok"，或不能穿上的原因（狀態不變）：
+   * "unavailable" 不能穿戴或找不到、"held" 正拿在手上、"full" 要拆出一件但物品欄已滿。
+   * 一筆有多件時拆出 1 件穿上（緊接在原本那筆後面），穿戴件數不設上限；卸下時保留同調，只是效果停止。
+   */
+  function setWorn(uid, on) {
+    const next = entries.map(copyEntry);
+    const entry = next.find(item => item.uid === uid);
+    if (!entry?.magic || !magicRule(entry) || !globalScope.MagicItemCatalog.isWearable(entry.magic.id)) return "unavailable";
+    if (Boolean(entry.worn) === Boolean(on)) return "ok";
+    if (!on) {
+      delete entry.worn;
+      commit(next, "wear");
+      return "ok";
+    }
+    if (entry.slot) return "held";
+    let target = entry;
+    if (entry.quantity > 1) {
+      if (next.length >= LIMITS.items) return "full";
+      entry.quantity -= 1;
+      target = { ...entry, quantity: 1, uid: nextUid(new Set(next.map(item => item.uid))) };
+      delete target.uses;
+      next.splice(next.indexOf(entry) + 1, 0, target);
+    }
+    target.worn = true;
+    delete target.in;
+    commit(next, "wear");
     return "ok";
   }
 
@@ -1077,6 +1126,7 @@
     getMagicEquipment,
     getEquipmentValue,
     setAttuned,
+    setWorn,
     getAttunement,
     getBonusTransfer,
     setBonusTransfer,

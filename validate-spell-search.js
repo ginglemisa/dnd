@@ -876,7 +876,8 @@ async function validateMagicItemShop(page) {
   await openItem("amulet");
   assert.equal(await item.locator(".magic-item-detail__subtitle").textContent(), "奇物，稀有（需同調）");
   assert.equal(await item.locator(".magic-item-detail__manual").textContent(), "角色卡不會自動套用這項效果，請依說明處理");
-  assert.deepEqual(await item.locator(".inventory-item-actions .inventory-action-button").allTextContents(), ["開始同調"], "non-consumable items have no use button; items that need attunement only have the attunement switch");
+  assert.deepEqual(await item.locator(".inventory-item-actions .inventory-action-button").allTextContents(), ["裝備", "開始同調"], "non-consumable items have no use button; wearable items that need attunement have the wear and attunement switches");
+  assert.equal(await item.locator(".inventory-item-actions .inventory-action-row__text").textContent(), "需要穿戴並同調才會生效。");
   await closeItem();
   await openItem("bag");
   assert.equal(await item.locator(".inventory-item-actions .inventory-action-button").count(), 0, "non-consumable items without attunement have no buttons");
@@ -2253,6 +2254,68 @@ async function validateInventoryItemActions(page) {
   assert.deepEqual(await page.evaluate(() => Inventory.entries().filter(entry => entry.name?.endsWith("法術卷軸")).map(entry => [entry.name, entry.itemId || "", Inventory.getScrollSpellId(entry)])),
     [["假法術卷軸", "", ""], ["命令術法術卷軸", "法術卷軸", "command"]]);
   await page.evaluate(() => DiceRoller.setEnabled(false));
+
+  // 穿戴類魔法物品：「裝備」從一筆多件拆出一件穿上（視窗關閉，標籤到「裝備中」）；卸下保留同調；開始同調時自動穿上。
+  // 手持類（魔杖）照武器的選手視窗放進主手或副手；可以穿戴也可以手持的護符分成「手持」「穿戴」兩顆按鈕。
+  // AC 與法術數字要自動計算：這個角色還原後開關是關的，直接打開（不觸發確認視窗），結束時還原。
+  const keyStatsWasOn = await page.evaluate(() => document.getElementById("auto-calculate-key-stats-toggle").checked);
+  await page.evaluate(() => applyStateObject({ class: "wizard", level: "5", int: "16", dex: "14", mainHand: "", offHand: "", armor: "", "spellcasting-ability": "int", __inventory: { version: 1, items: [
+    { uid: "rings", quantity: 2, magic: { id: "ring-of-protection" } },
+    { uid: "cloak", quantity: 1, magic: { id: "cloak-of-protection" } },
+    { uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-the-war-mage-plus", bonus: 1 } },
+    { uid: "talisman", quantity: 1, magic: { id: "talisman-of-pure-good" } }
+  ] } }));
+  await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
+  const group = name => page.evaluate(groupName => [...document.querySelectorAll(`[data-inventory-group="${groupName}"] .inventory-tag`)].map(tag => tag.dataset.inventoryUid), name);
+  const numbers = () => page.evaluate(() => ["ac-display", "spell-attack-bonus"].map(id => document.getElementById(id).value));
+  const openUid = async (uid) => {
+    await page.locator(`[data-inventory-uid="${uid}"]`).click();
+    await item.waitFor();
+  };
+  await openUid("rings");
+  assert.deepEqual(await actionButtons(), ["裝備", "開始同調"]);
+  await item.getByRole("button", { name: "穿上防禦戒指" }).click();
+  await itemClosed();
+  const wornRing = await page.evaluate(() => Inventory.entries().find(entry => entry.worn).uid);
+  assert.deepEqual([await group("equipped"), await page.evaluate(() => Inventory.getEntry("rings").quantity)], [[wornRing], 1], "wearing one ring of a pair splits it into the equipped group");
+  assert.deepEqual(await numbers(), ["12", "+6"], "an unattuned ring does nothing yet");
+  await openUid(wornRing);
+  assert.deepEqual([await actionButtons(), await item.locator(".inventory-item-meta .inventory-tag__badge").isVisible(), await item.locator(".inventory-holding__row").isVisible()],
+    [["卸下", "開始同調"], true, false], "a worn ring shows 卸下, the equipped badge and no quantity row");
+  await item.getByRole("button", { name: "切換防禦戒指的同調" }).click();
+  await page.waitForFunction(() => document.getElementById("ac-display").value === "13", null, { timeout: 2000 });
+  assert.deepEqual([await actionButtons(), await numbers()], [["卸下", "結束同調"], ["13", "+6"]], "a worn, attuned ring adds AC");
+  await item.getByRole("button", { name: "卸下防禦戒指" }).click();
+  await page.waitForFunction(() => document.getElementById("ac-display").value === "12", null, { timeout: 2000 });
+  assert.deepEqual([await actionButtons(), await page.evaluate(uid => Inventory.getEntry(uid).attuned, wornRing)], [["裝備", "結束同調"], true], "taking the ring off keeps attunement");
+  assert.equal(await item.locator(".inventory-item-actions .inventory-action-row__text").textContent(), "需要穿戴才會生效。");
+  await closeItem();
+  assert.deepEqual(await group("equipped"), [], "a ring taken off leaves the equipped group");
+  await openUid("cloak");
+  await item.getByRole("button", { name: "切換防護斗篷的同調" }).click();
+  await page.waitForFunction(() => document.getElementById("ac-display").value === "13", null, { timeout: 2000 });
+  assert.deepEqual([await actionButtons(), await page.evaluate(() => Inventory.getEntry("cloak").worn)], [["卸下", "結束同調"], true], "attuning a cloak puts it on");
+  await closeItem();
+  await openUid("wand");
+  assert.deepEqual(await actionButtons(), ["裝備", "結束同調"], "a wand is equipped like a weapon");
+  await item.getByRole("button", { name: "裝備戰法魔杖+1" }).click();
+  await equipDialog.getByRole("button", { name: "主手", exact: true }).click();
+  await itemClosed();
+  assert.deepEqual([await slots(), (await numbers())[1], await page.inputValue("#atk-main-name")], [["戰法魔杖+1", "", ""], "+7", ""], "a wand in the main hand raises spell attacks without an attack row");
+  await openUid("talisman");
+  assert.deepEqual(await actionButtons(), ["手持", "穿戴", "開始同調"], "a talisman can be held or worn");
+  await item.getByRole("button", { name: "穿上純善護符" }).click();
+  await page.waitForFunction(() => Inventory.getEntry("talisman").worn === true, null, { timeout: 2000 });
+  assert.deepEqual(await actionButtons(), ["卸下", "開始同調"], "a worn talisman cannot be put in a hand");
+  assert.equal(await page.locator("#offHand option", { hasText: "純善護符" }).count(), 0, "a worn talisman is not offered to the hands");
+  await closeItem();
+  // 窄螢幕：穿戴與同調兩顆按鈕不超出視窗。
+  await page.setViewportSize({ width: 375, height: 800 });
+  await openUid("rings");
+  assert.equal(await item.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, "the wear row fits at 375px");
+  await closeItem();
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await page.evaluate(on => { document.getElementById("auto-calculate-key-stats-toggle").checked = on; }, keyStatsWasOn);
 }
 
 async function emptyCartAndCloseShop(page) {

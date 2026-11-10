@@ -10,6 +10,9 @@
  *   目錄找不到的魔法物品保留這一筆，顯示「未知魔法物品」。
  *   需要同調的魔法物品在互動列有同調開關（Inventory.setAttuned()，分享模式只顯示狀態）：由玩家自己開，超過上限或同調同一種物品時提示原因、不改狀態；
  *   限定條件（例如「由法師」）只顯示不阻擋。同調中的標籤與視窗標示「同調」，物品欄有需同調物品時標題下方顯示「同調 N/3」。
+ *   可以穿戴的魔法物品（戒指、斗篷等，MagicItemCatalog.isWearable）在同一列有「裝備／卸下」（Inventory.setWorn()）：穿上後標籤在「裝備中」、固定 ×1，
+ *   一筆多件時拆出一件穿上並關閉視窗；開始同調時自動穿上，卸下保留同調。手持類的魔杖等照武器的選手視窗放進主手或副手；
+ *   可以穿戴也可以手持的護符分成「手持」「穿戴」兩顆按鈕。分享模式只顯示穿戴與同調狀態。
  *   互動列的按鈕在左欄、與下方數量框同寬，說明在右欄。至少 2 件的物品在數量框與位置選單之間有「拆分」，開 `inventory-split` 視窗輸入兩堆的數量；拆開後是兩個獨立標籤。
  * - 裝備：物品經 Inventory.syncEquipped() 從物品欄拿 1 件出來，成為固定 ×1、排在「裝備中」的標籤（entry.slot）；角色卡的裝備選擇是唯一依據，
  *   index.html 在選擇改變與還原存檔後呼叫 syncEquippedSlots()。從標籤的「裝備」按鈕拿那個標籤，從下拉則由 Inventory 依規則找。卸除後在身上成為獨立的 ×1 標籤。
@@ -133,7 +136,12 @@
     return usage;
   }
 
+  // 手持的非武器魔法物品（魔杖等）沒有基本款，照武器的方式放進主手或副手，以裝備欄位的值（自己的名稱）計算。
   function usageKey(entry) {
+    if (entry?.magic && !entry.itemId) {
+      const name = entry.worn ? "" : api().getEquipmentValue(entry);
+      return name ? `weapon:${name}` : "";
+    }
     const item = api().getCatalogItem(entry?.itemId);
     if (!item) return "";
     if (item.kind === "shield") return "shield";
@@ -498,6 +506,8 @@
     const row = el("div", "inventory-action-row");
     if (text) row.appendChild(el("p", "inventory-action-row__text", text));
     const buttons = controls.filter(Boolean);
+    // 兩顆按鈕佔滿左右兩欄時，說明排到下一行。
+    if (text && buttons.length > 1) row.classList.add("inventory-action-row--stacked");
     if (buttons.length) {
       const group = el("div", "inventory-action-row__buttons");
       group.append(...buttons);
@@ -512,18 +522,45 @@
     duplicate: "不能同時同調兩件相同的魔法物品。"
   });
 
-  // 同調由玩家自己開（角色卡不代填）；限定條件只是提示，不阻擋。分享模式只看得到狀態。
-  function buildAttunementRow(entry, rule, label) {
-    const need = rule.attunement === true ? "需要同調才會生效。" : `需要${rule.attunement}同調才會生效。`;
-    if (globalScope.SHARE_MODE) return actionRow(entry.attuned ? "同調中。" : need);
-    // 同調中已有標示，限定條件才另外寫。
-    const text = entry.attuned && rule.attunement === true ? "" : need;
-    const control = actionButton(entry.attuned ? "結束同調" : "開始同調", () => {
+  const WEAR_REFUSALS = Object.freeze({
+    held: "這件正拿在手上，要穿戴請先從主手或副手卸下。",
+    full: `物品欄最多 ${globalScope.Inventory?.LIMITS.items ?? 300} 筆，無法拆出一件穿上，請先整理物品欄。`
+  });
+
+  /**
+   * 穿戴與同調（同一列）：可以穿戴的物品（MagicItemCatalog.isWearable）有「裝備／卸下」，需要同調的有「開始同調／結束同調」。
+   * 同調由玩家自己開（角色卡不代填），開始同調時穿戴類物品自動穿上；卸下保留同調、效果停止。限定條件只是提示，不阻擋。
+   * 一筆有多件時按「裝備」拆出一件穿上，視窗關閉（新的那件在「裝備中」）。拿在手上的護符不顯示「裝備」。分享模式只看得到狀態。
+   */
+  function buildWearAttunementRow(entry, rule, label, ctx) {
+    const wearable = globalScope.MagicItemCatalog.isWearable(entry.magic.id) && !entry.slot;
+    const attunement = rule.attunement ? (rule.attunement === true ? "同調" : `${rule.attunement}同調`) : "";
+    if (globalScope.SHARE_MODE) {
+      const status = [wearable ? (entry.worn ? "穿戴中" : "未穿戴") : "", attunement ? (entry.attuned ? "同調中" : "未同調") : ""].filter(Boolean).join("、");
+      return status ? actionRow(`${status}。`) : null;
+    }
+    const bothWays = globalScope.MagicItemCatalog.getUse(entry.magic.id) === "wornOrHeld";
+    const needs = [wearable && !entry.worn ? (bothWays ? "穿戴或手持" : "穿戴") : "", attunement && !entry.attuned ? attunement : ""].filter(Boolean);
+    // 都滿足時不另外寫；同調中只剩限定條件（例如「由法師」）時照樣提示。
+    const text = needs.length ? `需要${needs.join("並")}才會生效。` : (entry.attuned && rule.attunement !== true ? `需要${attunement}才會生效。` : "");
+    // 可以穿戴也可以手持的護符寫「穿戴」，與放到手上的「手持」分開；其他穿戴物品寫「裝備」。
+    const wearText = bothWays ? "穿戴" : "裝備";
+    const wear = wearable ? actionButton(entry.worn ? "卸下" : wearText, () => {
+      const split = !entry.worn && entry.quantity > 1;
+      const result = api().setWorn(entry.uid, !entry.worn);
+      if (result !== "ok") {
+        if (WEAR_REFUSALS[result]) globalScope.AppDialog.notify(WEAR_REFUSALS[result], { tone: "warning" });
+        return;
+      }
+      if (split) ctx.close();
+    }, `${entry.worn ? "卸下" : "穿上"}${label}`) : null;
+    if (wear) wear.setAttribute("aria-pressed", String(Boolean(entry.worn)));
+    const attune = attunement ? actionButton(entry.attuned ? "結束同調" : "開始同調", () => {
       const result = api().setAttuned(entry.uid, !entry.attuned);
       if (result !== "ok" && ATTUNEMENT_REFUSALS[result]) globalScope.AppDialog.notify(ATTUNEMENT_REFUSALS[result], { tone: "warning" });
-    }, `切換${label}的同調`);
-    control.setAttribute("aria-pressed", String(Boolean(entry.attuned)));
-    return actionRow(text, control);
+    }, `切換${label}的同調`) : null;
+    if (attune) attune.setAttribute("aria-pressed", String(Boolean(entry.attuned)));
+    return wear || attune ? actionRow(text, wear, attune) : null;
   }
 
   // 可變形的物品（王者權杖）：目前形態下拉，裝備中切換時主手的傷害、屬性與精通跟著改。分享模式只顯示目前形態。
@@ -568,8 +605,9 @@
     const rows = [];
     const key = usageKey(entry);
     if (key) {
-      // 已裝備的武器再按一次是換手或拿第二把。
-      const equipText = entry.slot ? "換手" : "裝備";
+      // 已裝備的武器再按一次是換手或拿第二把。可以穿戴也可以手持的護符，放到手上的按鈕叫「手持」，與穿戴的按鈕分開。
+      const bothWays = Boolean(entry.magic) && globalScope.MagicItemCatalog?.getUse(entry.magic.id) === "wornOrHeld";
+      const equipText = entry.slot ? "換手" : bothWays ? "手持" : "裝備";
       const equip = actionButton(equipText, (control) => {
         if (key === "shield") equipShield(control, entry, ctx.close);
         else if (key.startsWith("armor:")) equipArmor(entry, control, ctx.close);
@@ -650,7 +688,8 @@
         }, `使用${label}`)));
       }
     }
-    if (entry.magic && magicRule?.attunement) rows.push(buildAttunementRow(entry, magicRule, label));
+    const wearRow = entry.magic && magicRule ? buildWearAttunementRow(entry, magicRule, label, ctx) : null;
+    if (wearRow) rows.push(wearRow);
     const transfer = entry.magic ? buildBonusTransferControl(entry) : null;
     if (entry.magic && magicRule?.forms) rows.push(buildFormRow(entry, magicRule));
     if (transfer) rows.push(actionRow("可把部分或全部加值轉到 AC，攻擊與傷害會減少相同數值；重新整理後回到 0。", transfer));
@@ -904,7 +943,7 @@
         // 說明已列單件重量，只有一件時不重複。
         const weight = el("span", "inventory-holding__weight");
         const badge = el("span", "inventory-tag__badge", "裝備中");
-        badge.hidden = !entry.slot;
+        badge.hidden = !entry.slot && !entry.worn;
         const attunedBadge = el("span", "inventory-attuned-badge", "同調中");
         attunedBadge.hidden = !entry.attuned;
         meta.append(badge, attunedBadge);
@@ -921,11 +960,11 @@
         const refreshActions = () => {
           const current = api().getEntry(uid);
           if (!current) return;
-          badge.hidden = !current.slot;
+          badge.hidden = !current.slot && !current.worn;
           attunedBadge.hidden = !current.attuned;
           syncWeight(current);
-          // 裝備中的物品固定 1 件，沒有數量與位置；其他時候數量真的變了才改輸入框，保留玩家還沒按「完成」的輸入。
-          if (controls) controls.row.hidden = Boolean(current.slot);
+          // 裝備中與穿戴中的物品固定 1 件，沒有數量與位置；其他時候數量真的變了才改輸入框，保留玩家還沒按「完成」的輸入。
+          if (controls) controls.row.hidden = Boolean(current.slot || current.worn);
           // 同調中的物品固定 1 件，數量不能改（位置可以）。
           if (controls?.quantityField) controls.quantityField.hidden = Boolean(current.attuned);
           if (controls?.split) controls.split.hidden = !api().canSplit(current);
@@ -991,7 +1030,7 @@
         place.appendChild(labelled("位置", location));
         row.appendChild(place);
         holding.appendChild(row);
-        row.hidden = Boolean(entry.slot);
+        row.hidden = Boolean(entry.slot || entry.worn);
         if (fields) holding.append(fields.desc, fields.toggleLabel);
         body.appendChild(holding);
         controls = { stepper, location, row, quantityField, split, ...fields };
@@ -1004,7 +1043,7 @@
           intent: "primary",
           resolve: async () => {
             const current = api().getEntry(uid) || entry;
-            if (current.slot) return "saved";
+            if (current.slot || current.worn) return "saved";
             const quantity = api().isContainer(current) ? current.quantity : controls.stepper.read();
             if (quantity === 0) {
               const choice = await globalScope.AppDialog.requestDecision({
@@ -1157,12 +1196,12 @@
     item.style.setProperty("--inventory-jiggle-delay", `${-((index * 7) % 5) * 0.05}s`);
     const tag = button("inventory-tag", entryText(entry));
     tag.dataset.inventoryUid = entry.uid;
-    if (arranging) tag.title = entry.slot ? "裝備中的物品要先卸除才能移動" : "拖曳或用方向鍵調整順序，拖到同名標籤上可合併";
+    if (arranging) tag.title = entry.slot || entry.worn ? "裝備中的物品要先卸除才能移動" : "拖曳或用方向鍵調整順序，拖到同名標籤上可合併";
     else {
       tag.setAttribute("aria-haspopup", "dialog");
       tag.title = "調整數量、位置或刪除";
     }
-    if (entry.slot) {
+    if (entry.slot || entry.worn) {
       tag.classList.add("is-equipped");
       item.classList.add("is-fixed");
     }
@@ -1217,9 +1256,12 @@
   function renderTopLevel(listEl, all) {
     const top = all.filter(entry => !entry.in);
     const containers = top.filter(entry => api().isContainer(entry));
-    // 裝備中固定依主手、副手、護甲、盾牌排列。
-    const equipped = top.filter(entry => entry.slot).sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
-    const carried = top.filter(entry => !api().isContainer(entry) && !entry.slot);
+    // 裝備中固定依主手、副手、護甲、盾牌排列，穿戴中的物品（戒指、斗篷等）依物品欄順序排在後面。
+    const equipped = [
+      ...top.filter(entry => entry.slot).sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot)),
+      ...top.filter(entry => entry.worn)
+    ];
+    const carried = top.filter(entry => !api().isContainer(entry) && !entry.slot && !entry.worn);
     const groups = [["equipped", "裝備中", equipped], ["carried", "身上", carried], ["container", "容器", containers]].filter(([, , entries]) => entries.length);
     let index = 0;
     groups.forEach(([group, title, entries]) => {
@@ -1565,7 +1607,8 @@
     if (!arranging || drag || event.button !== 0 || !event.isPrimary) return;
     const tag = event.target.closest?.(".inventory-tag");
     const item = tag?.parentElement;
-    if (!itemUid(item) || api().getEntry(itemUid(item))?.slot) return;
+    const fixed = api().getEntry(itemUid(item));
+    if (!itemUid(item) || fixed?.slot || fixed?.worn) return;
     drag = { uid: itemUid(item), item, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, started: false, into: "", frame: 0 };
     document.addEventListener("pointermove", onArrangePointerMove);
     document.addEventListener("pointerup", onArrangePointerUp);
@@ -1587,7 +1630,7 @@
     if (!uid || !step || drag) return;
     event.preventDefault();
     const entry = api().getEntry(uid);
-    if (entry?.slot) return;
+    if (entry?.slot || entry?.worn) return;
     const itemEl = event.target.closest("[data-inventory-item]");
     const group = itemEl.dataset.inventoryGroup || "";
     const siblings = [...itemEl.parentElement.children].filter(child => itemUid(child) && (child.dataset.inventoryGroup || "") === group);

@@ -167,7 +167,7 @@
   function canShowSecondaryWeapon() {
     if (globalScope.isWeaponAttackAutomationEnabled?.() === false) return true;
     const offHandName = document.getElementById("offHand")?.value || "";
-    if (!offHandName || globalScope.isShieldItem?.(offHandName)) return false;
+    if (!offHandName || globalScope.isShieldItem?.(offHandName) || globalScope.getHeldMagicItem?.(offHandName)) return false;
 
     const mainWeapon = getEquippedWeapon("main");
     const isAlternateMain = document.getElementById("offHandAsMain")?.checked === true;

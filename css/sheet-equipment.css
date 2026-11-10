@@ -3092,6 +3092,12 @@ button.inventory-arrange-done {
   max-width: var(--inventory-holding-left);
 }
 
+/* 兩顆按鈕（穿戴與同調）佔滿兩欄時，說明在按鈕下一行。 */
+.inventory-action-row--stacked .inventory-action-row__text {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
 .inventory-action-tag {
   grid-column: 2;
   grid-row: 1;
@@ -3125,7 +3131,8 @@ button.inventory-arrange-done {
   }
 
   .inventory-action-row__text,
-  .inventory-action-tag {
+  .inventory-action-tag,
+  .inventory-action-row--stacked .inventory-action-row__text {
     grid-column: 1;
     grid-row: auto;
   }

@@ -4796,17 +4796,24 @@ async function verifyInventoryPersistence(browser, url) {
       assert.deepEqual(await magicSnapshot(magicShared), magicExpected, "share restores magic items");
       assert.equal(await magicShared.evaluate(() => { EquipmentShop.open(); return Boolean(document.querySelector(".equipment-shop__magic-toggle")); }), false, "share mode cannot switch to the magic shop");
     } finally { await magicShared.close(); }
-    // 裝備欄位寫魔法款的名稱，經 autosave、JSON、分享都還原，普通與魔法同名時不互換；同調（attuned）一起還原，普通物品的存檔不多欄位。
-    const equippedState = { class: "fighter", level: "5", str: "16", mainHand: "長劍+2", offHand: "", armor: "", __inventory: { version: 1, items: [
+    // 裝備欄位寫魔法款的名稱，經 autosave、JSON、分享都還原，普通與魔法同名時不互換；同調（attuned）與穿戴（worn）一起還原，普通物品的存檔不多欄位。
+    // 手持的魔杖放在副手，同樣以名稱還原。
+    const equippedState = { class: "fighter", level: "5", str: "16", dex: "14", mainHand: "長劍+2", offHand: "戰法魔杖+1", armor: "", __inventory: { version: 1, items: [
       { uid: "plain", itemId: "長劍", quantity: 1 },
       { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } },
-      { uid: "ring", quantity: 1, magic: { id: "ring-of-protection" }, attuned: true }
+      { uid: "ring", quantity: 1, magic: { id: "ring-of-protection" }, attuned: true, worn: true },
+      { uid: "spare", quantity: 1, magic: { id: "ring-of-protection" } },
+      { uid: "wand", quantity: 1, magic: { id: "wand-of-the-war-mage-plus", bonus: 1 } }
     ] } };
     const equippedSnapshot = target => target.evaluate(() => {
       const select = document.getElementById("mainHand");
-      return { option: select.selectedOptions[0].textContent, state: Inventory.getState().items, slots: Inventory.entries().filter(entry => entry.slot).map(entry => entry.uid), hit: document.getElementById("atk-main-hit").value };
+      return {
+        option: select.selectedOptions[0].textContent, off: document.getElementById("offHand").value, state: Inventory.getState().items,
+        slots: Inventory.entries().filter(entry => entry.slot).map(entry => entry.uid), hit: document.getElementById("atk-main-hit").value,
+        ac: document.getElementById("ac-display").value, equipped: [...document.querySelectorAll('[data-inventory-group="equipped"] .inventory-tag')].map(tag => tag.dataset.inventoryUid)
+      };
     });
-    const equippedExpected = { option: "長劍+2", state: equippedState.__inventory.items, slots: ["plus"], hit: "+8" };
+    const equippedExpected = { option: "長劍+2", off: "戰法魔杖+1", state: equippedState.__inventory.items, slots: ["plus", "wand"], hit: "+8", ac: "13", equipped: ["plus", "wand", "ring"] };
     await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, equippedState);
     assert.deepEqual(await equippedSnapshot(page), equippedExpected, "a magic item equipped next to its plain twin loads as itself");
     await page.goto(url);
@@ -4824,6 +4831,8 @@ async function verifyInventoryPersistence(browser, url) {
       const sharedRing = equippedShared.locator('.app-dialog[data-variant="inventory-item"]');
       await sharedRing.waitFor();
       assert.equal(await sharedRing.getByRole("button", { name: /同調/u }).count(), 0, "share mode cannot toggle attunement");
+      assert.equal(await sharedRing.getByRole("button", { name: /穿上|卸下/u }).count(), 0, "share mode cannot wear or take off rings");
+      assert.match(await sharedRing.locator(".inventory-item-actions").innerText(), /穿戴中、同調中/u, "share mode shows the worn state");
     } finally { await equippedShared.close(); }
     // 舊資料的裝備欄位是普通品名：普通物品照舊，魔法款不被當成已裝備。
     assert.deepEqual(await page.evaluate(() => {
@@ -4833,16 +4842,24 @@ async function verifyInventoryPersistence(browser, url) {
     assert.deepEqual(await page.evaluate(() => [
       { uid: "a", quantity: 1, magic: { id: "x" }, attuned: true },
       { uid: "a", quantity: 1, magic: { id: "x" }, equippedAs: "mainHand" },
-      { uid: "a", quantity: 1, magic: { id: "x" }, attuned: "yes" }
-    ].map(entry => isValidInventoryState({ version: 1, items: [entry] }))), [true, false, false], "the import preflight checks the new fields");
+      { uid: "a", quantity: 1, magic: { id: "x" }, attuned: "yes" },
+      { uid: "a", quantity: 1, magic: { id: "x" }, worn: true },
+      { uid: "a", quantity: 1, magic: { id: "x" }, worn: 1 }
+    ].map(entry => isValidInventoryState({ version: 1, items: [entry] }))), [true, false, false, true, false], "the import preflight checks the new fields");
     assert.deepEqual(await page.evaluate(() => {
       Inventory.restore({ version: 1, items: [
         { uid: "a", itemId: "長劍", quantity: 1, equippedAs: "mainHand", attuned: true },
         { uid: "b", quantity: 2, attuned: true, magic: { id: "ring-of-protection" } },
-        { uid: "c", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "weapon-plus", bonus: 1 } }
+        { uid: "c", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "weapon-plus", bonus: 1 } },
+        { uid: "d", itemId: "長劍", quantity: 1, worn: true },
+        { uid: "e", quantity: 2, worn: true, magic: { id: "ring-of-protection" } },
+        { uid: "f", quantity: 1, worn: true, magic: { id: "stone-of-good-luck" } },
+        { uid: "g", quantity: 1, worn: true, magic: { id: "unknown-item" } }
       ] });
       return Inventory.getState().items;
-    }), [{ uid: "a", itemId: "長劍", quantity: 1 }, { uid: "b", quantity: 2, magic: { id: "ring-of-protection" } }, { uid: "c", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } }], "plain items, stacks and items without attunement drop the new fields");
+    }), [{ uid: "a", itemId: "長劍", quantity: 1 }, { uid: "b", quantity: 2, magic: { id: "ring-of-protection" } }, { uid: "c", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } },
+      { uid: "d", itemId: "長劍", quantity: 1 }, { uid: "e", quantity: 2, magic: { id: "ring-of-protection" } }, { uid: "f", quantity: 1, magic: { id: "stone-of-good-luck" } }, { uid: "g", quantity: 1, worn: true, magic: { id: "unknown-item" } }],
+    "plain items, stacks and items that cannot be attuned or worn drop the new fields; unknown magic items keep them");
     console.log("Inventory persistence: autosave, JSON export, share (including empty inventories and text mode), legacy seeding, missing equipped items, descriptions, safe custom names and magic items passed.");
   } finally { await page.close(); }
 }

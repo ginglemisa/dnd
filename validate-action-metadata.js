@@ -1296,10 +1296,39 @@ async function verifyEquipmentLoadout(browser, url) {
       "12", "carried armor and shields add nothing");
     assert.equal((await magicNumbers({ class: "wizard", offHand: "盾牌+2", ...inventoryOf({ uid: "shield", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 2 } }) })).ac,
       "12", "an untrained shield gives no magic bonus either");
-    const ringOn = { uid: "ring", quantity: 1, attuned: true, magic: { id: "ring-of-protection" } };
-    assert.deepEqual(await magicNumbers(inventoryOf(ringOn, { uid: "cloak", quantity: 1, magic: { id: "cloak-of-protection" } })).then(result => [result.ac, result.dexSave]), ["13", "+3"], "attuned ring adds AC and saves; the unattuned cloak does not");
+    // 穿戴類物品要穿上（worn）才算，需要同調的還要同調；帶在身上的（幸運石）持有就算。
+    const ringOn = { uid: "ring", quantity: 1, attuned: true, worn: true, magic: { id: "ring-of-protection" } };
+    assert.deepEqual(await magicNumbers(inventoryOf(ringOn, { uid: "cloak", quantity: 1, worn: true, magic: { id: "cloak-of-protection" } })).then(result => [result.ac, result.dexSave]), ["13", "+3"], "a worn attuned ring adds AC and saves; the worn unattuned cloak does not");
+    assert.deepEqual(await magicNumbers(inventoryOf({ ...ringOn, worn: false }, { uid: "cloak", quantity: 1, attuned: true, magic: { id: "cloak-of-protection" } })).then(result => [result.ac, result.dexSave]), ["12", "+2"], "attuned rings and cloaks in the pack add nothing");
+    assert.deepEqual(await magicNumbers(inventoryOf({ uid: "ring", quantity: 2, magic: { id: "ring-of-protection" } })).then(result => [result.ac, result.dexSave]), ["12", "+2"], "spare rings add nothing");
+    assert.deepEqual(await page.evaluate(() => {
+      const read = () => [document.getElementById("ac-display").value, document.getElementById("save-dex").value];
+      const refused = Inventory.setAttuned("ring", true);
+      const stack = read();
+      Inventory.setWorn("ring", true);
+      const split = Inventory.entries().map(entry => [entry.quantity, Boolean(entry.worn), Boolean(entry.attuned)]);
+      const wornUid = Inventory.entries().find(entry => entry.worn).uid;
+      const wornUnattuned = read();
+      Inventory.setAttuned(wornUid, true);
+      const both = read();
+      Inventory.setWorn(wornUid, false);
+      const removed = [read(), Boolean(Inventory.getEntry(wornUid).attuned)];
+      Inventory.setAttuned(wornUid, false);
+      Inventory.setAttuned(wornUid, true);
+      return { refused, stack, split, wornUnattuned, both, removed, autoWorn: Inventory.getEntry(wornUid).worn === true, again: read() };
+    }), {
+      refused: "stack",
+      stack: ["12", "+2"],
+      split: [[1, false, false], [1, true, false]],
+      wornUnattuned: ["12", "+2"],
+      both: ["13", "+3"],
+      removed: [["12", "+2"], true],
+      autoWorn: true,
+      again: ["13", "+3"]
+    }, "wearing splits one ring off a stack, attunement needs the ring worn, taking it off keeps attunement, and attuning puts it back on");
+    assert.equal((await magicNumbers(inventoryOf({ uid: "stone", quantity: 1, attuned: true, magic: { id: "stone-of-good-luck" } }))).dexSave, "+3", "a carried luckstone counts in the pack");
     assert.deepEqual(await magicNumbers(inventoryOf({ uid: "blade", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "luck-blade" } })).then(result => [result.main[0], result.dexSave]), ["", "+3"], "luck blade saves do not need the blade in hand");
-    const bracers = { uid: "bracers", quantity: 1, attuned: true, magic: { id: "bracers-of-defense" } };
+    const bracers = { uid: "bracers", quantity: 1, attuned: true, worn: true, magic: { id: "bracers-of-defense" } };
     assert.equal((await magicNumbers(inventoryOf(bracers))).ac, "14", "bracers apply unarmored");
     assert.equal((await magicNumbers({ armor: "皮甲", ...inventoryOf(bracers, { uid: "leather", itemId: "皮甲", quantity: 1 }) })).ac, "13", "bracers stop with armor");
     assert.equal((await magicNumbers({ offHand: "盾牌", ...inventoryOf(bracers, { uid: "plainshield", itemId: "盾牌", quantity: 1 }) })).ac, "14", "bracers stop with a shield");
@@ -1317,7 +1346,7 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.equal(await page.inputValue("#ac-display"), "30", "manual AC stays manual");
     await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
 
-    // 施法數字（法師 5 級，智力 16：DC 14、命中 +6）：法杖要裝備在手上，魔杖、法袍同調就算；跟著所選的施法屬性重算。
+    // 施法數字（法師 5 級，智力 16：DC 14、命中 +6）：法杖與魔杖要拿在手上、法袍要穿上，需要同調的都要同調；跟著所選的施法屬性重算。
     const caster = { ...magicBase, class: "wizard", level: "5", int: "16", cha: "12", "spellcasting-ability": "int", mainHand: "", offHand: "", armor: "", "spell-save-dc": "14", "spell-attack-bonus": "+6" };
     const spellNumbers = extra => page.evaluate(([caster, extra]) => {
       applyStateObject({ ...caster, ...extra });
@@ -1325,26 +1354,52 @@ async function verifyEquipmentLoadout(browser, url) {
     }, [caster, extra]);
     const spellFields = () => page.evaluate(() => [document.getElementById("spell-save-dc").value, document.getElementById("spell-attack-bonus").value]);
     const wand = { uid: "wand", quantity: 1, magic: { id: "wand-of-the-war-mage-plus", bonus: 2 } };
-    const robe = { uid: "robe", quantity: 1, attuned: true, magic: { id: "robe-of-the-archmagi" } };
+    const robe = { uid: "robe", quantity: 1, attuned: true, worn: true, magic: { id: "robe-of-the-archmagi" } };
+    const heldWand = { mainHand: "戰法魔杖+2" };
     const heldStaff = id => ({ uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id } });
-    assert.deepEqual(await spellNumbers(inventoryOf(wand)), ["14", "+6"], "an unattuned wand adds nothing");
-    assert.deepEqual(await spellNumbers(inventoryOf({ ...wand, attuned: true })), ["14", "+8"], "an attuned wand counts without being equipped and only raises spell attacks");
+    assert.deepEqual(await spellNumbers({ ...heldWand, ...inventoryOf(wand) }), ["14", "+6"], "an unattuned wand adds nothing");
+    assert.deepEqual(await spellNumbers(inventoryOf({ ...wand, attuned: true })), ["14", "+6"], "an attuned wand in the pack adds nothing");
+    assert.deepEqual(await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }) }), ["14", "+8"], "an attuned wand in hand only raises spell attacks");
+    // 魔杖不是武器：沒有攻擊列、熟練警告或精通，裝備摘要寫類別；副手的魔杖佔用那隻手，兩用武器不用雙手骰。
+    assert.deepEqual(await page.evaluate(() => {
+      const value = id => document.getElementById(id).value;
+      const summary = document.getElementById("equipment-loadout-summary-content");
+      return { attack: [value("atk-main-name"), value("atk-main-hit"), value("atk-main-dmg")], warnings: summary.querySelectorAll(".equipment-proficiency-warning").length, row: summary.querySelector(".equipment-summary-row").textContent };
+    }), { attack: ["", "", ""], warnings: 0, row: "戰法魔杖+2：魔杖" }, "a wand in hand has no attack row and is not a weapon");
+    await spellNumbers({ class: "fighter", mainHand: "長劍", offHand: "戰法魔杖+2", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, { ...wand, attuned: true }) });
+    assert.deepEqual(await page.evaluate(() => ["atk-main-dmg", "atk-off-name", "atk-off-hit"].map(id => document.getElementById(id).value)),
+      ["1d8+3揮砍", "", ""], "a wand in the off hand occupies it without an attack row");
+    assert.deepEqual(await page.evaluate(() => {
+      applyStateObject({ class: "wizard", mainHand: "巨劍", offHand: "", __inventory: { version: 1, items: [{ uid: "great", itemId: "巨劍", quantity: 1 }, { uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-the-war-mage-plus", bonus: 2 } }] } });
+      const offHand = document.getElementById("offHand");
+      return [offHand.disabled, [...offHand.options].some(option => option.value === "戰法魔杖+2"), [...document.getElementById("mainHand").options].some(option => option.value === "戰法魔杖+2")];
+    }), [true, false, true], "a two-handed weapon leaves no off hand for a wand");
+    await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }) });
     await page.evaluate(value => { const select = document.getElementById("spellcasting-ability"); select.value = value; select.dispatchEvent(new Event("change", { bubbles: true })); }, "cha");
     assert.deepEqual(await spellFields(), ["12", "+6"], "the bonus follows the selected spellcasting ability");
     await page.evaluate(value => { const select = document.getElementById("spellcasting-ability"); select.value = value; select.dispatchEvent(new Event("change", { bubbles: true })); }, "int");
+    await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }) });
     await page.evaluate(() => Inventory.setAttuned("wand", false));
     await page.waitForFunction(() => document.getElementById("spell-attack-bonus").value === "+6");
     await page.evaluate(() => Inventory.setAttuned("wand", true));
     await page.waitForFunction(() => document.getElementById("spell-attack-bonus").value === "+8");
-    assert.deepEqual(await spellNumbers(inventoryOf(robe)), ["16", "+8"], "the robe raises both the save DC and spell attacks");
-    assert.deepEqual(await spellNumbers(inventoryOf({ ...wand, attuned: true }, robe)), ["16", "+10"], "different items stack");
+    assert.deepEqual(await spellNumbers(inventoryOf(robe)), ["16", "+8"], "the worn robe raises both the save DC and spell attacks");
+    assert.deepEqual(await spellNumbers(inventoryOf({ ...robe, worn: false })), ["14", "+6"], "the robe does nothing until worn");
+    assert.deepEqual(await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }, robe) }), ["16", "+10"], "different items stack");
+    // 純善護符：穿戴或手持任一即可，兩者都沒有時不算。
+    const talisman = { uid: "talisman", quantity: 1, attuned: true, magic: { id: "talisman-of-pure-good" } };
+    assert.deepEqual([
+      (await spellNumbers(inventoryOf(talisman)))[1],
+      (await spellNumbers(inventoryOf({ ...talisman, worn: true })))[1],
+      (await spellNumbers({ offHand: "純善護符", ...inventoryOf(talisman) }))[1]
+    ], ["+6", "+8", "+8"], "a talisman counts worn or held");
     for (const [name, id] of [["威力法杖", "staff-of-power"], ["叢林法杖", "staff-of-the-woodlands"], ["賢者法杖", "staff-of-the-magi"]]) {
       assert.deepEqual(await spellNumbers(inventoryOf(heldStaff(id))), ["14", "+6"], `${name} does nothing in the pack`);
       assert.deepEqual(await spellNumbers({ mainHand: name, ...inventoryOf(heldStaff(id)) }), ["14", "+8"], `${name} counts once held`);
     }
     assert.match(await page.locator("#equipment-loadout-summary-content").evaluate(element => element.textContent), /賢者法杖\s*法術命中\+2/u, "the loadout summary explains the bonus");
     assert.deepEqual(await spellNumbers({ "spell-save-dc": "19", "spell-attack-bonus": "+9", ...inventoryOf({ uid: "plain", itemId: "長棍", quantity: 1 }) }), ["19", "+9"], "a character without magic bonuses keeps its saved numbers after a magic character");
-    await spellNumbers(inventoryOf({ ...wand, attuned: true }));
+    await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }) });
     await page.evaluate(() => {
       document.getElementById("auto-calculate-key-stats-toggle").checked = false;
       document.getElementById("spell-attack-bonus").value = "+30";

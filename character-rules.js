@@ -717,11 +717,13 @@
 
   /**
    * 目前生效的魔法物品固定加值，規則只在這裡：物品不需同調或已同調才算。
+   * - 沒有基本款的物品依使用方式（MagicItemCatalog.getUse()）：worn 要穿上（entry.worn）、held 要放在主手或副手、
+   *   wornOrHeld 穿上或放在手上都算、carried 持有就算。有基本款的武器、護甲、盾牌、法杖依下面的裝備位置規則。
    * - hands.mainHand／offHand 的 attack、damage、label：裝備在那一手才算，只影響那一手。
    * - ac.armor、ac.shield：魔法護甲穿著、魔法盾牌持用中才算（盾牌訓練等既有條件由呼叫端判斷）；ac.other 是戒指、斗篷等其他物品。
-   * - saves：持有就算，武器也一樣（吉兆之刃不必手持）。
+   * - saves：有基本款的物品持有就算（吉兆之刃不必手持）。
    * - condition held 要裝備在手上，unarmored 要沒穿護甲且沒用盾牌。
-   * - spellAttack、spellSaveDc：法術攻擊與法術豁免 DC 加值，條件同 saves（持有且同調；held 要裝備在手上）。
+   * - spellAttack、spellSaveDc：法術攻擊與法術豁免 DC 加值，條件同 saves。
    * - sources：不靠裝備位置的加值來源 [{ label, ac, saves, spellAttack, spellSaveDc }]，裝備摘要顯示用。
    * context 可傳 { wearingArmor, usingShield }，省略時讀目前的裝備欄位。
    */
@@ -740,6 +742,9 @@
     inventory.entries().forEach((entry) => {
       const rule = entry.magic ? catalog.get(entry.magic.id) : null;
       if (!rule || (rule.attunement && !entry.attuned)) return;
+      const use = catalog.getUse(rule.id);
+      const inHand = entry.slot === "mainHand" || entry.slot === "offHand";
+      if ((use === "worn" && !entry.worn) || (use === "held" && !inHand) || (use === "wornOrHeld" && !entry.worn && !inHand)) return;
       const effects = catalog.getEffects(entry.magic.id, inventory.getMagicSelection(entry));
       const hand = result.hands[entry.slot] || null;
       // 防禦者：玩家把部分加值轉到 AC 時，攻擊與傷害減少、AC 增加相同數值（裝備在手上且已同調才有 getBonusTransfer）。
