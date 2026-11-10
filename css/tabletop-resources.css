@@ -282,6 +282,23 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tabletop-panel-resources 
   pointer-events: none;
 }
 
+/* 不支援 color-mix 的瀏覽器（iOS 15）：步進器底線與量表刻度改用未混色的顏色。 */
+@supports not (color: color-mix(in srgb, red, blue)) {
+  .tabletop-number-stepper {
+    box-shadow: inset 0 -2px 0 var(--resource-track);
+  }
+
+  .tabletop-resource-meter::after {
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent calc(10% - 1px),
+      var(--resource-paper) calc(10% - 1px),
+      var(--resource-paper) 10%
+    );
+  }
+}
+
 .tabletop-resource-meter__fill {
   display: block;
   width: var(--tabletop-resource-fill, 0%);
@@ -560,7 +577,7 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tabletop-panel-acti
   }
 }
 
-@media (width < 320px) {
+@media (max-width: 319.98px) {
   #tabletop-panel-actions .tabletop-weapon-fields {
     grid-template-columns: 3.7rem minmax(0, 1fr);
   }
@@ -570,7 +587,7 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tabletop-panel-acti
   }
 }
 
-@media (width < 280px) {
+@media (max-width: 279.98px) {
   #tabletop-panel-actions .tabletop-weapon-fields {
     grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
   }
@@ -638,7 +655,7 @@ html[data-theme="dark"] #tabletop-panel-actions .tabletop-weapon-field:nth-child
 
 #tabletop-panel-resources .tabletop-custom-resource-form input {
   color: var(--resource-ink);
-  font-size: var(--fs-sm);
+  font-size: max(var(--ios-control-font-floor), var(--fs-sm));
   letter-spacing: normal;
 }
 

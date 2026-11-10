@@ -314,7 +314,7 @@
   min-height: 2.4rem;
   margin: 0;
   padding: 0.3rem 1.5rem 0.3rem 0.5rem;
-  font-size: 0.85rem;
+  font-size: max(var(--ios-control-font-floor), 0.85rem);
 }
 
 .dice-ability-background {
@@ -451,6 +451,14 @@
   background: color-mix(in srgb, var(--accent-soft) 62%, transparent);
   color: inherit;
   box-shadow: none;
+}
+
+/* 不支援 color-mix 的瀏覽器（iOS 15）：按下的底色改用未混色的版本。 */
+@supports not (color: color-mix(in srgb, red, blue)) {
+  .dice-roller-history-open:hover,
+  .dice-roller-history-open:active {
+    background: var(--accent-soft);
+  }
 }
 
 .dice-roller-history-open:focus-visible {
@@ -877,6 +885,7 @@ html.onboarding-app-bar-hidden .tabs-shell {
 
 #point-buy-modal.onboarding-tour-preview .point-buy-modal-card {
   pointer-events: none;
+  -webkit-user-select: none;
   user-select: none;
 }
 

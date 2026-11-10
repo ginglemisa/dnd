@@ -28,6 +28,7 @@
 * 「規則以內容檔為準」的唯一例外是分享模式換法術的職業表：只有分享模式用得到，寫在 `share-readonly.js` 的 `SPELL_CHANGE`，不進內容檔；只有分享模式的法術頁、準備視窗與寫入防護讀這張表，一般角色卡的規則不得引用它。
 * 職業機制以 `classRules` 為準，`classFeatures` HTML 與能力名稱、標題只供顯示：程式不得從中反推規則，判斷特定能力時用能力 id。職業頁上找能力的位置用 `data-feature-id`；建置工具不以正則解析產生後的 HTML 或網站原始碼。
 * 樣式以 `css/` 的樣式檔為準（`index.html` 依序載入，順序即覆蓋順序；各檔分工見 DESIGN.md「樣式檔」），外觀與互動先查 [DESIGN.md](DESIGN.md)，各功能刻意的行為決定與舊資料處理見 [BEHAVIOR.md](BEHAVIOR.md)。新 dialog／toast 用 `app-dialog.js`，不用原生 `alert`／`confirm`／`prompt`。圖片放 `images/`、字型放 `fonts/`；`og-image.jpg` 必須留在根目錄（短網址 Worker 固定引用）。
+* 瀏覽器支援到 iOS 15（Safari 15.4 以上）。JS 不用正則 lookbehind、class static block 這類 Safari 16 以後才認得的語法（舊版會整個檔案載入失敗），較新的 API 先偵測再用；CSS 的對應寫法見 DESIGN.md「新樣式寫法」。唯一的例外是開啟 `#s2=` 分享連結需要 `DecompressionStream`（iOS 16.4 以上），舊版顯示不支援的訊息。
 * 修改正式部署載入的 CSS／JS 時，只更新該資源在 `index.html` 的 `?v=`；各 `*.generated.js` 的 `?v=` 由上線建置（`npm run build -- --stamp-version`）自動產生，不手改。
 
 ## 資料相容（不可破壞）

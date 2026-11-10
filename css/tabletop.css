@@ -441,6 +441,7 @@
   background: #000;
   cursor: grab;
   touch-action: none;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -619,6 +620,13 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 .tabletop-death-saves {
   border-top-color: var(--danger-border);
   background: color-mix(in srgb, var(--danger-soft) 58%, transparent);
+}
+
+/* 不支援 color-mix 的瀏覽器（iOS 15）：死亡豁免區的底色改用未混色的版本。 */
+@supports not (color: color-mix(in srgb, red, blue)) {
+  .tabletop-death-saves {
+    background: var(--danger-soft);
+  }
 }
 
 .tabletop-death-grid {
@@ -1287,7 +1295,7 @@ button.share-link__copy {
   margin: 0;
   resize: vertical;
   color: var(--text);
-  font-size: var(--fs-md);
+  font-size: max(var(--ios-control-font-floor), var(--fs-md));
   line-height: 1.5;
 }
 
@@ -2295,6 +2303,7 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .app-dialog__button--dange
   overflow-y: auto;
   cursor: auto;
   touch-action: pan-y;
+  -webkit-user-select: text;
   user-select: text;
 }
 

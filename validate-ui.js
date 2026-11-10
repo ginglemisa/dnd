@@ -12,6 +12,19 @@ function getExtractedPageScriptFiles(html) {
   return [...html.matchAll(/<script\b(?![^>]*\b(?:defer|async)\b)[^>]*\bsrc="(?!https?:|\/\/|data:)([^"?#]+)[^"]*"[^>]*>\s*<\/script>/gi)].map(match => match[1]);
 }
 
+// iOS 15 的 Safari 不認得這些寫法：JS 遇到 lookbehind 整個檔案載入失敗，CSS 的範圍語法斷點整段被忽略。
+function verifyOldSafariSyntax(html) {
+  const siteScripts = fs.readdirSync(__dirname).filter(name => name.endsWith(".js") && !name.startsWith("validate-"));
+  for (const [file, source] of [["index.html", html], ...siteScripts.map(name => [name, fs.readFileSync(path.join(__dirname, name), "utf8")])]) {
+    assert(!/\(\?<[=!]/.test(source), `${file}: a regular-expression lookbehind stops the whole file from loading on iOS 15`);
+  }
+  const cssDir = path.join(__dirname, "css");
+  for (const file of fs.readdirSync(cssDir).filter(name => name.endsWith(".css"))) {
+    const css = fs.readFileSync(path.join(cssDir, file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    assert(!/@media[^{]*[<>]/.test(css), `${file}: iOS 15 ignores @media range syntax; write min-width/max-width instead`);
+  }
+}
+
 // Shared presentation, dialogs and PDF output. Domain rules stay in their suites.
 const browserErrors = [];
 function verifyAnalyticsIsolation(html) {
@@ -4647,7 +4660,32 @@ async function verifyFirstLoadDefaults(browser, url) {
     await existing.goto(url);
     assert.deepEqual(await state(existing), [false, "true"], "a device that already has a character keeps its previous defaults");
     assert.deepEqual(await existing.evaluate(() => [localStorage.getItem("dnd.diceSystemEnabled.v1"), localStorage.getItem("dnd.inventoryWeightHidden.v1")]), [null, null], "first-load defaults are not written for existing players");
-    console.log("First-load defaults: new device, remembered choices and existing players passed.");
+
+    // 歡迎視窗的備份提醒只在 Safari 本身出現：其他瀏覽器、iOS 上的 Edge、加到主畫面的 App 與分享模式都不顯示。
+    const shareHash = await existing.evaluate(() => encodeStateToHash(collectShareState()));
+    const safariAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+    const noteShown = async ({ userAgent, vendor, standalone = false, target = url }) => {
+      const visitor = await browser.newContext(userAgent ? { userAgent } : {});
+      try {
+        if (vendor) await visitor.addInitScript(({ vendor, standalone }) => {
+          Object.defineProperty(Navigator.prototype, "vendor", { get: () => vendor });
+          Object.defineProperty(Navigator.prototype, "standalone", { get: () => standalone });
+        }, { vendor, standalone });
+        const visit = await visitor.newPage();
+        await visit.goto(target);
+        await visit.locator("#legal-ack-btn").waitFor();
+        return await visit.locator("#legal-safari-note").isVisible();
+      } finally { await visitor.close(); }
+    };
+    const apple = "Apple Computer, Inc.";
+    assert.equal(await page.locator("#legal-safari-note").isHidden(), true, "other browsers never see the Safari backup note");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple }), true, "Safari shows the backup note in the welcome dialog");
+    assert.equal(await noteShown({ userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15", vendor: apple }), true, "desktop Safari shows it too");
+    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "Version/17.0 EdgiOS/126.0.2592.56"), vendor: apple }), false, "other iOS browsers are not called Safari");
+    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "CriOS/126.0.6478.153"), vendor: apple }), false, "Chrome on iOS does not show it");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, standalone: true }), false, "a Home Screen web app does not show it");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, target: `${url}${shareHash}` }), false, "share mode saves nothing, so it has no backup note");
+    console.log("First-load defaults: new device, remembered choices, existing players and the Safari-only backup note passed.");
   } finally {
     await context.close();
     await returning.close();
@@ -5587,7 +5625,26 @@ async function verifyJsonImportTransaction(browser, url) {
     await page.getByRole("dialog", { name: "JSON 匯入失敗", exact: true }).getByRole("button", { name: "關閉", exact: true }).click();
     assert.equal(await page.locator("#gear-extra").inputValue(), "Exported");
     assert.equal(await page.evaluate(() => dndStorage.getItem("dnd.tabletopAvatar.v1")), avatar, "a non-image avatar is rejected before any cleanup");
-    console.log("JSON clean import: incoming precedence, cleanup, stage/apply/save failures, retained backups, retry, completion marker, denied session access and tabletop button/avatar round trip passed.");
+
+    // The cropper saves WebP; a canvas that cannot encode WebP (Safari hands back a PNG instead) falls back to JPEG.
+    const cropAvatar = async withoutWebp => {
+      await page.evaluate(withoutWebp => {
+        TabletopMode.setMode("tabletop");
+        if (!withoutWebp) return;
+        const encode = HTMLCanvasElement.prototype.toDataURL;
+        HTMLCanvasElement.prototype.toDataURL = function toDataURL(type, quality) { return encode.call(this, type === "image/webp" ? "image/png" : type, quality); };
+      }, withoutWebp);
+      await page.locator("#tabletop-avatar-file").setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: Buffer.from(avatar.split(",")[1], "base64") });
+      await page.waitForFunction(() => !document.getElementById("tabletop-avatar-modal").hidden && document.getElementById("tabletop-avatar-crop-image").naturalWidth > 0);
+      await page.locator("#tabletop-avatar-confirm").click();
+      return page.evaluate(() => {
+        const saved = dndStorage.getItem("dnd.tabletopAvatar.v1");
+        return { type: /^data:(image\/[a-z]+);base64,/.exec(saved)?.[1], valid: isValidTabletopAvatar(saved), exported: JSON.parse(collectJsonExportText().text).__tabletopAvatar === saved };
+      });
+    };
+    assert.deepEqual(await cropAvatar(false), { type: "image/webp", valid: true, exported: true }, "the cropper saves a WebP avatar");
+    assert.deepEqual(await cropAvatar(true), { type: "image/jpeg", valid: true, exported: true }, "without WebP encoding the cropper saves JPEG, not the PNG the browser falls back to");
+    console.log("JSON clean import: incoming precedence, cleanup, stage/apply/save failures, retained backups, retry, completion marker, denied session access, tabletop button/avatar round trip and avatar encoding fallback passed.");
   } finally { await page.close(); }
 }
 
@@ -5598,6 +5655,7 @@ async function main() {
   const all = sections.size === 0;
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   verifyAnalyticsIsolation(html);
+  verifyOldSafariSyntax(html);
   for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
     if (match[1].trim()) new vm.Script(match[1]);
   }
