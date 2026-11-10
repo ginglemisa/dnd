@@ -989,6 +989,308 @@ async function dragToast(page, index, distance) {
   await page.mouse.up();
 }
 
+// Real touch input over CDP, so touch-action, browser panning and pointercancel behave as on a phone.
+async function openTouch(page) {
+  const cdp = await page.context().newCDPSession(page);
+  const send = (type, points) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: points.map(([x, y], id) => ({ x, y, id })) });
+  return {
+    send,
+    // stepMs 0 is a flick; a hold before release drops the velocity to zero.
+    async drag([x0, y0], [x1, y1], { steps = 8, stepMs = 16, hold = 0, release = true } = {}) {
+      await send("touchStart", [[x0, y0]]);
+      for (let step = 1; step <= steps; step++) {
+        if (stepMs) await page.waitForTimeout(stepMs);
+        await send("touchMove", [[x0 + (x1 - x0) * step / steps, y0 + (y1 - y0) * step / steps]]);
+      }
+      if (hold) await page.waitForTimeout(hold);
+      if (release) await send("touchEnd", []);
+    },
+    end: () => send("touchEnd", []),
+    close: () => cdp.detach()
+  };
+}
+
+// Swiping the content changes the top-level tab in both modes; tab taps share the slide.
+async function verifyPageSwipe(browser, url) {
+  const mobile = { viewport: { width: 390, height: 844 }, hasTouch: true };
+  const open = async (options, target = url) => {
+    const page = await newUiPage(browser, { ...mobile, ...options });
+    await page.goto(target);
+    await page.locator(target === url ? "#legal-close-btn" : "#legal-ack-btn").click();
+    await page.evaluate(() => {
+      // Every page that was ever drawn beside the current one, as "side>current".
+      window.pageSwipeLog = [];
+      new MutationObserver(() => {
+        const current = document.querySelector(".page-swipe-current")?.id;
+        document.querySelectorAll(".page-swipe-side").forEach(side => {
+          const entry = `${side.id}>${current}`;
+          if (!window.pageSwipeLog.includes(entry)) window.pageSwipeLog.push(entry);
+        });
+      }).observe(document.getElementById("main-content"), { subtree: true, attributes: true, attributeFilter: ["class"] });
+    });
+    return page;
+  };
+  const read = page => page.evaluate(() => {
+    const box = el => { const rect = el.getBoundingClientRect(); return { id: el.id, left: rect.left, top: rect.top, hidden: el.hidden, clip: el.style.clipPath }; };
+    const current = document.querySelector(".page-swipe-current");
+    return {
+      tab: document.querySelector(".tab-content.active").id.replace("tab-", ""),
+      panel: TabletopMode.getPanel(),
+      scrollY: Math.round(window.scrollY),
+      current: current ? box(current) : null,
+      sides: [...document.querySelectorAll(".page-swipe-side")].map(box),
+      bodyScrollTop: document.body.scrollTop
+    };
+  });
+  const settle = async page => {
+    await page.waitForFunction(() => !document.querySelector(".page-swipe-host, .page-swipe-current, .page-swipe-side"));
+    assert.equal(await page.evaluate(() => [...document.querySelectorAll(".tab-content, .tabletop-panel")]
+      .filter(panel => ["display", "position", "left", "top", "width", "height", "transform", "clipPath", "overflow"].some(key => panel.style[key])).length), 0,
+    "a finished swipe leaves no inline layout styles on any page");
+  };
+  const log = page => page.evaluate(() => window.pageSwipeLog.splice(0));
+
+  let page = await open();
+  try {
+    const exported = await page.evaluate(() => collectJsonExportText().text);
+    // 觸控點分頁：新頁從按鈕順序的方向滑入；滑鼠點擊維持原本的切換。先測，之後的甩動會讓模擬器吞掉下一次點擊。
+    await page.locator('.tab-button[aria-controls="tab-equipment"]').tap();
+    assert.equal((await read(page)).tab, "equipment", "a tab tap switches at once");
+    await settle(page);
+    assert.deepEqual(await log(page), ["tab-basic>tab-equipment"], "a tab tap slides the old page out");
+    await page.locator('.tab-button[aria-controls="tab-basic"]').tap();
+    await settle(page);
+    await page.locator('.tab-button[aria-controls="tab-skills"]').click();
+    assert.equal((await read(page)).tab, "skills");
+    await page.locator("#basic-tab-button").click();
+    assert.deepEqual(await log(page), ["tab-equipment>tab-basic"], "mouse clicks keep the plain switch");
+
+    const touch = await openTouch(page);
+    const y = 500;
+    // 跟手：鄰頁貼在旁邊，資料與作用中的分頁在放手前都不變；拖回去放手就反悔。
+    await touch.drag([300, y], [150, y], { release: false });
+    await page.waitForFunction(() => document.querySelector(".page-swipe-current")?.getBoundingClientRect().left < -100, null, { timeout: 2000 })
+      .catch(() => assert.fail("the current page follows the finger"));
+    let state = await read(page);
+    assert.equal(state.tab, "basic", "dragging does not switch yet");
+    assert.equal(state.current.id, "tab-basic");
+    assert.deepEqual(state.sides.map(side => [side.id, side.hidden]), [["tab-skills", true]], "the next page by button order peeks in, still hidden to the app");
+    assert(Math.abs(state.sides[0].left - state.current.left - 390) < 1, "pages sit one screen apart");
+    await touch.send("touchMove", [[290, y]]);
+    await page.waitForTimeout(150);
+    await touch.end();
+    await settle(page);
+    assert.equal((await read(page)).tab, "basic", "dragging back cancels the switch");
+
+    // 慢慢拖過半頁放手會換頁；換頁順序照按鈕（技能之後是裝備，面板 DOM 順序則是動作）。
+    await touch.drag([320, y], [80, y], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "skills");
+    await touch.drag([320, y], [80, y], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "equipment", "swipes follow the tab button order");
+    assert.equal(await page.evaluate(() => window.dndStorage.getItem("activeTab")), "equipment", "the switch goes through showTab");
+    // 甩動：距離短但夠快就換頁；同樣距離慢慢拖則留在原頁。
+    await touch.drag([120, y], [240, y], { steps: 4, stepMs: 0 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "skills", "a short flick switches");
+    await touch.drag([120, y], [200, y], { stepMs: 40, hold: 150 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "skills", "a short slow drag stays");
+
+    // 垂直捲動照常；各頁的捲動位置照舊還原，滑進來的頁面一開始就畫在還原後的位置。
+    await touch.drag([200, 650], [200, 350], { hold: 150 });
+    await page.waitForTimeout(300);
+    const skillsScroll = (await read(page)).scrollY;
+    assert(skillsScroll > 100, `vertical drags still scroll the page: ${skillsScroll}`);
+    assert.equal((await read(page)).tab, "skills");
+    await touch.drag([80, y], [330, y], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.deepEqual([(await read(page)).tab, (await read(page)).scrollY], ["basic", 0]);
+    await touch.drag([330, y], [80, y], { stepMs: 30, hold: 150, release: false });
+    const peekTop = (await read(page)).sides[0].top;
+    await touch.end();
+    await settle(page);
+    state = await read(page);
+    assert.deepEqual([state.tab, state.scrollY], ["skills", skillsScroll], "each tab keeps its own scroll position");
+    assert(Math.abs(await page.evaluate(() => document.getElementById("tab-skills").getBoundingClientRect().top) - peekTop) < 1.5,
+      "the incoming page is drawn where it lands");
+    assert.equal(state.bodyScrollTop, 0);
+
+    // 第一頁往右沒有上一頁：帶阻力、放手彈回。
+    await page.evaluate(() => showTab("basic"));
+    await touch.drag([80, y], [340, y], { release: false });
+    await page.waitForFunction(() => document.querySelector(".page-swipe-current"));
+    await page.waitForTimeout(60);
+    state = await read(page);
+    assert(state.current.left > 20 && state.current.left < 140 && state.sides.length === 0, `edge drag resists: ${state.current.left}`);
+    await touch.end();
+    await settle(page);
+    assert.equal((await read(page)).tab, "basic");
+
+    // 還在滑的頁面可以接住再拖回去。
+    await touch.drag([330, y], [80, y], { stepMs: 30, hold: 150 });
+    await touch.send("touchStart", [[120, y]]);
+    await page.waitForTimeout(50);
+    state = await read(page);
+    assert.deepEqual([state.tab, state.current?.id], ["skills", "tab-skills"], "the switch happens on release and the page is still gliding");
+    await page.waitForTimeout(120);
+    const held = await read(page);
+    assert(held.current && Math.abs(held.current.left - state.current.left) < 0.5 && held.current.left > 20,
+      `a touch stops the gliding page: ${state.current.left} -> ${held.current?.left}`);
+    for (const x of [180, 240, 300, 360]) { await page.waitForTimeout(30); await touch.send("touchMove", [[x, y]]); }
+    await page.waitForTimeout(150);
+    await touch.end();
+    await settle(page);
+    assert.equal((await read(page)).tab, "basic", "a caught page can be dragged back");
+
+    // 不搶其他手勢：系統邊緣、對話框、橫向捲動區、內層分頁列、自己處理觸控的元件、第二根手指。
+    const stays = async (label, gesture, { started = false } = {}) => {
+      await log(page);
+      await gesture();
+      await page.waitForTimeout(250);
+      await settle(page);
+      assert.equal((await read(page)).tab, "basic", `${label} must not change the tab`);
+      assert.equal((await log(page)).length > 0, started, `${label} ${started ? "starts" : "never starts"} a page drag`);
+    };
+    await stays("an edge swipe", () => touch.drag([10, y], [300, y], { steps: 4, stepMs: 0 }));
+    await page.evaluate(() => { AppDialog.showMessage({ title: "滑動測試", message: "對話框開啟時不換頁" }); });
+    await stays("a swipe under a dialog", () => touch.drag([320, 760], [80, 760], { steps: 4, stepMs: 0 }));
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => {
+      const host = document.createElement("div");
+      host.id = "swipe-fixtures";
+      host.innerHTML = '<div id="swipe-scroller" style="overflow-x:auto;height:70px"><div style="width:1200px;height:50px"></div></div>'
+        + '<div id="swipe-tabs" role="tablist" style="height:70px"></div><div id="swipe-own" style="touch-action:none;height:70px"></div>';
+      document.getElementById("tab-basic").prepend(host);
+      window.scrollTo(0, 0);
+    });
+    const middle = async id => { const box = await page.locator(`#${id}`).boundingBox(); return box.y + box.height / 2; };
+    const scrollerY = await middle("swipe-scroller");
+    await stays("a horizontal scroller", () => touch.drag([320, scrollerY], [80, scrollerY], { hold: 150 }));
+    assert(await page.evaluate(() => document.getElementById("swipe-scroller").scrollLeft) > 100, "the scroller itself scrolls");
+    for (const id of ["swipe-tabs", "swipe-own"]) {
+      const fixtureY = await middle(id);
+      await stays(`#${id}`, () => touch.drag([320, fixtureY], [80, fixtureY], { steps: 4, stepMs: 0 }));
+    }
+    await page.evaluate(() => document.getElementById("swipe-fixtures").remove());
+    await stays("a second finger", async () => {
+      await touch.drag([320, y], [200, y], { release: false });
+      await touch.send("touchStart", [[200, y], [300, 300]]);
+      await touch.send("touchMove", [[40, y], [140, 300]]);
+      await touch.end();
+    }, { started: true });
+
+    // 隱藏或停用的分頁會跳過。
+    await page.evaluate(() => { document.querySelector('.tab-button[aria-controls="tab-skills"]').hidden = true; });
+    await touch.drag([320, y], [80, y], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "equipment", "hidden tabs are skipped");
+    await page.evaluate(() => { document.querySelector('.tab-button[aria-controls="tab-skills"]').hidden = false; });
+
+    // 雙指放大檢視時停用，水平平移還給瀏覽器。
+    const touchActions = () => page.evaluate(() => [document.body, document.getElementById("gear-notes")].map(el => getComputedStyle(el).touchAction));
+    assert.deepEqual(await touchActions(), ["pan-y pinch-zoom", "pan-y pinch-zoom"]);
+    const zoom = await page.context().newCDPSession(page);
+    await zoom.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
+    await page.waitForFunction(() => document.documentElement.classList.contains("page-swipe-zoomed"));
+    assert.deepEqual(await touchActions(), ["auto", "auto"], "a zoomed page pans freely");
+    await touch.drag([160, 300], [40, 300], { steps: 4, stepMs: 0 });
+    await page.waitForTimeout(200);
+    assert.equal((await read(page)).tab, "equipment", "a zoomed page does not swipe");
+    await zoom.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
+    await page.waitForFunction(() => !document.documentElement.classList.contains("page-swipe-zoomed"));
+    await zoom.detach();
+
+    // 跑團模式：照看得到的分頁順序換頁，切換走 TabletopMode.setPanel；各頁捲動位置不同時，滑進來的頁面不蓋住分頁列。
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("skills"); });
+    await page.waitForTimeout(100);
+    await page.evaluate(() => window.scrollTo(0, 150));
+    await page.waitForTimeout(100);
+    await touch.drag([80, y], [330, y], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.deepEqual([(await read(page)).panel, (await read(page)).scrollY], ["overview", 0]);
+    await touch.drag([330, y], [150, y], { release: false });
+    await page.waitForFunction(() => document.querySelector(".page-swipe-side"));
+    await page.waitForTimeout(60);
+    state = await read(page);
+    assert.deepEqual([state.panel, state.current.id, state.sides.map(side => side.id)], ["overview", "tabletop-panel-overview", ["tabletop-panel-skills"]]);
+    assert(Math.abs(parseFloat(state.sides[0].clip.replace("inset(", "")) - 150) < 2, `the incoming panel is cut off below the tab bar: ${state.sides[0].clip}`);
+    await touch.send("touchMove", [[60, y]]);
+    await page.waitForTimeout(150);
+    await touch.end();
+    await settle(page);
+    assert.deepEqual([(await read(page)).panel, (await read(page)).scrollY], ["skills", 150]);
+    await page.evaluate(() => { TabletopMode.setPanel("overview"); window.scrollTo(0, 0); });
+    const visiblePanels = await page.evaluate(() => [...document.querySelectorAll(".tabletop-primary-tabs [data-tabletop-tab]")].filter(tab => !tab.hidden).map(tab => tab.dataset.tabletopTab));
+    const visited = ["overview"];
+    for (let index = 1; index < visiblePanels.length; index++) {
+      await touch.drag([330, 760], [80, 760], { stepMs: 30, hold: 150 });
+      await settle(page);
+      visited.push((await read(page)).panel);
+    }
+    assert.deepEqual(visited, visiblePanels, "tabletop swipes walk the visible tabs in order, from the blank area below a short panel too");
+    await touch.drag([330, 760], [80, 760], { stepMs: 30, hold: 150 });
+    await settle(page);
+    assert.equal((await read(page)).panel, visiblePanels.at(-1), "the last panel has no next page");
+
+    await page.evaluate(() => { TabletopMode.setMode("sheet"); showTab("basic"); });
+    assert.equal(await page.evaluate(() => collectJsonExportText().text), exported, "swiping never changes character data");
+    await touch.close();
+  } finally { await page.close(); }
+
+  // 減少動態效果：一樣能滑動換頁，但不跟手、不滑動。
+  page = await open({ reducedMotion: "reduce" });
+  try {
+    const touch = await openTouch(page);
+    await touch.drag([320, 500], [150, 500]);
+    await page.waitForFunction(() => document.querySelector(".tab-content.active").id === "tab-skills");
+    await touch.drag([320, 500], [280, 500], { stepMs: 30, hold: 150 });
+    await page.waitForTimeout(100);
+    assert.equal((await read(page)).tab, "skills", "a short drag stays under reduced motion too");
+    assert.deepEqual(await log(page), [], "reduced motion never draws a sliding page");
+    assert.equal(await page.evaluate(() => document.querySelectorAll("[class*='page-swipe']").length), 0);
+    await touch.close();
+  } finally { await page.close(); }
+
+  // 分享模式也能換頁（鎖定的欄位上也能起手）。
+  page = await newUiPage(browser, mobile);
+  let shareHash;
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.TabletopMode && window.Spellbook);
+    shareHash = await page.evaluate(() => encodeStateToHash({ class: "fighter", level: "3", race: "human", str: "15", __shareStateVersion: 1 }));
+  } finally { await page.close(); }
+  page = await open({}, url + shareHash);
+  try {
+    await page.waitForFunction(() => document.getElementById("auto-calculate-key-stats-toggle")?.dataset.shareLocked === "true");
+    const touch = await openTouch(page);
+    await page.evaluate(() => document.getElementById("str").scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(200);
+    const box = await page.locator("#str").boundingBox();
+    assert.equal(await page.evaluate(() => document.getElementById("str").closest("[inert]") !== null || document.getElementById("str").readOnly), true, "the swipe starts on a locked field");
+    await touch.drag([box.x + box.width / 2, box.y + box.height / 2], [box.x + box.width / 2 - 66, box.y + box.height / 2], { steps: 3, stepMs: 0 });
+    await settle(page);
+    assert.equal((await read(page)).tab, "skills", "share mode pages can be swiped");
+    await touch.close();
+  } finally { await page.close(); }
+
+  // 桌機滑鼠拖曳不換頁。
+  page = await newUiPage(browser, { viewport: { width: 1280, height: 800 } });
+  try {
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await page.mouse.move(700, 500);
+    await page.mouse.down();
+    await page.mouse.move(300, 500, { steps: 6 });
+    const dragging = await page.evaluate(() => document.querySelectorAll("[class*='page-swipe']").length);
+    await page.mouse.up();
+    assert.deepEqual([dragging, await page.evaluate(() => document.querySelector(".tab-content.active").id)], [0, "tab-basic"], "mouse drags never swipe pages");
+  } finally { await page.close(); }
+
+  console.log("Page swipe: finger tracking, cancel, flick, tab order, scroll memory, edge resistance, catch, exclusions, zoom, tabletop, reduced motion, share mode, mouse and tab taps passed.");
+}
+
 // Share methods are whole choice cards; short URLs fail visibly and never retry.
 async function verifyShareDialog(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
@@ -1153,6 +1455,9 @@ async function verifyToasts(browser) {
   await desktop.waitForTimeout(250);
   assert.deepEqual(await toastMessages(desktop), ["第二則", "第四則"]);
   await assertStackOrder(desktop);
+  await dragToast(desktop, 0, 56);
+  await desktop.waitForTimeout(250);
+  assert.deepEqual(await toastMessages(desktop), ["第二則", "第四則"], "A quick short mouse drag still keeps the toast");
   assert.deepEqual(errors, []);
   await desktop.close();
 
@@ -1180,6 +1485,24 @@ async function verifyToasts(browser) {
   assert.deepEqual(await toastMessages(mobile), ["丙"]);
   await swipeToast(mobile, 0, 1, 30);
   assert.deepEqual(await toastMessages(mobile), ["丙"], "Short swipe must keep the toast");
+  // 甩動：距離短但夠快就滑除；同樣距離慢慢拖、或拖遠後甩回來則保留。
+  await mobile.evaluate(() => AppDialog.notify("甩動", { duration: 10000 }));
+  await mobile.waitForTimeout(250);
+  const touch = await openTouch(mobile);
+  const flickBox = await mobile.locator("#app-toast .app-toast").nth(1).boundingBox();
+  const [flickX, flickY] = [flickBox.x + 40, flickBox.y + flickBox.height / 2];
+  await touch.drag([flickX, flickY], [flickX + 56, flickY], { steps: 7, stepMs: 50 });
+  await mobile.waitForTimeout(250);
+  assert.deepEqual(await toastMessages(mobile), ["丙", "甩動"], "A slow short drag keeps the toast");
+  await touch.drag([flickX, flickY], [flickX + 220, flickY], { steps: 4, stepMs: 30, release: false });
+  for (const back of [190, 160, 130, 100]) { await mobile.waitForTimeout(25); await touch.send("touchMove", [[flickX + back, flickY]]); }
+  await touch.end();
+  await mobile.waitForTimeout(250);
+  assert.deepEqual(await toastMessages(mobile), ["丙", "甩動"], "Flicking back keeps the toast");
+  await touch.drag([flickX, flickY], [flickX + 56, flickY], { steps: 2, stepMs: 0 });
+  await mobile.waitForFunction(() => document.querySelectorAll("#app-toast .app-toast").length === 1);
+  assert.deepEqual(await toastMessages(mobile), ["丙"], "A quick short flick dismisses the toast");
+  await touch.close();
   await mobile.evaluate(() => AppDialog.notify("短暫", { duration: 80 }));
   await mobile.getByText("短暫").waitFor({ state: "visible" });
   await mobile.waitForFunction(() => !Array.from(document.querySelectorAll(".app-toast__message")).some(el => el.textContent === "短暫"));
@@ -5270,7 +5593,7 @@ async function verifyJsonImportTransaction(browser, url) {
 
 async function main() {
   const sections = new Set(process.argv.slice(2));
-  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--journal-only", "--pdf-only", "--pdf-fields-only", "--data-only", "--share-only"].includes(flag), `Unknown option: ${flag}`);
+  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--gestures-only", "--journal-only", "--pdf-only", "--pdf-fields-only", "--data-only", "--share-only"].includes(flag), `Unknown option: ${flag}`);
   assert(sections.size <= 1, "Choose at most one UI section");
   const all = sections.size === 0;
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
@@ -5303,6 +5626,8 @@ async function main() {
       try { await verifyAppearanceAndLayout(browser, page, url); }
       finally { await page.close(); }
     }
+    if (sections.has("--gestures-only")) await verifyToasts(browser);
+    if (all || sections.has("--gestures-only")) await verifyPageSwipe(browser, url);
     if (all || sections.has("--dialogs-only")) {
       await verifyToasts(browser);
       await verifyShareDialog(browser, url);

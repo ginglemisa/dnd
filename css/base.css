@@ -1118,6 +1118,40 @@ body.utility-menu-open #equipment-search-fab {
   }
 }
 
+/* ===== 分頁滑動換頁（page-swipe.js） ===== */
+/* 水平滑動交給換頁手勢（內容不滿一頁時，下方空白處也要能滑）；
+   垂直捲動與雙指縮放仍由瀏覽器處理，內層的橫向捲動區不受影響。
+   body 與 textarea 本身是捲動容器，各自都要指定，否則瀏覽器會把上面的水平滑動收走。
+   雙指放大檢視時（page-swipe-zoomed）取消限制，才能單指左右平移畫面。 */
+html:not(.page-swipe-zoomed),
+html:not(.page-swipe-zoomed) body,
+html:not(.page-swipe-zoomed) textarea {
+  touch-action: pan-y pinch-zoom;
+}
+
+.page-swipe-host {
+  position: relative;
+}
+
+.page-swipe-current,
+.page-swipe-side {
+  animation: none !important;
+  will-change: transform;
+}
+
+/* 暫時畫在左右兩側的鄰頁：位置與大小由 page-swipe.js 以行內樣式指定。 */
+.page-swipe-side {
+  position: absolute;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* 滑動結束後仍在作用中的頁面：不重播進場動畫，transform 與進場動畫結束時相同。 */
+.tab-content.page-swipe-rest {
+  animation: none;
+  transform: translateY(0);
+}
+
 .tab-content > .section + .section,
 .tab-content > .section + details.section,
 .tab-content > details.section + .section,

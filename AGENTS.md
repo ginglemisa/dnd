@@ -67,6 +67,7 @@
 | 跑團模式 | `tabletop-mode.js`（`TabletopMode` 共用狀態與公開 API），子模組 `tabletop-*.js` 經 `TabletopMode`、`SpellCatalog`、`character-rules.js`、`DiceRoller` 協作 |
 | 擲骰 | `dice-roller.js`（`DiceRoller` 是擲骰與歷史的唯一入口） |
 | 導覽 | `onboarding-tour.js` |
+| 分頁滑動換頁、觸控點分頁的轉場 | `page-swipe.js`（只管畫面，切換仍走 `showTab()`／`TabletopMode.setPanel()`） |
 | PDF | `pdf-launcher.js`、`pdf-export.js`、`pdf-field-map.js` |
 | Legal／About | `legal-about.js`、`legal-modal.js` |
 
@@ -101,7 +102,7 @@
 | `validate-ability-roll.js` | 屬性產生、購點、擲骰（`--point-buy-only`／`--dice-only`） |
 | `validate-onboarding.js` | 導覽、創角匯入、PDF 載入取消（`--touch-only`／`--imports-only`） |
 | `validate-tabletop-rest.js` | 短休／長休、資源恢復、休息後選項 |
-| `validate-ui.js` | `--data-only` 存檔／分享／匯入安全、分享模式唯讀（也可用 `--share-only` 單跑）、職業選項記憶、子職、物品欄；`--dialogs-only` 對話框、角色能力視窗、缺項提示；`--appearance-only` 主題外觀；`--pdf-only`／`--pdf-fields-only` PDF；`--journal-only` 日誌；不帶參數另含 GA4 隔離模擬 |
+| `validate-ui.js` | `--data-only` 存檔／分享／匯入安全、分享模式唯讀（也可用 `--share-only` 單跑）、職業選項記憶、子職、物品欄；`--dialogs-only` 對話框、角色能力視窗、缺項提示；`--gestures-only` 分頁滑動換頁與 Toast 滑除；`--appearance-only` 主題外觀；`--pdf-only`／`--pdf-fields-only` PDF；`--journal-only` 日誌；不帶參數另含 GA4 隔離模擬 |
 
 * 環境為 Node.js 20 以上，在專案根目錄執行。Playwright 腳本會自行啟動伺服器與 Chromium（`DND_BROWSER_CHANNEL=msedge` 可改用 Edge）。新環境先執行 `npm ci` 與 `npx --no-install playwright install chromium`。新的 worktree 沒有 `content/private/`，建置結果只含公開內容。
 * **測試流量**：任何方式載入本站（本機、正式站、`file://`、新分頁、新 context、分享網址），網址都必須帶 `analytics=owner`，並放在 `#` 之前；禁止向真實 GA4 送測試事件。
