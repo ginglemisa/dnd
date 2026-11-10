@@ -2147,6 +2147,17 @@ async function verifyPdfSpellbookOptions(page) {
       avatar: __pdfTestOptions.avatarDataUrl, includeAvatar: "includeAvatar" in __pdfTestOptions })),
     { mode: "compact", sheet: "official", characterName: "官方角色", englishName: "", checkedMode: "compact", avatar: savedAvatar ? avatar : "", includeAvatar: false });
   }
+
+  // 官方角色卡的檔案從網站移除（404）時，不提供這個選項。
+  await page.route("**/fonts/AdobeFanHeitiStd-Bold.otf", route => route.fulfill({ status: 404, body: "" }));
+  await page.evaluate(() => { window.__pdfTestDone = showPdfExportModal({ ...__pdfTestState, class: "fighter" }, [], null); });
+  const missingOfficialModal = page.locator('.pdf-export-flow-modal');
+  await missingOfficialModal.getByRole('button', { name: '繼續', exact: true }).click();
+  await page.waitForFunction(() => document.querySelectorAll('.pdf-export-flow-modal .pdf-export-choice-option').length === 1);
+  assert.match(await missingOfficialModal.locator('.pdf-export-choice-option').innerText(), /第三方角色卡/, "only the third-party sheet remains");
+  await missingOfficialModal.locator('.pdf-export-flow-modal__close').click();
+  await page.evaluate(() => __pdfTestDone);
+  await page.unroute("**/fonts/AdobeFanHeitiStd-Bold.otf");
   await page.evaluate(() => window.dndStorage.removeItem("dnd.tabletopAvatar.v1"));
   for (const classId of ["warlock", "cleric", "fighter"]) {
     await page.evaluate(classId => { window.__pdfTestDone = showPdfExportModal({...__pdfTestState, class: classId}, [], null); }, classId);
