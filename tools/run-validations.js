@@ -23,6 +23,13 @@ if (unknown.length) {
   console.error(`不認得的腳本：${unknown.join("、")}`);
   process.exit(1);
 }
+try {
+  const copied = require("./copy-private-assets").copyPrivateAssets();
+  if (copied.length) console.log(`已從私人 repo 補上：${copied.join("、")}`);
+} catch (error) {
+  console.error(`官方角色卡的測試需要私人 repo 的檔案。${error.message}`);
+  process.exit(1);
+}
 const results = [];
 for (const script of selected.length ? selected : SCRIPTS) {
   console.log(`\n▶ node ${script}`);

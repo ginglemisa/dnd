@@ -17,5 +17,8 @@ node_modules/
 /spell-content.generated.js
 /spell-srd.generated.js
 /twd20.html
+# Official sheet template and font: fetched from the private repo at deploy time (locally: npm run assets:private)
+/5e_char_sheet_of.pdf
+/fonts/AdobeFanHeitiStd-Bold.otf
 # Visual snapshot output (tools/visual-snapshot.js); default location is the system temp folder
 /.visual-snapshots/
