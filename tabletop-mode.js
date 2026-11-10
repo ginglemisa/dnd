@@ -5450,6 +5450,8 @@
     getMode: () => currentMode,
     setPanel: setActivePanel,
     getPanel: () => currentPanel,
+    // 滑動換頁（page-swipe.js）要把鄰頁畫在它還原後的捲動位置。
+    getPanelScroll: panel => panelScrollPositions[panel] || 0,
     getTabletopActionPreferences,
     restoreSharedActionPreferences,
     setTabletopActionNotes,

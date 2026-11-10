@@ -107,7 +107,7 @@
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/base.css?v=20261108-css-split">
+  <link rel="stylesheet" href="css/base.css?v=20261110-page-swipe">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261109-item-actions">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261108-css-split">
@@ -137,10 +137,10 @@
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
   <script src="character-rules.js?v=20261106-skills-auto" defer></script>
-  <script src="app-dialog.js?v=20261107-share-link" defer></script>
+  <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261108-wild-shape-ux" defer></script>
+  <script src="tabletop-mode.js?v=20261110-page-swipe" defer></script>
   <script src="tabletop-druid.js?v=20261109-primal-strike-note" defer></script>
   <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
   <script src="tabletop-actions.js?v=20261108-wild-shape-savage" defer></script>
@@ -153,6 +153,7 @@
   <script src="spell-management.js?v=20261107-share-readonly" defer></script>
   <script src="share-readonly.js?v=20261107-share-menu" defer></script>
   <script src="class-option-memory.js?v=20261106-background-memory" defer></script>
+  <script src="page-swipe.js?v=20261110-page-swipe" defer></script>
   <script src="deity-info.js" defer></script>
 
 </head>
@@ -3059,6 +3060,9 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
         window.scrollTo(0, Math.min(nextScrollY, maxScroll));
       });
     }
+
+    // 滑動換頁（page-swipe.js）要把鄰頁畫在它還原後的捲動位置。
+    window.getSheetTabScroll = tab => tabScrollPositions[tab] ?? 0;
 
     if (hasSavedTab) {
       showTab(savedTab, null, { activateSheet: false });
