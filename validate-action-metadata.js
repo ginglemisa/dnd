@@ -1184,35 +1184,6 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "wizard", mainHand: "長劍", offHand: "盾牌", offHandAsMain: false, armor: "" }));
     assert.equal(await page.inputValue("#ac-display"), "10");
 
-    // 兩用武器：一般模式主手的另一手空著或武藝才算雙手；主手2模式只看有沒有持盾；一般副手欄不適用。
-    const versatileBase = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "1", str: "16", dex: "10", armor: "",
-      mainHand: "長劍", offHand: "", offHandAsMain: false, main2Shield: false, "weapon-attack-automation": true,
-      __inventory: { version: 1, items: ["長劍", "短劍", "長棍", "短矛", "匕首", "盾牌"].map((itemId, index) => ({ uid: `versatile-${index}`, itemId, quantity: 1 })) } };
-    const versatile = async (overrides = {}) => {
-      await page.evaluate(state => applyStateObject(state), { ...versatileBase, ...overrides });
-      return page.evaluate(() => [document.getElementById("atk-main-dmg").value, document.getElementById("atk-off-dmg").value]);
-    };
-    assert.deepEqual(await versatile(), ["1d10+3揮砍", ""], "an empty off hand makes the main hand two-handed");
-    assert.match(await page.locator("#equipment-loadout-summary-content").innerText(), /1d10 揮砍/u, "the summary shows the die in use");
-    await page.selectOption("#offHand", "盾牌");
-    assert.equal(await page.inputValue("#atk-main-dmg"), "1d8+3揮砍", "equipping a shield returns to the one-handed die");
-    assert.match(await page.locator("#equipment-loadout-summary-content").innerText(), /1d8 揮砍/u);
-    await page.selectOption("#offHand", "");
-    assert.equal(await page.inputValue("#atk-main-dmg"), "1d10+3揮砍", "emptying the off hand restores the two-handed die");
-    assert.deepEqual(await versatile({ offHand: "短劍" }), ["1d8+3揮砍", "1d6穿刺"], "an off-hand weapon keeps the one-handed die");
-    assert.deepEqual(await versatile({ mainHand: "", offHand: "長劍" }), ["", "1d8揮砍"], "the ordinary off hand never uses the two-handed die");
-    assert.deepEqual(await versatile({ offHandAsMain: true, offHand: "長棍" }), ["1d10+3揮砍", "1d8+3鈍擊"], "main 2 mode treats both weapons as two-handed without a shield");
-    assert.deepEqual(await versatile({ offHandAsMain: true, offHand: "長棍", main2Shield: true }), ["1d8+3揮砍", "1d6+3鈍擊"], "main 2 mode with a shield is one-handed");
-    assert.deepEqual(await versatile({ offHandAsMain: true, mainHand: "", offHand: "長劍" }), ["", "1d10+3揮砍"], "main hand 2 alone is two-handed");
-    assert.deepEqual(await versatile({ mainHand: "短矛" }), ["1d8+3穿刺", ""], "throwing weapons show the melee two-handed die");
-    assert.match(await page.evaluate(() => renderAttackCalculationPopup(attackCalculationDetails.main, "damage")), /武器傷害（兩用，雙手）.*1d8.*投擲時武器傷害.*1d6/su, "the popup explains the two-handed and thrown dice");
-    const versatileMonk = { class: "monk", str: "10", dex: "16", mainHand: "長棍" };
-    assert.deepEqual(await versatile(versatileMonk), ["1d8+3鈍擊", ""], "a monk with a free hand uses the versatile die");
-    assert.deepEqual(await versatile({ ...versatileMonk, offHand: "武藝" }), ["1d8+3鈍擊", "1d6+3鈍擊"], "martial arts counts as an empty hand");
-    assert.deepEqual(await versatile({ ...versatileMonk, offHand: "匕首" }), ["1d6+3鈍擊", "1d6+3穿刺"], "a monk holding another weapon keeps the one-handed die");
-    await versatile({ ...versatileMonk, level: "5" });
-    assert.equal(await page.evaluate(() => attackCalculationDetails.main.usesVersatileDie), false, "a martial arts die at least as large is not labelled two-handed");
-
     // 魔法物品的固定加值：只影響裝備的那一手，需同調的物品同調後才算；副手不加屬性調整值時魔法傷害加值仍要加。
     const magicBase = { __spellManagement: { version: 2, manual: false, entries: [] }, __autoCalculatedChecks: true, class: "fighter", level: "5", str: "16", dex: "14", con: "12", int: "10", wis: "10", cha: "10",
       mainHand: "", offHand: "", offHandAsMain: false, main2Shield: false, armor: "", shillelaghWeaponHand: "none", "prof-dex": false };
@@ -1230,9 +1201,9 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.deepEqual((await magicNumbers({ class: "monk", dex: "16", str: "10", wis: "14", mainHand: "短棒+1", ...inventoryOf(plus("club", "短棒", 1)) })).main,
       ["+7", "1d8+4鈍擊"], "Martial Arts adds the magic bonus");
     assert.deepEqual((await magicNumbers({ mainHand: "陽炎劍", ...inventoryOf({ uid: "sun", itemId: "長劍", quantity: 1, magic: { id: "sun-blade" } }) })).main,
-      ["+6", "1d8+3揮砍"], "an item that needs attunement does nothing until attuned");
+      ["+6", "1d10+3揮砍"], "an item that needs attunement does nothing until attuned");
     assert.deepEqual((await magicNumbers({ mainHand: "陽炎劍", ...inventoryOf({ uid: "sun", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "sun-blade" } }) })).main,
-      ["+8", "1d8+5揮砍"], "attuned items apply");
+      ["+8", "1d10+5揮砍"], "attuned items apply");
     const details = await page.evaluate(() => { const result = calculateHandAttacks()[0].details; return [result.magicLabel, result.magicAttackBonus, result.magicDamageBonus, renderAttackCalculationPopup(result, "hit").includes("陽炎劍")]; });
     assert.deepEqual(details, ["陽炎劍", 2, 2, true], "attack details list the magic bonus");
     assert.match(await page.locator("#equipment-loadout-summary-content").textContent(), /陽炎劍：.*魔法 \+2/u, "the loadout summary names the magic weapon and its bonus");
@@ -1261,11 +1232,11 @@ async function verifyEquipmentLoadout(browser, url) {
     }, [magicBase]), {
       inPack: [null, false],
       unattuned: null,
-      start: [{ value: 0, max: 3 }, ["+9", "1d8+6揮砍", "12"]],
-      two: [{ value: 2, max: 3 }, ["+7", "1d8+4揮砍", "14"]],
-      clamped: [3, ["+6", "1d8+3揮砍", "15"]],
+      start: [{ value: 0, max: 3 }, ["+9", "1d10+6揮砍", "12"]],
+      two: [{ value: 2, max: 3 }, ["+7", "1d10+4揮砍", "14"]],
+      clamped: [3, ["+6", "1d10+3揮砍", "15"]],
       saved: "attuned,itemId,magic,quantity,uid",
-      reloaded: [0, ["+9", "1d8+6揮砍", "12"]]
+      reloaded: [0, ["+9", "1d10+6揮砍", "12"]]
     }, "the Defender moves its bonus to AC only while attuned and held, and the split is not saved");
     // 王者權杖：形態存在這一筆的 magic.form，裝備欄位不變；傷害、屬性跟著新形態，火焰之刃沒有 +3。
     assert.deepEqual(await page.evaluate(([base]) => {
@@ -1287,15 +1258,15 @@ async function verifyEquipmentLoadout(browser, url) {
     }, [magicBase]), {
       steps: {
         mace: ["王者權杖", "王者權杖", "+9", "1d6+6鈍擊"],
-        battleaxe: ["王者權杖", "王者權杖", "+9", "1d8+6揮砍"],
-        spear: ["王者權杖", "王者權杖", "+9", "1d6+6穿刺"],
-        "flame-longsword": ["王者權杖", "王者權杖", "+6", "1d8+3揮砍"],
+        battleaxe: ["王者權杖", "王者權杖", "+9", "1d10+6揮砍"],
+        spear: ["王者權杖", "王者權杖", "+9", "1d8+6穿刺"],
+        "flame-longsword": ["王者權杖", "王者權杖", "+6", "1d10+3揮砍"],
         "flame-shortsword": ["王者權杖", "王者權杖", "+6", "1d6+3穿刺"],
         other: ["王者權杖", "王者權杖", "+9", "1d6+6鈍擊"]
       },
       saved: { id: "rod-of-lordly-might", form: "flame-longsword" },
       field: "王者權杖",
-      reloaded: ["王者權杖", "王者權杖", "+6", "1d8+3揮砍"],
+      reloaded: ["王者權杖", "王者權杖", "+6", "1d10+3揮砍"],
       back: { id: "rod-of-lordly-might" },
       bad: false
     }, "the Rod of Lordly Might changes weapon data with its form while the equipment field keeps its name");
@@ -1381,6 +1352,35 @@ async function verifyEquipmentLoadout(browser, url) {
     });
     assert.deepEqual(await spellFields(), ["14", "+30"], "manual spell numbers stay manual");
     await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
+
+    // 兩用武器：一般模式主手的另一手空著或武藝才算雙手；主手2模式只看有沒有持盾；一般副手欄不適用。
+    const versatileBase = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "1", str: "16", dex: "10", armor: "",
+      mainHand: "長劍", offHand: "", offHandAsMain: false, main2Shield: false, "weapon-attack-automation": true,
+      __inventory: { version: 1, items: ["長劍", "短劍", "長棍", "短矛", "匕首", "盾牌"].map((itemId, index) => ({ uid: `versatile-${index}`, itemId, quantity: 1 })) } };
+    const versatile = async (overrides = {}) => {
+      await page.evaluate(state => applyStateObject(state), { ...versatileBase, ...overrides });
+      return page.evaluate(() => [document.getElementById("atk-main-dmg").value, document.getElementById("atk-off-dmg").value]);
+    };
+    assert.deepEqual(await versatile(), ["1d10+3揮砍", ""], "an empty off hand makes the main hand two-handed");
+    assert.match(await page.locator("#equipment-loadout-summary-content").innerText(), /1d10 揮砍/u, "the summary shows the die in use");
+    await page.selectOption("#offHand", "盾牌");
+    assert.equal(await page.inputValue("#atk-main-dmg"), "1d8+3揮砍", "equipping a shield returns to the one-handed die");
+    assert.match(await page.locator("#equipment-loadout-summary-content").innerText(), /1d8 揮砍/u);
+    await page.selectOption("#offHand", "");
+    assert.equal(await page.inputValue("#atk-main-dmg"), "1d10+3揮砍", "emptying the off hand restores the two-handed die");
+    assert.deepEqual(await versatile({ offHand: "短劍" }), ["1d8+3揮砍", "1d6穿刺"], "an off-hand weapon keeps the one-handed die");
+    assert.deepEqual(await versatile({ mainHand: "", offHand: "長劍" }), ["", "1d8揮砍"], "the ordinary off hand never uses the two-handed die");
+    assert.deepEqual(await versatile({ offHandAsMain: true, offHand: "長棍" }), ["1d10+3揮砍", "1d8+3鈍擊"], "main 2 mode treats both weapons as two-handed without a shield");
+    assert.deepEqual(await versatile({ offHandAsMain: true, offHand: "長棍", main2Shield: true }), ["1d8+3揮砍", "1d6+3鈍擊"], "main 2 mode with a shield is one-handed");
+    assert.deepEqual(await versatile({ offHandAsMain: true, mainHand: "", offHand: "長劍" }), ["", "1d10+3揮砍"], "main hand 2 alone is two-handed");
+    assert.deepEqual(await versatile({ mainHand: "短矛" }), ["1d8+3穿刺", ""], "throwing weapons show the melee two-handed die");
+    assert.match(await page.evaluate(() => renderAttackCalculationPopup(attackCalculationDetails.main, "damage")), /武器傷害（兩用，雙手）.*1d8.*投擲時武器傷害.*1d6/su, "the popup explains the two-handed and thrown dice");
+    const versatileMonk = { class: "monk", str: "10", dex: "16", mainHand: "長棍" };
+    assert.deepEqual(await versatile(versatileMonk), ["1d8+3鈍擊", ""], "a monk with a free hand uses the versatile die");
+    assert.deepEqual(await versatile({ ...versatileMonk, offHand: "武藝" }), ["1d8+3鈍擊", "1d6+3鈍擊"], "martial arts counts as an empty hand");
+    assert.deepEqual(await versatile({ ...versatileMonk, offHand: "匕首" }), ["1d6+3鈍擊", "1d6+3穿刺"], "a monk holding another weapon keeps the one-handed die");
+    await versatile({ ...versatileMonk, level: "5" });
+    assert.equal(await page.evaluate(() => attackCalculationDetails.main.usesVersatileDie), false, "a martial arts die at least as large is not labelled two-handed");
 
     // 刃之魔契：不再熟練全部軍用武器，只有標記為契約武器的那一把熟練、可用魅力；同時只有一把。
     // 傷害類型（預設黯蝕）存在 pactWeaponDamageType，裝備摘要視窗、刃之魔契卡片與跑團動作的下拉都是它的鏡像。
