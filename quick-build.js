@@ -1738,7 +1738,7 @@
 
   function ensureWizard() {
     let modal = document.getElementById("quick-build-wizard");
-    if (modal) return modal;
+    if (modal) return modal;
     modal = document.createElement("div");
     modal.id = "quick-build-wizard";
     modal.inert = true;
@@ -1779,7 +1779,7 @@
     return modal;
   }
 
-  function ensureSpellDetailModal() {
+  function ensureSpellDetailModal() {
     let modal = document.getElementById("quick-build-spell-detail");
     if (modal) return modal;
     modal = document.createElement("div");
@@ -2530,7 +2530,7 @@
       && rituals.length === 2 && new Set(rituals).size === 2;
   }
 
-  function ensurePactTomeModal() {
+  function ensurePactTomeModal() {
     let modal = document.getElementById("quick-build-pact-tome");
     if (modal) return modal;
     modal = document.createElement("div");
