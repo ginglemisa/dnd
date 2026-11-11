@@ -723,6 +723,18 @@
     };
   }
 
+  /**
+   * 荒野形態變身時的裝備格（跑團 combatState.druid.equipment 的 key），對應只寫在這裡：
+   * 護甲欄（魔法護甲，或放在護甲欄的盾牌）→ armor；主手（武器、法杖、手持物品）→ main；
+   * 副手與主手 2 的盾牌（盾牌、手持物品）→ off；其他穿戴或帶在身上的物品（戒指、斗篷、靴子、艾恩石、背包裡 when: owned 的效果）→ other。
+   */
+  function getWildShapeEquipmentGroup(entry) {
+    if (entry.slot === "armor") return "armor";
+    if (entry.slot === "mainHand") return "main";
+    if (entry.slot === "offHand" || entry.slot === "shield") return "off";
+    return "other";
+  }
+
   // 武僧武藝的攻擊列名稱（index.html 的 getMonkMartialArtsWeapon）：魔法物品的 unarmedStrike 只加在這一手。
   const UNARMED_ATTACK_NAME = "武藝";
 
@@ -771,8 +783,8 @@
    *   alsoPool 是另外再扣 1 次的池；action.spell 是從物品施放的法術（跑團法術頁的「物品」分組，tabletop-spells.js 的 getItemSpellEntries）。
    *   條件同提示（action.when 為 owned 時持有就算；action.option 要選了那個選項），同一種物品的同一個能力只列第一件。
    * context 可傳 { wearingArmor, usingShield, handBases }，省略的欄位讀目前的裝備欄位。
-   * context.wildShape 為 { armor, shield }（荒野形態的跑團畫面）：只算穿戴中的魔法護甲（armor 為 true 時）與盾牌（shield 為 true 時），
-   * 其他物品（含 when: owned 的提示與屬性）都不算。
+   * context.wildShape 為 { armor, main, off, other }（荒野形態的跑團畫面，變身時每一格是否選「穿戴」）：物品依所在的格子
+   * （getWildShapeEquipmentGroup）生效，那一格選穿戴時照平常規則算，融入或掉落時整件不算（含 when: owned 的效果）。
    */
   function getActiveMagicEffects(context = {}) {
     context = { ...readMagicEffectContext(), ...context };
@@ -811,12 +823,8 @@
       const rule = entry.magic ? catalog.get(entry.magic.id) : null;
       if (!rule || (rule.attunement && !entry.attuned)) return;
       const kind = inventory.getCatalogItem(entry.itemId)?.kind;
-      // 荒野形態：只留穿戴中的護甲（護甲欄）與盾牌（副手、主手 2 的盾牌，或放在護甲欄的盾牌跟著護甲）。
-      if (context.wildShape) {
-        const keepArmor = context.wildShape.armor && entry.slot === "armor";
-        const keepShield = kind === "shield" && (entry.slot === "offHand" || entry.slot === "shield") && context.wildShape.shield;
-        if (!keepArmor && !keepShield) return;
-      }
+      // 荒野形態：物品所在的那一格（護甲、主手、副手、其他）變身時選了穿戴才生效。
+      if (context.wildShape && context.wildShape[getWildShapeEquipmentGroup(entry)] !== true) return;
       const use = catalog.getUse(rule.id);
       const inHand = entry.slot === "mainHand" || entry.slot === "offHand";
       const usable = !((use === "worn" && !entry.worn) || (use === "held" && !inHand) || (use === "wornOrHeld" && !entry.worn && !inHand));

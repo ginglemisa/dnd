@@ -747,7 +747,7 @@ text: |-
 | `noStrengthRequirement`、`noStealthDisadvantage` | `true`：這件護甲沒有力量需求、不讓隱匿有劣勢（秘銀護甲）。只用於護甲類；裝備摘要不顯示這兩項，速度不因力量需求降低。 |
 | `movement` | `{ swim?, climb?, fly?, hover?, minimum?, ignoreArmorStrength? }`：`swim`／`climb`／`fly` 是呎數或 `speed`（等於目前步行速度），寫在跑團速度那一格（「30 呎，游泳 60、攀爬 30」，多個來源取最大，等於速度的跟著目前速度與大步奔行）；`hover: true` 要和 `fly` 一起寫；`minimum` 是步行速度至少的呎數、`ignoreArmorStrength: true` 是不因護甲力量需求降速（跑跳之靴），這兩項角色卡與 PDF 的速度欄也算。角色卡速度欄只算步行。 |
 
-荒野形態的跑團畫面只算穿戴中的魔法護甲與盾牌（`getActiveMagicEffects({ wildShape })`）：其他物品的屬性、技能、檢定、熟練、豁免加值、提示、優勢與移動都不算，心智屬性用原值；角色卡的數字不變。
+荒野形態的跑團畫面跟著變身時每一格的選擇（`getActiveMagicEffects({ wildShape: { armor, main, off, other } })`，物品在哪一格由 `character-rules.js` 的 `getWildShapeEquipmentGroup()` 決定）：選穿著的那一格照平常規則生效，融入、掉落的不算（含 `when: owned`）；力敏體以野獸數值為原值套用屬性效果。角色卡的數字不變。
 
 **`hints`（提示）**，可寫在物品、選項的 `choices` 與 `forms`，是清單，每筆：
 
@@ -783,7 +783,7 @@ actions:
 | `amount` | 恢復量：整數或骰式（`1d6 + 1`，可以用 d3；按恢復時經 `DiceRoller` 擲，進擲骰歷史，加上去不超過 `max`）。省略表示全部恢復。 |
 | `cooldown` | 冷卻多久（例如「7 天」「1d12 小時」），只用於 `recover: cooldown`，寫在恢復按鈕上。 |
 
-**`actions`（能力）**：跑團模式的按鈕，生效條件同 `hints`（`when: owned` 時持有就算），荒野形態只留穿戴中的魔法護甲與盾牌的按鈕。按鈕文字、說明都是這裡的資料；扣次數的按鈕在物品名稱後面顯示「1/3」，不夠時變灰（仍可點開看說明），不隱藏。
+**`actions`（能力）**：跑團模式的按鈕，生效條件同 `hints`（`when: owned` 時持有就算），荒野形態只留變身時選「穿著」那幾格物品的按鈕。按鈕文字、說明都是這裡的資料；扣次數的按鈕在物品名稱後面顯示「1/3」，不夠時變灰（仍可點開看說明），不隱藏。
 
 | 欄位 | 說明 |
 | --- | --- |

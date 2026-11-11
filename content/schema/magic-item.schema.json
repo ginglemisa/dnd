@@ -142,7 +142,7 @@
             "minimum": { "type": "integer", "minimum": 5, "description": "步行速度至少為這個值（原本較高時用原本的）。" },
             "ignoreArmorStrength": { "const": true, "description": "力量未達護甲需求時不降低速度。" }
           },
-          "description": "移動方式：跑團速度那一格寫出游泳、攀爬、飛行（多個來源取最大）；角色卡速度欄只算步行。荒野形態不算。"
+          "description": "移動方式：跑團速度那一格寫出游泳、攀爬、飛行（多個來源取最大）；角色卡速度欄只算步行。荒野形態依變身時「其他」格的選擇，接在野獸速度上。"
         },
         "unarmedStrike": {
           "type": "object",

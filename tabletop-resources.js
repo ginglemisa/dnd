@@ -681,7 +681,8 @@
       level: document.getElementById("level")?.value || "",
       wisdomScore: (globalScope.getEffectiveAbilityValue?.("wis") ?? document.getElementById("wis")?.value) || "10",
       charismaScore: (globalScope.getEffectiveAbilityValue?.("cha") ?? document.getElementById("cha")?.value) || "10",
-      proficiencyBonus: globalScope.getProficiencyBonus?.()
+      // 荒野形態時熟練加值依變身時的選擇（TabletopMode.getMagicEffects）。
+      proficiencyBonus: globalScope.getProficiencyBonus?.(globalScope.TabletopMode?.getMagicEffects?.() || undefined)
     }).filter(spec => spec.target.type === "builtIn").map(spec => ({
       ...spec,
       note: spec.kind === "points"

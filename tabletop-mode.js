@@ -1192,8 +1192,8 @@
   function getMageArmorEffect() {
     const dexterity = getDruidForm()?.abilities.dex ?? readAbilityScore("dex") ?? 10;
     const modifier = globalScope.calculateAbilityModifier(dexterity);
-    // 法師護甲取代護甲的計算，戒指、斗篷等魔法物品的加值仍要算（荒野形態不算）。
-    const magicBonus = getDruidForm() ? 0 : globalScope.getActiveMagicEffects?.().ac.other || 0;
+    // 法師護甲取代護甲的計算，戒指、斗篷等魔法物品的加值仍要算（荒野形態依變身時「其他」格的選擇）。
+    const magicBonus = getMagicEffects()?.ac.other || 0;
     return { active: combatState.mageArmorActive, ac: 13 + modifier + magicBonus, dexterityModifier: modifier };
   }
 
@@ -1294,7 +1294,7 @@
     const options = {
       className: value("class"), race: value("race"), level: value("level"),
       wisdomScore: readAbilityScore("wis") || "", charismaScore: readAbilityScore("cha") || "",
-      proficiencyBonus: globalScope.getProficiencyBonus?.(),
+      proficiencyBonus: globalScope.getProficiencyBonus?.(getMagicEffects() || undefined),
       raceChoice: getSelectedRaceChoice(), druidLand: value("druid-land"),
       hasTravelCompanion: Boolean(globalScope.hasSelectedFeat?.("最佳旅伴")),
       spellSlotGroups: slots.map(group => ({ level: group.level, ids: group.controls.map(control => control.id) })),
@@ -1620,20 +1620,27 @@
     return globalScope.getEffectiveAbilityValue?.(ability) ?? document.getElementById(ability)?.value ?? "";
   }
 
-  // 魔法物品改變屬性時的有效值與來源；荒野形態的力敏體換成野獸數值，心智屬性用原值（物品只留穿戴中的護甲與盾牌）。
+  // 魔法物品改變屬性時的有效值與來源（跑團畫面，getMagicEffects）。荒野形態的力敏體以野獸數值為原值：
+  // 設定值類物品和野獸數值取較高，加值類加在野獸數值上並照上限；智力、感知、魅力照角色本身的有效值。
   function getAbilityEffect(ability) {
-    if (getDruidForm() && ["str", "dex", "con"].includes(ability)) return null;
-    const effective = globalScope.getEffectiveAbilityScore?.(ability, getMagicEffects());
+    const beast = getDruidForm();
+    const effects = getMagicEffects();
+    const effective = beast && PHYSICAL_ABILITIES.includes(ability)
+      ? globalScope.calculateEffectiveAbilityScore?.(String(beast.abilities[ability]), effects?.abilities?.[ability] || [])
+      : globalScope.getEffectiveAbilityScore?.(ability, effects);
     return effective?.changed ? effective : null;
   }
 
-  // 跑團畫面用的魔法物品效果（character-rules.js 的 getActiveMagicEffects）：荒野形態只留穿戴中的魔法護甲與盾牌，
-  // 其他物品的加值、提示、優勢、屬性與移動都不算（形態選擇視窗的「穿著」才算穿戴中）。
+  const PHYSICAL_ABILITIES = Object.freeze(["str", "dex", "con"]);
+
+  // 跑團畫面用的魔法物品效果（character-rules.js 的 getActiveMagicEffects）：荒野形態時物品跟著變身時每一格的選擇
+  // （combatState.druid.equipment 的 armor／main／off／other），選「穿戴」的那一格照平常規則生效，融入、掉落的不算。
+  // 加值、AC、豁免、技能、熟練加值、資源次數、優勢、提示、物品按鈕與物品法術都讀這裡。預設各格都是融入。
   function getMagicEffects() {
     if (!globalScope.getActiveMagicEffects) return null;
     if (!getDruidForm()) return globalScope.getActiveMagicEffects();
     const equipment = combatState.druid.equipment;
-    return globalScope.getActiveMagicEffects({ wildShape: { armor: equipment.armor === "wear", shield: equipment.off === "wear" } });
+    return globalScope.getActiveMagicEffects({ wildShape: Object.fromEntries(["armor", "main", "off", "other"].map(key => [key, equipment[key] === "wear"])) });
   }
 
   function getDruidForm() {
@@ -1657,6 +1664,26 @@
     return parts.length ? `，${parts.join("、")}` : "";
   }
 
+  // 荒野形態的速度：野獸的速度（迅捷步法 +10、extra 是大步奔行的 +10），加上生效中魔法物品的移動方式（同一種取最大，
+  // 等於速度的跟著步行速度，速度至少的只看步行）。例如「步行 40 呎、游泳 40 呎」。
+  function getDruidSpeedText(beast, extra = 0) {
+    const bonus = (hasSelectedFeat("迅捷步法") ? 10 : 0) + extra;
+    const speeds = new Map(Object.entries(beast.speeds).map(([label, feet]) => [label, feet + bonus]));
+    const labels = (typeof monsterLabels !== "undefined" && monsterLabels.speed) || {};
+    const label = mode => labels[mode] || { walk: "步行", swim: "游泳", climb: "攀爬", fly: "飛行" }[mode];
+    const movement = getMagicEffects()?.movement;
+    if (movement) {
+      if (movement.minimum && speeds.has(label("walk"))) speeds.set(label("walk"), Math.max(speeds.get(label("walk")), movement.minimum));
+      const walk = speeds.get(label("walk"));
+      ["swim", "climb", "fly"].forEach((mode) => {
+        const values = movement[mode].map(source => source.value === "speed" ? walk : source.value).filter(Number.isFinite);
+        if (values.length) speeds.set(label(mode), Math.max(speeds.get(label(mode)) ?? 0, ...values));
+      });
+    }
+    const hover = movement?.hover.length ? label("fly") : "";
+    return [...speeds].map(([name, feet]) => `${name} ${feet} 呎${name === hover ? "（懸停）" : ""}`).join("、");
+  }
+
   // 變形中數值旁的標記「(狼)」：比照樹膚術的「(樹膚)」，只標屬性（力敏體）、AC 與速度。
   function getDruidFormMarks() {
     const beast = getDruidForm();
@@ -1669,12 +1696,12 @@
     const original = fallback ?? read(id);
     const beast = getDruidForm();
     if (!beast) return original;
-    // 荒野形態只留穿戴中的魔法護甲與盾牌（getMagicEffects）：角色自己的屬性是這時的有效值（心智屬性就是原值），
-    // 技能、豁免、先攻欄裡其他魔法物品加上的部分（屬性、技能加值、檢定加值、熟練加值、豁免加值）先扣掉，再換成野獸的屬性。
-    // 自動計算關閉時欄位是玩家手填的數字，當作沒有物品加值，只換算屬性。
+    // 荒野形態的魔法物品跟著變身時每一格的選擇（getMagicEffects）：角色自己的屬性是這時的有效值，
+    // 技能、豁免、先攻欄裡不生效的魔法物品加上的部分（屬性、技能加值、檢定加值、熟練加值、豁免加值）先扣掉，再換成野獸的屬性。
+    // 力敏體以野獸數值為原值套用生效中的屬性物品（getAbilityEffect）。自動計算關閉時欄位是玩家手填的數字，當作沒有物品加值，只換算屬性。
     const formEffects = getMagicEffects();
     const own = key => Number(globalScope.getEffectiveAbilityValue?.(key, formEffects) ?? read(key)) || 0;
-    const score = key => ["str", "dex", "con"].includes(key) ? beast.abilities[key] : own(key);
+    const score = key => PHYSICAL_ABILITIES.includes(key) ? getAbilityEffect(key)?.score ?? beast.abilities[key] : own(key);
     const mod = key => globalScope.calculateAbilityModifier(score(key));
     const signed = value => globalScope.formatSignedValue(value);
     const magicPart = () => {
@@ -1696,10 +1723,7 @@
       const perception = Number(getDruidEffectiveValue("skill-察覺", read("skill-察覺")));
       return String(Number(original) - Number(read("skill-察覺")) + perception);
     }
-    if (id === "speed-display") {
-      const bonus = hasSelectedFeat("迅捷步法") ? 10 : 0;
-      return Object.entries(beast.speeds).map(([label, feet]) => `${label} ${feet + bonus} 呎`).join("、");
-    }
+    if (id === "speed-display") return getDruidSpeedText(beast);
     if (id === "ac-display") {
       const state = combatState.druid;
       if (state.acOverride !== null) return String(state.acOverride);
@@ -1708,13 +1732,16 @@
       const shield = ((state.equipment.off === "wear" && globalScope.isEffectiveEquippedShield?.())
         || (state.equipment.armor === "wear" && globalScope.isShieldItem?.(armorName)))
         && globalScope.isShieldProficient?.() !== false;
-      // 只有穿戴中的魔法護甲與盾牌加值保留，其他持有物不算。
+      // 魔法物品依變身時的選擇：穿著的護甲、盾牌照算，其他格選穿戴時戒指、斗篷等的 AC 加值也算（formEffects.ac.other）。
       const magicAc = formEffects?.ac;
       const shieldMagic = shield ? magicAc?.shield || 0 : 0;
+      const otherMagic = magicAc?.other || 0;
       if (armor) return String(globalScope.calculateArmorClass({ armor, hasArmor: true, className: "druid",
         dexterityScore: score("dex"), constitutionScore: score("con"), wisdomScore: score("wis"), charismaScore: score("cha"),
-        hasShield: shield, hasDefenseFightingStyle: globalScope.hasDefenseFightingStyleFeat?.(), magicBonus: (magicAc?.armor || 0) + shieldMagic }));
-      return String(Number(beast.ac) + (shield ? 2 + shieldMagic : 0));
+        hasShield: shield, hasDefenseFightingStyle: globalScope.hasDefenseFightingStyleFeat?.(), magicBonus: (magicAc?.armor || 0) + shieldMagic + otherMagic }));
+      // 沒穿護甲時，大法師法袍等的基礎 AC（unarmoredAc＋敏捷）和野獸的 AC 取較高。
+      const unarmored = formEffects?.unarmoredAc ? formEffects.unarmoredAc + mod("dex") : 0;
+      return String(Math.max(Number(beast.ac), unarmored) + (shield ? 2 + shieldMagic : 0) + otherMagic);
     }
     return original;
   }
@@ -2726,10 +2753,11 @@
       // 物品名稱放在擲骰按鈕外，窄螢幕時換到數值下方整行。
       const magic = getAbilityEffect(ability);
       const magicSources = [...new Set([...(magic?.sources || []), ...(checkBonus ? checkSources : [])])];
-      if (formMarks.length && ["str", "dex", "con"].includes(ability)) {
-        renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, formMarks);
-      } else if (magicSources.length) {
-        renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, []);
+      // 荒野形態的力敏體：形態標記之外，生效中的屬性物品（腰帶等）讓數值高過野獸時也寫出物品名稱。
+      const formAbility = formMarks.length && PHYSICAL_ABILITIES.includes(ability);
+      if (formAbility) renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, formMarks);
+      if (magicSources.length) {
+        if (!formAbility) renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, []);
         const source = document.createElement("span");
         source.className = "tabletop-ac-effect-label tabletop-ability-modifier__source";
         source.textContent = `(${magicSources.join("、")})`;
@@ -2934,7 +2962,7 @@
     if (combatState.longstriderActive) {
       const beast = getDruidForm();
       const speed = beast
-        ? Object.entries(beast.speeds).map(([label, feet]) => `${label} ${feet + (hasSelectedFeat("迅捷步法") ? 10 : 0) + 10} 呎`).join("、")
+        ? getDruidSpeedText(beast, 10)
         : walkSpeed !== null ? `${walkSpeed + 10} 呎${getMagicMovementText(walkSpeed + 10)}` : "—";
       renderEffectStat(elements.speed, speed, [...formMarks, "(大步)"]);
     } else if (formMarks.length) {
