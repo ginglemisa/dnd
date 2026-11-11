@@ -1325,41 +1325,47 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); });
     await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-magic-note")?.textContent.includes("冰點以下"));
     assert.equal(await page.evaluate(() => document.querySelector('#tabletop-panel-actions .tabletop-weapon-fields .tabletop-inline-roll[aria-label*="傷害"]')?.disabled === false || !DiceRoller.isEnabled()), true, "the damage with an extra die stays rollable");
-    // 第 8 步：跑團武器卡顯示裝備中的彈藥，按命中擲骰扣 1 枚。最後 1 枚用掉時從物品欄移除；還有完全相同的另一筆（同品名、同選項）時自動改裝那一筆並提示，
-    // 普通與魔法、+1 與 +2 不互換；沒有就不再扣。沒裝備或種類不同時不扣、不顯示。
+    // 第 8 步：跑團武器卡顯示裝備中的彈藥，按命中擲骰扣 1 枚。彈藥用到 0 時保留（×0）、仍是裝備中、加值不算，之後擲命中不扣並提示彈藥用完；
+    // 還有完全相同、還有彈藥的另一堆（同品名、同選項）時自動改裝那一堆，空的那堆放到身上。普通與魔法、+1 與 +2 不互換。沒裝備或種類不同時不扣、不顯示。
     const diceWasOn = await page.evaluate(() => DiceRoller.isEnabled());
     await page.evaluate(([base, extra]) => { applyStateObject({ ...base, ...extra }); DiceRoller.setEnabled(true); }, [magicBase, { mainHand: "長弓", ...inventoryOf(
       { uid: "bow", itemId: "長弓", quantity: 1 },
       { uid: "quiver", itemId: "箭袋", quantity: 1 },
-      { uid: "arrows", itemId: "箭矢", quantity: 2, magic: { id: "ammunition-plus", bonus: 1 }, ammo: true },
+      { uid: "arrows", itemId: "箭矢", quantity: 2, in: "quiver", magic: { id: "ammunition-plus", bonus: 1 }, ammo: true },
       { uid: "plain", itemId: "箭矢", quantity: 20 },
       { uid: "plus2", itemId: "箭矢", quantity: 4, magic: { id: "ammunition-plus", bonus: 2 } },
       { uid: "spare", itemId: "箭矢", quantity: 3, in: "quiver", magic: { id: "ammunition-plus", bonus: 1 } },
       { uid: "bolts", itemId: "弩矢", quantity: 5 }) }]);
     const ammoLine = () => page.evaluate(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent ?? null);
+    const bowHit = () => page.evaluate(() => document.querySelector('#tabletop-panel-actions [aria-label="擲主手 長弓命中"]').textContent);
     const fireBow = () => page.evaluate(() => document.querySelector('#tabletop-panel-actions [aria-label="擲主手 長弓命中"]').click());
     // AppDialog.notify() 在下一個 animation frame 才填入文字（和 validate-spell-search.js 的 lastToast 相同）：等最新那則有文字再讀，避免時序造成空字串。
     const lastToast = () => page.waitForFunction(() => document.querySelector("#app-toast > .app-toast:last-child .app-toast__message")?.textContent, null, { timeout: 2000 })
       .then(handle => handle.jsonValue());
+    const stacks = () => page.evaluate(() => Inventory.entries().map(entry => [entry.uid, entry.quantity, entry.in || "", Boolean(entry.ammo)]));
     await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢+1 剩 2");
-    assert.equal(await page.evaluate(() => document.querySelector('#tabletop-panel-actions [aria-label="擲主手 長弓命中"]').textContent), "+6", "the tabletop hit includes the arrow bonus");
+    assert.equal(await bowHit(), "+6", "the tabletop hit includes the arrow bonus");
     await fireBow();
     await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢+1 剩 1");
     assert.equal(await page.evaluate(() => Inventory.getEntry("arrows").quantity), 1, "a hit roll uses one arrow");
     await fireBow();
-    await page.waitForFunction(() => !Inventory.getEntry("arrows"));
-    assert.match(await lastToast(), /箭矢\+1用完了，已從物品欄移除；改用另一筆箭矢\+1（剩 3）。/u, "the last arrow switches to an identical stack with a notice");
+    await page.waitForFunction(() => Inventory.getEquippedAmmo()?.uid === "spare");
+    assert.match(await lastToast(), /箭矢\+1用完了，空的那堆放到身上；改用另一筆箭矢\+1（剩 3）。/u, "the last arrow switches to an identical stack with a notice");
     await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢+1 剩 3");
-    assert.deepEqual(await page.evaluate(() => [Inventory.getEquippedAmmo()?.uid, Inventory.getEntry("spare").in]), ["spare", "quiver"], "the identical stack in the quiver is equipped where it is");
+    assert.deepEqual((await stacks()).filter(([uid]) => ["arrows", "spare"].includes(uid)), [["arrows", 0, "", false], ["spare", 3, "quiver", true]],
+      "the empty stack stays as ×0 on the body, the identical stack in the quiver is equipped where it is");
     await page.evaluate(() => Inventory.update("spare", { quantity: 1 }));
     await fireBow();
-    await page.waitForFunction(() => !Inventory.getEntry("spare"));
-    assert.match(await lastToast(), /箭矢\+1用完了，已從物品欄移除；之後擲命中不再扣彈藥。/u, "with no identical stack left the notice says nothing more is used");
-    await page.waitForFunction(() => !document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo"));
-    assert.equal(await page.evaluate(() => Inventory.getEquippedAmmo()), null, "plain arrows and +2 arrows do not replace +1 arrows");
+    await page.waitForFunction(() => Inventory.getEntry("spare")?.quantity === 0);
+    assert.match(await lastToast(), /箭矢\+1用完了（×0，仍是裝備中）；之後擲命中不再扣彈藥。/u, "with no identical stack left the empty stack stays equipped");
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢+1 剩 0");
+    assert.deepEqual([await page.evaluate(() => Inventory.getEquippedAmmo()?.uid), await bowHit()], ["spare", "+5"], "plain and +2 arrows do not replace +1 arrows, and an empty stack gives no bonus");
     await fireBow();
-    assert.deepEqual(await page.evaluate(() => [Inventory.entries().map(entry => [entry.uid, entry.quantity]), document.querySelector('#tabletop-panel-actions [aria-label="擲主手 長弓命中"]').textContent]),
-      [[["bow", 1], ["quiver", 1], ["plain", 20], ["plus2", 4], ["bolts", 5]], "+5"], "without equipped ammunition nothing is used and the bonus is gone");
+    assert.match(await lastToast(), /彈藥用完：箭矢\+1剩 0，這次沒有扣。/u, "firing with no arrows says the ammunition is out");
+    assert.deepEqual(await stacks(), [["bow", 1, "", false], ["quiver", 1, "", false], ["arrows", 0, "", false], ["plain", 20, "", false], ["plus2", 4, "", false], ["spare", 0, "quiver", true], ["bolts", 5, "", false]],
+      "nothing is used once the equipped ammunition is empty, and empty stacks are kept");
+    await page.evaluate(() => Inventory.setAmmo("spare", false));
+    assert.deepEqual([await page.evaluate(() => Inventory.getEntry("spare")?.quantity), await ammoLine()], [0, null], "taking off empty ammunition keeps it");
     await page.evaluate(() => Inventory.setAmmo("bolts", true));
     await fireBow();
     assert.deepEqual([await page.evaluate(() => Inventory.getEntry("bolts").quantity), await ammoLine()], [5, null], "bolts are not used by a longbow");
@@ -1367,8 +1373,8 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => { Inventory.setAmmo("plain", true); Inventory.update("plain", { quantity: 1 }); });
     await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢 剩 1");
     await fireBow();
-    await page.waitForFunction(() => !Inventory.getEntry("plain"));
-    assert.deepEqual(await page.evaluate(() => [Inventory.getEquippedAmmo(), Inventory.getEntry("plus2").quantity]), [null, 4], "plain arrows are not replaced by magic arrows");
+    await page.waitForFunction(() => Inventory.getEntry("plain")?.quantity === 0);
+    assert.deepEqual(await page.evaluate(() => [Inventory.getEquippedAmmo()?.uid, Inventory.getEntry("plus2").quantity]), ["plain", 4], "plain arrows are not replaced by magic arrows");
     await page.evaluate(on => DiceRoller.setEnabled(on), diceWasOn);
     const hints = extra => page.evaluate(([base, extra]) => {
       applyStateObject({ ...base, ...extra });

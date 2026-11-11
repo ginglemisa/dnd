@@ -4917,11 +4917,13 @@ async function verifyInventoryPersistence(browser, url) {
       assert.match(await sharedRing.locator(".inventory-item-actions").innerText(), /穿戴中、同調中/u, "share mode shows the worn state");
     } finally { await equippedShared.close(); }
     // 第 8 步：裝備中的彈藥（ammo）存在那一筆上，留在箭袋裡也一樣；autosave、JSON、分享都還原，加值跟著長弓。分享模式只顯示狀態、不能換。
+    // 用完的彈藥保留 ×0（唯一可以數量 0 的物品），也一起還原。
     const ammoState = { class: "fighter", level: "5", str: "16", dex: "14", mainHand: "長弓", offHand: "", armor: "", __inventory: { version: 1, items: [
       { uid: "bow", itemId: "長弓", quantity: 1 },
       { uid: "quiver", itemId: "箭袋", quantity: 1 },
       { uid: "plus", itemId: "箭矢", quantity: 12, in: "quiver", magic: { id: "ammunition-plus", bonus: 1 }, ammo: true },
-      { uid: "plain", itemId: "箭矢", quantity: 20, in: "quiver" }
+      { uid: "plain", itemId: "箭矢", quantity: 20, in: "quiver" },
+      { uid: "empty", itemId: "箭矢", quantity: 0, magic: { id: "ammunition-plus", bonus: 1 } }
     ] } };
     const ammoSnapshot = target => target.evaluate(() => ({ state: Inventory.getState().items, attack: [document.getElementById("atk-main-hit").value, document.getElementById("atk-main-dmg").value] }));
     const ammoExpected = { state: ammoState.__inventory.items, attack: ["+6", "1d8+3穿刺"] };
@@ -4934,6 +4936,9 @@ async function verifyInventoryPersistence(browser, url) {
     assert.deepEqual(await page.evaluate(() => [true, "yes", 1].map(ammo => {
       try { validateCharacterState({ class: "fighter", __inventory: { version: 1, items: [{ uid: "a", itemId: "箭矢", quantity: 1, ammo }] } }); return "accepted"; } catch (error) { return "rejected"; }
     })), ["accepted", "rejected", "rejected"], "the import precheck only accepts a boolean ammo field");
+    assert.deepEqual(await page.evaluate(() => [{ itemId: "箭矢" }, { itemId: "彈丸，投石索", ammo: true }, { itemId: "長劍" }, { name: "雜物" }].map(item => {
+      try { validateCharacterState({ class: "fighter", __inventory: { version: 1, items: [{ uid: "z", quantity: 0, ...item }] } }); return "accepted"; } catch (error) { return "rejected"; }
+    })), ["accepted", "accepted", "rejected", "rejected"], "the import precheck accepts a quantity of 0 only for ammunition");
     const ammoHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
     const ammoShared = await newUiPage(browser);
     try {

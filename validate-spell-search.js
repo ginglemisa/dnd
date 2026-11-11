@@ -1971,14 +1971,44 @@ async function validateMagicAmmunition(page) {
     result.off = [Inventory.setAmmo(part, false), ammoUids()];
     result.part = part;
     result.preflight = [true, false, "yes", 1].map(ammo => isValidInventoryState({ version: 1, items: [{ quantity: 1, itemId: "箭矢", ammo }] }));
-    // useAmmo：用完時改裝完全相同的另一筆（普通彈丸換普通彈丸），魔法彈丸不替代普通的；沒有裝備時回傳 null。
+    // useAmmo：用到 0 保留；有完全相同、還有彈藥的另一堆時改裝那一堆（普通彈丸換普通彈丸），空的那堆放到身上；魔法彈丸不替代普通的；
+    // 裝備中的已是 0 時不扣（empty）；沒有裝備時回傳 null。
     Inventory.restore({ version: 1, items: [
-      { uid: "s1", itemId: "彈丸，投石索", quantity: 1, ammo: true },
+      { uid: "pouch", itemId: "小包", quantity: 1 },
+      { uid: "s1", itemId: "彈丸，投石索", quantity: 1, in: "pouch", ammo: true },
       { uid: "s2", itemId: "彈丸，投石索", quantity: 1, magic: { id: "ammunition-plus", bonus: 1 } },
-      { uid: "s3", itemId: "彈丸，投石索", quantity: 2 }
+      { uid: "s3", itemId: "彈丸，投石索", quantity: 2, in: "pouch" }
     ] });
-    const shot = () => { const used = Inventory.useAmmo(); return used && [used.removed, used.quantity, used.next?.uid || "", used.next?.quantity || 0]; };
-    result.useAmmo = [shot(), shot(), shot(), shot(), Inventory.entries().map(entry => entry.uid)];
+    const shot = () => { const used = Inventory.useAmmo(); return used && [used.empty, used.quantity, used.next?.uid || "", used.next?.quantity || 0]; };
+    const shots = [shot(), shot(), shot(), shot()];
+    result.useAmmo = [...shots, Inventory.entries().map(entry => [entry.uid, entry.quantity, entry.in || "", Boolean(entry.ammo)])];
+    Inventory.setAmmo("s3", false);
+    result.noAmmo = [Inventory.useAmmo(), Inventory.getEntry("s3").quantity];
+    // 數量 0：只有彈藥可以（restore、update、consume），其他物品照舊至少 1；×0 的文字、重量、商店買進同一堆都正常。
+    Inventory.restore({ version: 1, items: [
+      { uid: "z1", itemId: "箭矢", quantity: 0 },
+      { uid: "z2", itemId: "箭矢", quantity: 0, magic: { id: "ammunition-plus", bonus: 1 } },
+      { uid: "z3", itemId: "箭矢", quantity: -5 },
+      { uid: "z4", itemId: "長劍", quantity: 0 },
+      { uid: "z5", name: "雜物", quantity: 0 },
+      { uid: "bag", quantity: 1, magic: { id: "bag-of-holding" } },
+      { uid: "z6", itemId: "弩矢", quantity: 0, in: "bag" }
+    ] });
+    const quantities = () => Inventory.entries().map(entry => entry.quantity);
+    result.zero = { restored: quantities(), text: Inventory.formatText(), weight: Inventory.getWeight().weight };
+    Inventory.update("z4", { quantity: 0 });
+    Inventory.update("z1", { quantity: 5 });
+    Inventory.update("z1", { quantity: 0 });
+    result.zero.updated = [Inventory.getEntry("z4").quantity, Inventory.getEntry("z1").quantity];
+    result.zero.consume = [Inventory.consume("z1"), Inventory.getEntry("z1").quantity];
+    Inventory.update("z1", { quantity: 1 });
+    result.zero.consumeLast = [Inventory.consume("z1"), Boolean(Inventory.getEntry("z1"))];
+    Inventory.add([{ itemId: "箭矢", quantity: 20 }]);
+    result.zero.bought = Inventory.getEntry("z1").quantity;
+    result.zero.preflight = [
+      { itemId: "箭矢", quantity: 0 }, { itemId: "箭矢", quantity: 0, magic: { id: "ammunition-plus", bonus: 1 } }, { itemId: "箭矢", quantity: -1 },
+      { itemId: "長劍", quantity: 0 }, { name: "雜物", quantity: 0 }, { quantity: 0, magic: { id: "bag-of-holding" } }
+    ].map(item => isValidInventoryState({ version: 1, items: [item] }));
     return result;
   });
   assert.deepEqual(data.restored, [["a1"], "q"], "only the first ammunition entry stays equipped, it can stay in the quiver, and non-ammunition drops the field");
@@ -1997,8 +2027,15 @@ async function validateMagicAmmunition(page) {
   assert.equal(data.otherWeapon, 0, "arrows do not boost a crossbow");
   assert.deepEqual(data.off, [{ ok: true, previous: "" }, []], "ammunition can be taken off");
   assert.deepEqual(data.preflight, [true, true, false, false], "the import preflight accepts only a boolean ammo field");
-  assert.deepEqual(data.useAmmo, [[true, 0, "s3", 2], [false, 1, "", 0], [true, 0, "", 0], null, ["s2"]],
-    "using the last piece switches to an identical stack, magic ammunition never replaces plain, and nothing is used without equipped ammunition");
+  assert.deepEqual(data.useAmmo, [[false, 0, "s3", 2], [false, 1, "", 0], [false, 0, "", 0], [true, 0, "", 0],
+    [["pouch", 1, "", false], ["s1", 0, "", false], ["s2", 1, "", false], ["s3", 0, "pouch", true]]],
+    "using the last piece keeps the empty stack on the body and switches to an identical one; magic ammunition never replaces plain; an empty equipped stack stays equipped and uses nothing");
+  assert.deepEqual(data.noAmmo, [null, 0], "taking off empty ammunition keeps it, and nothing is used without equipped ammunition");
+  assert.deepEqual(data.zero, {
+    restored: [0, 0, 0, 1, 1, 1, 0], text: "箭矢 ×0、箭矢+1 ×0、箭矢 ×0、長劍、雜物、次元袋（弩矢 ×0）", weight: 8,
+    updated: [1, 0], consume: [null, 0], consumeLast: [{ removed: false, quantity: 0, uses: 0, emptied: false }, true], bought: 20,
+    preflight: [true, true, false, false, false, false]
+  }, "only ammunition may be ×0 (restore, update, consume, preflight); other items stay at least 1; text, weight and buying more work with ×0");
 
   // 物品詳情：所有彈藥都有「裝備」，說明列出用這種彈藥的武器；換裝備時提示原本那種；標籤標示裝備中但留在箭袋裡。
   await page.evaluate(() => Inventory.restore({ version: 1, items: [
@@ -2039,6 +2076,30 @@ async function validateMagicAmmunition(page) {
   await open("rope");
   assert.equal(await item.getByRole("button", { name: /^裝備繩索$/u }).count(), 0, "other items have no ammunition button");
   await close();
+  // ×0：彈藥在物品視窗把數量改成 0 按「完成」直接存成 0（不問刪除），標籤變灰顯示 ×0；「使用」停用。其他物品的 0 仍是刪除確認。
+  await open("a2");
+  await item.locator(".inventory-stepper__input").fill("0");
+  await item.getByRole("button", { name: "完成" }).click();
+  await item.waitFor({ state: "detached" });
+  assert.deepEqual(await page.evaluate(() => {
+    const tag = document.querySelector('[data-inventory-uid="a2"]');
+    return [Inventory.getEntry("a2")?.quantity, Inventory.getEntry("a2")?.ammo, tag.textContent, tag.classList.contains("is-empty")];
+  }), [0, true, "箭矢+1 ×0", true], "empty ammunition stays equipped as a grey ×0 tag");
+  await open("a2");
+  assert.equal(await item.getByRole("button", { name: "使用箭矢+1" }).isDisabled(), true, "there is nothing to use at ×0");
+  await item.getByRole("button", { name: "卸下箭矢+1" }).click();
+  await page.waitForFunction(() => Inventory.getEntry("a2")?.ammo === undefined);
+  await close();
+  assert.equal(await page.evaluate(() => Inventory.getEntry("a2")?.quantity), 0, "taking off empty ammunition keeps it");
+  await open("rope");
+  await item.locator(".inventory-stepper__input").fill("0");
+  await item.getByRole("button", { name: "完成" }).click();
+  const confirmDelete = page.locator(".app-dialog", { hasText: "數量為 0，確認後會從物品欄刪除這項物品。" });
+  await confirmDelete.waitFor();
+  await confirmDelete.getByRole("button", { name: "取消" }).click();
+  await item.getByRole("button", { name: "取消" }).click();
+  await item.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(() => Inventory.getEntry("rope")?.quantity), 1, "other items still ask before a quantity of 0 deletes them");
   // 窄螢幕：彈藥列不超出視窗。
   await page.setViewportSize({ width: 375, height: 800 });
   await open("a2");
