@@ -724,7 +724,7 @@ text: |-
 
 | 詞 | 寫法與算法 |
 | --- | --- |
-| `attack`、`damage` | 武器攻擊與傷害的固定加值，只加在拿著這件武器的那一手。值是正整數或 `bonus`（取自 `bonus` 選項）。 |
+| `attack`、`damage` | 武器攻擊與傷害的固定加值，只加在拿著這件武器的那一手。值是正整數或 `bonus`（取自 `bonus` 選項）。彈藥（`base.any: [ammunition]`）要在物品詳情按「裝備」，加在拿著用這種彈藥的武器（武器屬性「彈藥 (…；箭矢)」）的那一手。 |
 | `ac`、`saves`、`spellAttack`、`spellSaveDc` | AC、豁免、法術攻擊、法術豁免 DC 的固定加值。 |
 | `condition` | `ac`／`saves`／`spellAttack`／`spellSaveDc` 的生效條件：`unarmored`（未穿戴護甲且未使用盾牌）、`held`（這件武器裝備在主手或副手；只用於有 `base` 的物品，沒有 `base` 的物品改寫 `use`）。只能寫在物品本身。 |
 | `extraDamage` | 每次命中都有的額外傷害骰：`[{ dice: 1d6, type: cold }]`，`type` 是傷害類型 ID，或 `weapon`（與這件武器目前的傷害類型相同，例如惡毒武器）。攻擊列寫成 `1d8+3揮砍+1d6冷凍`，同類型時併進武器骰：`1d8+2d6+3揮砍`；跑團擲傷害時一起擲。只用於武器類（有 `base` 且不是護甲、盾牌）。 |

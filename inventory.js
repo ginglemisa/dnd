@@ -1,7 +1,7 @@
 /**
  * 物品欄資料（傳統 defer script，無額外 runtime dependency）。
  *
- * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses?, magic?, charges?, spellId? }] }。
+ * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses?, magic?, charges?, spellId?, ammo? }] }。
  *   itemId 是裝備說明的品名（與 mainHand／商店相同的中文名稱）；name 是顯示名稱，自訂物品必填，目錄品項只在寫法不同時保留
  *   （例如「書籍（禱文）」）。weight（每件磅數）、container 與 desc（描述）只用於自訂物品；in 是所在容器的 uid；
  *   source "initial" 標記快速創角匯入的初始裝備，"equipped" 標記因主手／副手／護甲已裝備而補上的物品（整理成標籤時先抵掉，不重複）。
@@ -17,6 +17,9 @@
  * - attuned 是魔法物品的同調狀態（只有 magic 的筆、固定 1 件才有），由玩家以 setAttuned() 開關：同時最多 LIMITS.attunement 件，同一種魔法物品（同 magic.id）不能同調第二件。同調中的物品不能合併或拆分，移除後同調自然消失。
  * - worn 是可以穿戴的魔法物品（MagicItemCatalog.isWearable：戒指、斗篷等）正穿在身上（只有 magic 的筆、固定 1 件、在最外層才有），由玩家以 setWorn() 開關，件數不設上限；
  *   開始同調時自動穿上，卸下時保留同調。穿戴中的物品不能合併、拆分或放進容器，也不會被拿去放進主手或副手。普通物品的存檔格式不變。
+ * - ammo 是目前裝備的彈藥（普通或魔法彈藥都可以；整個物品欄最多一筆），由玩家以 setAmmo() 開關。和穿戴不同，裝備中的彈藥可以留在容器（箭袋）裡、
+ *   改數量、拆分（拆出的那筆不帶）與合併（被併掉的那筆有 ammo 時，合併後那筆繼承）。彈藥是商店「彈藥」群組的品項，種類是品名「，」前的字
+ *   （箭矢、弩矢、子彈、彈丸、針），對到武器屬性「彈藥 (射程…；箭矢)」的最後一詞（getWeaponAmmunition()）。
  * - 手持類的非武器魔法物品（魔杖等，MagicItemCatalog.isHandHeld）沒有基本款，也可以放進主手或副手：裝備欄位存它的顯示名稱，同樣以 slot 標記。
  * - charges 是魔法物品次數池（MagicItemCatalog.getPools：充能、每日一次、冷卻、珠子等）目前這件的剩餘次數 { 池 id: 0～99 }，只有 magic 的筆才有；
  *   沒寫的池表示滿的（取得時都是滿的），滿了就拿掉。一筆多件時其餘件數都是滿的，拆分、穿上或裝備拆出的那件也是滿的。有次數池的物品不合併。
@@ -131,6 +134,38 @@
     return itemId ? catalog().get(itemId) || null : null;
   }
 
+  // 商店「彈藥」群組的品項（equipment-notes.js 的 SHOP_GROUP_CATEGORIES）；彈藥種類是品名「，」前的字，例如「子彈，火器」是子彈。
+  const AMMUNITION_GROUP = "彈藥";
+
+  /** 彈藥的種類（箭矢、弩矢、子彈、彈丸、針）；不是彈藥時回傳空字串。魔法彈藥看基本款（itemId）。 */
+  function getAmmunitionType(itemId) {
+    return getCatalogItem(itemId)?.group === AMMUNITION_GROUP ? String(itemId).split("，")[0] : "";
+  }
+
+  function isAmmunition(entry) {
+    return Boolean(entry) && Boolean(getAmmunitionType(entry.itemId));
+  }
+
+  /** 武器使用的彈藥種類：武器屬性「彈藥 (射程 80/320；箭矢)」的最後一詞；不用彈藥或找不到武器時回傳空字串。 */
+  function getWeaponAmmunition(weaponName) {
+    const weapon = ["weapons_simple_melee", "weapons_simple_ranged", "weapons_martial_melee", "weapons_martial_ranged"]
+      .flatMap(getList).find(item => item.名稱 === weaponName);
+    if (!weapon) return "";
+    for (const index of [1, 2, 3, 4]) {
+      const match = String(weapon[`屬性${index}`] ?? "").trim().match(/^彈藥\s*[（(][^）)]*[；;]\s*([^）)；;]+?)\s*[）)]$/u);
+      if (match) return match[1];
+    }
+    return "";
+  }
+
+  /** 使用這種彈藥的武器品名（依 equipment-data.js 的順序）。 */
+  function getAmmunitionWeapons(itemId) {
+    const type = getAmmunitionType(itemId);
+    if (!type) return [];
+    return ["weapons_simple_ranged", "weapons_martial_ranged", "weapons_simple_melee", "weapons_martial_melee"]
+      .flatMap(getList).map(item => item.名稱).filter(name => getWeaponAmmunition(name) === type);
+  }
+
   /** 目錄物品每件的使用次數（醫療包 10 次）；沒有使用次數的物品回傳 0。 */
   function getMaxUses(itemId) {
     const uses = itemId ? globalScope.EQUIPMENT_ITEM_ACTIONS?.[itemId]?.uses : 0;
@@ -224,7 +259,20 @@
     // 次數池的剩餘次數只有魔法物品才有；池 id 與上限由 repairMagicState 依目錄再檢查。
     const charges = magic ? cleanCharges(raw.charges) : null;
     if (charges) entry.charges = charges;
+    // 裝備中的彈藥：是不是彈藥、是否只有一筆由 repairAmmo 檢查。
+    if (raw.ammo === true) entry.ammo = true;
     return entry;
+  }
+
+  // 裝備中的彈藥只能是彈藥，整個物品欄只留第一筆。
+  function repairAmmo(list) {
+    let found = false;
+    list.forEach((entry) => {
+      if (!entry.ammo) return;
+      if (found || !isAmmunition(entry)) delete entry.ammo;
+      else found = true;
+    });
+    return list;
   }
 
   // 剩餘次數：{ 池 id: 0～99 的整數 }；格式不對的鍵略過，空的回傳 null。
@@ -303,7 +351,7 @@
       normalized.push(entry);
     });
     normalized.forEach((entry) => { if (!entry.uid) entry.uid = nextUid(taken); });
-    return repairMagicState(repairContainment(normalized));
+    return repairAmmo(repairMagicState(repairContainment(normalized)));
   }
 
   function copyEntry(entry) {
@@ -703,6 +751,8 @@
     if (max && charges % max) stack.uses = charges % max;
     else delete stack.uses;
     if (entry.source && !stack.source && entry.source !== "equipped") stack.source = entry.source;
+    // 裝備中的彈藥被併進另一筆時，合併後那筆就是裝備中的彈藥。
+    if (entry.ammo) stack.ammo = true;
     return commit(next.filter(item => item !== entry), "merge");
   }
 
@@ -725,6 +775,7 @@
     const part = { ...entry, quantity: entry.quantity - kept, uid: nextUid(new Set(next.map(item => item.uid))) };
     delete part.uses;
     delete part.charges;
+    delete part.ammo;
     entry.quantity = kept;
     next.splice(index + 1, 0, part);
     commit(next, "split");
@@ -1098,6 +1149,34 @@
   }
 
   /**
+   * 裝備或卸下彈藥（普通或魔法彈藥）。同時只能裝備一種：裝備另一筆時原本那筆自動卸下。
+   * 回傳 { ok: true, previous }（previous 是被換下的那筆的名稱，沒有時為空字串），不是彈藥或找不到時回傳 { ok: false }。
+   */
+  function setAmmo(uid, on) {
+    const next = entries.map(copyEntry);
+    const entry = next.find(item => item.uid === uid);
+    if (!entry || !isAmmunition(entry)) return { ok: false, previous: "" };
+    if (Boolean(entry.ammo) === Boolean(on)) return { ok: true, previous: "" };
+    let previous = "";
+    if (on) {
+      next.forEach((item) => {
+        if (!item.ammo) return;
+        previous = getLabel(item);
+        delete item.ammo;
+      });
+      entry.ammo = true;
+    } else delete entry.ammo;
+    commit(next, "ammo");
+    return { ok: true, previous };
+  }
+
+  /** 目前裝備的彈藥（複本）；沒有時回傳 null。 */
+  function getEquippedAmmo() {
+    const entry = entries.find(item => item.ammo);
+    return entry ? copyEntry(entry) : null;
+  }
+
+  /**
    * 這筆魔法物品的次數池（MagicItemCatalog.getPools）：[{ id, label, max, recover?, amount?, cooldown?, left }]，left 是目前這件的剩餘次數
    * （存檔 charges 沒寫表示滿的）。一筆多件時其餘件數都是滿的。不是魔法物品或沒有池時回傳空陣列。
    */
@@ -1219,6 +1298,12 @@
     getEquipmentValue,
     setAttuned,
     setWorn,
+    setAmmo,
+    getEquippedAmmo,
+    isAmmunition,
+    getAmmunitionType,
+    getWeaponAmmunition,
+    getAmmunitionWeapons,
     getAttunement,
     getBonusTransfer,
     setBonusTransfer,

@@ -18,7 +18,6 @@ options:
 effects: { attack: bonus, damage: bonus }
 displayName: "{base}{bonus}"
 consumable: true
-manualEffect: true
 text: |-
   使用這件魔法彈藥進行的攻擊檢定與傷害擲骰，你獲得加值。加值由彈藥的稀有度決定。彈藥一旦擊中目標，就不再具有魔法。
 
