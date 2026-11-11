@@ -352,7 +352,7 @@
 
     if (hazard.key === "suffocation") {
       const rawConstitution = globalScope.TabletopMode?.getDruidForm?.()?.abilities.con
-        ?? (typeof document !== "undefined" ? document.getElementById("con")?.value : "");
+        ?? (typeof document !== "undefined" ? globalScope.getEffectiveAbilityValue?.("con") ?? document.getElementById("con")?.value : "");
       const modifier = globalScope.calculateAbilityModifier?.(rawConstitution);
       if (Number.isFinite(modifier)) {
         const duration = modifier + 1 >= 1 ? `${modifier + 1} 分鐘` : "30 秒";

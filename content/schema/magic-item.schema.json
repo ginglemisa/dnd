@@ -17,6 +17,30 @@
       "enum": ["acid", "bludgeoning", "cold", "fire", "force", "lightning", "necrotic", "piercing", "poison", "psychic", "radiant", "slashing", "thunder"],
       "description": "傷害類型 ID（character-rules.js 的 getDamageTypeLabel，例如 cold →「冷凍」）。"
     },
+    "abilityEffect": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false, "required": ["set"],
+          "properties": { "set": { "type": "integer", "minimum": 1, "maximum": 30, "description": "屬性設定為這個值；原本較高時用原本的值。" }, "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就算，不看穿戴或手持。省略時和其他效果相同。" } }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["bonus", "max"],
+          "properties": {
+            "bonus": { "type": "integer", "minimum": 1, "description": "屬性增加的點數（不會降低）。" },
+            "max": { "type": "integer", "minimum": 1, "maximum": 30, "description": "加值後的上限。" }, "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就算，不看穿戴或手持。省略時和其他效果相同。" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["setBonus", "max", "from"],
+          "properties": {
+            "setBonus": { "type": "integer", "minimum": 1, "description": "from 物品給的設定值再增加的點數。" },
+            "max": { "type": "integer", "minimum": 1, "maximum": 30, "description": "增加後的上限。" },
+            "from": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }, "description": "物品 id：這些物品同時生效時，它們的 set 才增加。" }, "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就算，不看穿戴或手持。省略時和其他效果相同。" }
+          }
+        }
+      ],
+      "description": "屬性的三種寫法：{ set }、{ bonus, max }、{ setBonus, max, from }。"
+    },
     "dice": { "type": "string", "pattern": "^[1-9]\\d*d(4|6|8|10|12|20)$", "description": "骰式，例如 1d6、2d6。" },
     "effects": {
       "type": "object",
@@ -60,6 +84,20 @@
             "damage": { "type": "integer", "minimum": 1 }
           },
           "description": "拿指定武器攻擊時的命中、傷害加值（例如射手護腕的長弓、短弓）。"
+        },
+        "abilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "str": { "$ref": "#/definitions/abilityEffect" },
+            "dex": { "$ref": "#/definitions/abilityEffect" },
+            "con": { "$ref": "#/definitions/abilityEffect" },
+            "int": { "$ref": "#/definitions/abilityEffect" },
+            "wis": { "$ref": "#/definitions/abilityEffect" },
+            "cha": { "$ref": "#/definitions/abilityEffect" }
+          },
+          "description": "屬性的有效值（屬性欄保留原值，不存檔）：原值 → 加值（夾上限）→ 與設定值比，取最高。只在物品生效時（已同調、穿戴或手持）算。"
         },
         "unarmedStrike": {
           "type": "object",
@@ -119,7 +157,7 @@
         "rarity": { "$ref": "#/definitions/rarity", "description": "此選項的稀有度（物品的 rarity 為 varies 時必填）。" },
         "effects": { "$ref": "#/definitions/effects", "description": "選了此項才有的固定數值。" },
         "heal": { "type": "string", "pattern": "^\\d+d\\d+( \\+ \\d+)?$", "description": "治療藥水恢復的生命值骰式。" },
-        "score": { "type": "integer", "minimum": 1, "description": "巨人之力物品賦予的力量值。" },
+        "score": { "type": "integer", "minimum": 1, "description": "巨人之力藥水賦予的力量值（只是資料，不自動計算；穿戴類物品改用 effects.abilities）。" },
         "saveDc": { "type": "integer", "minimum": 1, "description": "法術卷軸的豁免 DC。" },
         "attackBonus": { "type": "integer", "minimum": 1, "description": "法術卷軸的攻擊加值。" },
         "omitInName": { "const": true, "description": "顯示名稱不加這個選項（一般的治療藥水）。" },

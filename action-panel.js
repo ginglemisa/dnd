@@ -232,8 +232,13 @@
     });
   }
 
+  // 屬性用有效值（含魔法物品，character-rules.js 的 getEffectiveAbilityValue）。
+  function readAbilityScore(abilityId) {
+    return String((window.getEffectiveAbilityValue?.(abilityId) ?? document.getElementById(abilityId)?.value) || "").trim();
+  }
+
   function getAbilityModifier(abilityId) {
-    const rawScore = String(document.getElementById(abilityId)?.value || "").trim();
+    const rawScore = readAbilityScore(abilityId);
     if (!/^[+-]?\d+$/u.test(rawScore)) return null;
     const score = Number(rawScore);
     return Number.isSafeInteger(score) ? Math.floor((score - 10) / 2) : null;
@@ -393,7 +398,7 @@
     return {
       level: getCharacterLevel(),
       levelBlank: !field("level"),
-      abilityScores: Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map(id => [id, field(id)]))
+      abilityScores: Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map(id => [id, readAbilityScore(id)]))
     };
   }
 

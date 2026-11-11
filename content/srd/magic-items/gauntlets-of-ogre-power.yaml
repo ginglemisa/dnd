@@ -8,6 +8,6 @@ group: wearable
 rarity: uncommon
 attunement: true
 use: worn
-manualEffect: true
+effects: { abilities: { str: { set: 19 } } }
 text: |-
   穿戴這副護手時，你的力量為19。若不穿戴護手時你的力量就已達到19或更高，護手對你沒有效果。

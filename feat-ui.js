@@ -454,6 +454,7 @@ function isFeatChoiceEligible(value, spec) {
   if (spec.type === "level") {
     if (rule.type === "style") return false;
   } else if (rule.type !== spec.type) return false;
+  // 專長門檻看屬性欄的原值（不含魔法物品的有效值）。
   if (rule.abilities && !rule.abilities.some(id => Number(document.getElementById(id)?.value || 0) >= 13)) return false;
   const cls = document.getElementById("class")?.value || "";
   if (rule.heavyArmor && !(["fighter", "paladin"].includes(cls) || (cls === "cleric" && document.getElementById("cleric-guardian")?.checked))) return false;

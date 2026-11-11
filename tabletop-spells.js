@@ -326,8 +326,9 @@
     return Math.max(1, Number.parseInt(document.getElementById("level")?.value || "1", 10) || 1);
   }
 
+  // 屬性用有效值（含魔法物品，character-rules.js 的 getEffectiveAbilityValue）。
   function getAbilityModifier(abilityId) {
-    const score = Number.parseInt(document.getElementById(abilityId)?.value || "10", 10);
+    const score = Number.parseInt((globalScope.getEffectiveAbilityValue?.(abilityId) ?? document.getElementById(abilityId)?.value) || "10", 10);
     return Number.isFinite(score) ? Math.floor((score - 10) / 2) : 0;
   }
 

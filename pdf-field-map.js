@@ -1197,7 +1197,9 @@ function isWeaponRowEmpty(payload, slot) {
     });
   }
 
-  function buildPdfFieldPayload(state, options = {}) {
+  function buildPdfFieldPayload(sourceState, options = {}) {
+    // 屬性格與用到屬性的數字寫有效值：匯出流程以 options.abilityScores 傳入頁面算好的有效值（魔法物品），存檔本身仍是原值。
+    const state = options.abilityScores ? { ...sourceState, ...options.abilityScores } : sourceState;
     const payload = {};
     const classKey = normalizeText(state.class);
     const backgroundKey = normalizeText(state.background);

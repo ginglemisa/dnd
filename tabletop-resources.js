@@ -408,7 +408,7 @@
         ability.disabled = amount.disabled = true;
         use.addEventListener("change", () => { ability.disabled = amount.disabled = !use.checked; });
         ability.addEventListener("change", () => {
-          amount.value = String(Math.max(0, companionChoice.level + globalScope.calculateAbilityModifier(document.getElementById(ability.value)?.value || 10)));
+          amount.value = String(Math.max(0, companionChoice.level + globalScope.calculateAbilityModifier((globalScope.getEffectiveAbilityValue?.(ability.value) ?? document.getElementById(ability.value)?.value) || 10)));
         });
         section.appendChild(createElement("p", "", isLong ? "長休先清空臨時 HP，再套用此數值。"
           : `目前臨時 HP：${globalScope.TabletopMode.collectState().temporaryHp}。套用會替換，不相加。`));
@@ -670,8 +670,8 @@
       className: document.getElementById("class")?.value || "",
       race: document.getElementById("race")?.value || "",
       level: document.getElementById("level")?.value || "",
-      wisdomScore: document.getElementById("wis")?.value || "10",
-      charismaScore: document.getElementById("cha")?.value || "10"
+      wisdomScore: (globalScope.getEffectiveAbilityValue?.("wis") ?? document.getElementById("wis")?.value) || "10",
+      charismaScore: (globalScope.getEffectiveAbilityValue?.("cha") ?? document.getElementById("cha")?.value) || "10"
     }).filter(spec => spec.target.type === "builtIn").map(spec => ({
       ...spec,
       note: spec.kind === "points"

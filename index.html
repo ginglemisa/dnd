@@ -108,22 +108,22 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261111-magic-advantage">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261111-magic-wear-held">
-  <link rel="stylesheet" href="css/sheet-spells.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261111-magic-abilities">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261111-magic-abilities">
+  <link rel="stylesheet" href="css/sheet-spells.css?v=20261111-magic-abilities">
   <link rel="stylesheet" href="css/utility.css?v=20261110-footer-one-line">
   <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
   <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/tabletop.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261111-magic-advantage-inline">
+  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261111-merge-abilities">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
   <link rel="stylesheet" href="css/quick-build.css?v=20261110-safari">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261110-safari" defer></script>
   <script src="magic-item-content.generated.js?v=0" defer></script>
-  <script src="magic-items.js?v=20261111-magic-vocab" defer></script>
+  <script src="magic-items.js?v=20261111-magic-abilities" defer></script>
   <script src="monster-content.generated.js?v=0" defer></script>
   <script src="monster.js?v=20261108-wild-shape-ux" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261108-new-forms" defer></script>
@@ -136,18 +136,18 @@
   <script src="equipment-notes.js?v=20261109-merge-main" defer></script>
   <script src="spell-content.generated.js?v=0" defer></script>
   <script src="spell-list.js?v=20261107-companion-variant" defer></script>
-  <script src="condition.js?v=20261021-bonus-wording" defer></script>
-  <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
-  <script src="character-rules.js?v=20261111-magic-advantage" defer></script>
+  <script src="condition.js?v=20261111-magic-abilities" defer></script>
+  <script src="action-panel.js?v=20261111-magic-abilities" defer></script>
+  <script src="character-rules.js?v=20261111-magic-abilities" defer></script>
   <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261111-magic-advantage-inline" defer></script>
+  <script src="tabletop-mode.js?v=20261111-merge-abilities" defer></script>
   <script src="tabletop-druid.js?v=20261111-merge-main" defer></script>
-  <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
-  <script src="tabletop-actions.js?v=20261111-magic-vocab" defer></script>
+  <script src="tabletop-resources.js?v=20261111-magic-abilities" defer></script>
+  <script src="tabletop-actions.js?v=20261111-magic-abilities" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
-  <script src="tabletop-spells.js?v=20261109-item-actions" defer></script>
+  <script src="tabletop-spells.js?v=20261111-magic-abilities" defer></script>
   <script src="legal-modal.js?v=20261110-safari" defer></script>
   <script src="onboarding-tour.js?v=20261109-merge-main" defer></script>
   <script src="quick-build.js?v=20261108-css-refactor-b7" defer></script>
@@ -866,32 +866,32 @@
       <div class="ability">
         <div class="ability-title">STR</div>
         <div class="modifier" id="str-mod"></div>
-        <input type="number" id="str" class="ability-score" min="1" max="20" placeholder="力量">
+        <input type="number" id="str" class="ability-score" min="1" max="30" placeholder="力量">
       </div>
       <div class="ability">
         <div class="ability-title">DEX</div>
         <div class="modifier" id="dex-mod"></div>
-        <input type="number" id="dex" class="ability-score" min="1" max="20" placeholder="敏捷">
+        <input type="number" id="dex" class="ability-score" min="1" max="30" placeholder="敏捷">
       </div>
       <div class="ability">
         <div class="ability-title">CON</div>
         <div class="modifier" id="con-mod"></div>
-        <input type="number" id="con" class="ability-score" min="1" max="20" placeholder="體質">
+        <input type="number" id="con" class="ability-score" min="1" max="30" placeholder="體質">
       </div>
       <div class="ability">
         <div class="ability-title">INT</div>
         <div class="modifier" id="int-mod"></div>
-	<input type="number" id="int" class="ability-score" min="1" max="20" placeholder="智力">
+	<input type="number" id="int" class="ability-score" min="1" max="30" placeholder="智力">
       </div>
       <div class="ability">
         <div class="ability-title">WIS</div>
         <div class="modifier" id="wis-mod"></div>
-        <input type="number" id="wis" class="ability-score" min="1" max="20" placeholder="感知">
+        <input type="number" id="wis" class="ability-score" min="1" max="30" placeholder="感知">
       </div>
       <div class="ability">
         <div class="ability-title">CHA</div>
         <div class="modifier" id="cha-mod"></div>
-        <input type="number" id="cha" class="ability-score" min="1" max="20" placeholder="魅力">
+        <input type="number" id="cha" class="ability-score" min="1" max="30" placeholder="魅力">
       </div>
     </div>
   </div>
@@ -1167,6 +1167,7 @@
     <div class="equipment-loadout-heading">
       <h3>裝備</h3>
       <p class="equipment-loadout-intro">從攜帶物品中選擇裝備。</p>
+      <button id="attunement-open" type="button" hidden aria-haspopup="dialog">同調 0/3</button>
     </div>
 
     <div class="equipment-loadout-controls">
@@ -1442,7 +1443,7 @@
   </div>
 
   <script src="sheet-utils.js?v=20261024-index-split"></script>
-  <script src="feat-ui.js?v=20261105-feat-categories"></script>
+  <script src="feat-ui.js?v=20261111-magic-abilities"></script>
   <script src="spell-sources.js?v=20261109-item-actions"></script>
   <script src="class-features-ui.js?v=20261111-magic-wear-held"></script>
   <script>
@@ -1516,7 +1517,7 @@ function updateHPDisplay() {
   const maxHp = calculateCharacterMaxHp({
     className: classValue,
     level: document.getElementById("level").value || "1",
-    constitutionScore: document.getElementById("con").value || "10",
+    constitutionScore: getEffectiveAbilityValue("con") || "10",
     race: document.getElementById("race").value,
     hasToughFeat: hasSelectedFeat("強韌體魄")
   });
@@ -1809,7 +1810,7 @@ function updateSpeedDisplay() {
     isWearingArmor: Boolean(armorName) && !isShieldItem(armorName),
     isWearingHeavyArmor: armor?.分類 === "重甲",
     armorStrengthRequirement: armor?.力量需求,
-    strengthScore: document.getElementById("str")?.value,
+    strengthScore: getEffectiveAbilityValue("str"),
     hasShield,
     hasSpeedyFeat: hasSelectedFeat("迅捷步法")
   }) || "--";
@@ -2240,10 +2241,10 @@ function updateACDisplay() {
     hasArmor,
     className,
     level: document.getElementById("level")?.value || "1",
-    dexterityScore: document.getElementById("dex")?.value || "10",
-    constitutionScore: document.getElementById("con")?.value || "10",
-    wisdomScore: document.getElementById("wis")?.value || "10",
-    charismaScore: document.getElementById("cha")?.value || "10",
+    dexterityScore: getEffectiveAbilityValue("dex") || "10",
+    constitutionScore: getEffectiveAbilityValue("con") || "10",
+    wisdomScore: getEffectiveAbilityValue("wis") || "10",
+    charismaScore: getEffectiveAbilityValue("cha") || "10",
     hasAnyShield: hasOffHandShield || hasArmorShield,
     hasShield,
     hasDefenseFightingStyle: hasDefenseFightingStyleFeat(),
@@ -3093,23 +3094,43 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
         }
       }
 
-      const mod = calculateModifier(input.valueAsNumber);
+      // 調整值用有效值；魔法物品改變屬性時，調整值旁加 ✦ 標記，點了（觸控也可）在規則說明浮層顯示「有效 21・巨人之力腰帶（山丘）」。
+      const effective = getEffectiveAbilityScore(input.id);
+      const mod = calculateModifier(effective.score ?? input.valueAsNumber);
       if (!mod) {
         modDisplay.textContent = "";
         return;
       }
       modDisplay.innerHTML = `<span class="modifier-main">${mod}</span>`;
+      if (effective.changed) modDisplay.appendChild(createAbilityEffectTip(input.id, effective));
+    }
+
+    const ABILITY_EFFECT_LABELS = { str: "力量", dex: "敏捷", con: "體質", int: "智力", wis: "感知", cha: "魅力" };
+    function createAbilityEffectTip(ability, effective) {
+      const label = ABILITY_EFFECT_LABELS[ability];
+      const text = `有效 ${effective.score}・${effective.sources.join("、")}`;
+      const tip = document.createElement("button");
+      tip.type = "button";
+      tip.className = "skill-tip ability-effect-tip";
+      tip.dataset.skill = label;
+      tip.dataset.tipText = text;
+      tip.textContent = "✦";
+      tip.setAttribute("aria-controls", "skillPopup");
+      tip.setAttribute("aria-label", `${label}${text}`);
+      return tip;
     }
 
     const abilities = ["str", "dex", "con", "int", "wis", "cha"];
+    const abilityDisplayUpdates = [];
     abilities.forEach(ability => {
       const input = document.getElementById(ability);
       const modDisplay = document.getElementById(`${ability}-mod`);
       const groupMod = document.querySelector(`.skill-group-mod[data-ability="${ability}"]`);
       const update = () => {
         updateAbilityScore(input, modDisplay);
-        if (groupMod) groupMod.textContent = calculateModifier(input.valueAsNumber);
+        if (groupMod) groupMod.textContent = calculateModifier(getEffectiveAbilityScore(ability).score ?? input.valueAsNumber);
       };
+      abilityDisplayUpdates.push(update);
       input.addEventListener("input", update);
       input.addEventListener("change", update);
 
@@ -3118,6 +3139,8 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
         input.dispatchEvent(new Event("input"));
       }
     });
+    // 只重畫屬性格（調整值與有效值那一行），不派送事件：載入存檔時物品的裝備位置最後才對應，用這個補畫。
+    window.refreshAbilityScoreDisplays = () => abilityDisplayUpdates.forEach(update => update());
   </script>
 
 <script>
@@ -3132,12 +3155,13 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="search.js?v=20261109-magic-version" defer></script>
 <script src="equipment-shop.js?v=20261109-merge-main2" defer></script>
 <script src="inventory.js?v=20261111-magic-wear-held" defer></script>
-<script src="inventory-ui.js?v=20261111-magic-wear-held" defer></script>
+<script src="inventory-ui.js?v=20261111-magic-abilities" defer></script>
 <script src="magic-item-shop.js?v=20261111-magic-vocab" defer></script>
 
 <script>
+// 屬性調整值用有效值（屬性欄的原值加上生效中的魔法物品，character-rules.js 的 getEffectiveAbilityValue）。
 function getModifier(statId) {
-  return calculateAbilityModifier(document.getElementById(statId).value || "10");
+  return calculateAbilityModifier(getEffectiveAbilityValue(statId) || "10");
 }
 
 /** 依等級回傳熟練加值（先做完整 1~20 規則，未來你擴充等級也不用再改） */
@@ -3327,7 +3351,7 @@ function updatePassivePerceptionDisplay() {
 }
 
 function updateAutomaticInitiative() {
-  const dexRaw = String(document.getElementById("dex")?.value ?? "").trim();
+  const dexRaw = getEffectiveAbilityValue("dex");
   const initiative = document.getElementById("initiative-input");
   if (!initiative || !isAutomaticKeyStatsEnabled()) return;
   if (!dexRaw) {
@@ -3489,7 +3513,7 @@ function finishDerivedChecksLoad(data) {
   syncAutomaticKeyStatsMode({ refresh: false });
 }
 </script>
-<script src="pdf-launcher.js?v=20261111-merge-private-assets"></script>
+<script src="pdf-launcher.js?v=20261111-magic-abilities"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -4964,7 +4988,7 @@ function updateArmorInfo() {
 }
 </script>
 <script src="sheet-spells.js?v=20261108-monster-srd"></script>
-<script src="rule-tips.js?v=20261108-monster-srd"></script>
+<script src="rule-tips.js?v=20261111-magic-abilities"></script>
 <script>
 const SPELL_QR_IMAGE_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwAQMAAAAEm3vRAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABD0lEQVRYhe2YMQ6DMAxFXTFk5EgcjR6NIzEyINLYDk6ahpSiiun/BeHH9GXHPxBB96v3UXN4GZayAlzHq7o3zp2nIRSfqQLcwKG26Qu5ragAf8FdeC4PMRX4X5j2+QY+g9N8k2uOP7Bh2xx8Kkor1lcN8Hmcy0/UErBJLQzTzI/JbXFTs7vAh1gVVwibOu6dmLUicIHlDGQv/UriJUuPRwK+iEUcEVmCg9XSuwR8iHsZa3bSTOVYs2QLGvgDJ3GEtixtNxXgCziPNXovoS4ff+AqzvJ0bNBOvwduYutA2yXyHQGfwjEMcpZ2FVOBr2GyWLMvaOADLEqd+h5rgKs4DrTXVvTy56C87AH/hqG79QLS1jgHWvai8gAAAABJRU5ErkJggg==";
 
@@ -5912,6 +5936,7 @@ function applyStateObjectNow(data) {
   syncMain2ShieldControl({ legalize: true });
   // 物品的裝備位置不進存檔：裝備欄位都還原後才重新對應（舊資料也從這裡把已裝備的物品拿出來）。
   window.InventoryUI?.syncEquippedSlots({ restoring: true });
+  window.refreshAbilityScoreDisplays?.();
   refreshMagicSpellCastingStats();
   updateACDisplay();
   updateSpeedDisplay();
@@ -6520,7 +6545,8 @@ function readNonNegativeInt(id) {
 // 可攜負重：力量值 ×15，種族內容檔有 carryMultiplier 時再乘上（例如歌利亞 ×2）。錢財區與物品欄負重共用。
 function getCarryCapacityPounds() {
   const carryMultiplier = 15 * (getRaceRules(document.getElementById("race")?.value || "")?.carryMultiplier || 1);
-  return readNonNegativeInt("str") * carryMultiplier;
+  const strength = Number.parseInt(getEffectiveAbilityValue("str") || "0", 10);
+  return (Number.isFinite(strength) ? Math.max(strength, 0) : 0) * carryMultiplier;
 }
 
 // 硬幣不分幣值，每 50 枚 1 磅（與錢財區「貨幣數量」相同的四種幣值）。
@@ -6946,6 +6972,8 @@ window.addEventListener("DOMContentLoaded", async function() {
   let previousMainHand = mainHandSelect.value;
   let previousOffHand = offHandSelect.value;
   let activeMagicEffectsKey = JSON.stringify(getActiveMagicEffects());
+  const readEffectiveAbilityScores = () => Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map(id => [id, getEffectiveAbilityValue(id)]));
+  let activeAbilityScores = readEffectiveAbilityScores();
   // 物品欄變動時重建裝備下拉（保留目前選取），並排入自動儲存。
   document.addEventListener("inventory:change", (event) => {
     refreshWeaponSelections();
@@ -6958,6 +6986,13 @@ window.addEventListener("DOMContentLoaded", async function() {
     const magicKey = JSON.stringify(getActiveMagicEffects());
     // 穿上或脫下精靈之靴等不影響數字的物品也要更新技能格的「優勢」標籤。
     updateSkillAdvantageTags();
+    // 魔法物品改變屬性有效值時，比照玩家改屬性欄重算一次（調整值、技能、豁免、生命值、AC、攻擊、法術數值、跑團畫面等）。
+    // 屬性欄的原值不變，只派送 input 事件；載入存檔途中只重畫屬性格，其餘由載入流程最後統一計算。
+    const abilityScores = readEffectiveAbilityScores();
+    const changedAbilities = Object.keys(abilityScores).filter(id => abilityScores[id] !== activeAbilityScores[id]);
+    activeAbilityScores = abilityScores;
+    if (changedAbilities.length && characterStateLoadDepth) window.refreshAbilityScoreDisplays?.();
+    else changedAbilities.forEach(id => document.getElementById(id)?.dispatchEvent(new Event("input", { bubbles: true })));
     if (magicKey === activeMagicEffectsKey && event.detail?.reason !== "form") return;
     activeMagicEffectsKey = magicKey;
     updateACDisplay();

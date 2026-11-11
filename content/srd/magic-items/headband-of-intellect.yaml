@@ -8,6 +8,6 @@ group: wearable
 rarity: uncommon
 attunement: true
 use: worn
-manualEffect: true
+effects: { abilities: { int: { set: 19 } } }
 text: |-
   你穿戴這條頭帶時，你的智力為19。若你不靠它智力就已是19或更高，它對你沒有效果。

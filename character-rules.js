@@ -753,6 +753,8 @@
    *   extraDamage [{ dice, type, label }]（type 為傷害類型 ID 或 weapon）、damageType、finesse、thrown [一般, 遠]、proficiencyAs、
    *   unarmed { dice, type, label }（這一手是武藝時的 unarmedStrike）、notes（武器說明的提示文字）。
    *   weapons（射手護腕等）與 unarmedStrike 來自裝備著的物品，依那一手的基本款（context.handBases）套用。
+   * - abilities：屬性效果 { str: [{ label, itemId, set }｜{ label, itemId, bonus, max }｜{ label, itemId, setBonus, max, from }], … }，
+   *   物品生效（已同調；有基本款的要裝備著，沒有基本款的依使用方式；效果寫 when: owned 時持有就算）才列；有效值由 getEffectiveAbilityScore() 計算。
    * - hints：提示 [{ uid, label, panel, detail, advantage }]，同一件物品在同一處合成一筆；panel 為 overview 或 skills。
    *   有基本款的物品要裝備著（拿在手上或穿著），沒有基本款的依使用方式；hint.when 為 owned 時持有就算。
    * context 可傳 { wearingArmor, usingShield, handBases }，省略時讀目前的裝備欄位。
@@ -765,6 +767,7 @@
       spellAttack: 0,
       spellSaveDc: 0,
       sources: [],
+      abilities: {},
       hints: []
     };
     const addHandBonus = (hand, label, attack, damage) => {
@@ -805,8 +808,12 @@
           result.hints.push({ uid: entry.uid, label, panel, detail, advantage: [...(hint.advantage || [])] });
         }
       });
-      if (!usable) return;
       const effects = catalog.getEffects(entry.magic.id, selection);
+      // 屬性效果寫 when: owned 時持有（需同調的已同調）就算，不看穿戴或手持（雷鳴巨棒、雷神之錘）。
+      Object.entries(effects.abilities || {}).forEach(([ability, { when, ...effect }]) => {
+        if (when === "owned" || equipped) (result.abilities[ability] ||= []).push({ ...effect, label, itemId: rule.id });
+      });
+      if (!usable) return;
       // 防禦者：玩家把部分加值轉到 AC 時，攻擊與傷害減少、AC 增加相同數值（裝備在手上且已同調才有 getBonusTransfer）。
       const transferred = hand ? inventory.getBonusTransfer?.(entry.uid)?.value || 0 : 0;
       if (transferred) {
@@ -862,6 +869,45 @@
       if (!result[target].includes(hint.label)) result[target].push(hint.label);
     }));
     return result;
+  }
+
+  /**
+   * 屬性有效值（純計算）：rawText 是屬性欄的原值，contributions 是 getActiveMagicEffects().abilities 的其中一項。
+   * 順序：原值 → 加值依序加上（每筆夾在自己的上限，不會降低）→ 與設定值比（setBonus 加在 from 物品的設定值上，夾上限）→ 取最高。
+   * 回傳 { raw, base, score, value, sources, changed }：base 是原值數字、score 是有效值數字（原值不是整數時兩者為 null，物品不影響），
+   * value 是給計算用的文字（原值空白時為空字串）、sources 是決定有效值的物品名稱（原值最高時為空陣列）。
+   */
+  function calculateEffectiveAbilityScore(rawText, contributions = []) {
+    const raw = String(rawText ?? "").trim();
+    const base = /^[+-]?\d+$/.test(raw) ? Number(raw) : null;
+    if (base === null) return { raw, base: null, score: null, value: raw, sources: [], changed: false };
+    let score = base;
+    let sources = [];
+    contributions.filter(item => item.bonus).forEach((item) => {
+      const next = Math.min(score + item.bonus, item.max ?? Infinity);
+      if (next <= score) return;
+      score = next;
+      sources = [...sources, item.label];
+    });
+    contributions.filter(item => item.set).forEach((item) => {
+      const boosters = contributions.filter(other => other.setBonus && other.from.includes(item.itemId));
+      const boosted = boosters.reduce((value, other) => Math.min(value + other.setBonus, other.max), item.set);
+      if (boosted <= score) return;
+      score = boosted;
+      sources = [item.label, ...boosters.filter(() => boosted > item.set).map(other => other.label)];
+    });
+    return { raw, base, score, value: String(score), sources, changed: score !== base };
+  }
+
+  /** 目前屬性欄（#str 等）的有效值：原值加上目前生效的魔法物品（見 calculateEffectiveAbilityScore）；effects 可傳已算好的 getActiveMagicEffects()。 */
+  function getEffectiveAbilityScore(ability, effects = getActiveMagicEffects()) {
+    const field = globalScope.document?.getElementById?.(ability);
+    return calculateEffectiveAbilityScore(field ? field.value : "", effects.abilities?.[ability] || []);
+  }
+
+  /** 計算用的屬性值文字：原值空白時為空字串（呼叫端照舊補 10），其餘是有效值。 */
+  function getEffectiveAbilityValue(ability, effects) {
+    return getEffectiveAbilityScore(ability, effects).value;
   }
 
   /** 計算 AC，包含無甲防禦、護甲、盾牌、防禦戰鬥風格與魔法物品加值（magicBonus，由 getActiveMagicEffects() 算出、呼叫端決定哪些部分生效）。 */
@@ -1023,6 +1069,9 @@
     calculateArmorClass,
     getActiveMagicEffects,
     getMagicItemAdvantages,
+    calculateEffectiveAbilityScore,
+    getEffectiveAbilityScore,
+    getEffectiveAbilityValue,
     calculateCharacterMaxHp,
     calculateCharacterSpeed,
     calculateProficiencyBonus,

@@ -1356,6 +1356,91 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => TabletopMode.setPanel("skills"));
     await page.waitForFunction(() => document.querySelector("#tabletop-panel-skills .tabletop-defense-summary__list")?.textContent.includes("矮人腰帶：與矮人、灰矮人互動"));
     await page.evaluate(() => { TabletopMode.setPanel("overview"); TabletopMode.setMode("sheet"); });
+    // 屬性有效值的算法：原值 → 加值（各自夾上限、不會降低）→ 與設定值比（setBonus 加在 from 物品的設定值上）→ 取最高。
+    assert.deepEqual(await page.evaluate(() => {
+      const belt = { label: "腰帶", itemId: "belt-of-giant-strength", set: 21 };
+      const hammer = { label: "錘", itemId: "hammer-of-thunderbolts", setBonus: 4, max: 30, from: ["belt-of-giant-strength", "gauntlets-of-ogre-power"] };
+      const stone = label => ({ label, itemId: "ioun-stone", bonus: 2, max: 20 });
+      const pick = ({ value, sources, changed }) => [value, sources.join("、"), changed];
+      return [
+        pick(calculateEffectiveAbilityScore("15", [belt])),
+        pick(calculateEffectiveAbilityScore("20", [{ ...belt, set: 19 }])),
+        pick(calculateEffectiveAbilityScore("19", [stone("石")])),
+        pick(calculateEffectiveAbilityScore("20", [stone("石")])),
+        pick(calculateEffectiveAbilityScore("15", [stone("石一"), stone("石二")])),
+        pick(calculateEffectiveAbilityScore("18", [stone("石"), { ...belt, set: 19 }])),
+        pick(calculateEffectiveAbilityScore("15", [belt, hammer])),
+        pick(calculateEffectiveAbilityScore("15", [{ ...belt, set: 29 }, hammer])),
+        pick(calculateEffectiveAbilityScore("15", [hammer])),
+        pick(calculateEffectiveAbilityScore("", [belt]))
+      ];
+    }), [
+      ["21", "腰帶", true], ["20", "", false], ["20", "石", true], ["20", "", false], ["19", "石一、石二", true],
+      ["20", "石", true], ["25", "腰帶、錘", true], ["30", "腰帶、錘", true], ["15", "", false], ["", "", false]
+    ], "effective ability scores: set, capped bonuses that stack, set bonuses on another item, blank scores");
+    // 生效中的物品（已同調且穿戴／手持）改變調整值、技能、豁免、生命值、攻擊與負重；屬性欄與存檔仍是原值。
+    // 調整值旁的 ✦ 標記：aria-label 寫出有效值與物品，沒有物品影響時不出現。
+    const abilityNumbers = extra => page.evaluate(([base, extra]) => {
+      applyStateObject({ ...base, "prof-str": true, "prof-con": true, ...extra });
+      const value = id => document.getElementById(id).value;
+      return {
+        str: [value("str"), document.querySelector("#str-mod .modifier-main").textContent, document.querySelector("#str-mod .ability-effect-tip")?.getAttribute("aria-label") || ""],
+        con: [document.querySelector("#con-mod .modifier-main").textContent, value("hp-display"), value("save-con")],
+        checks: [value("skill-運動"), value("save-str"), value("atk-main-hit"), getCarryCapacityPounds()],
+        saved: collectStateObject().str
+      };
+    }, [magicBase, extra]);
+    const giantBelt = { uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-giant-strength", giant: "hill" } };
+    assert.deepEqual(await abilityNumbers({ mainHand: "長劍", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }) }), {
+      str: ["16", "+3", ""], con: ["+1", "39", "+4"], checks: ["+3", "+6", "+6", 240], saved: "16"
+    }, "without magic items the sheet uses the raw scores");
+    assert.deepEqual(await abilityNumbers({ mainHand: "長劍", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, giantBelt, { uid: "amulet", quantity: 1, attuned: true, worn: true, magic: { id: "amulet-of-health" } }) }), {
+      str: ["16", "+5", "力量有效 21・巨人之力腰帶（山丘）"], con: ["+4", "54", "+7"], checks: ["+5", "+8", "+8", 315], saved: "16"
+    }, "the Belt of Giant Strength and Amulet of Health set the effective scores while the fields keep the raw values");
+    const strengthOf = async extra => (await abilityNumbers(extra)).str.slice(1);
+    assert.deepEqual(await strengthOf(inventoryOf({ ...giantBelt, worn: false })), ["+3", ""], "a belt in the pack does nothing");
+    assert.deepEqual(await strengthOf(inventoryOf({ ...giantBelt, attuned: false })), ["+3", ""], "an unattuned belt does nothing");
+    const hammerOf = (extra = {}) => ({ uid: "hammer", itemId: "戰錘", quantity: 1, attuned: true, magic: { id: "hammer-of-thunderbolts" }, ...extra });
+    assert.deepEqual(await strengthOf({ mainHand: "雷神之錘（戰錘）", ...inventoryOf(hammerOf(), giantBelt) }), ["+7", "力量有效 25・巨人之力腰帶（山丘）、雷神之錘（戰錘）"], "the Hammer of Thunderbolts adds 4 to the belt");
+    // 雷神之錘與雷鳴巨棒的屬性效果寫 when: owned：同調就算，不用拿在手上。
+    assert.deepEqual(await strengthOf(inventoryOf(hammerOf(), giantBelt)), ["+7", "力量有效 25・巨人之力腰帶（山丘）、雷神之錘（戰錘）"], "the attuned hammer adds without being held");
+    assert.deepEqual(await strengthOf(inventoryOf(hammerOf({ attuned: false }), giantBelt)), ["+5", "力量有效 21・巨人之力腰帶（山丘）"], "an unattuned hammer adds nothing");
+    assert.deepEqual(await strengthOf(inventoryOf(hammerOf(), { ...giantBelt, worn: false })), ["+3", ""], "the belt still has to be worn for the hammer to add");
+    assert.deepEqual(await strengthOf({ mainHand: "雷神之錘（戰錘）", ...inventoryOf(hammerOf()) }), ["+3", ""], "the hammer alone sets nothing");
+    assert.deepEqual(await strengthOf({ mainHand: "雷鳴巨棒", ...inventoryOf({ uid: "club", itemId: "巨棒", quantity: 1, attuned: true, magic: { id: "thunderous-greatclub" } }) }), ["+5", "力量有效 20・雷鳴巨棒"], "the Thunderous Greatclub sets Strength 20 while held");
+    assert.deepEqual(await strengthOf(inventoryOf({ uid: "club", itemId: "巨棒", quantity: 1, attuned: true, magic: { id: "thunderous-greatclub" } })), ["+5", "力量有效 20・雷鳴巨棒"], "an attuned Thunderous Greatclub in the pack still sets Strength 20");
+    assert.deepEqual(await strengthOf(inventoryOf({ uid: "stone", quantity: 1, attuned: true, worn: true, magic: { id: "ioun-stone", kind: "strength" } }, { uid: "gauntlets", quantity: 1, attuned: true, worn: true, magic: { id: "gauntlets-of-ogre-power" } })),
+      ["+4", "力量有效 19・食人魔力量護手"], "the higher of a capped bonus (18) and a set value (19) wins");
+    assert.deepEqual((await abilityNumbers(inventoryOf({ uid: "dwarf", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-dwarvenkind" } }))).con.slice(0, 2), ["+2", "44"], "the Belt of Dwarvenkind adds 2 Constitution");
+    // 力量需求用有效力量：食人魔力量護手讓穿鎖子甲（力量 13）的角色不降速。
+    const speedWith = extra => page.evaluate(([base, extra]) => { applyStateObject({ ...base, str: "10", armor: "鎖子甲", ...extra }); return document.getElementById("speed-display").value; }, [magicBase, extra]);
+    const mail = { uid: "mail", itemId: "鎖子甲", quantity: 1 };
+    assert.deepEqual([await speedWith(inventoryOf(mail)), await speedWith(inventoryOf(mail, { uid: "gauntlets", quantity: 1, attuned: true, worn: true, magic: { id: "gauntlets-of-ogre-power" } }))], ["20", "30"], "the armor Strength requirement reads the effective Strength");
+    // 點 ✦ 在規則說明浮層顯示有效值與物品。
+    await abilityNumbers(inventoryOf(giantBelt));
+    const previousTab = await page.evaluate(() => document.querySelector(".tab-content:not([hidden])")?.id.replace(/^tab-/u, "") || "");
+    await page.evaluate(() => showTab("basic"));
+    await page.locator("#str-mod .ability-effect-tip").click();
+    assert.deepEqual(await page.evaluate(() => [getComputedStyle(document.getElementById("skillPopup")).display, document.querySelector("#skillPopup .title").textContent, document.querySelector("#skillPopup .content").textContent.replace(/\s+/gu, "")]),
+      ["block", "力量", "力量有效21・巨人之力腰帶（山丘）"], "the marker opens the rule popup with the effective score and its source");
+    await page.keyboard.press("Escape");
+    if (previousTab) await page.evaluate(tab => showTab(tab), previousTab);
+    // 屬性欄可以輸入到 30；購點與擲屬性的規則不變。
+    assert.deepEqual(await page.evaluate(() => {
+      const field = document.getElementById("str");
+      const type = value => { field.value = value; field.dispatchEvent(new Event("input", { bubbles: true })); return field.value; };
+      const result = [type("25"), document.querySelector("#str-mod .modifier-main").textContent, type("35")];
+      type("16");
+      return result;
+    }), ["25", "+7", "30"], "ability fields accept up to 30");
+    // 跑團模式的屬性調整值比照形態標記寫出物品名稱（在擲骰按鈕之外），數值不帶角色卡的 ✦。
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("overview"); });
+    await page.waitForFunction(() => document.querySelector("#tabletop-ability-modifiers .tabletop-ability-modifier__source")?.textContent === "(巨人之力腰帶（山丘）)");
+    assert.deepEqual(await page.evaluate(() => {
+      const marked = document.querySelector("#tabletop-ability-modifiers .tabletop-ability-modifier__source").closest(".tabletop-ability-modifier");
+      return [marked.querySelector(".tabletop-ability-modifier__value").textContent, document.querySelectorAll("#tabletop-ability-modifiers .tabletop-ability-modifier__source").length];
+    }), ["+5", 1], "tabletop shows the effective Strength modifier followed by the item name");
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
     // 魔法款沿用基本款的規則：熟練、護甲訓練、力量需求、重甲、雙手與攻擊列名稱。
     assert.deepEqual(await page.evaluate(([base]) => {
       const held = (extra, ...items) => applyStateObject({ ...base, ...extra, __inventory: { version: 1, items } });
