@@ -1740,6 +1740,42 @@ async function validateMagicContainers(page) {
     const after = await history();
     assert.deepEqual(after.slice(0, 3), ["運動（力量）檢定", "運動（力量）檢定", "運動（力量）檢定"], "each escape roll is in the dice history");
     assert.equal(after.length, Math.min(historyBefore.length + 3, 66), "the hidden timer adds nothing to the dice history");
+    // 自訂物品不吃（使用者決定）：袋子裡只有自訂物品時不計時；混合時到期就把最上層的自訂物品連同裡面的東西吐到身上（描述保留），
+    // 明細只列被吃的目錄物品，另加「吞噬袋似乎不喜歡這個味道，把…吐了出來。」；放棄只移除被吃的那些。
+    await page.evaluate(() => {
+      window.__devourRandom = 0;
+      Inventory.add([{ name: "日記", desc: "給妹妹的信" }], { into: "bd" });
+    });
+    assert.deepEqual(await advance(3600), [1, false], "a bag holding only custom items does not time");
+    await page.evaluate(() => {
+      Inventory.add([{ name: "自訂背包", container: true }], { into: "bd" });
+      const pack = Inventory.childrenOf("bd").find(entry => entry.name === "自訂背包").uid;
+      Inventory.add([{ itemId: "火把" }, { name: "地圖" }], { into: pack });
+      Inventory.add([{ itemId: "繩索" }], { into: "bd" });
+      Inventory.add([{ itemId: "背包" }], { into: "bd" });
+      const bag = Inventory.childrenOf("bd").find(entry => entry.itemId === "背包").uid;
+      Inventory.add([{ name: "筆記" }], { into: bag });
+    });
+    assert.deepEqual(await advance(119), [7, false], "adding catalog items starts the hidden timer");
+    assert.deepEqual(await advance(2), [2, true], "at expiry the custom items are spat out before the dialog shows; only the catalog items stay in the bag");
+    const mixed = devourDialog.filter({ hasText: "吞噬袋吃掉了你的道具！" });
+    await mixed.waitFor();
+    assert.deepEqual(await mixed.locator(".app-dialog__body p").allTextContents(), ["吞噬袋吃掉了你的道具！", "繩索、背包", "吞噬袋似乎不喜歡這個味道，把日記、自訂背包（火把、地圖）、筆記吐了出來。"],
+      "the dialog lists only the eaten catalog items and names what was spat out");
+    await mixed.getByRole("button", { name: "放棄" }).click();
+    assert.deepEqual(await page.evaluate(() => {
+      const top = Inventory.entries().filter(entry => !entry.in && Inventory.isCustom(entry));
+      const pack = top.find(entry => entry.name === "自訂背包");
+      return {
+        bag: Inventory.descendantsOf("bd").length,
+        top: top.map(entry => [entry.name, entry.desc || ""]),
+        pack: Inventory.childrenOf(pack.uid).map(entry => Inventory.getLabel(entry)),
+        eaten: Inventory.entries().filter(entry => ["繩索", "背包"].includes(entry.itemId)).length
+      };
+    }), { bag: 0, top: [["日記", "給妹妹的信"], ["自訂背包", ""], ["筆記", ""]], pack: ["火把", "地圖"], eaten: 0 },
+    "giving up removes only the eaten catalog items; custom items stay on the character with their notes, a custom container keeps everything inside it");
+    assert.deepEqual(await advance(3600), [0, false], "the emptied bag does not time");
+    await page.evaluate(() => Inventory.entries().filter(entry => !entry.in && Inventory.isCustom(entry)).forEach(entry => Inventory.remove(entry.uid, { keepContents: false })));
   } finally {
     await page.evaluate(() => {
       Date.now = window.__devourReal.now;
