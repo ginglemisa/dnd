@@ -1547,6 +1547,24 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:bonus:magic-item-boots-of-speed-click-heels", true));
     assert.deepEqual((await itemButtons("bonus")).map(([key]) => key), ["magic-item-pipes-of-the-sewers-call-rats"], "item buttons can be hidden with the usual preference key");
     await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:bonus:magic-item-boots-of-speed-click-heels", false));
+    // 第 5b 步：沒有次數池的物品也有按鈕（只有說明）；穿戴類要穿上，沒有 use 的寫 when: owned（帶著就算），手持類要拿在手上。
+    await page.evaluate(([base]) => {
+      applyStateObject({ ...base, mainHand: "", offHand: "", __inventory: { version: 1, items: [
+        { uid: "ring", quantity: 1, attuned: true, worn: true, magic: { id: "ring-of-invisibility" } },
+        { uid: "rod", quantity: 1, magic: { id: "immovable-rod" } },
+        { uid: "rope", quantity: 1, magic: { id: "rope-of-entanglement" } },
+        { uid: "spell-ring", quantity: 1, attuned: true, magic: { id: "ring-of-spell-turning" } }
+      ] } });
+      TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions");
+    }, [magicBase]);
+    assert.deepEqual([(await itemButtons("action")).map(([key, text]) => [key, text]), (await itemButtons("bonus")).map(([key, text]) => [key, text]), (await itemButtons("reaction")).map(([key]) => key)], [
+      [["magic-item-ring-of-invisibility-vanish", "隱形隱形戒指"], ["magic-item-immovable-rod-button", "按下按鈕不動權杖"]],
+      [["magic-item-ring-of-invisibility-appear", "重新現身隱形戒指"]],
+      []
+    ], "step 5b: description-only item buttons follow use (worn ring, carried rod); a rope not in hand and an unworn ring have none");
+    await page.locator("#tabletop-action-tab-action").click();
+    await page.locator('[data-action-option-key="magic-item-immovable-rod-button"]').click();
+    assert.equal(await page.locator("#tabletop-action-panel-action .tabletop-action-resource-use").count(), 0, "buttons without a pool only show their description");
     // 第 6 步：從物品施放的法術（含念珠項鍊的附贈動作法術）不在動作／附贈／反應頁，而在法術頁的「物品」分組。
     await page.evaluate(([base]) => {
       applyStateObject({ ...base, mainHand: "威力法杖", offHand: "", __inventory: { version: 1, items: [
