@@ -1364,9 +1364,14 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.match(await lastToast(), /彈藥用完：箭矢\+1剩 0，這次沒有扣。/u, "firing with no arrows says the ammunition is out");
     assert.deepEqual(await stacks(), [["bow", 1, "", false], ["quiver", 1, "", false], ["arrows", 0, "", false], ["plain", 20, "", false], ["plus2", 4, "", false], ["spare", 0, "quiver", true], ["bolts", 5, "", false]],
       "nothing is used once the equipped ammunition is empty, and empty stacks are kept");
+    // 跑團武器卡在 inventory:change 後的下一個 animation frame 才重畫（tabletop-actions.js 的 scheduleRender）：等彈藥行消失再讀，
+    // 2 秒內沒消失照樣失敗。
+    const ammoLineGone = () => page.waitForFunction(() => !document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo"), null, { timeout: 2000 });
     await page.evaluate(() => Inventory.setAmmo("spare", false));
+    await ammoLineGone();
     assert.deepEqual([await page.evaluate(() => Inventory.getEntry("spare")?.quantity), await ammoLine()], [0, null], "taking off empty ammunition keeps it");
     await page.evaluate(() => Inventory.setAmmo("bolts", true));
+    await ammoLineGone();
     await fireBow();
     assert.deepEqual([await page.evaluate(() => Inventory.getEntry("bolts").quantity), await ammoLine()], [5, null], "bolts are not used by a longbow");
     // 普通箭矢用完時同樣只換普通箭矢，不會換上魔法箭矢。
