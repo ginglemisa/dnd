@@ -4947,6 +4947,42 @@ async function verifyInventoryPersistence(browser, url) {
       assert.equal(await sharedAmmo.getByRole("button", { name: /裝備箭矢|卸下箭矢/u }).count(), 0, "share mode cannot change the equipped ammunition");
       assert.match(await sharedAmmo.locator(".inventory-item-actions").innerText(), /裝備中。跑團模式擲短弓、長弓的命中時扣 1 枚。/u, "share mode shows the ammunition state");
     } finally { await ammoShared.close(); }
+    // 第 9 步：魔法容器（次元袋、吞噬袋等）裡的物品存在原本的 in 欄位，autosave、JSON、分享都還原，異次元容器裡的物品不算重量。
+    // 舊存檔的這些袋子以前不是容器：一筆兩件的次元袋載入拆成兩筆。分享模式不計吞噬袋的時間。
+    const bagState = { class: "fighter", level: "5", mainHand: "", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "holding", quantity: 1, magic: { id: "bag-of-holding" } },
+      { uid: "rope", itemId: "繩索", quantity: 1, in: "holding" },
+      { uid: "devour", quantity: 1, magic: { id: "bag-of-devouring" } },
+      { uid: "torch", itemId: "火把", quantity: 2, in: "devour" }
+    ] } };
+    const bagSnapshot = target => target.evaluate(() => ({ state: Inventory.getState().items, weight: Inventory.getWeight().weight }));
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, bagState);
+    const bagExpected = { state: bagState.__inventory.items, weight: await page.evaluate(() => Inventory.getUnitWeight(Inventory.getEntry("holding")) + 2 * Inventory.getUnitWeight(Inventory.getEntry("torch"))) };
+    assert.deepEqual(await bagSnapshot(page), bagExpected, "items sit in the magic bags; the rope in the bag of holding weighs nothing");
+    await page.goto(url);
+    assert.deepEqual(await bagSnapshot(page), bagExpected, "autosave restores items in the magic bags");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await bagSnapshot(page), bagExpected, "JSON restores items in the magic bags");
+    assert.deepEqual(await page.evaluate(() => {
+      applyStateObject({ class: "fighter", level: "5", __inventory: { version: 1, items: [{ uid: "old", quantity: 2, magic: { id: "bag-of-holding" } }, { uid: "r", itemId: "繩索", quantity: 1 }] } });
+      return Inventory.getState().items.map(item => [item.magic?.id || item.itemId, item.quantity, item.uid === "old"]);
+    }), [["bag-of-holding", 1, true], ["bag-of-holding", 1, false], ["繩索", 1, false]], "an old save's stack of two bags of holding loads as two containers");
+    await page.evaluate(state => applyStateObject(state), bagState);
+    const bagHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const bagShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = bagHash;
+      await bagShared.goto(sharedUrl.href);
+      await bagShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await bagSnapshot(bagShared), bagExpected, "share restores items in the magic bags");
+      // 分享模式不計時：時鐘往後調一小時、回到頁面，吞噬袋的東西還在、沒有視窗。
+      assert.deepEqual(await bagShared.evaluate(() => {
+        const realNow = Date.now;
+        Date.now = () => realNow() + 3600 * 1000;
+        try { document.dispatchEvent(new Event("visibilitychange")); } finally { Date.now = realNow; }
+        return [Inventory.descendantsOf("devour").length, document.documentElement.classList.contains("app-dialog-open")];
+      }), [1, false], "share mode never times the devouring bag");
+    } finally { await bagShared.close(); }
     // 次數池的剩餘次數（charges）存在那一筆物品上，autosave、JSON、分享都還原；舊資料沒有這個欄位就是滿的。
     // 分享模式可以調整次數（和法術位一樣只在頁面記憶體），看的人的本機存檔不變。
     const chargesState = { class: "fighter", level: "5", mainHand: "", offHand: "", armor: "", __inventory: { version: 1, items: [

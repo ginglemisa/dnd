@@ -867,7 +867,8 @@ async function validateMagicItemShop(page) {
       weights: ["長劍+2", "次元袋", "健康護符", "治療藥水（高等）", "箭矢+1"].map(label => Inventory.getUnitWeight(find(label)))
     };
   }), {
-    tags: ["長劍+2", "次元袋", "健康護符", "治療藥水", "治療藥水（高等）", "命令術法術卷軸", "箭矢+1 ×20"],
+    // 次元袋是容器（第 9 步），排在最外層的「容器」分組。
+    tags: ["長劍+2", "健康護符", "治療藥水", "治療藥水（高等）", "命令術法術卷軸", "箭矢+1 ×20", "次元袋"],
     custom: 0,
     weights: [3, 5, null, 0.5, 0.05]
   }, "magic items are labelled by the catalog and are not custom items");
@@ -1534,6 +1535,140 @@ async function validateInventory(page) {
   await validateMagicItemCharges(page);
   await validateItemSpells(page);
   await validateMagicAmmunition(page);
+  await validateMagicContainers(page);
+}
+
+// 魔法容器（內容檔 container 詞）：次元袋等是容器、舊存檔一筆多件拆開、異次元容器裡（含更深層）不算重量、吞噬袋照算、
+// 兩個異次元容器互放只提示不刪除、箭袋裡的裝備彈藥照常扣；吞噬袋的隱藏計時不經 DiceRoller、到期跳視窗並移除內容物。
+async function validateMagicContainers(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  const data = await page.evaluate(() => {
+    applyStateObject({ class: "fighter", level: "5", mainHand: "長弓", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "bow", itemId: "長弓", quantity: 1 },
+      { uid: "bh", quantity: 2, magic: { id: "bag-of-holding" } },
+      { uid: "hh", quantity: 1, magic: { id: "handy-haversack" } },
+      { uid: "ph", quantity: 1, magic: { id: "portable-hole" } },
+      { uid: "eq", quantity: 1, magic: { id: "efficient-quiver" } },
+      { uid: "bd", quantity: 1, magic: { id: "bag-of-devouring" } },
+      { uid: "tricks", quantity: 1, magic: { id: "bag-of-tricks", color: "gray" } },
+      { uid: "bp", itemId: "背包", quantity: 1, in: "bh" },
+      { uid: "rope", itemId: "繩索", quantity: 1, in: "bp" },
+      { uid: "arrows", itemId: "箭矢", quantity: 2, in: "eq", ammo: true },
+      { uid: "torch", itemId: "火把", quantity: 3, in: "bd" }
+    ] } });
+    const unit = uid => Inventory.getUnitWeight(Inventory.getEntry(uid));
+    const outer = ["bow", "bh", "hh", "ph", "eq", "bd", "tricks", "torch"];
+    const result = {
+      containers: ["bh", "hh", "ph", "eq", "bd", "tricks", "bow"].map(uid => Inventory.isContainer(Inventory.getEntry(uid))),
+      traits: ["bh", "eq", "bd", "tricks"].map(uid => Inventory.getMagicContainer(Inventory.getEntry(uid))),
+      split: Inventory.entries().filter(entry => entry.magic?.id === "bag-of-holding").map(entry => [entry.quantity, entry.uid === "bh"]),
+      placed: ["bp", "rope", "arrows", "torch"].map(uid => Inventory.getEntry(uid).in),
+      targets: Inventory.getContainerTargets("rope").length,
+      weight: Inventory.getWeight(),
+      unweighted: Inventory.entries().filter(entry => !Number.isFinite(Inventory.getUnitWeight(entry))).map(entry => entry.magic?.id || entry.itemId),
+      inner: ["bp", "rope", "arrows"].map(uid => unit(uid) > 0),
+      nestingBefore: Inventory.getExtradimensionalNesting()
+    };
+    // 算重量的：最外層的物品、第二個次元袋與吞噬袋裡的火把；次元袋裡的背包、繩索與箭袋裡的箭矢不算。
+    const counted = [...outer, Inventory.entries().find(entry => entry.magic?.id === "bag-of-holding" && entry.uid !== "bh").uid];
+    result.expected = counted.reduce((sum, uid) => sum + (unit(uid) || 0) * Inventory.getEntry(uid).quantity, 0);
+    // 隔著背包也算放進異次元空間；吞噬袋不算異次元容器。
+    Inventory.update("hh", { in: "bp" });
+    Inventory.update("eq", { in: "bd" });
+    result.nesting = Inventory.getExtradimensionalNesting();
+    result.kept = ["hh", "bh"].map(uid => Boolean(Inventory.getEntry(uid)));
+    Inventory.update("eq", { in: "" });
+    // 箭袋裡的裝備彈藥照常扣。
+    result.ammo = Inventory.useAmmo()?.quantity;
+    Inventory.restore(Inventory.getState());
+    result.roundTrip = ["bp", "rope", "hh", "torch"].map(uid => Inventory.getEntry(uid)?.in);
+    result.emptied = Inventory.emptyContainer("bh");
+    result.afterEmpty = ["bp", "rope", "hh", "bh"].map(uid => Boolean(Inventory.getEntry(uid)));
+    result.emptyAgain = Inventory.emptyContainer("bh");
+    return result;
+  });
+  assert.deepEqual(data.containers, [true, true, true, true, true, false, false], "bags with the container word are containers; the bag of tricks is not");
+  assert.deepEqual(data.traits, [{ extradimensional: true }, { extradimensional: true }, { devour: "2d6" }, null], "container traits come from the content file");
+  assert.deepEqual(data.split, [[1, true], [1, false]], "an old stack of two bags of holding loads as two single containers");
+  assert.deepEqual(data.placed, ["bh", "bp", "eq", "bd"], "items can sit in the magic containers");
+  assert.ok(data.targets >= 6, "magic containers are offered as places");
+  assert.deepEqual(data.unweighted, ["portable-hole", "bag-of-devouring", "bag-of-tricks"], "only bags without a listed weight are unknown");
+  assert.deepEqual(data.inner, [true, true, true], "the items inside the bags have their own weight");
+  assert.deepEqual(data.weight, { weight: Math.round(data.expected * 100) / 100, unknown: 3 },
+    "items inside extradimensional containers (also inside a backpack in them) weigh nothing, the bags themselves and the devouring bag's contents still count");
+  assert.deepEqual(data.nestingBefore, [], "no nesting at first");
+  assert.deepEqual(data.nesting, [{ inner: "hh", outer: "bh" }], "a haversack in a backpack in a bag of holding is reported; the devouring bag is not extradimensional");
+  assert.deepEqual(data.kept, [true, true], "nesting never deletes the bags");
+  assert.equal(data.ammo, 1, "equipped ammunition in the efficient quiver is still used");
+  assert.deepEqual(data.roundTrip, ["bh", "bp", "bp", "bd"], "containment in magic containers survives a save round trip");
+  assert.equal(data.emptied, "背包（便利袋、繩索）", "emptying returns what was inside (in inventory order)");
+  assert.deepEqual(data.afterEmpty, [false, false, false, true], "emptying removes everything inside but keeps the bag");
+  assert.equal(data.emptyAgain, "", "an empty container returns nothing");
+
+  // 介面：異次元容器的說明、互放提示（載入時不提示）。
+  await page.evaluate(() => {
+    AppDialog.dismissToasts();
+    Inventory.restore({ version: 1, items: [
+      { uid: "bh", quantity: 1, magic: { id: "bag-of-holding" } },
+      { uid: "hh", quantity: 1, magic: { id: "handy-haversack" }, in: "bh" },
+      { uid: "bd", quantity: 1, magic: { id: "bag-of-devouring" } },
+      { uid: "ph", quantity: 1, magic: { id: "portable-hole" } }
+    ] });
+  });
+  assert.equal(await page.locator(".app-toast", { hasText: "摧毀兩件物品" }).count(), 0, "loading nested bags shows no warning");
+  await page.evaluate(() => InventoryUI.openItemDialog("bh"));
+  const bagDialog = page.locator('.app-dialog[data-variant="inventory-item"]');
+  await bagDialog.waitFor();
+  assert.match(await bagDialog.locator(".inventory-item-note").first().innerText(), /內含 1 項物品；異次元空間裡的物品不算重量，只算容器本身。/u, "the bag of holding explains its weight");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => InventoryUI.openItemDialog("bd"));
+  await bagDialog.waitFor();
+  assert.match(await bagDialog.locator(".inventory-item-note").first().innerText(), /可以放入其他物品；容器不會減輕內容物的重量。/u, "the devouring bag reads like a plain container");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => Inventory.update("ph", { in: "bh" }));
+  const warning = page.locator(".app-toast", { hasText: "把便攜式次元洞放進次元袋會立即摧毀兩件物品" });
+  await warning.waitFor();
+  assert.match(await warning.innerText(), /角色卡不會自動刪除，請和 DM 確認後自行處理。/u, "moving one extradimensional container into another only warns");
+  assert.equal(await page.evaluate(() => Inventory.entries().length), 4, "nothing is deleted");
+  await page.evaluate(() => { Inventory.update("bh", { quantity: 1 }); AppDialog.dismissToasts(); });
+  assert.equal(await page.locator(".app-toast", { hasText: "摧毀兩件物品" }).count(), 0, "an unrelated change does not repeat the warning");
+
+  // 吞噬袋：放進東西就悄悄計時（Math.random 固定為最小值 → 2d6 = 2 分鐘），不進擲骰歷史、不提示；時鐘過了到期時間、回到頁面時跳視窗。
+  // 主管決定：視窗讓玩家選「從物品欄移除」或「先保留」；先保留時袋子裡還有東西就重新計時。
+  const advance = seconds => page.evaluate((value) => {
+    window.__devourOffset = value * 1000;
+    document.dispatchEvent(new Event("visibilitychange"));
+    return [Inventory.descendantsOf("bd").length, document.documentElement.classList.contains("app-dialog-open")];
+  }, seconds);
+  const history = await page.evaluate(() => {
+    window.__devourReal = { now: Date.now, random: Math.random };
+    window.__devourOffset = 0;
+    Date.now = () => window.__devourReal.now() + window.__devourOffset;
+    Math.random = () => 0;
+    const count = dndStorage.getItem("dnd.diceRollHistory.v1");
+    Inventory.add([{ itemId: "背包" }], { into: "bd" });
+    const pack = Inventory.childrenOf("bd")[0].uid;
+    Inventory.add([{ itemId: "火把", quantity: 2 }], { into: pack });
+    return count;
+  });
+  try {
+    assert.deepEqual(await advance(119), [2, false], "nothing happens and nothing is shown before the hidden time is up");
+    assert.deepEqual(await advance(121), [2, true], "the dialog opens when the clock passes the hidden 2d6 minutes; nothing is removed yet");
+    const eaten = page.locator(".app-dialog", { hasText: "吞噬袋把裡面的東西吞掉了！" });
+    await eaten.waitFor();
+    assert.match(await eaten.innerText(), /背包（火把 ×2）[\s\S]*要從物品欄移除這些物品嗎？/u, "the dialog lists what was eaten");
+    assert.equal(await eaten.locator(".app-dialog__button--primary").innerText(), "從物品欄移除", "removing is the primary choice");
+    await eaten.getByRole("button", { name: "先保留" }).click();
+    assert.deepEqual(await advance(122), [2, false], "keeping the items starts a new hidden timer instead of asking again at once");
+    assert.deepEqual(await advance(242), [2, true], "the new timer runs out two minutes later");
+    await eaten.getByRole("button", { name: "從物品欄移除" }).click();
+    assert.deepEqual(await page.evaluate(() => [Inventory.descendantsOf("bd").length, Boolean(Inventory.getEntry("bd")), dndStorage.getItem("dnd.diceRollHistory.v1")]), [0, true, history],
+      "removing empties the bag, keeps the bag, and never touches the dice history");
+    assert.deepEqual(await advance(3600), [0, false], "an empty bag does not time");
+  } finally {
+    await page.evaluate(() => { Date.now = window.__devourReal.now; Math.random = window.__devourReal.random; delete window.__devourReal; delete window.__devourOffset; });
+  }
+  assert.equal(await page.evaluate(() => Inventory.getExtradimensionalNesting().length), 2, "the devouring bag leaves the other bags (the haversack and the hole in the bag of holding) alone");
 }
 
 // 魔法物品的次數池：存檔整理（滿的不記、不存在的池拿掉）、不合併、拆出的那件是滿的、匯入預檢，以及物品詳情的 −／＋ 與恢復按鈕。
