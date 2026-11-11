@@ -6,6 +6,7 @@ const path = require("node:path");
 const http = require("node:http");
 const vm = require("node:vm");
 const { chromium } = require("playwright");
+const { missingPrivateAssets, privateAssetsSkipped, MISSING_HELP } = require("./tools/copy-private-assets");
 
 // Code moved out of index.html loads in place as local scripts without defer/async.
 function getExtractedPageScriptFiles(html) {
@@ -891,7 +892,11 @@ async function verifyPdf(page, fieldsOnly) {
   await page.addScriptTag({ url: "/pdf-lib.custom.min.js" });
   await page.addScriptTag({ url: "/fontkit.custom.min.js" });
   await page.addScriptTag({ url: "/pdf-export.js" });
-  await page.evaluate(async () => {
+  // Without the private repo (npm test -- --no-private-assets) only the checks that load the
+  // official sheet's template or font are skipped; see tools/copy-private-assets.js.
+  const skipOfficial = privateAssetsSkipped();
+  if (!skipOfficial) assert.deepEqual(missingPrivateAssets(), [], MISSING_HELP);
+  await page.evaluate(async (skipOfficial) => {
     const expected = new Set(["barbarian", "cleric", "druid", "fighter", "paladin", "ranger"]);
     const template = await PDFLib.PDFDocument.load(await (await fetch('/5e_char_sheet.pdf')).arrayBuffer());
     const originalName2 = template.getForm().getTextField('Name2').acroField.getWidgets()[0].getRectangle();
@@ -1042,24 +1047,27 @@ async function verifyPdf(page, fieldsOnly) {
 
       // Official sheet: every payload value matches a template field of the
       // same kind, template checkbox drawings survive, and compact flattens.
-      const officialTemplate = (await PDFLib.PDFDocument.load(await (await fetch('/5e_char_sheet_of.pdf')).arrayBuffer())).getForm();
       const officialState = { ...window.__officialPdfState, "heroic-inspiration": true };
-      for (const outputMode of ["editable", "compact"]) {
-        for (const [name, value] of Object.entries(buildPdfFieldPayload(officialState, { outputMode, sheetTemplate: "official", characterName: "x" }))) {
-          if ((typeof value === "boolean") !== (officialTemplate.getField(name) instanceof PDFLib.PDFCheckBox)) throw new Error(`Official field kind: ${name}`);
+      let officialForm = null;
+      if (!skipOfficial) {
+        const officialTemplate = (await PDFLib.PDFDocument.load(await (await fetch('/5e_char_sheet_of.pdf')).arrayBuffer())).getForm();
+        for (const outputMode of ["editable", "compact"]) {
+          for (const [name, value] of Object.entries(buildPdfFieldPayload(officialState, { outputMode, sheetTemplate: "official", characterName: "x" }))) {
+            if ((typeof value === "boolean") !== (officialTemplate.getField(name) instanceof PDFLib.PDFCheckBox)) throw new Error(`Official field kind: ${name}`);
+          }
         }
-      }
-      const checkedAppearance = (form, name) => {
-        const normal = form.getCheckBox(name).acroField.getWidgets()[0].getAppearances().normal;
-        return Array.from(form.doc.context.lookup(normal.get(PDFLib.PDFName.of("0"))).getContents()).join(",");
-      };
-      await exportCharacterPdfFromState(officialState, { outputMode: "editable", sheetTemplate: "official", characterName: "艾尼克斯・薩卡蘭姆", englishName: "Enix" });
-      const officialForm = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm();
-      checkEditingFont(officialForm, "official", "AdobeFanHeitiStd-Bold");
-      if (officialForm.getTextField("name").getText() !== "艾尼克斯‧薩卡蘭姆") throw new Error("Official name uses a glyph the font has");
-      if (!officialForm.getCheckBox("hero insp").isChecked() || officialForm.getCheckBox("light").isChecked()) throw new Error("Official checkbox values");
-      for (const name of ["hero insp", "light", "ds1s", "chk-c1"]) {
-        if (checkedAppearance(officialForm, name) !== checkedAppearance(officialTemplate, name)) throw new Error(`Official checkbox keeps template drawing: ${name}`);
+        const checkedAppearance = (form, name) => {
+          const normal = form.getCheckBox(name).acroField.getWidgets()[0].getAppearances().normal;
+          return Array.from(form.doc.context.lookup(normal.get(PDFLib.PDFName.of("0"))).getContents()).join(",");
+        };
+        await exportCharacterPdfFromState(officialState, { outputMode: "editable", sheetTemplate: "official", characterName: "艾尼克斯・薩卡蘭姆", englishName: "Enix" });
+        officialForm = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm();
+        checkEditingFont(officialForm, "official", "AdobeFanHeitiStd-Bold");
+        if (officialForm.getTextField("name").getText() !== "艾尼克斯‧薩卡蘭姆") throw new Error("Official name uses a glyph the font has");
+        if (!officialForm.getCheckBox("hero insp").isChecked() || officialForm.getCheckBox("light").isChecked()) throw new Error("Official checkbox values");
+        for (const name of ["hero insp", "light", "ds1s", "chk-c1"]) {
+          if (checkedAppearance(officialForm, name) !== checkedAppearance(officialTemplate, name)) throw new Error(`Official checkbox keeps template drawing: ${name}`);
+        }
       }
       // A reader redraws an edited field from DA, so a shrunken field must
       // record the reduced size it was drawn at, not its preferred size.
@@ -1072,7 +1080,7 @@ async function verifyPdf(page, fieldsOnly) {
         ["official", "class-a-2", { "class-extra": numberedLines(30) }, 7],
         ["third-party", "extra1", { "gear-extra": "長".repeat(160) }, 9.9],
         ["third-party", "extra1", { "gear-extra": numberedLines(9) }, 9]
-      ]) {
+      ].filter(([sheetTemplate]) => !skipOfficial || sheetTemplate !== "official")) {
         await exportCharacterPdfFromState({ class: "fighter", level: "1", ...notes }, { outputMode: "editable", sheetTemplate, characterName: "UI regression" });
         const field = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm().getTextField(name);
         const appearance = new TextDecoder("latin1").decode(PDFLib.decodePDFRawStream(field.acroField.getWidgets()[0].getAppearances().normal).decode());
@@ -1084,26 +1092,30 @@ async function verifyPdf(page, fieldsOnly) {
         const normal = form.getFields().find(field => field.getName().endsWith("_af_image")).acroField.getWidgets()[0].getAppearances()?.normal;
         return Boolean(normal?.dict?.lookup(PDFLib.PDFName.of("Resources"))?.lookup(PDFLib.PDFName.of("XObject")));
       };
-      if (avatarImageDrawn(officialForm)) throw new Error("Official avatar box stays empty without an avatar");
       // A WebP avatar (the format the cropper saves) fills the appearance box.
       const avatarCanvas = document.createElement("canvas");
       avatarCanvas.width = avatarCanvas.height = 64;
       avatarCanvas.getContext("2d").fillRect(0, 0, 32, 32);
       const avatarDataUrl = avatarCanvas.toDataURL("image/webp", 0.82);
-      const avatarResult = await exportCharacterPdfFromState(officialState, { outputMode: "editable", sheetTemplate: "official", characterName: "艾尼克斯", avatarDataUrl });
-      const avatarForm = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm();
-      if (!avatarResult.avatarPlaced || !avatarImageDrawn(avatarForm)) throw new Error("Official editable avatar");
-      const compactAvatar = await exportCharacterPdfFromState(officialState, { outputMode: "compact", sheetTemplate: "official", characterName: "艾尼克斯", avatarDataUrl });
-      const officialCompact = await PDFLib.PDFDocument.load(await blob.arrayBuffer());
-      if (!compactAvatar.avatarPlaced || officialCompact.catalog.has(PDFLib.PDFName.of("AcroForm")) || officialCompact.getPageCount() !== 2) throw new Error("Official compact flattening with avatar");
       const thirdPartyAvatar = await exportCharacterPdfFromState({ class: "fighter", level: "1" }, { outputMode: "compact", characterName: "x", avatarDataUrl });
       if (thirdPartyAvatar.avatarPlaced) throw new Error("Third-party sheet has no avatar box");
-      if (!(await validatePdfEnglishName("Enix".repeat(40), "editable", "official")).fits) throw new Error("Official sheet ignores the English name");
-      const officialName = await validatePdfCharacterName("艾尼克斯", "compact", "official");
-      if (!officialName.fits || Math.abs(officialName.maxWidth - (253.7608 - 26.9363 - 4)) > 0.001) throw new Error("Official name validation width");
+      if (!skipOfficial) {
+        if (avatarImageDrawn(officialForm)) throw new Error("Official avatar box stays empty without an avatar");
+        const avatarResult = await exportCharacterPdfFromState(officialState, { outputMode: "editable", sheetTemplate: "official", characterName: "艾尼克斯", avatarDataUrl });
+        const avatarForm = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm();
+        if (!avatarResult.avatarPlaced || !avatarImageDrawn(avatarForm)) throw new Error("Official editable avatar");
+        const compactAvatar = await exportCharacterPdfFromState(officialState, { outputMode: "compact", sheetTemplate: "official", characterName: "艾尼克斯", avatarDataUrl });
+        const officialCompact = await PDFLib.PDFDocument.load(await blob.arrayBuffer());
+        if (!compactAvatar.avatarPlaced || officialCompact.catalog.has(PDFLib.PDFName.of("AcroForm")) || officialCompact.getPageCount() !== 2) throw new Error("Official compact flattening with avatar");
+        if (!(await validatePdfEnglishName("Enix".repeat(40), "editable", "official")).fits) throw new Error("Official sheet ignores the English name");
+        const officialName = await validatePdfCharacterName("艾尼克斯", "compact", "official");
+        if (!officialName.fits || Math.abs(officialName.maxWidth - (253.7608 - 26.9363 - 4)) > 0.001) throw new Error("Official name validation width");
+      }
     } finally { URL.createObjectURL = create; }
-  });
-  console.log("PDF export: 8 actual PDFs checked, including automatic feat sources, shared name centering, measured equipment/notes wrapping in both modes and both official sheet versions.");
+  }, skipOfficial);
+  console.log(skipOfficial
+    ? "PDF export: third-party sheet PDFs checked. SKIPPED (no private assets): official sheet exports, its template fields, font and avatar box."
+    : "PDF export: 8 actual PDFs checked, including automatic feat sources, shared name centering, measured equipment/notes wrapping in both modes and both official sheet versions.");
 }
 
 async function prepareToastFixture(page) {

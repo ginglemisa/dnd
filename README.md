@@ -64,3 +64,5 @@ This work includes material from the System Reference Document 5.2.1 (“SRD 5.2
 Email：[tsai.reggie428@gmail.com](mailto:tsai.reggie428@gmail.com) · 巴哈姆特站內信：`reggietsai`
 
 歡迎回報問題、提出修改建議、fork 或分享本站。
+
+fork 後執行測試：官方角色卡的範本與字型不公開，請用 `npm test -- --no-private-assets`，只略過需要這兩個檔案的檢查，其他測試照常執行。
