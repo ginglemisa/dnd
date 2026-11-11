@@ -240,14 +240,20 @@
     const mastery = document.getElementById(`${prefix}-mastery`);
     const isAlternateMain = hand === "off" && document.getElementById("offHandAsMain")?.checked === true;
     const beast = globalScope.TabletopMode?.getDruidForm?.();
-    // 自動計算時依跑團狀態重算：野獸形態的力量與敏捷，以及橡棍術持續效果（不看角色卡的「☐橡棍術」）。
+    // 自動計算時依跑團狀態重算：野獸形態的力量與敏捷（含依變身選擇生效的屬性物品），橡棍術持續效果（不看角色卡的「☐橡棍術」），
+    // 以及魔法物品效果（荒野形態時跟著每一格的選擇：那一手選持用時魔法武器的加值、額外傷害骰、傷害類型照算）。
+    const beastModifier = ability => {
+      const value = Number.parseInt(globalScope.TabletopMode?.getDruidEffectiveValue?.(`${ability}-mod`, "") ?? "", 10);
+      return Number.isFinite(value) ? value : globalScope.calculateAbilityModifier(beast.abilities[ability]);
+    };
     const projected = globalScope.isWeaponAttackAutomationEnabled?.()
       ? globalScope.calculateHandAttacks?.({
         shillelaghHand: globalScope.TabletopMode?.getActiveShillelaghHand?.() ?? null,
-        ...(beast ? { strModifier: globalScope.calculateAbilityModifier(beast.abilities.str), dexModifier: globalScope.calculateAbilityModifier(beast.abilities.dex), ignoreMagicEffects: true } : {})
+        magicEffects: globalScope.TabletopMode?.getMagicEffects?.() || undefined,
+        ...(beast ? { strModifier: beastModifier("str"), dexModifier: beastModifier("dex") } : {})
       })?.find(item => item.key === hand)
       : null;
-    // 防禦者的加值分配：融入荒野形態時武器加值不算，不顯示。
+    // 防禦者的加值分配：荒野形態時不顯示步進器（武器加值依變身選擇照算）。
     const held = beast ? null : globalScope.Inventory?.entries().find(entry => entry.slot === (hand === "main" ? "mainHand" : "offHand"));
     return {
       hand,
@@ -644,7 +650,8 @@
       level: document.getElementById("level")?.value || "",
       wisdomScore: (globalScope.getEffectiveAbilityValue?.("wis") ?? document.getElementById("wis")?.value) || "10",
       charismaScore: (globalScope.getEffectiveAbilityValue?.("cha") ?? document.getElementById("cha")?.value) || "10",
-      proficiencyBonus: globalScope.getProficiencyBonus?.()
+      // 荒野形態時熟練加值依變身時的選擇（TabletopMode.getMagicEffects）。
+      proficiencyBonus: globalScope.getProficiencyBonus?.(globalScope.TabletopMode?.getMagicEffects?.() || undefined)
     });
   }
 

@@ -108,7 +108,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261111-magic-abilities">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261112-skill-effect-tips">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261112-magic-effects-8b">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261111-magic-abilities">
   <link rel="stylesheet" href="css/utility.css?v=20261110-footer-one-line">
@@ -116,7 +116,7 @@
   <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/tabletop.css?v=20261111-magic-effects-6">
-  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261111-magic-effects-7">
+  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261112-skill-effect-tips">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
   <link rel="stylesheet" href="css/quick-build.css?v=20261110-safari">
@@ -138,14 +138,14 @@
   <script src="spell-list.js?v=20261111-magic-effects-6" defer></script>
   <script src="condition.js?v=20261111-magic-abilities" defer></script>
   <script src="action-panel.js?v=20261111-magic-effects-4" defer></script>
-  <script src="character-rules.js?v=20261112-magic-effects-8b" defer></script>
+  <script src="character-rules.js?v=20261112-merge-ammo-wildshape" defer></script>
   <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261111-magic-effects-7" defer></script>
+  <script src="tabletop-mode.js?v=20261112-wild-shape-slots" defer></script>
   <script src="tabletop-druid.js?v=20261111-merge-main" defer></script>
-  <script src="tabletop-resources.js?v=20261111-magic-effects-5" defer></script>
-  <script src="tabletop-actions.js?v=20261112-magic-effects-8b" defer></script>
+  <script src="tabletop-resources.js?v=20261112-wild-shape-slots" defer></script>
+  <script src="tabletop-actions.js?v=20261112-merge-ammo-wildshape" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261111-magic-effects-6" defer></script>
   <script src="legal-modal.js?v=20261110-safari" defer></script>
@@ -3370,6 +3370,7 @@ function updatePassivePerceptionDisplay() {
 }
 
 // 先攻的計算值；敏捷空白或無法判讀時為 null。effects 同 getModifier。
+// 魔法物品的所有屬性檢定加值（幸運石，effects.checks）也加在先攻（使用者決定）；角色卡、跑團與 PDF 都讀這個值。
 function getInitiativeTotal(effects = getActiveMagicEffects()) {
   const dexScore = Number.parseInt(getEffectiveAbilityValue("dex", effects), 10);
   if (!Number.isFinite(dexScore)) return null;
@@ -3382,7 +3383,7 @@ function getInitiativeTotal(effects = getActiveMagicEffects()) {
     hasAlertFeat,
     proficiencyBonus
   );
-  return dexMod + (hasAlertFeat ? proficiencyBonus : jackOfAllTradesBonus);
+  return dexMod + (hasAlertFeat ? proficiencyBonus : jackOfAllTradesBonus) + (effects.checks || 0);
 }
 
 function updateAutomaticInitiative() {
@@ -4627,8 +4628,8 @@ function buildStealthPenaltyDetail(penalty) {
   return fragment;
 }
 
-// 魔法物品給的無條件優勢（getMagicItemAdvantages()）：放在技能名稱下方的「優勢」小標籤，滑鼠提示與報讀寫出來源物品。
-// 角色卡技能格與跑團的技能按鈕、先攻格共用；只是顯示，擲骰不會自動擲兩次。
+// 魔法物品給的無條件優勢（getMagicItemAdvantages()）：跑團技能按鈕與先攻格的「優勢」小標籤，滑鼠提示與報讀寫出來源物品。
+// 只是顯示，擲骰不會自動擲兩次。角色卡技能頁改用 ✦（updateSkillEffectTips）。
 function createMagicAdvantageTag(sources) {
   const tag = document.createElement("span");
   tag.className = "magic-advantage-tag";
@@ -4641,17 +4642,45 @@ function createMagicAdvantageTag(sources) {
   return tag;
 }
 
-// 角色卡技能格：有優勢的技能在名稱下方加標籤，沒有的格子不動。
-function updateSkillAdvantageTags(advantages = getMagicItemAdvantages()) {
+// 角色卡技能頁的 ✦（和屬性格同一種 .skill-tip.ability-effect-tip，點了在規則說明浮層 #skillPopup 顯示內容）：
+// - 技能名稱旁：這個技能專屬的效果，無條件優勢「優勢・精靈之靴」與技能固定加值「+5・竊賊手套」，多個來源接在同一個浮層。
+// - 技能頁標題旁：影響全部技能的效果，「所有屬性檢定 +1・幸運石」「熟練加值 +1・艾恩石（精進）」。
+// 沒有物品影響的格子不加任何東西；內容沒變時不重建按鈕。
+function createSkillEffectTip(title, text) {
+  const tip = document.createElement("button");
+  tip.type = "button";
+  tip.className = "skill-tip ability-effect-tip skill-effect-tip";
+  tip.dataset.skill = title;
+  tip.dataset.tipText = text;
+  tip.textContent = "✦";
+  tip.setAttribute("aria-controls", "skillPopup");
+  tip.setAttribute("aria-label", `${title}：${text}`);
+  return tip;
+}
+
+function syncSkillEffectTip(container, title, text) {
+  if (!container) return;
+  const current = container.querySelector(":scope > .skill-effect-tip");
+  if ((current?.dataset.tipText || "") === text) return;
+  current?.remove();
+  if (text) container.appendChild(createSkillEffectTip(title, text));
+}
+
+function updateSkillEffectTips(magic = getActiveMagicEffects()) {
+  const advantages = getMagicItemAdvantages(magic);
   document.querySelectorAll("#tab-skills .skill-cell").forEach((cell) => {
     const skill = cell.querySelector(".skill-tip")?.dataset.skill || "";
-    const name = cell.querySelector(".skill-name");
-    const sources = advantages[skill] || [];
-    const current = name?.querySelector(".magic-advantage-tag");
-    if (current?.title === `優勢：${sources.join("、")}`) return;
-    current?.remove();
-    if (name && sources.length) name.appendChild(createMagicAdvantageTag(sources));
+    const parts = [
+      ...(advantages[skill]?.length ? [`優勢・${advantages[skill].join("、")}`] : []),
+      ...magic.sources.filter(source => source.skills?.[skill]).map(source => `${formatSigned(source.skills[skill])}・${source.label}`)
+    ];
+    syncSkillEffectTip(cell.querySelector(".skill-name"), skill, parts.join("；"));
   });
+  const overall = [
+    ...magic.sources.filter(source => source.checks).map(source => `所有屬性檢定 ${formatSigned(source.checks)}・${source.label}`),
+    ...magic.sources.filter(source => source.proficiencyBonus).map(source => `熟練加值 ${formatSigned(source.proficiencyBonus)}・${source.label}`)
+  ];
+  syncSkillEffectTip(document.querySelector("#skill-bonus-section .skill-section-heading h3"), "技能", overall.join("；"));
 }
 
 function updateEquipmentLoadoutSummary() {
@@ -4759,7 +4788,7 @@ function updateEquipmentLoadoutSummary() {
   if (focusedHand) content.querySelector(`[data-weapon-damage-type-hand="${focusedHand}"]`)?.focus();
   const acValue = document.getElementById("equipment-current-ac-value");
   if (acValue) acValue.textContent = document.getElementById("ac-display")?.value?.trim() || "—";
-  updateSkillAdvantageTags(getMagicItemAdvantages(magic));
+  updateSkillEffectTips(magic);
   updateWeaponMasteryBadges();
   window.ShareReadonly?.onEquipmentChanged();
 }
@@ -4767,19 +4796,22 @@ function updateEquipmentLoadoutSummary() {
 
 // 動作命中傷害
 // options.shillelaghHand：跑團模式依橡棍術持續效果指定生效的一手（null 為不生效）；沒給時依角色卡的「☐橡棍術」。
+// options.magicEffects：要用的魔法物品效果（荒野形態傳 TabletopMode.getMagicEffects()，依變身時每一格的選擇）；沒給時是目前全部生效的物品。
+// options.ignoreMagicEffects：完全不算魔法物品的武器效果（武器資料本身的比較用）。
 function calculateHandAttacks(options = {}) {
   const hasTwoWeaponFighting = hasTwoWeaponFightingStyleFeat();
   const hasArcheryFightingStyle = hasArcheryFightingStyleFeat();
   const shillelaghTargetHand = Object.hasOwn(options, "shillelaghHand") ? options.shillelaghHand : getSheetShillelaghHand();
   const offHandAsMain = isOffHandAlternateMain();
-  const magicHands = getActiveMagicEffects().hands;
+  const magicEffects = options.magicEffects || getActiveMagicEffects();
+  const magicHands = magicEffects.hands;
   const hands = [
     { key: "main", selectId: "mainHand", prefix: "atk-main", usesMainHandRules: true },
     { key: "off", selectId: "offHand", prefix: "atk-off", usesMainHandRules: offHandAsMain }
   ];
   return hands.map(hand => {
     const weaponName = document.getElementById(hand.selectId).value;
-    // 魔法加值跟著那一手的武器；options.ignoreMagicEffects 是荒野形態（只有穿戴中的護甲與盾牌加值保留）。
+    // 魔法加值跟著那一手的武器（荒野形態時那一手選了持用才有，見 options.magicEffects）。
     const magicHand = options.ignoreMagicEffects ? null : magicHands[hand.selectId];
     // 魔法武器改變的傷害類型、靈巧、投擲與徒手打擊直接換進武器資料，下面的判斷都讀換過的資料。
     const weapon = withMagicWeaponEffects(getWeaponOrShieldByName(weaponName), magicHand);
@@ -4794,7 +4826,7 @@ function calculateHandAttacks(options = {}) {
     const cls = document.getElementById("class")?.value || "";
     const isRanged = isRangedWeapon(weapon);
     const isDexEligible = weaponHasProp(weapon, "靈巧");
-    const pb = getProficiencyBonus();
+    const pb = getProficiencyBonus(magicEffects);
     const pactWeapon = isPactWeaponHand(hand.key);
     const originalDamageType = getWeaponOwnDamageType(weapon);
     const damageTypeChoice = getHandDamageTypeChoiceKind(hand.key, { shillelaghHand: shillelaghTargetHand });
@@ -4802,7 +4834,7 @@ function calculateHandAttacks(options = {}) {
     const oneHandedDie = weapon.傷害.split(/\s+/u)[0];
     const versatileDie = getHandVersatileDie(weapon, hand.key);
     const weaponDamage = `${versatileDie || oneHandedDie} ${damageType}`;
-    const proficient = isMonkMartialArts || pactWeapon ? true : isHandWeaponProficient(weapon, magicHand);
+    const proficient = isMonkMartialArts || pactWeapon ? true : isHandWeaponProficient(weapon, magicHand, magicEffects);
     const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive(weaponName) && isMonkWeapon(weapon);
     const shillelaghEffect = hand.key === shillelaghTargetHand
       ? getPreparedShillelaghEffect(weaponName, strMod, damageType)
@@ -6073,6 +6105,8 @@ function applyStateObjectNow(data) {
   refreshMagicSpellCastingStats();
   // 有魔法物品的生命值上限加值（狂戰斧）才重算；沒有的角色維持存檔裡的數字。
   if (getActiveMagicEffects().hitPointsPerLevel) updateHPDisplay();
+  // 有所有檢定加值（幸運石）時先攻也重算；沒有的角色維持存檔裡的數字。
+  if (getActiveMagicEffects().checks) updateAutomaticInitiative();
   updateACDisplay();
   updateSpeedDisplay();
   syncProficiencyUseChecks();
@@ -7120,8 +7154,8 @@ window.addEventListener("DOMContentLoaded", async function() {
     scheduleSaveAllFields();
     // 物品欄變動、同調切換、裝備變更只要改到魔法加值就重算；加值沒變時不動既有流程。切換形態時武器資料也會變。
     const magicKey = JSON.stringify(getActiveMagicEffects());
-    // 穿上或脫下精靈之靴等不影響數字的物品也要更新技能格的「優勢」標籤。
-    updateSkillAdvantageTags();
+    // 穿上或脫下精靈之靴等不影響數字的物品也要更新技能頁的 ✦。
+    updateSkillEffectTips();
     // 魔法物品改變屬性有效值時，比照玩家改屬性欄重算一次（調整值、技能、豁免、生命值、AC、攻擊、法術數值、跑團畫面等）。
     // 屬性欄的原值不變，只派送 input 事件；載入存檔途中只重畫屬性格，其餘由載入流程最後統一計算。
     const abilityScores = readEffectiveAbilityScores();
