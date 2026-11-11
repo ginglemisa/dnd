@@ -2106,6 +2106,50 @@ async function validateMagicAmmunition(page) {
   assert.equal(await item.evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth + 1), true, "the ammunition row fits a 375px dialog");
   await close();
   await page.setViewportSize({ width: 1100, height: 850 });
+  // ×0 經「純文字管理」來回一次：轉成文字寫「箭矢+1 ×0」，整理成標籤時只有彈藥保留 ×0（魔法彈藥查回魔法物品），不會憑空多一枚；之後仍可用 −／＋。
+  // 手上不拿東西：關閉純文字管理時已裝備的武器會補回物品欄，和這裡要看的彈藥無關。
+  await page.evaluate(() => {
+    applyStateObject({ ...collectStateObject(), mainHand: "", offHand: "", armor: "", "gear-notes": "", __inventory: { version: 1, items: [
+      { uid: "m0", itemId: "箭矢", quantity: 0, magic: { id: "ammunition-plus", bonus: 1 }, ammo: true },
+      { uid: "b0", itemId: "弩矢", quantity: 0 },
+      { uid: "a20", itemId: "箭矢", quantity: 20 },
+      { uid: "rope", itemId: "繩索", quantity: 1 }
+    ] } });
+    document.getElementById("gear-notes").value = "";
+  });
+  const more = async (id) => {
+    await page.locator("#inventory-more").click();
+    await page.locator(`#${id}`).click();
+  };
+  await more("inventory-text-only");
+  await page.locator(".app-dialog", { hasText: "只以文字管理物品？" }).getByRole("button", { name: "轉成文字" }).click();
+  await page.waitForFunction(() => Inventory.isTextOnly());
+  assert.equal(await page.locator("#gear-notes").inputValue(), "物品欄：箭矢+1 ×0、弩矢 ×0、箭矢 ×20、繩索", "text mode writes empty ammunition as ×0");
+  await more("inventory-text-only");
+  await page.waitForFunction(() => !Inventory.isTextOnly());
+  await more("inventory-tidy");
+  const tidy = page.locator('.app-dialog[data-variant="inventory-tidy"]');
+  await tidy.waitFor();
+  assert.deepEqual(await tidy.locator(".inventory-tags--preview .inventory-tag").allTextContents(), ["箭矢+1 ×0", "弩矢 ×0", "箭矢 ×20", "繩索"], "the tidy preview keeps ×0 and the magic ammunition name");
+  await tidy.getByRole("button", { name: "轉成標籤" }).click();
+  await tidy.waitFor({ state: "detached" });
+  assert.deepEqual(await page.evaluate(() => Inventory.entries().map(entry => [entry.itemId, entry.magic || null, entry.quantity])), [
+    ["箭矢", { id: "ammunition-plus", bonus: 1 }, 0], ["弩矢", null, 0], ["箭矢", null, 20], ["繩索", null, 1]
+  ], "after the round trip empty ammunition is still ×0 (magic ammunition stays magic) and nothing gains a piece");
+  assert.deepEqual(await page.evaluate(() => ["雜物 ×0", "箭矢 ×0", "箭矢+1 ×3", "長劍+1 ×2"].map(text => (({ itemId, name, magic, quantity }) => [itemId || name, magic?.id || "", quantity])(Inventory.parseItemText(text)))),
+    [["雜物", "", 1], ["箭矢", "", 0], ["箭矢", "ammunition-plus", 3], ["長劍+1", "", 2]], "only ammunition reads ×0 from text; other magic items stay names as before");
+  const boltsUid = await page.evaluate(() => Inventory.entries().find(entry => entry.itemId === "弩矢").uid);
+  await open(boltsUid);
+  await item.getByRole("button", { name: "增加數量" }).click();
+  await item.getByRole("button", { name: "完成" }).click();
+  await item.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(uid => Inventory.getEntry(uid).quantity, boltsUid), 1, "a ×0 stack from text can be raised with +");
+  await open(boltsUid);
+  await item.getByRole("button", { name: "減少數量" }).click();
+  await item.getByRole("button", { name: "完成" }).click();
+  await item.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(uid => Inventory.getEntry(uid)?.quantity, boltsUid), 0, "and lowered back to ×0 with −");
+  await page.evaluate(() => { document.getElementById("gear-notes").value = ""; });
   await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
 }
 
