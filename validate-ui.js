@@ -4855,8 +4855,8 @@ async function verifyInventoryPersistence(browser, url) {
     const dropped = { mainHand: "長劍", offHand: "盾牌", main2Shield: false, main2ShieldItem: "" };
     const droppedState = { class: "fighter", level: "1", hp: "10", mainHand: "", offHand: "", droppedHands: dropped,
       __inventory: { version: 1, items: [{ uid: "sword", itemId: "長劍", quantity: 1 }, { uid: "shield", itemId: "盾牌", quantity: 1 }] } };
-    const droppedSnapshot = target => target.evaluate(() => [TabletopMode.collectState().droppedHands || null,
-      document.getElementById("tabletop-dropped-hands").hidden, document.getElementById("tabletop-dropped-hands").textContent]);
+    const droppedSnapshot = target => target.evaluate(() => (TabletopMode.setMode("tabletop"), TabletopMode.setPanel("overview"), [TabletopMode.collectState().droppedHands || null,
+      document.getElementById("tabletop-dropped-hands").hidden, document.getElementById("tabletop-dropped-hands").textContent]));
     const droppedExpected = [dropped, false, "昏迷時掉落：長劍、盾牌撿回不用了"];
     await page.evaluate(() => dndStorage.setItem("dndchar_autosave_v1", JSON.stringify({ class: "fighter", level: "1" })));
     await page.goto(url);
