@@ -7,6 +7,8 @@ category: wondrous
 group: wearable
 rarity: rare
 attunement: false
+pools:
+  - { id: beads, label: 珠子, max: 9 }
 text: |-
   這條項鍊上掛有1d6 + 3顆珠子。你可以進行魔法動作，取下一顆珠子並將它擲向最遠60呎外。當珠子抵達其軌跡終點時，會以3環_火球術_（豁免DC 15）引爆。
 

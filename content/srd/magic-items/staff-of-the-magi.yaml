@@ -11,6 +11,11 @@ effects: { attack: 2, damage: 2, spellAttack: 2, condition: held }
 hints:
   - panel: skills
     text: 對法術的豁免有優勢。
+pools:
+  - { id: charges, label: 充能, max: 50, recover: dawn, amount: 4d6 + 2 }
+actions:
+  - { id: absorb, name: 法術吸收, type: reaction, text: 另一個生物施放只以你為目標的法術時，法杖吸收它、取消效果，並獲得等同法術環階的充能（請在物品詳情加上）；超過 50 次時法杖爆炸，如同報復打擊。 }
+  - { id: retributive-strike, name: 報復打擊, type: magic, text: 折斷法杖，以法杖為起點的 30 呎發散區域爆炸：你有 50% 機率前往隨機位面避開，否則受到剩餘充能 ×16 的力場傷害；其他生物 DC 17 敏捷豁免，失敗受到剩餘充能 ×6 的力場傷害，成功減半。法杖被摧毀。 }
 text: |-
   這根法杖有50次充能，可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+2加值。你手持它時，法術攻擊檢定獲得+2加值。
 

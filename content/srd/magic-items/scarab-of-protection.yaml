@@ -12,6 +12,10 @@ effects: { ac: 1 }
 hints:
   - panel: skills
     text: 對法術的豁免有優勢。
+pools:
+  - { id: charges, label: 充能, max: 12 }
+actions:
+  - { id: preserve, name: 保存, type: reaction, pool: charges, text: 你對死靈法術或源自不死生物的有害效果豁免失敗時，改為成功。最後一次充能用掉時聖甲蟲被摧毀。 }
 text: |-
   這枚甲蟲形狀的徽章帶在你身上時，提供三種益處。
 

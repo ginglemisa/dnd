@@ -7,5 +7,9 @@ category: ring
 rarity: rare
 attunement: true
 use: worn
+pools:
+  - { id: charges, label: 充能, max: 3, recover: dawn, amount: 1d3 }
+actions:
+  - { id: evade, name: 反射閃避, type: reaction, pool: charges, text: 你的敏捷豁免失敗時，改為成功。 }
 text: |-
   這枚戒指有3次充能，每天黎明恢復1d3次已消耗的充能。穿戴這枚戒指時，當你敏捷豁免失敗，你可以進行反應動作並消耗1次充能，改為使該豁免成功。

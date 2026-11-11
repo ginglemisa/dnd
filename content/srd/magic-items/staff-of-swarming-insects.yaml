@@ -7,6 +7,10 @@ category: staff
 rarity: rare
 attunement: "由吟遊詩人、牧師、德魯伊、術士、契術師或法師"
 base: { fixed: 長棍 }
+pools:
+  - { id: charges, label: 充能, max: 10, recover: dawn, amount: 1d6 + 4 }
+actions:
+  - { id: insect-cloud, name: 蟲雲, type: magic, pool: charges, text: 以你為起點的 30 呎發散區域充滿無害的飛行昆蟲 10 分鐘，對你以外的生物是重度遮蔽；強風會驅散蟲群。 }
 text: |-
   這根法杖有10次充能。
 

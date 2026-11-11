@@ -7,6 +7,10 @@ category: wondrous
 group: tool
 rarity: rare
 attunement: false
+pools:
+  - { id: summon, label: 召喚水元素, max: 1, recover: dawn }
+actions:
+  - { id: summon, name: 召喚水元素, type: magic, pool: summon, when: owned, text: 碗缽裝滿水且你在 5 呎內時，召喚一隻服從你的水元素，在你之後行動，1 小時後、死亡或你以附贈動作遣散時消失。 }
 text: |-
   當這個碗缽裝滿水且你在其5呎內時，你可以進行魔法動作來召喚一隻水元素。該元素生物出現在盡可能靠近碗缽的未被佔據的空間，聽得懂你的語言、服從你的命令，並在你的先攻順位上緊接在你之後進行回合。該元素生物會在1小時後、死亡時，或當你以附贈動作遣散它時消失。直到下次黎明前，碗缽都無法再次這樣使用。
 

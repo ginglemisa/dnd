@@ -9,6 +9,10 @@ attunement: true
 base: { from: [ 長柄刀, 巨劍, 長劍, 刺劍, 彎刀, 鐮刀, 短劍 ] }
 effects: { attack: 1, damage: 1, saves: 1 }
 manualEffect: true
+pools:
+  - { id: luck, label: 幸運, max: 1, recover: dawn }
+  - { id: wish, label: 祈願（今日）, max: 1, recover: dawn }
+  - { id: charges, label: 祈願充能, max: 3 }
 text: |-
   使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。只要武器在你身上，你的豁免也獲得+1加值。
 

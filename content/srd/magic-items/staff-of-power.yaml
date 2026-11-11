@@ -8,6 +8,10 @@ rarity: very-rare
 attunement: "由術士、契術師或法師"
 base: { fixed: 長棍 }
 effects: { attack: 2, damage: 2, ac: 2, saves: 2, spellAttack: 2, condition: held }
+pools:
+  - { id: charges, label: 充能, max: 20, recover: dawn, amount: 2d8 + 4 }
+actions:
+  - { id: retributive-strike, name: 報復打擊, type: magic, text: 折斷法杖，以法杖為起點的 30 呎發散區域爆炸：你有 50% 機率前往隨機位面避開，否則受到剩餘充能 ×16 的力場傷害；其他生物 DC 17 敏捷豁免，失敗受到剩餘充能 ×4 的力場傷害，成功減半。法杖被摧毀。 }
 text: |-
   這根法杖有20次充能，可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+2加值。手持它時，你的AC、豁免與法術攻擊檢定獲得+2加值。
 

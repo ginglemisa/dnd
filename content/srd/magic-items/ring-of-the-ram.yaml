@@ -7,6 +7,11 @@ category: ring
 rarity: rare
 attunement: true
 use: worn
+pools:
+  - { id: charges, label: 充能, max: 3, recover: dawn, amount: 1d3 }
+actions:
+  - { id: ram, name: 公羊頭, type: magic, pool: charges, cost: [ 1, 3 ], text: 對 60 呎內你看得見的一個生物進行遠程法術攻擊（+7），命中時每消耗 1 次充能造成 2d10 力場傷害並推開 5 呎。 }
+  - { id: break, name: 破壞物體, type: magic, pool: charges, cost: [ 1, 3 ], text: 嘗試破壞 60 呎內你看得見、未被穿戴或攜帶的非魔法物體：戒指進行力量檢定，每消耗 1 次充能 +5。 }
 text: |-
   這枚戒指有3次充能，每天黎明恢復1d3次已消耗的充能。穿戴這枚戒指時，你可以進行魔法動作，消耗1至3次充能，對你自身60呎內你看得見的一個生物進行一次遠程法術攻擊。戒指會生成一個幽靈般的公羊頭，並以+7加值進行其攻擊檢定。命中時，你每花費1次充能，目標就受到2d10力場傷害，並被推離你5呎。
 

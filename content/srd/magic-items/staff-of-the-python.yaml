@@ -7,6 +7,11 @@ category: staff
 rarity: uncommon
 attunement: true
 base: { fixed: 長棍 }
+pools:
+  - { id: cooldown, label: 化為巨蟒, max: 1, recover: cooldown, cooldown: 1 小時 }
+actions:
+  - { id: snake, name: 化為巨蟒, type: magic, pool: cooldown, text: 投擲法杖到你 10 呎內未佔據的空間，變成受你控制的巨蟒（與你共用先攻、在你之後行動）。附贈動作讓牠變回法杖，之後 1 小時內不能再用；巨蟒降到 0 生命值時死亡，法杖被摧毀。 }
+  - { id: revert, name: 巨蟒變回法杖, type: bonus, text: 命令巨蟒在牠所在的空間變回法杖；在失去所有生命值之前變回時，牠的生命值全部恢復。 }
 text: |-
   作為魔法動作，你可以投擲這根法杖，使其落在你10呎內一個未被佔據的空間，讓法杖在該空間變成一條**巨蟒**。這條蛇受你控制，與你共用先攻順位，並在你的回合之後立即進行它的回合。
 

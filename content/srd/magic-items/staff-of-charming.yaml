@@ -7,6 +7,11 @@ category: staff
 rarity: rare
 attunement: "由吟遊詩人、牧師、德魯伊、術士、契術師或法師"
 base: { fixed: 長棍 }
+pools:
+  - { id: charges, label: 充能, max: 10, recover: dawn, amount: 1d8 + 2 }
+  - { id: resist, label: 抵抗惑控, max: 1, recover: dawn }
+actions:
+  - { id: reflect, name: 反射惑控, type: reaction, pool: charges, text: 你對只以你為目標的惑控法術豁免成功時，讓那個法術如同由你施放一般反彈回施法者身上。 }
 text: |-
   這根法杖有10次充能。手持法杖時，你可以使用它的任一特性：
 

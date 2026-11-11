@@ -9,6 +9,8 @@ attunement: "由德魯伊、術士、契術師或法師"
 base: { fixed: 長棍 }
 hints:
   - resistances: [ fire ]
+pools:
+  - { id: charges, label: 充能, max: 10, recover: dawn, amount: 1d6 + 4 }
 text: |-
   手持這根法杖時，你對火焰傷害具有抗性。
 

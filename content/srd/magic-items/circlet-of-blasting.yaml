@@ -8,5 +8,7 @@ group: wearable
 rarity: uncommon
 attunement: false
 use: worn
+pools:
+  - { id: scorching-ray, label: 灼熱射線, max: 1, recover: dawn }
 text: |-
   穿戴這個頭飾時，你可以用它施放_灼熱射線_（命中+5）。直到下次黎明前，頭飾都無法再次施放這個法術。

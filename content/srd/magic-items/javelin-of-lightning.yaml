@@ -10,6 +10,8 @@ base: { fixed: 標槍 }
 hints:
   - panel: weapon
     text: 命中時可改為閃電傷害；閃電束（每日一次，見說明）。
+pools:
+  - { id: lightning-bolt, label: 閃電束, max: 1, recover: dawn }
 text: |-
   每次你以這件魔法武器進行攻擊檢定並命中時，你可以讓它造成閃電傷害而非穿刺傷害。
 

@@ -10,6 +10,10 @@ attunement: 由牧師或聖騎士
 use: wornOrHeld
 effects: { spellAttack: 2 }
 manualEffect: true
+pools:
+  - { id: charges, label: 充能, max: 7 }
+actions:
+  - { id: rebuke, name: 純粹斥責, type: magic, pool: charges, text: 120 呎內你看得見、位於地面上的一個生物 DC 20 敏捷豁免（邪魔或不死生物有劣勢），失敗則墜入燃燒的裂隙被摧毀，成功受到 4d6 心靈傷害。 }
 text: |-
   這個護符是善良的強大象徵。觸碰護符的邪魔或不死生物會受到8d6光耀傷害，且每次在其回合結束時仍握著或攜帶護符，就再次受到該傷害。
 

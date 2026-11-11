@@ -7,6 +7,8 @@ category: ring
 rarity: rare
 attunement: false
 use: worn
+pools:
+  - { id: charges, label: 充能, max: 3, recover: dawn, amount: 1d3 }
 text: |-
   這枚戒指有3次充能，每天黎明恢復1d3次已消耗的充能。穿戴這枚戒指時，你可以消耗1次充能，從戒指施放下列法術之一（豁免DC 13）：
 

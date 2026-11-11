@@ -7,7 +7,10 @@ category: wondrous
 group: consumable
 rarity: legendary
 attunement: false
-consumable: true
+pools:
+  - { id: ounces, label: 膠水（盎司）, max: 7 }
+actions:
+  - { id: apply, name: 塗抹膠水, type: action, pool: ounces, when: owned, text: 塗抹 1 盎司覆蓋 1 平方呎的表面，1 分鐘後凝固成永久黏合，只有萬溶劑、以太化之油或祈願術能破除。 }
 text: |-
   這種黏稠的乳白色物質能在任意兩個物體之間形成永久的黏合。它必須存放在內側塗有_滑溜之油_的罐子或瓶子中。被發現時，一個容器內有1d6 + 1盎司。
 

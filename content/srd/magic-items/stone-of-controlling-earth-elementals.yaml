@@ -8,5 +8,9 @@ group: tool
 rarity: rare
 attunement: false
 weight: 5
+pools:
+  - { id: summon, label: 召喚土元素, max: 1, recover: dawn }
+actions:
+  - { id: summon, name: 召喚土元素, type: magic, pool: summon, when: owned, text: 石頭觸碰地面，在你 30 呎內召喚一隻服從你的土元素，在你之後行動，1 小時後、死亡或你以附贈動作遣散時消失。 }
 text: |-
   將這塊5磅重的石頭觸碰地面時，你可以進行魔法動作，召喚一隻**土元素**。該元素生物出現在你30呎內由你選擇的一個未被佔據的空間，服從你的命令，並在你的先攻順位上緊接在你之後進行回合。該元素生物在1小時後、死亡時，或你以附贈動作將其遣散時消失。直到下次黎明前，這塊石頭都無法再次這樣使用。

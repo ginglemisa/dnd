@@ -8,6 +8,8 @@ group: wearable
 rarity: very-rare
 attunement: 由法師
 use: held
+pools:
+  - { id: unknown-spell, label: 未知法術, max: 1, recover: shortRest }
 text: |-
   這頂尖帽具有以下特性。
 

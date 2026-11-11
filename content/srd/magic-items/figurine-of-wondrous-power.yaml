@@ -20,6 +20,10 @@ options:
       - { value: onyx-dog, label: 縞瑪瑙犬, rarity: rare }
       - { value: serpentine-owl, label: 蛇紋石貓頭鷹, rarity: rare }
       - { value: silver-raven, label: 銀渡鴉, rarity: uncommon }
+pools:
+  - { id: cooldown, label: 塑像, max: 1, recover: cooldown, cooldown: 依塑像而定 }
+actions:
+  - { id: animate, name: 丟出塑像, type: magic, pool: cooldown, when: owned, text: 把塑像丟向 60 呎內地面的一點，變成說明指定的友善生物，在你之後行動；持續時間與冷卻依各塑像而定（見說明）。 }
 text: |-
   _異能塑像_是一尊小到能放進口袋的塑像。若你進行魔法動作，將塑像丟向你周圍60呎內地面上的一點，塑像就會變成下方塑像說明中指定的活生物。若該生物將出現的空間被其他生物或物體佔據，或是沒有足夠的空間容納該生物，塑像就不會變成生物。
 

@@ -7,6 +7,8 @@ category: wondrous
 group: tool
 rarity: legendary
 attunement: false
+pools:
+  - { id: charges, label: 充能, max: 3, recover: dawn, amount: 1d3 }
 text: |-
   這個方塊寬3吋，散發著可察覺的魔法能量。方塊的六個面各自對應一個不同的位面，其中一個是物質位面。其他面連結到由DM決定的位面。
 

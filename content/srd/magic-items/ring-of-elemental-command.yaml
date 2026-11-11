@@ -17,6 +17,10 @@ options:
       - { value: water, label: 水, effects: { movement: { swim: 60 } }, hints: [ { languages: [ 水族語 ], text: 可在水下呼吸。 } ] }
 hints:
   - text: 對元素生物的攻擊檢定有優勢，元素生物對你的攻擊檢定有劣勢。
+pools:
+  - { id: charges, label: 充能, max: 5, recover: dawn, amount: 1d4 + 1 }
+actions:
+  - { id: compel, name: 元素驅使, type: magic, text: 60 呎內你看得見的一隻元素生物 DC 18 感知豁免，失敗則被魅惑到你的下個回合開始，由你決定它下個回合的移動與動作。 }
 text: |-
   每枚_命令元素戒指_都連結到四個元素位面之一。連結的位面由DM選擇或隨機決定。例如，_命令元素戒指_（風）連結到風元素位面。
 

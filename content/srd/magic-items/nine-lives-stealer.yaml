@@ -12,6 +12,8 @@ hints:
   - panel: weapon
     text: 擲出 20 時，生命值少於 100 的生物須通過 DC 15 體質豁免，否則死亡（構裝、不死生物自動成功；殺死時用掉 1 次充能）。
 manualEffect: true
+pools:
+  - { id: charges, label: 充能, max: 9 }
 text: |-
   使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+2加值。
 

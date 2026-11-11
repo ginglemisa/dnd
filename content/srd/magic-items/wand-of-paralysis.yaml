@@ -7,6 +7,10 @@ category: wand
 rarity: rare
 attunement: 由施法者
 use: held
+pools:
+  - { id: charges, label: 充能, max: 7, recover: dawn, amount: 1d6 + 1 }
+actions:
+  - { id: paralysis, name: 麻痺射線, type: magic, pool: charges, text: 60 呎內你看得見的一個生物 DC 15 體質豁免，失敗則麻痺 1 分鐘，每個回合結束時重複豁免。 }
 text: |-
   這根魔杖有7次充能。手持它時，你可以進行魔法動作，消耗1次充能，使一道細細的藍色光線從杖尖射向你自身60呎內一個你能看見的生物。目標必須成功通過DC 15的體質豁免，否則陷入麻痺狀態1分鐘。在目標的每個回合結束時，它重複進行該豁免，成功則結束其身上的此效果。
 

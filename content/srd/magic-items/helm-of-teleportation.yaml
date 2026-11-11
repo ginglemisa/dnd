@@ -8,5 +8,7 @@ group: wearable
 rarity: rare
 attunement: true
 use: worn
+pools:
+  - { id: charges, label: 充能, max: 3, recover: dawn, amount: 1d3 }
 text: |-
   這頂頭盔有3次充能。穿戴它時，你可以消耗1次充能，從中施放_傳送術_。頭盔每天黎明恢復1d3次已消耗的充能。

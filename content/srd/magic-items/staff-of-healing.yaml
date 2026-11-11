@@ -7,6 +7,8 @@ category: staff
 rarity: rare
 attunement: "由吟遊詩人、牧師或德魯伊"
 base: { fixed: 長棍 }
+pools:
+  - { id: charges, label: 充能, max: 10, recover: dawn, amount: 1d6 + 4 }
 text: |-
   這根法杖有10次充能。手持法杖時，你可以使用你的施法屬性調整值，從法杖施放下表中的一個法術。表格列出施放各法術需要消耗的充能次數。
 

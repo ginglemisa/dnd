@@ -14,6 +14,10 @@ options:
       - { value: gray, label: 灰色 }
       - { value: rust, label: 鏽紅色 }
       - { value: tan, label: 棕褐色 }
+pools:
+  - { id: tricks, label: 毛茸茸的東西, max: 3, recover: dawn }
+actions:
+  - { id: pull, name: 拉出生物, type: magic, pool: tricks, when: owned, text: 從袋中拉出一個毛茸茸的東西並投擲至多 20 呎，落地後變成依袋子顏色擲骰決定的友善生物，在你之後行動，下次黎明或生命值降到 0 時消失。附贈動作命令它。 }
 text: |-
   這個以灰色、鏽紅色或棕褐色布料製成的袋子看起來是空的。然而，把手伸進袋中，會發現裡面有一個毛茸茸的小東西。
 

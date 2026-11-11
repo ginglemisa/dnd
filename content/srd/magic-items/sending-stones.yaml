@@ -7,6 +7,8 @@ category: wondrous
 group: tool
 rarity: uncommon
 attunement: false
+pools:
+  - { id: sending, label: 短訊術, max: 1, recover: dawn }
 text: |-
   _傳訊石_成對出現，每顆石頭都雕成與另一顆相配，因此容易認出它們是一對。當你觸碰其中一顆石頭時，你可以從它施放_短訊術_。目標是另一顆石頭的持有者。若沒有任何生物持有另一顆石頭，你在使用該石頭時就會立即知道這件事，且你不會施放該法術。
 

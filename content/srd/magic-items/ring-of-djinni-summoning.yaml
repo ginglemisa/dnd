@@ -7,6 +7,10 @@ category: ring
 rarity: legendary
 attunement: true
 use: worn
+pools:
+  - { id: cooldown, label: 召喚風巨靈, max: 1, recover: cooldown, cooldown: 風巨靈離去後 24 小時 }
+actions:
+  - { id: summon, name: 召喚風巨靈, type: magic, pool: cooldown, text: 在你 120 呎內召喚一隻友善、服從你的風巨靈，需要專注，最長 1 小時或直到它的生命值降到 0。風巨靈死亡時戒指變成非魔法物品。 }
 text: |-
   穿戴這枚戒指時，你可以進行魔法動作，從風元素位面召喚一隻特定的**風巨靈**。風巨靈會出現在距離你自身120呎內、由你選擇的一個未被佔據的空間。只要你維持專注，它就會持續存在，最長1小時，或直到它的生命值降至0為止。
 

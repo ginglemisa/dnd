@@ -10,6 +10,10 @@ use: held
 hints:
   - advantage: [ 先攻, 察覺 ]
 manualEffect: true
+pools:
+  - { id: aura, label: 防護靈光, max: 1, recover: dawn }
+actions:
+  - { id: aura, name: 防護靈光, type: magic, pool: aura, text: 把權杖插入地面，散發半徑 60 呎明亮光照、再向外 60 呎微光光照 10 分鐘：明亮光照內的你和盟友 AC 與豁免 +1，並能感知光照內隱形生物的位置。 }
 text: |-
   這根權杖具有下列特性。
 

@@ -8,6 +8,8 @@ group: wearable
 rarity: rare
 attunement: false
 use: worn
+pools:
+  - { id: dimension-door, label: 任意門, max: 1, recover: dawn }
 text: |-
   這件披肩隱約散發硫磺的氣味。穿戴時，你可以用它施放_任意門_，施放時間為魔法動作。此特性直到下次黎明前都無法再次使用。
 

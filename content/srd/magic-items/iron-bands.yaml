@@ -8,6 +8,10 @@ group: tool
 rarity: rare
 attunement: false
 weight: 1
+pools:
+  - { id: bands, label: 鐵索, max: 1, recover: dawn }
+actions:
+  - { id: throw, name: 投擲鐵索, type: magic, pool: bands, when: owned, text: 擲向 60 呎內巨型或更小的生物，遠程攻擊（敏捷調整值＋熟練加值），命中則束縛，直到你以附贈動作下令釋放；DC 20 力量（運動）檢定可扯斷。 }
 text: |-
   這顆生鏽的鐵球直徑3吋、重1磅。你可以進行魔法動作，將這顆球擲向你60呎內你看得見的一個巨型或更小的生物。球在空中移動時，會展開成一團纏結的金屬環帶。
 

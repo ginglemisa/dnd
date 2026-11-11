@@ -7,6 +7,8 @@ category: wand
 rarity: rare
 attunement: 由施法者
 use: held
+pools:
+  - { id: charges, label: 充能, max: 7, recover: dawn, amount: 1d6 + 1 }
 text: |-
   這根魔杖有7次充能。手持它時，你可以消耗不超過3次充能，從中施放_閃電束_（豁免DC 15）。消耗1次充能時，你施放該法術的3環版本。每多消耗1次充能，你可以將法術的環階提高1環。
 
