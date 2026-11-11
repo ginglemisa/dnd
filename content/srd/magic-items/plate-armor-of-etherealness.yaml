@@ -7,7 +7,6 @@ category: armor
 rarity: legendary
 attunement: true
 base: { from: [ 半身板甲, 全身板甲 ] }
-manualEffect: true
 pools:
   - { id: etherealness, label: 以太化, max: 1, recover: dawn }
 actions:

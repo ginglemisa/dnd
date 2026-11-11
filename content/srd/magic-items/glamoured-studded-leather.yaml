@@ -8,7 +8,6 @@ rarity: rare
 attunement: false
 base: { fixed: 鑲釘皮甲 }
 effects: { ac: 1 }
-manualEffect: true
 actions:
   - { id: glamour, name: 變換外觀, type: bonus, text: 讓護甲看起來像一般衣物或其他護甲（顏色、款式由你決定），體積與重量不變；持續到再次使用或脫下護甲。 }
 text: |-

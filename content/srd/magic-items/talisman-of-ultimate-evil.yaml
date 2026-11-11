@@ -9,7 +9,6 @@ rarity: legendary
 attunement: true
 use: wornOrHeld
 effects: { spellAttack: 2 }
-manualEffect: true
 pools:
   - { id: charges, label: 充能, max: 6 }
 actions:

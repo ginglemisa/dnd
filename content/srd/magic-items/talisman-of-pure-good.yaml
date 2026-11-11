@@ -9,7 +9,6 @@ rarity: legendary
 attunement: 由牧師或聖騎士
 use: wornOrHeld
 effects: { spellAttack: 2 }
-manualEffect: true
 pools:
   - { id: charges, label: 充能, max: 7 }
 actions:

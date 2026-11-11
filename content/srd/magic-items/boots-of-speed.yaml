@@ -8,7 +8,10 @@ group: wearable
 rarity: rare
 attunement: true
 use: worn
-manualEffect: true
+pools:
+  - { id: minutes, label: 使用時間（分鐘）, max: 10, recover: longRest }
+actions:
+  - { id: click-heels, name: 敲擊靴跟, type: bonus, pool: minutes, cost: [ 1, 10 ], text: 速度 ×2、藉機攻擊對你劣勢；再敲一次結束。累計使用 10 分鐘後要長休才能再用，按下時選這次用幾分鐘。 }
 text: |-
   穿戴這雙靴子時，你可以進行附贈動作，將靴跟互相敲擊。若你這麼做，靴子會使你的速度加倍，且任何對你進行藉機攻擊的生物，其攻擊檢定具有劣勢。若你再次敲擊靴跟，就會結束此效果。
 
