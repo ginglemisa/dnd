@@ -106,7 +106,7 @@ async function checkPersistentSpells(page) {
   console.log("Persistent spells: casting, targets, cancellation, stacking, themes, persistence, dismissal and beast stats passed.");
 }
 
-// 荒野形態：只有穿戴中的魔法護甲與盾牌加值保留，戒指等其他持有物的加值不算；法師護甲與樹膚術照常。
+// 荒野形態：只有穿戴中的魔法護甲與盾牌加值保留，戒指等其他物品（即使穿著、同調）的加值不算；法師護甲與樹膚術照常。
 async function checkMagicItemsInWildShape(page) {
   const results = await page.evaluate(() => {
     TabletopMode.setMode("sheet");
@@ -115,7 +115,7 @@ async function checkMagicItemsInWildShape(page) {
       __inventory: { version: 1, items: [
         { uid: "hide", itemId: "皮甲", quantity: 1, magic: { id: "armor-plus", bonus: 1 } },
         { uid: "shield", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 2 } },
-        { uid: "ring", quantity: 1, attuned: true, magic: { id: "ring-of-protection" } }
+        { uid: "ring", quantity: 1, attuned: true, worn: true, magic: { id: "ring-of-protection" } }
       ] } });
     TabletopMode.setMode("tabletop");
     const c = () => TabletopMode.getDruidContext();
@@ -135,7 +135,7 @@ async function checkMagicItemsInWildShape(page) {
   assert.deepEqual(await page.evaluate(async () => {
     TabletopMode.setMode("sheet");
     applyStateObject({ __autoCalculatedChecks: true, class: "wizard", level: "5", str: "10", dex: "14", armor: "", mainHand: "", offHand: "",
-      __inventory: { version: 1, items: [{ uid: "ring", quantity: 1, attuned: true, magic: { id: "ring-of-protection" } }] } });
+      __inventory: { version: 1, items: [{ uid: "ring", quantity: 1, attuned: true, worn: true, magic: { id: "ring-of-protection" } }] } });
     TabletopMode.setMode("tabletop");
     TabletopMode.setPanel("overview");
     TabletopMode.setMageArmorActive(true);
@@ -739,8 +739,8 @@ async function main() {
     await dialog.getByRole("button", { name: "取消", exact: true }).click();
     await setLevel("8");
     await checkPersistentSpells(page);
-    await checkMagicItemsInWildShape(page);
     await checkArmorStrengthSpeed(page);
+    await checkMagicItemsInWildShape(page);
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Druid status card, strips, known forms, shape cards, attack cards, recharge, resources, cancellation, alternate payment, autosave and responsive layout passed.");
   } finally {
