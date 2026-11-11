@@ -1633,40 +1633,121 @@ async function validateMagicContainers(page) {
   await page.evaluate(() => { Inventory.update("bh", { quantity: 1 }); AppDialog.dismissToasts(); });
   assert.equal(await page.locator(".app-toast", { hasText: "摧毀兩件物品" }).count(), 0, "an unrelated change does not repeat the warning");
 
-  // 吞噬袋：放進東西就悄悄計時（Math.random 固定為最小值 → 2d6 = 2 分鐘），不進擲骰歷史、不提示；時鐘過了到期時間、回到頁面時跳視窗。
-  // 主管決定：視窗讓玩家選「從物品欄移除」或「先保留」；先保留時袋子裡還有東西就重新計時。
-  const advance = seconds => page.evaluate((value) => {
-    window.__devourOffset = value * 1000;
-    document.dispatchEvent(new Event("visibilitychange"));
-    return [Inventory.descendantsOf("bd").length, document.documentElement.classList.contains("app-dialog-open")];
-  }, seconds);
-  const history = await page.evaluate(() => {
-    window.__devourReal = { now: Date.now, random: Math.random };
+  // 吞噬袋：放進東西就悄悄計時（Math.random 固定為 0 → 2d6 = 2 分鐘），不進擲骰歷史、不提示；時鐘過了到期時間、回到頁面時跳視窗。
+  // 到期的彩蛋（使用者設計）：放棄就移除；伸手搶救 50% 搶回（Math.random ≥ 0.5）、否則被吞，掙脫要擲運動（力量）1d20＋運動欄，
+  // 擲骰功能關閉也播放動畫；15 以上爬出來，低於 15 亮暗反轉並跳對應的視窗。亂數都換成可控的值，d20 由 crypto.getRandomValues 控制。
+  const devourDialog = page.locator(".app-dialog").last();
+  const history = () => page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1") || "[]").map(entry => entry.label || ""));
+  await page.evaluate(() => {
+    window.__devourReal = { now: Date.now, random: Math.random, crypto: crypto.getRandomValues };
     window.__devourOffset = 0;
+    window.__devourRandom = 0;
+    window.__devourD20 = 10;
     Date.now = () => window.__devourReal.now() + window.__devourOffset;
-    Math.random = () => 0;
-    const count = dndStorage.getItem("dnd.diceRollHistory.v1");
+    Math.random = () => window.__devourRandom;
+    crypto.getRandomValues = (array) => { array[0] = window.__devourD20 - 1; return array; };
+    document.documentElement.dataset.theme = "light";
+    DiceRoller.setEnabled(false);
+  });
+  const fill = () => page.evaluate(() => {
+    window.__devourRandom = 0;
     Inventory.add([{ itemId: "背包" }], { into: "bd" });
     const pack = Inventory.childrenOf("bd")[0].uid;
     Inventory.add([{ itemId: "火把", quantity: 2 }], { into: pack });
-    return count;
   });
-  try {
+  const advance = seconds => page.evaluate((value) => {
+    window.__devourOffset += value * 1000;
+    document.dispatchEvent(new Event("visibilitychange"));
+    return [Inventory.descendantsOf("bd").length, document.documentElement.classList.contains("app-dialog-open")];
+  }, seconds);
+  const expire = async () => {
     assert.deepEqual(await advance(119), [2, false], "nothing happens and nothing is shown before the hidden time is up");
-    assert.deepEqual(await advance(121), [2, true], "the dialog opens when the clock passes the hidden 2d6 minutes; nothing is removed yet");
-    const eaten = page.locator(".app-dialog", { hasText: "吞噬袋把裡面的東西吞掉了！" });
-    await eaten.waitFor();
-    assert.match(await eaten.innerText(), /背包（火把 ×2）[\s\S]*要從物品欄移除這些物品嗎？/u, "the dialog lists what was eaten");
-    assert.equal(await eaten.locator(".app-dialog__button--primary").innerText(), "從物品欄移除", "removing is the primary choice");
-    await eaten.getByRole("button", { name: "先保留" }).click();
-    assert.deepEqual(await advance(122), [2, false], "keeping the items starts a new hidden timer instead of asking again at once");
-    assert.deepEqual(await advance(242), [2, true], "the new timer runs out two minutes later");
-    await eaten.getByRole("button", { name: "從物品欄移除" }).click();
-    assert.deepEqual(await page.evaluate(() => [Inventory.descendantsOf("bd").length, Boolean(Inventory.getEntry("bd")), dndStorage.getItem("dnd.diceRollHistory.v1")]), [0, true, history],
-      "removing empties the bag, keeps the bag, and never touches the dice history");
+    assert.deepEqual(await advance(2), [2, true], "the dialog opens when the clock passes the hidden 2d6 minutes; nothing is removed yet");
+    await devourDialog.filter({ hasText: "吞噬袋吃掉了你的道具！" }).waitFor();
+  };
+  const historyBefore = await history();
+  try {
+    // 放棄：移除；到期視窗不能關掉，只有兩個按鈕。
+    await fill();
+    await expire();
+    assert.match(await devourDialog.innerText(), /吞噬袋吃掉了你的道具！[\s\S]*背包（火把 ×2）/u, "the dialog lists everything that was eaten");
+    assert.deepEqual(await devourDialog.locator(".app-dialog__button").allTextContents(), ["放棄", "伸手搶救"], "the dialog offers 放棄 and 伸手搶救");
+    assert.equal(await devourDialog.locator(".app-dialog__close").count(), 0, "the dialog has no close button");
+    await page.keyboard.press("Escape");
+    assert.equal(await devourDialog.isVisible(), true, "Escape does not dismiss the choice");
+    await devourDialog.getByRole("button", { name: "放棄" }).click();
+    assert.deepEqual(await page.evaluate(() => [Inventory.descendantsOf("bd").length, Boolean(Inventory.getEntry("bd"))]), [0, true], "giving up removes the eaten items and keeps the bag");
     assert.deepEqual(await advance(3600), [0, false], "an empty bag does not time");
+
+    // 伸手搶救、搶回：物品放回身上，袋子空了不再計時。
+    await fill();
+    await expire();
+    await page.evaluate(() => { window.__devourRandom = 0.7; });
+    await devourDialog.getByRole("button", { name: "伸手搶救" }).click();
+    const rescued = devourDialog.filter({ hasText: "你搶回了道具！" });
+    await rescued.waitFor();
+    assert.deepEqual(await page.evaluate(() => [
+      Inventory.descendantsOf("bd").length,
+      Inventory.entries().filter(entry => !entry.in && entry.itemId === "背包").length,
+      Inventory.entries().filter(entry => entry.itemId === "火把").map(entry => Inventory.getLabel(Inventory.getEntry(entry.in)))
+    ]), [0, 1, ["背包"]], "the rescued items go back on the character, the backpack still holding its torches");
+    await rescued.getByRole("button").last().click();
+    assert.deepEqual(await advance(3600), [0, false], "the emptied bag stops timing");
+    await page.evaluate(() => Inventory.remove(Inventory.entries().find(entry => !entry.in && entry.itemId === "背包").uid, { keepContents: false }));
+
+    // 被吞：只有「掙脫逃命」，按下後擲骰視窗播放動畫（擲骰功能關閉也播放）。
+    const swallow = async ({ athletics, d20 }) => {
+      await fill();
+      await expire();
+      await page.evaluate(([value, roll]) => { document.getElementById("skill-運動").value = value; window.__devourD20 = roll; window.__devourRandom = 0.2; }, [athletics, d20]);
+      await devourDialog.getByRole("button", { name: "伸手搶救" }).click();
+      const trapped = devourDialog.filter({ hasText: "吸力把你整個人拖了進去" });
+      await trapped.waitFor();
+      assert.deepEqual(await trapped.locator(".app-dialog__button").allTextContents(), ["掙脫逃命"], "being swallowed leaves only 掙脫逃命");
+      assert.equal(await trapped.locator(".app-dialog__close").count(), 0, "the swallowed dialog cannot be closed");
+      await trapped.getByRole("button", { name: "掙脫逃命" }).click();
+      await page.locator("#dice-roller-modal.is-open #dice-roller-stage .dice-roller-animation").waitFor();
+      assert.equal(await page.evaluate(() => DiceRoller.isEnabled()), false, "the animation plays even with the dice roller turned off");
+    };
+    // 運動欄空白（當 0）、d20 = 14 → 14 < 15：亮色變暗色、「你  掛  了」。
+    await swallow({ athletics: "", d20: 14 });
+    await page.locator(".app-toast__message", { hasText: /^運動（力量）檢定：14$/u }).waitFor({ timeout: 6000 });
+    const dead = devourDialog.filter({ hasText: "掛" });
+    await dead.waitFor({ timeout: 6000 });
+    assert.equal(await dead.locator(".app-dialog__body p").last().innerText(), "你  掛  了", "the light-mode failure keeps the spaces of 你  掛  了");
+    assert.deepEqual(await page.evaluate(() => [
+      document.documentElement.dataset.theme, dndStorage.getItem("dnd.theme.v1"), Inventory.descendantsOf("bd").length,
+      document.getElementById("dice-roller-modal").classList.contains("is-open")
+    ]), ["dark", "dark", 0, false], "a check below 15 switches light to dark and remembers it like the toggle, removes the items and closes the dice window");
+    await dead.getByRole("button").last().click();
+
+    // 運動 +3、d20 = 12 → 15：爬出來，物品仍被吃掉，亮暗不變。
+    await swallow({ athletics: "+3", d20: 12 });
+    await page.locator(".app-toast__message", { hasText: /^運動（力量）檢定：12 \+ 3 = 15$/u }).waitFor({ timeout: 6000 });
+    const escaped = devourDialog.filter({ hasText: "你驚險地從袋口爬了出來，道具仍是被吃掉了。" });
+    await escaped.waitFor({ timeout: 6000 });
+    assert.deepEqual(await page.evaluate(() => [document.documentElement.dataset.theme, Inventory.descendantsOf("bd").length]), ["dark", 0], "15 or more escapes; the items are still gone and the theme stays");
+    await escaped.getByRole("button").last().click();
+
+    // 運動欄不是數字（當 0）、d20 = 5：暗色變亮色、靈魂之河。
+    await swallow({ athletics: "abc", d20: 5 });
+    await page.locator(".app-toast__message", { hasText: /^運動（力量）檢定：5$/u }).waitFor({ timeout: 6000 });
+    const river = devourDialog.filter({ hasText: "你不知身處何處，四周都是亮光，啊，那是靈魂之河..." });
+    await river.waitFor({ timeout: 6000 });
+    assert.deepEqual(await page.evaluate(() => [document.documentElement.dataset.theme, dndStorage.getItem("dnd.theme.v1")]), ["light", "light"], "a failure in dark mode switches to light");
+    await river.getByRole("button").last().click();
+    // 計時不進擲骰紀錄；掙脫的三次檢定照常進紀錄。
+    const after = await history();
+    assert.deepEqual(after.slice(0, 3), ["運動（力量）檢定", "運動（力量）檢定", "運動（力量）檢定"], "each escape roll is in the dice history");
+    assert.equal(after.length, Math.min(historyBefore.length + 3, 66), "the hidden timer adds nothing to the dice history");
   } finally {
-    await page.evaluate(() => { Date.now = window.__devourReal.now; Math.random = window.__devourReal.random; delete window.__devourReal; delete window.__devourOffset; });
+    await page.evaluate(() => {
+      Date.now = window.__devourReal.now;
+      Math.random = window.__devourReal.random;
+      crypto.getRandomValues = window.__devourReal.crypto;
+      delete window.__devourReal;
+      document.getElementById("skill-運動").value = "";
+    });
   }
   assert.equal(await page.evaluate(() => Inventory.getExtradimensionalNesting().length), 2, "the devouring bag leaves the other bags (the haversack and the hole in the bag of holding) alone");
 }
