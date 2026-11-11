@@ -10,6 +10,8 @@ attunement: false
 use: worn
 pools:
   - { id: dimension-door, label: 任意門, max: 1, recover: dawn }
+actions:
+  - { id: dimension-door, spell: dimension-door, pool: dimension-door, note: 離開的空間留下一團煙霧，到你下個回合結束前輕度遮蔽。 }
 text: |-
   這件披肩隱約散發硫磺的氣味。穿戴時，你可以用它施放_任意門_，施放時間為魔法動作。此特性直到下次黎明前都無法再次使用。
 

@@ -790,7 +790,29 @@ actions:
 | `pool`、`cost` | 使用時扣哪個池，與每次花費（預設 1；`[1, 3]` 表示按下後選這次花幾次）。沒有 `pool` 的按鈕只有說明。 |
 | `when` | `owned`：持有就能用（碗缽、號角等沒有 `use` 的物品）。沒有 `base` 也沒有 `use` 的物品要寫。 |
 
-從物品施法（魔杖、法杖的法術）是之後的步驟，這些物品目前只有池。
+| `option` | `{ 選項 id: 值 }`：只有選了這個選項時才有（命令元素戒指依元素位面的法術表）。 |
+| `alsoPool` | 另外再扣 1 次的池，要和 `pool` 一起寫（吉兆之刃的祈願：扣祈願充能，也扣「每日一次」的池）。 |
+
+**從物品施放的法術**：能力寫 `spell`（法術 ID，含只有 SRD 版的法術）時，就是從物品施放的法術，不寫 `name`、`type`、`text`（名稱與施放時間讀法術），不出現在動作／附贈／反應頁，而是放在跑團法術頁的「物品」分組。不耗法術位、不要求法術在職業法表，資格就是上面的生效條件；施法時扣 `pool`（沒寫 `pool` 表示隨意施放，例如花費 0 的法術、浮空之靴）。只有 SRD 版的法術畫面顯示 SRD 版，擲骰資料見「法術」的 `srd.outcomes`。
+
+```yaml
+actions:
+  - { id: fireball, spell: fireball, pool: charges, cost: [ 1, 3 ], level: 3, saveDc: 15 }   # 1 次是 3 環，每多 1 次 +1 環
+  - { id: cure-wounds, spell: cure-wounds, pool: charges, cost: [ 1, 4 ], stats: yours }
+  - { id: suggestion, spell: suggestion, pool: suggestion, saveDc: 17, concentration: false, when: owned, note: 透過探知術感應器…也結束。 }
+```
+
+| 欄位 | 說明 |
+| --- | --- |
+| `level` | 施放的環階（固定版本，例如星辰法袍的 5 環魔法飛彈）；省略是法術本身的環階。`cost` 是範圍時，付最少花費是這個環階，每多付 1 次 +1 環；`maxLevel` 是升環上限（火球項鍊）。 |
+| `saveDc`、`attackBonus` | 物品固定的法術豁免 DC 與攻擊加值（魔杖 DC 15、爆裂頭飾 +5）。 |
+| `stats` | `yours`：用角色卡的法術豁免 DC 與法術攻擊（含物品加值）；角色沒有施法屬性時不能施放，畫面寫原因。三者都不寫表示說明沒寫（或法術不需要），畫面不顯示 DC。治療等加的施法屬性調整值一律用角色卡的數值。 |
+| `castingTime` | 覆寫施放時間：`action`、`bonus-action`、`reaction`（念珠項鍊是附贈動作）。 |
+| `concentration` | `false`：這次施放不需專注（水晶球的暗示術）；其餘照法術本身，由跑團的專注追蹤處理。 |
+| `note` | 目標限制或備註，寫在法術旁（「只能以你自己為目標。」「只影響野獸。」），以句號結尾。材料成分只顯示在法術說明，不檢查。 |
+
+- 建置檢查：法術存在、`level` 不低於法術本身、戲法不升環、多付花費不超過 9 環（或寫 `maxLevel`）、`stats` 與固定數字擇一、`concentration: false` 只用於專注法術、`castingTime` 不與法術本身相同、`option` 是這件物品的選項、`alsoPool` 是另一個池；`spell` 與 `name`／`type`／`text` 不可同時寫。
+- 只放說明、不做法術的：驚奇魔杖的隨機表、萬法帽、神秘牌組、祈神蠟燭、法力再生珍珠。藥水與油的「獲得法術效果」不算施法。
 
 ```yaml
 effects: { extraDamage: [ { dice: 1d6, type: cold } ] }

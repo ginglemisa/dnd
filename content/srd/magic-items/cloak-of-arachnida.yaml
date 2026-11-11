@@ -13,6 +13,8 @@ hints:
   - resistances: [ poison ]
 pools:
   - { id: web, label: 蛛網術, max: 1, recover: dawn }
+actions:
+  - { id: web, spell: web, pool: web, saveDc: 13, note: 蛛網填滿正常範圍的兩倍。 }
 text: |-
   這件精緻的衣物以黑色絲綢織成，其中交織著淡淡的銀色絲線。穿戴時，你獲得以下益處。
 

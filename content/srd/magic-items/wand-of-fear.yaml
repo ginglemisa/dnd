@@ -9,6 +9,9 @@ attunement: true
 use: held
 pools:
   - { id: charges, label: 充能, max: 7, recover: dawn, amount: 1d6 + 1 }
+actions:
+  - { id: command, spell: command, pool: charges, saveDc: 15, note: 命令詞只能是「滾」或「趴下」。 }
+  - { id: fear, spell: fear, pool: charges, cost: 3, saveDc: 15, note: 範圍是 60 呎錐形區域。 }
 text: |-
   這根魔杖有7次充能。
 

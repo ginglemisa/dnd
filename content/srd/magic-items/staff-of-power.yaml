@@ -12,6 +12,15 @@ pools:
   - { id: charges, label: 充能, max: 20, recover: dawn, amount: 2d8 + 4 }
 actions:
   - { id: retributive-strike, name: 報復打擊, type: magic, text: 折斷法杖，以法杖為起點的 30 呎發散區域爆炸：你有 50% 機率前往隨機位面避開，否則受到剩餘充能 ×16 的力場傷害；其他生物 DC 17 敏捷豁免，失敗受到剩餘充能 ×4 的力場傷害，成功減半。法杖被摧毀。 }
+  - { id: cone-of-cold, spell: cone-of-cold, stats: yours, pool: charges, cost: 5 }
+  - { id: fireball, spell: fireball, stats: yours, level: 5, pool: charges, cost: 5 }
+  - { id: globe-of-invulnerability, spell: globe-of-invulnerability, stats: yours, pool: charges, cost: 6 }
+  - { id: hold-monster, spell: hold-monster, stats: yours, pool: charges, cost: 5 }
+  - { id: levitate, spell: levitate, stats: yours, pool: charges, cost: 2 }
+  - { id: lightning-bolt, spell: lightning-bolt, stats: yours, level: 5, pool: charges, cost: 5 }
+  - { id: magic-missile, spell: magic-missile, stats: yours, pool: charges }
+  - { id: ray-of-enfeeblement, spell: ray-of-enfeeblement, stats: yours, pool: charges }
+  - { id: wall-of-force, spell: wall-of-force, stats: yours, pool: charges, cost: 5 }
 text: |-
   這根法杖有20次充能，可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+2加值。手持它時，你的AC、豁免與法術攻擊檢定獲得+2加值。
 

@@ -12,6 +12,14 @@ pools:
   - { id: charges, label: 充能, max: 6, recover: dawn, amount: 1d6 }
 actions:
   - { id: tree, name: 樹形, type: magic, pool: charges, text: 把法杖一端插入泥土，變成一棵高 60 呎、樹冠半徑 20 呎的樹；觸碰樹並進行魔法動作讓它變回法杖。 }
+  - { id: animal-friendship, spell: animal-friendship, stats: yours, pool: charges }
+  - { id: awaken, spell: awaken, stats: yours, pool: charges, cost: 5 }
+  - { id: barkskin, spell: barkskin, stats: yours, pool: charges, cost: 2 }
+  - { id: locate-animals-or-plants, spell: locate-animals-or-plants, stats: yours, pool: charges, cost: 2 }
+  - { id: pass-without-trace, spell: pass-without-trace, stats: yours, pool: charges, cost: 2 }
+  - { id: speak-with-animals, spell: speak-with-animals, stats: yours, pool: charges }
+  - { id: speak-with-plants, spell: speak-with-plants, stats: yours, pool: charges, cost: 3 }
+  - { id: wall-of-thorns, spell: wall-of-thorns, stats: yours, pool: charges, cost: 6 }
 text: |-
   這根法杖有6次充能，可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+2加值。手持它時，你的法術攻擊檢定獲得+2加值。
 

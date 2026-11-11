@@ -12,6 +12,9 @@ pools:
 actions:
   - { id: ball-lightning, name: 閃電球, type: magic, pool: charges, cost: 2, text: 在 120 呎內創造最多四顆閃電球（需要專注，最長 1 分鐘），附贈動作各移動 30 呎；球體第一次來到你以外的生物 5 呎內時放出閃電，DC 15 敏捷豁免，傷害依球數（見說明），成功減半。 }
   - { id: shooting-stars, name: 流星, type: magic, pool: charges, cost: [ 1, 3 ], text: 每消耗 1 次充能射出一顆光點到 60 呎內一點，以那點為起點的 15 呎立方體內每個生物 DC 15 敏捷豁免，失敗受到 5d4 光耀傷害，成功減半。 }
+  - { id: dancing-lights, spell: dancing-lights }
+  - { id: light, spell: light }
+  - { id: faerie-fire, spell: faerie-fire, pool: charges }
 text: |-
   你可以從這枚戒指施放_舞光術_或_光亮術_。
 

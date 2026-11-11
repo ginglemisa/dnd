@@ -12,6 +12,15 @@ hints:
   - text: 頭盔至少有一顆紅寶石時，火焰傷害抗性。
 actions:
   - { id: flame, name: 點燃武器, type: magic, text: 頭盔至少有一顆火蛋白石時，讓你手持的一件武器爆出火焰（半徑 10 呎明亮光照、再向外 10 呎微光光照），命中時額外造成 1d6 火焰傷害；附贈動作熄滅。 }
+  - { id: daylight, spell: daylight, pool: opals, saveDc: 18 }
+  - { id: fireball, spell: fireball, pool: fire-opals, saveDc: 18 }
+  - { id: prismatic-spray, spell: prismatic-spray, pool: diamonds, saveDc: 18 }
+  - { id: wall-of-fire, spell: wall-of-fire, pool: rubies, saveDc: 18 }
+pools:
+  - { id: diamonds, label: 鑽石, max: 10 }
+  - { id: rubies, label: 紅寶石, max: 20 }
+  - { id: fire-opals, label: 火蛋白石, max: 30 }
+  - { id: opals, label: 蛋白石, max: 40 }
 text: |-
   這頂頭盔鑲有1d10顆鑽石、2d10顆紅寶石、3d10顆火蛋白石與4d10顆蛋白石。從頭盔上撬下的任何寶石都會碎成粉末。當所有寶石都被移除或摧毀時，頭盔失去魔力。
 

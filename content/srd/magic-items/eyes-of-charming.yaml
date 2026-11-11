@@ -10,5 +10,7 @@ attunement: true
 use: worn
 pools:
   - { id: charges, label: 充能, max: 3, recover: dawn }
+actions:
+  - { id: charm-person, spell: charm-person, pool: charges, cost: [ 1, 3 ], saveDc: 13 }
 text: |-
   這些水晶鏡片可戴在眼睛上。它們有3次充能。穿戴它們時，你可以消耗1次或更多次充能來施放_魅惑人類_（豁免DC 13）。消耗1次充能時，你施放的是該法術的1環版本。你每額外消耗1次充能，法術的環階就提高1環。鏡片每天黎明恢復所有已消耗的充能。

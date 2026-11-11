@@ -12,6 +12,9 @@ pools:
   - { id: resist, label: 抵抗惑控, max: 1, recover: dawn }
 actions:
   - { id: reflect, name: 反射惑控, type: reaction, pool: charges, text: 你對只以你為目標的惑控法術豁免成功時，讓那個法術如同由你施放一般反彈回施法者身上。 }
+  - { id: charm-person, spell: charm-person, stats: yours, pool: charges }
+  - { id: command, spell: command, stats: yours, pool: charges }
+  - { id: comprehend-languages, spell: comprehend-languages, stats: yours, pool: charges }
 text: |-
   這根法杖有10次充能。手持法杖時，你可以使用它的任一特性：
 

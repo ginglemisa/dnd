@@ -8,5 +8,7 @@ group: wearable
 rarity: uncommon
 attunement: false
 use: worn
+actions:
+  - { id: comprehend-languages, spell: comprehend-languages }
 text: |-
   穿戴這頂頭盔時，你可以從中施放_通曉語言_。

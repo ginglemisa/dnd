@@ -7,5 +7,7 @@ category: ring
 rarity: uncommon
 attunement: false
 use: worn
+actions:
+  - { id: water-walk, spell: water-walk, note: 只能以你自己為目標。 }
 text: |-
   穿戴這枚戒指時，你從中施放_水上行走_，且只能以你自己為目標。
