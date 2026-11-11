@@ -1185,7 +1185,11 @@
           document.removeEventListener("inventory:change", refreshActions);
         };
         const contents = api().descendantsOf(uid).length;
-        if (api().isContainer(entry)) holding.appendChild(el("p", "inventory-item-note", contents ? `內含 ${contents} 項物品；容器不會減輕內容物的重量。` : "可以放入其他物品；容器不會減輕內容物的重量。"));
+        if (api().isContainer(entry)) {
+          // 異次元容器（內容檔 container.extradimensional）裡的物品不算重量；吞噬袋沿用普通容器的說法，不透露計時。
+          const weightNote = api().getMagicContainer(entry)?.extradimensional ? "異次元空間裡的物品不算重量，只算容器本身。" : "容器不會減輕內容物的重量。";
+          holding.appendChild(el("p", "inventory-item-note", contents ? `內含 ${contents} 項物品；${weightNote}` : `可以放入其他物品；${weightNote}`));
+        }
         // 自訂物品：名稱與磅數一列，數量與位置一列，描述自成一列。
         const fields = custom ? buildCustomFields(entry) : null;
         if (fields) holding.appendChild(fields.nameRow);
@@ -2040,6 +2044,9 @@
       if (more?.getAttribute("aria-expanded") === "true" && !tools?.contains(event.target)) setMoreOpen(false);
     });
     document.addEventListener("inventory:change", render);
+    document.addEventListener("inventory:change", event => watchMagicContainers(event.detail?.reason));
+    ["visibilitychange", "focus", "pageshow"].forEach(name => (name === "visibilitychange" ? document : globalScope).addEventListener(name, checkDevourDue));
+    watchMagicContainers("restore");
     document.getElementById("attunement-open")?.addEventListener("click", event => openAttunementDialog(event.currentTarget));
     document.addEventListener("click", (event) => {
       const trigger = event.target.closest?.("[data-starting-equipment]");
@@ -2239,6 +2246,100 @@
           }
         }
       ]
+    });
+  }
+
+  // ===== 魔法容器（內容檔的 container 詞）=====
+  // 兩個異次元容器互放：依說明會摧毀兩件物品，這裡只提示、不刪除。載入存檔、匯入、開分享連結（restore）時不提示。
+  let nestingSeen = new Set();
+
+  function watchMagicContainers(reason) {
+    if (!api()) return;
+    const pairs = api().getExtradimensionalNesting();
+    const keys = new Set(pairs.map(pair => `${pair.inner}>${pair.outer}`));
+    if (reason !== "restore" && reason !== "mode") {
+      pairs.filter(pair => !nestingSeen.has(`${pair.inner}>${pair.outer}`)).forEach((pair) => {
+        const inner = api().getLabel(api().getEntry(pair.inner));
+        const outer = api().getLabel(api().getEntry(pair.outer));
+        globalScope.AppDialog?.notify(`把${inner}放進${outer}會立即摧毀兩件物品，並開啟通往星界的通道（見物品說明）。角色卡不會自動刪除，請和 DM 確認後自行處理。`, { tone: "warning" });
+      });
+    }
+    nestingSeen = keys;
+    syncDevourTimers(reason);
+  }
+
+  // 吞噬袋（container.devour）：使用者要求的隱藏彩蛋。裡面一有東西就以真實時間計時，到期才跳視窗。
+  // 計時的骰子（例如 2d6 分鐘）刻意不經 DiceRoller、不進擲骰歷史、不顯示也不提示玩家——使用者明確要求這樣做，
+  // 是 AGENTS.md「DiceRoller 是擲骰與歷史的唯一入口」的例外。到期時間只在記憶體：重新整理、關閉頁面、載入另一個角色或匯入都重新計時；分享模式不計時。
+  // 背景分頁或手機鎖屏時計時器會被放慢，所以回到頁面（visibilitychange／focus／pageshow）時再比對時鐘。
+  const devourTimers = new Map();
+  const DEVOUR_RETRY_MS = 1000;
+
+  function rollHiddenMinutes(dice) {
+    const match = /^(\d+)d(\d+)$/u.exec(String(dice || ""));
+    if (!match) return 0;
+    let total = 0;
+    for (let index = 0; index < Number(match[1]); index += 1) total += 1 + Math.floor(Math.random() * Number(match[2]));
+    return total;
+  }
+
+  function clearDevourTimer(uid) {
+    const timer = devourTimers.get(uid);
+    if (timer) globalScope.clearTimeout(timer.handle);
+    devourTimers.delete(uid);
+  }
+
+  function armDevourTimer(uid, delay) {
+    const timer = devourTimers.get(uid);
+    if (!timer) return;
+    globalScope.clearTimeout(timer.handle);
+    timer.handle = globalScope.setTimeout(checkDevourDue, Math.max(0, Math.min(delay, 2147483647)));
+  }
+
+  function syncDevourTimers(reason) {
+    if (["restore", "mode", "clear"].includes(reason)) [...devourTimers.keys()].forEach(clearDevourTimer);
+    if (globalScope.SHARE_MODE === true || !api()) return;
+    const all = api().entries();
+    const filled = new Set();
+    all.forEach((entry) => {
+      const dice = api().getMagicContainer(entry)?.devour;
+      if (!dice || !all.some(item => item.in === entry.uid)) return;
+      filled.add(entry.uid);
+      if (devourTimers.has(entry.uid)) return;
+      const minutes = rollHiddenMinutes(dice);
+      if (!minutes) return;
+      devourTimers.set(entry.uid, { due: Date.now() + minutes * 60000, handle: 0 });
+      armDevourTimer(entry.uid, minutes * 60000);
+    });
+    [...devourTimers.keys()].filter(uid => !filled.has(uid)).forEach(clearDevourTimer);
+  }
+
+  function checkDevourDue() {
+    const now = Date.now();
+    devourTimers.forEach((timer, uid) => {
+      if (timer.due > now) armDevourTimer(uid, timer.due - now);
+      else devour(uid);
+    });
+  }
+
+  function devour(uid) {
+    // 開著其他視窗時先等它關掉（新視窗會關掉舊的）；頁面在背景時等回到頁面。
+    if (!globalScope.AppDialog || document.documentElement.classList.contains("app-dialog-open") || document.visibilityState === "hidden") {
+      armDevourTimer(uid, DEVOUR_RETRY_MS);
+      return;
+    }
+    const entry = api().getEntry(uid);
+    clearDevourTimer(uid);
+    if (!entry) return;
+    const label = api().getLabel(entry);
+    const eaten = api().emptyContainer(uid);
+    if (!eaten) return;
+    globalScope.AppDialog.showMessage({
+      title: label,
+      message: `${label}把裡面的東西吞掉了！`,
+      renderContent: (body) => {
+        body.append(el("p", "", eaten), el("p", "", "這些物品已從物品欄移除。"));
+      }
     });
   }
 

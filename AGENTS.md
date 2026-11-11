@@ -69,7 +69,7 @@
 | 搜尋 | `search.js` |
 | 動作 | `action-panel.js` |
 | 跑團模式 | `tabletop-mode.js`（`TabletopMode` 共用狀態與公開 API），子模組 `tabletop-*.js` 經 `TabletopMode`、`SpellCatalog`、`character-rules.js`、`DiceRoller` 協作 |
-| 擲骰 | `dice-roller.js`（`DiceRoller` 是擲骰與歷史的唯一入口） |
+| 擲骰 | `dice-roller.js`（`DiceRoller` 是擲骰與歷史的唯一入口；唯一例外是吞噬袋刻意隱藏的計時骰，在 `inventory-ui.js`，見 BEHAVIOR.md） |
 | 導覽 | `onboarding-tour.js` |
 | 分頁滑動換頁、觸控點分頁的轉場 | `page-swipe.js`（只管畫面，切換仍走 `showTab()`／`TabletopMode.setPanel()`） |
 | PDF | `pdf-launcher.js`、`pdf-export.js`、`pdf-field-map.js` |
