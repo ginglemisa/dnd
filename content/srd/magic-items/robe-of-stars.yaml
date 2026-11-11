@@ -13,6 +13,7 @@ pools:
   - { id: stars, label: 星星, max: 6, recover: dusk, amount: 1d6 }
 actions:
   - { id: astral, name: 進入星界, type: magic, text: 連同你穿戴和攜帶的一切進入星界，直到你再進行魔法動作返回原本的位面。 }
+  - { id: magic-missile, spell: magic-missile, pool: stars, level: 5 }
 text: |-
   這件黑色或深藍色的法袍上繡有白色或銀色的小星星。你穿戴它時，豁免獲得+1加值。
 

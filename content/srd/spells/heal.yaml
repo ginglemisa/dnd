@@ -15,6 +15,8 @@ srd:
     選擇射程內一個你能看見的生物。正能量流過目標，恢復70點生命值。此法術同時會結束目標身上的失明、耳聾與中毒狀態。
 
     _使用更高環階法術位。_ 每高於6環一環，治療量增加10。
+  outcomes:
+    - { kind: healing, fixed: 70, modifierTags: [ restores-hit-points, can-restore-other-creature-hit-points ], autoOnCast: true, context: 治療量；不直接修改角色 HP }
 en:
   body: |-
     Choose a creature that you can see within range. Positive energy washes through the target, restoring 70 Hit Points. This spell also ends the Blinded, Deafened, and Poisoned conditions on the target.

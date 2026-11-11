@@ -7,6 +7,7 @@ category: potion
 rarity: uncommon
 attunement: false
 consumable: true
+spellLinks: [ freedom-of-movement, grease ]
 text: |-
   一瓶這種油可以塗滿一個中型或更小的生物，連同它穿戴與攜帶的裝備（每高於中型一個體型類別，就需要多一瓶）。塗抹這種油需時10分鐘。受影響的生物接著獲得_行動自如_法術的效果，持續8小時。
 

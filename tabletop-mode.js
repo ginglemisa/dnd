@@ -4737,9 +4737,11 @@
     const canCast = typeof globalScope.hasSpellcastingCapability === "function"
       ? globalScope.hasSpellcastingCapability()
       : true;
+    // 身上有生效中的物品法術（魔杖、法杖等）時，沒有施法能力也顯示法術頁的「物品」分組。
     return canCast
       || Boolean(getConcentrationSpellId())
-      || combatState.endedConcentrations.length > 0;
+      || combatState.endedConcentrations.length > 0
+      || Boolean(getMagicEffects()?.actions.some(item => item.action.spell));
   }
 
   function syncSpellPanelAvailability() {

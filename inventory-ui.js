@@ -542,10 +542,58 @@
     }, `施展${label}`);
     cast.disabled = !access.allowed;
     const row = actionRow(scrollAccessText(access, spell, scroll), cast);
+    row.querySelector(".inventory-action-row__text").prepend(spellLink(spell), "｜");
+    return row;
+  }
+
+  // 法術連結（法術名稱，點了開法術說明；只有 SRD 版的法術顯示 SRD 版）。
+  function spellLink(spell) {
     const link = button("inventory-spell-link", spell.nameZh);
     link.setAttribute("aria-label", `查看${spell.nameZh}的法術內容`);
-    link.addEventListener("click", () => globalScope.TabletopSpells?.showSpellDetail?.(spellId, link));
-    row.querySelector(".inventory-action-row__text").prepend(link, "｜");
+    link.addEventListener("click", () => globalScope.TabletopSpells?.showSpellDetail?.(spell.spellId, link));
+    return link;
+  }
+
+  /**
+   * 從物品施放的法術（內容檔 actions 的 spell）：每個法術一列「法術｜消耗與 DC｜施法」，和跑團法術頁的「物品」分組是同一個施法視窗
+   * （TabletopSpells.castItemSpell）；確認施法後扣次數、關閉物品視窗，焦點回到標籤。物品沒有生效（未同調、沒穿戴或手持，
+   * 或同一種物品已有另一件在用）、次數不夠、「用你的 DC」但沒有施法屬性時按鈕反灰並寫原因。
+   */
+  function buildItemSpellRows(entry, label, ctx) {
+    const spells = globalScope.TabletopSpells;
+    if (!spells?.getItemSpellEntries || !globalScope.SpellCatalog?.getItemSpell) return [];
+    const active = spells.getItemSpellEntries().filter(item => item.itemSpell.uid === entry.uid);
+    const selection = api().getMagicSelection(entry);
+    return globalScope.MagicItemCatalog.getActions(entry.magic.id)
+      .filter(action => action.spell && Object.entries(action.option || {}).every(([optionId, value]) => selection[optionId] === value))
+      .flatMap((action) => {
+        const spell = globalScope.SpellCatalog.getItemSpell(action.spell);
+        if (!spell) return [];
+        const itemSpell = active.find(item => item.itemSpell.action.id === action.id);
+        const blocked = itemSpell ? spells.logic.getItemSpellState(itemSpell).blocked : "這件物品生效時才能施放。";
+        const cast = actionButton("施法", (control) => {
+          spells.castItemSpell(itemSpell, control, {
+            afterCommit() {
+              ctx.close();
+              return document.querySelector(`[data-inventory-uid="${entry.uid}"]`) || fallbackFocusTarget();
+            }
+          });
+        }, `從${label}施放${spell.nameZh}`);
+        cast.disabled = Boolean(blocked);
+        const row = actionRow(itemSpell ? `${spells.getItemSpellSummary(itemSpell, { withItem: false })}${blocked}` : blocked, cast);
+        row.dataset.itemSpell = action.id;
+        row.querySelector(".inventory-action-row__text").prepend(spellLink(spell), "｜");
+        return [row];
+      });
+  }
+
+  // 藥水與油的「獲得法術效果」（內容檔 spellLinks）：不是施法，只連到法術說明。
+  function buildSpellLinkRow(magicRule) {
+    const spells = (magicRule.spellLinks || []).map(id => globalScope.SpellCatalog?.getItemSpell?.(id)).filter(Boolean);
+    if (!spells.length) return null;
+    const row = actionRow("法術效果：");
+    const text = row.querySelector(".inventory-action-row__text");
+    spells.forEach((spell, index) => text.append(...(index ? ["、"] : []), spellLink(spell)));
     return row;
   }
 
@@ -801,7 +849,9 @@
     }
     const wearRow = entry.magic && magicRule ? buildWearAttunementRow(entry, magicRule, label, ctx) : null;
     if (wearRow) rows.push(wearRow);
-    if (entry.magic && magicRule) rows.push(...buildChargeRows(entry, label));
+    if (entry.magic && magicRule) rows.push(...buildChargeRows(entry, label), ...buildItemSpellRows(entry, label, ctx));
+    const spellLinkRow = magicRule ? buildSpellLinkRow(magicRule) : null;
+    if (spellLinkRow) rows.unshift(spellLinkRow);
     const transfer = entry.magic ? buildBonusTransferControl(entry) : null;
     if (entry.magic && magicRule?.forms) rows.push(buildFormRow(entry, magicRule));
     if (transfer) rows.push(actionRow("可把部分或全部加值轉到 AC，攻擊與傷害會減少相同數值；重新整理後回到 0。", transfer));

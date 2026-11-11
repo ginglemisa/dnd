@@ -7,5 +7,7 @@ category: ring
 rarity: very-rare
 attunement: true
 use: worn
+actions:
+  - { id: telekinesis, spell: telekinesis }
 text: |-
   穿戴這枚戒指時，你可以從中施放_心靈遙控_。

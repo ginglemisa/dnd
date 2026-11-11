@@ -21,6 +21,9 @@ srd:
     生物可以穿過牆壁，只是既緩慢又痛苦。生物每在牆壁中移動1呎，就必須花費4呎移動力。此外，生物在一個回合內第一次進入牆壁中的空間，或在其中結束自己的回合時，該生物進行一次敏捷豁免，豁免失敗時受到7d8揮砍傷害，成功時受到一半傷害。生物每回合只進行一次此豁免。
 
     _使用更高環階法術位。_ 每高於6環一個環階，兩種傷害都增加1d8。
+  outcomes:
+    - { kind: damage, formula: 7d8, damageType: piercing, autoOnCast: true, context: 牆壁出現時的區域傷害擲一次；豁免依規則處理 }
+    - { kind: damage, formula: 7d8, damageType: slashing, autoOnCast: false, context: 之後進入牆壁或在其中結束回合時 }
 en:
   material: a handful of thorns
   body: |-

@@ -78,7 +78,8 @@ function spellRules(spell) {
     duration: spell.duration,
     ...(spell.concentration ? { concentration: true } : {}),
     ...(spell.upcast ? { upcast: true } : {}),
-    ...(spell.site ? { playable: true, outcomes: spell.site.outcomes || [] } : {})
+    // 只有 SRD 版的法術：outcomes 只供從魔法物品施放（SpellCatalog.getItemSpell），沒有 playable，不是角色可用的法術。
+    ...(spell.site ? { playable: true, outcomes: spell.site.outcomes || [] } : spell.srd?.outcomes ? { outcomes: spell.srd.outcomes } : {})
   };
 }
 

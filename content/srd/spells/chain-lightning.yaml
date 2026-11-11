@@ -18,6 +18,8 @@ srd:
     每個目標都要進行敏捷豁免，豁免失敗時受到10d8閃電傷害，成功則傷害減半。
 
     _使用更高環階法術位。_ 使用的法術位環階每比6環高一環，就多一道閃電從第一個目標躍向另一個目標。
+  outcomes:
+    - { kind: damage, formula: 10d8, damageType: lightning, autoOnCast: true, context: 擲一次套用到每個目標；各目標豁免依規則處理 }
 en:
   material: three silver pins
   body: |-

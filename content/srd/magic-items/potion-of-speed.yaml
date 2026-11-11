@@ -7,6 +7,7 @@ category: potion
 rarity: very-rare
 attunement: false
 consumable: true
+spellLinks: [ haste ]
 text: |-
   當你喝下這瓶藥水時，你獲得_加速術_法術的效果，持續1分鐘（不需專注），且不會承受效果結束時通常會發生的那陣疲憊浪潮。
 

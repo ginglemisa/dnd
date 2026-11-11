@@ -197,8 +197,14 @@
     "action": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "type", "text"],
-      "description": "能力：跑團模式依 type 放在動作、附贈或反應頁的按鈕，按鈕文字與說明都是這裡的資料。",
+      "required": ["id"],
+      "description": "能力：跑團模式依 type 放在動作、附贈或反應頁的按鈕，按鈕文字與說明都是這裡的資料。寫了 spell 的是從物品施放的法術：放在跑團法術頁的「物品」分組，不寫 name、type、text。",
+      "if": { "required": ["spell"] },
+      "then": { "not": { "anyOf": [{ "required": ["name"] }, { "required": ["type"] }, { "required": ["text"] }] } },
+      "else": {
+        "required": ["name", "type", "text"],
+        "not": { "anyOf": [{ "required": ["level"] }, { "required": ["maxLevel"] }, { "required": ["saveDc"] }, { "required": ["attackBonus"] }, { "required": ["stats"] }, { "required": ["castingTime"] }, { "required": ["concentration"] }, { "required": ["note"] }] }
+      },
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "能力 ID：跑團隱藏偏好的 key（official:<分頁>:magic-item-<物品 id>-<能力 id>），不可改名（列在基準檔「物品 id:action:能力 id」）。" },
         "name": { "type": "string", "minLength": 1, "description": "按鈕文字。" },
@@ -212,7 +218,24 @@
           ],
           "description": "每次花費：整數（預設 1），或 [最少, 最多]（按下後選這次花幾次）。要和 pool 一起寫。"
         },
-        "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就能用。省略時和自動計算相同：有基本款的要裝備著，沒有基本款的依 use。" }
+        "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就能用。省略時和自動計算相同：有基本款的要裝備著，沒有基本款的依 use。" },
+        "option": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "additionalProperties": { "type": "string" },
+          "description": "{ 選項 id: 值 }：只有選了這個選項時才有這個能力（命令元素戒指依元素位面的法術表）。"
+        },
+        "alsoPool": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "另外再扣 1 次的池（吉兆之刃的祈願：扣充能，也扣每日一次的池）。要和 pool 一起寫。" },
+        "spell": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "從物品施放的法術 ID（任何法術，含只有 SRD 版的）。不要求法術在職業法表。" },
+        "level": { "type": "integer", "minimum": 1, "maximum": 9, "description": "施放的環階（固定版本，例如星辰法袍 5 環魔法飛彈）；省略＝法術本身的環階。cost 是 [最少, 最多] 時是付最少花費的環階，每多付 1 次 +1 環。" },
+        "maxLevel": { "type": "integer", "minimum": 2, "maximum": 9, "description": "多付花費升環的上限（火球項鍊：每多一顆珠子 +1d6、最多 12d6）。只用於 cost 是範圍時。" },
+        "saveDc": { "type": "integer", "minimum": 1, "maximum": 30, "description": "物品固定的法術豁免 DC（魔杖 DC 15 等）。" },
+        "attackBonus": { "type": "integer", "minimum": -5, "maximum": 20, "description": "物品固定的法術攻擊加值（爆裂頭飾 +5）。" },
+        "stats": { "enum": ["yours"], "description": "yours：用角色卡的法術豁免 DC 與法術攻擊（含物品加值），角色沒有施法屬性時不能施放。省略且沒寫 saveDc／attackBonus 表示說明沒寫（或法術不需要）。" },
+        "castingTime": { "enum": ["action", "bonus-action", "reaction"], "description": "覆寫法術的施放時間（念珠項鍊的附贈動作）。" },
+        "concentration": { "const": false, "description": "false：這次施放不需專注（水晶球的暗示術）。" },
+        "note": { "type": "string", "minLength": 1, "description": "目標限制或備註（純文字，以句號結尾），寫在法術旁，例如「只能以你自己為目標。」。" }
       }
     },
     "base": {
@@ -296,6 +319,7 @@
         "hints": { "$ref": "#/definitions/hints" },
         "pools": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/pool" }, "description": "次數池（充能、每日一次、冷卻、珠子等）。" },
         "actions": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/action" }, "description": "能力：跑團模式的動作、附贈、反應按鈕。" },
+        "spellLinks": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }, "description": "藥水與油「獲得某法術的效果」：物品詳情多一列「法術效果：…」連到法術說明（不是施法）。" },
         "displayName": { "type": "string", "minLength": 1, "description": "選定後的顯示名稱樣板：{base} 為基本款，{選項 ID} 為該選項的 label。省略時為「名稱（基本款、選項）」。" },
         "consumable": { "const": true, "description": "用掉就減 1。" },
         "forms": { "type": "array", "minItems": 2, "items": { "$ref": "#/definitions/form" }, "description": "可切換的形態（王者權杖）：物品視窗的「目前形態」下拉，存在這一筆的 magic.form。裝備欄位的值不變。" },

@@ -134,7 +134,8 @@
         "classes": { "$ref": "#/definitions/classIds", "description": "SRD 的職業清單，只在有 site、且與頂層 classes（網站法表）不同時才寫。只用於查閱（查閱法術、搜尋以兩者的聯集分類），不影響職業法表與準備法術。" },
         "material": { "$ref": "#/definitions/textBlock/properties/material" },
         "trigger": { "$ref": "#/definitions/textBlock/properties/trigger" },
-        "body": { "$ref": "#/definitions/textBlock/properties/body" }
+        "body": { "$ref": "#/definitions/textBlock/properties/body" },
+        "outcomes": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/outcome" }, "description": "只有 SRD 版（沒有 site）的法術從魔法物品施放時的擲骰資料，格式同 site.outcomes。不會讓法術變成角色可用的法術；有 site 的法術寫在 site.outcomes。" }
       },
       "additionalProperties": false
     },

@@ -177,12 +177,14 @@ function checkItem(item, context, errors) {
   if ((item.siteText || item.sitePrice) && !item.equipmentName) errors.push(`${at}：siteText、sitePrice 只用於寫了 equipmentName 的物品`);
   if (Boolean(item.siteText) !== Boolean(item.sitePrice)) errors.push(`${at}：siteText 與 sitePrice 要一起寫`);
   if (/[A-Za-z]{4,}/.test(item.text)) errors.push(`${at}：text 只放中文，不放英文內文`);
-  checkPoolsAndActions(item, at, errors);
+  checkPoolsAndActions(item, at, context, errors);
+  (item.spellLinks || []).filter(id => !context.spells.getItemSpell(id)).forEach(id => errors.push(`${at}：spellLinks 的「${id}」不是法術 ID`));
 }
 
 // 次數池與能力：id 不重複、能力扣的池存在、cost 要和 pool 一起寫、[最少, 最多] 不超過池的最大值；
 // 能力的生效條件和效果相同，所以沒有基本款的物品要寫 use（或能力寫 when: owned）。
-function checkPoolsAndActions(item, at, errors) {
+// 從物品施放的法術（spell）：法術存在、環階不低於法術本身、升環不超過 9 環（或 maxLevel）、數字來源擇一。
+function checkPoolsAndActions(item, at, context, errors) {
   const pools = item.pools || [];
   const actions = item.actions || [];
   const poolIds = pools.map(pool => pool.id);
@@ -203,9 +205,31 @@ function checkPoolsAndActions(item, at, errors) {
     if (action.cost !== undefined && !action.pool) errors.push(`${where}：cost 要和 pool 一起寫`);
     if (Array.isArray(action.cost) && (action.cost[0] >= action.cost[1] || (pool && action.cost[1] > pool.max))) errors.push(`${where}：cost 的 [最少, 最多] 要由小到大，且不超過池的 max`);
     if (typeof action.cost === "number" && pool && action.cost > pool.max) errors.push(`${where}：cost 超過池的 max`);
-    if (!/[。！？）]$/.test(action.text)) errors.push(`${where}：text 以句號結尾`);
+    if (action.text && !/[。！？）]$/.test(action.text)) errors.push(`${where}：text 以句號結尾`);
+    if (action.note && !/[。！？）]$/.test(action.note)) errors.push(`${where}：note 以句號結尾`);
+    if (action.alsoPool && (!action.pool || action.alsoPool === action.pool || !pools.some(entry => entry.id === action.alsoPool))) errors.push(`${where}：alsoPool 要和 pool 一起寫，且是這件物品的另一個池`);
+    Object.entries(action.option || {}).forEach(([optionId, value]) => {
+      const option = (item.options || []).find(entry => entry.id === optionId);
+      if (!option || !option.choices.some(choice => choice.value === value)) errors.push(`${where}：option 的 ${optionId}: ${value} 不是這件物品的選項`);
+    });
+    if (action.spell) checkItemSpell(action, where, context, errors);
     if (!item.use && !item.base && action.when !== "owned") errors.push(`${where}：沒有基本款的物品要寫 use（或能力寫 when: owned）`);
   });
+}
+
+function checkItemSpell(action, where, context, errors) {
+  const spell = context.spells.getItemSpell(action.spell);
+  if (!spell) { errors.push(`${where}：spell「${action.spell}」不是法術 ID`); return; }
+  const level = action.level ?? spell.level;
+  if (action.level !== undefined && action.level < spell.level) errors.push(`${where}：level 不可低於法術本身的 ${spell.level} 環`);
+  if (spell.level === 0 && action.level !== undefined) errors.push(`${where}：戲法不寫 level`);
+  const extra = Array.isArray(action.cost) ? action.cost[1] - action.cost[0] : 0;
+  if (action.maxLevel !== undefined && (!extra || action.maxLevel <= level)) errors.push(`${where}：maxLevel 只用於 cost 是範圍時，且要高於 level`);
+  if (extra && spell.level === 0) errors.push(`${where}：戲法不能多付花費升環`);
+  if (extra && !action.maxLevel && level + extra > 9) errors.push(`${where}：多付花費會超過 9 環，請寫 maxLevel`);
+  if (action.stats && (action.saveDc !== undefined || action.attackBonus !== undefined)) errors.push(`${where}：stats: yours 與 saveDc／attackBonus 擇一`);
+  if (action.concentration === false && !spell.concentration) errors.push(`${where}：法術本身不需專注，不寫 concentration`);
+  if (action.castingTime && spell.castingTimes.length === 1 && spell.castingTimes[0] === action.castingTime) errors.push(`${where}：castingTime 和法術本身相同，不需寫`);
 }
 
 // effects.abilities 的 setBonus：from 列的物品要存在，且在物品本身或選項寫了同一個屬性的 set（雷神之錘加在巨人之力腰帶、食人魔力量護手上）。
@@ -268,6 +292,7 @@ function loadMagicItems() {
     lists,
     known: knownEquipment(lists),
     damageLabels: loadSpellCatalog().damageTypeLabels,
+    spells: loadSpellCatalog(),
     equipmentNames: new Set(Object.keys(loadEquipmentData().EQUIPMENT_ENGLISH_NAMES)),
     weaponNames: new Set([...lists["simple-weapon"], ...lists["martial-weapon"]]),
     skills: loadSkillAbilities()

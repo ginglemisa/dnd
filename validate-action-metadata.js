@@ -1547,6 +1547,17 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:bonus:magic-item-boots-of-speed-click-heels", true));
     assert.deepEqual((await itemButtons("bonus")).map(([key]) => key), ["magic-item-pipes-of-the-sewers-call-rats"], "item buttons can be hidden with the usual preference key");
     await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:bonus:magic-item-boots-of-speed-click-heels", false));
+    // 第 6 步：從物品施放的法術（含念珠項鍊的附贈動作法術）不在動作／附贈／反應頁，而在法術頁的「物品」分組。
+    await page.evaluate(([base]) => {
+      applyStateObject({ ...base, mainHand: "威力法杖", offHand: "", __inventory: { version: 1, items: [
+        { uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id: "staff-of-power" } },
+        { uid: "beads", quantity: 1, attuned: true, worn: true, magic: { id: "necklace-of-prayer-beads" } }
+      ] } });
+      TabletopMode.setPanel("actions");
+    }, [magicBase]);
+    assert.deepEqual((await itemButtons("action")).map(([key]) => key), ["magic-item-staff-of-power-retributive-strike"], "item spells are not action buttons");
+    assert.deepEqual(await itemButtons("bonus"), [], "bonus-action item spells stay on the spell page");
+    assert.equal(await page.evaluate(() => TabletopSpells.getItemSpellEntries().length), 15, "the staff's 9 spells and the beads' 6 spells are item spells");
     await page.evaluate(() => TabletopMode.setMode("sheet"));
     // 點 ✦ 在規則說明浮層顯示有效值與物品。
     await abilityNumbers(inventoryOf(giantBelt));

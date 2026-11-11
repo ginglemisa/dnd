@@ -9,5 +9,7 @@ attunement: false
 use: held
 pools:
   - { id: charges, label: 充能, max: 3, recover: dawn, amount: 1d3 }
+actions:
+  - { id: detect-magic, spell: detect-magic, pool: charges }
 text: |-
   這根魔杖有3次充能。手持它時，你可以消耗1次充能，從中施放_偵測魔法_。魔杖每天黎明恢復1d3次已消耗的充能。

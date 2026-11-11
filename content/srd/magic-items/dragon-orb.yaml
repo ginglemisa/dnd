@@ -12,6 +12,11 @@ pools:
   - { id: call-dragons, label: 召喚龍類, max: 1, recover: cooldown, cooldown: 1 小時 }
 actions:
   - { id: call-dragons, name: 召喚龍類, type: magic, pool: call-dragons, when: owned, text: 控制法球時發出心靈感應召喚，40 英里內的繽紛龍被迫盡快前來法球所在之處，可能對你懷有敵意。 }
+  - { id: cure-wounds, spell: cure-wounds, pool: charges, cost: 4, level: 9, when: owned, note: 要先控制法球。 }
+  - { id: daylight, spell: daylight, pool: charges, when: owned, note: 要先控制法球。 }
+  - { id: death-ward, spell: death-ward, pool: charges, cost: 2, when: owned, note: 要先控制法球。 }
+  - { id: detect-magic, spell: detect-magic, when: owned, note: 要先控制法球。 }
+  - { id: scrying, spell: scrying, pool: charges, cost: 3, saveDc: 18, when: owned, note: 要先控制法球。 }
 text: |-
   法球是一顆刻有紋路的水晶球，直徑約10吋。使用時，它會增大到直徑約20吋，內部有霧氣旋繞。
 

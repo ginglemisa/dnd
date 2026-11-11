@@ -543,10 +543,11 @@ en:
 | `srd.classes` | SRD 的職業清單，只在有 `site`、且與 `classes` 不同時才寫。只用於查閱與搜尋的職業分類（兩者的聯集），不影響職業法表與準備法術。建置檢查職業 ID，`tools/spell-reference/validate.js --srd` 與 SRD 比對。 |
 | `site.tabletop` | 跑團版說明（跑團動作分頁與跑團法術詳情）；省略時用 `site.body`。目前沒有法術使用。 |
 | `site.wildCompanion` | 德魯伊荒野夥伴施放時的跑團說明（特例，只有 `find-familiar`）：`castingTime`、`components`（不含材料）、`duration`、`body`，學派與射程同法術。只有跑團的荒野夥伴動作與法術頁的荒野夥伴法術詳情使用；SRD 版、法術書、搜尋與其他職業仍是一般版本。 |
+| `srd.outcomes` | 只有 SRD 版（沒有 `site`）的法術從魔法物品施放時的擲骰資料，格式同 `site.outcomes`；只補施法當下就有骰子的法術（例如寒冰錐、醫療術），沒有骰子的不寫。不會讓法術變成角色可用的法術（沒有 `playable`，也不進 `spell-id-baseline.json`），畫面仍顯示 SRD 版。 |
 | `site.outcomes` | 跑團施法結果（擲骰按鈕）：`kind`（`damage`／`healing`／`temporary-hp`／`attack`）、`formula` 或 `fixed`、`cantripAt5`、`upcastDice`、`damageType`（或可選的 `damageTypes`）、`autoOnCast`（施法時自動擲骰）、`context` 等，欄位說明見格式定義。 |
 
 - 建置檢查：格式、檔名、名稱不重複、成分與材料、觸發條件、`upcast` 與網站版說明、`outcomes` 的骰式與升環欄位，以及 `spell-id-baseline.json`（只列有 `site` 的法術；新增可用法術或移除 `site` 都須確認後更新基準檔）。
-- `npm run build` 產生根目錄的 `spell-content.generated.js`：`spellRules`（全部法術的規則；`playable` 為角色可用）、`spellText`（網站版的 `desc` 標頭＋說明、`header` 標頭各項、`tabletop`、`wildCompanion`）。網站經 `spell-list.js` 的 `SpellCatalog` 讀取，不從說明文字反推規則。`spell-srd.generated.js` 是 SRD 版的 HTML，網站第一次切到「SRD 版」時才載入，離線版內嵌。英文原文不寫進任何產生檔。
+- `npm run build` 產生根目錄的 `spell-content.generated.js`：`spellRules`（全部法術的規則；`playable` 為角色可用；只有 SRD 版的法術有 `srd.outcomes` 時也帶 `outcomes`，經 `SpellCatalog.getItemSpell()`／`resolveCastOutcomes()` 只供物品施法）、`spellText`（網站版的 `desc` 標頭＋說明、`header` 標頭各項、`tabletop`、`wildCompanion`）。網站經 `spell-list.js` 的 `SpellCatalog` 讀取，不從說明文字反推規則。`spell-srd.generated.js` 是 SRD 版的 HTML，網站第一次切到「SRD 版」時才載入，離線版內嵌。英文原文不寫進任何產生檔。
 - SRD 譯文的用語與檢查見 [tools/spell-reference/README.md](../tools/spell-reference/README.md)。
 
 ### 私人法術（尚未啟用）
@@ -701,6 +702,7 @@ text: |-
 | `options` | 取得時要選的項目：`[{ id, label, choices: [{ value, label, ... }] }]`。`id` 與 `value` 會寫進物品欄存檔的 `magic` 物件，不可改名（列在基準檔），`id` 不可用 `id`、`base`、`form`、`pool`、`action`。`id: bonus` 是 +N 加值，`id: damageType` 的值須是法術的傷害類型 ID。`choices` 可寫 `rarity`、`effects`（選了才有的自動計算，不可寫 `condition`）、`hints`（選了才有的提示，例如抗性戒指每種傷害類型的抗性）、`heal`（治療藥水骰式，例如 `4d4 + 4`）、`score`（巨人之力藥水的力量值，只是資料、不計算；穿戴類物品寫 `effects.abilities`）、`saveDc`／`attackBonus`（法術卷軸）、`omitInName: true`（顯示名稱不加這個選項）。 |
 | `effects` | 只放角色卡會自動計算的恆定效果，用下方「效果與提示的詞」描述。對特定目標才有的加值、擲 20 才有的效果、命中後選用或要豁免的效果、只對遠程的 AC 等條件式效果不寫，改寫 `hints`（武器說明）或留在說明文字。 |
 | `hints` | 提示：只顯示、不計算的效果，例如常駐抗性、優勢、詛咒、看目標的額外傷害。見下方「效果與提示的詞」。 |
+| `spellLinks` | 藥水與油「獲得某法術的效果」的法術 ID 清單，只連到法術說明，不是施法（見下方「從物品施放的法術」）。 |
 | `pools`、`actions` | 次數池（充能、每日一次、冷卻、珠子等）與能力（跑團的動作、附贈、反應按鈕）。見下方「次數池與能力」。 |
 | `displayName` | 選定後的顯示名稱樣板，`{base}` 為基本款、`{選項 id}` 為該選項的 `label`，例如 `"{base}{bonus}"`。省略時為「名稱（可選的基本款、選項）」，例如「治療藥水（高等）」「焰舌（長劍）」；固定基本款不列入。 |
 | `consumable` | `true`：用掉就減 1（藥水、卷軸、彈藥、每顆一件的珠子等）。一個容器裡有好幾撮、好幾盎司的物品（乾燥粉、至尊膠、萬溶劑）改寫不恢復的 `pools`。 |
@@ -788,8 +790,29 @@ actions:
 | `type` | `action` 動作、`magic` 魔法動作、`attack` 攻擊動作（這三種在動作頁）、`bonus` 附贈動作、`reaction` 反應。 |
 | `pool`、`cost` | 使用時扣哪個池，與每次花費（預設 1；`[1, 3]` 表示按下後選這次花幾次）。沒有 `pool` 的按鈕只有說明。 |
 | `when` | `owned`：持有就能用（碗缽、號角等沒有 `use` 的物品）。沒有 `base` 也沒有 `use` 的物品要寫。 |
+| `option` | `{ 選項 id: 值 }`：只有選了這個選項時才有（命令元素戒指依元素位面的法術表）。 |
+| `alsoPool` | 另外再扣 1 次的池，要和 `pool` 一起寫（吉兆之刃的祈願：扣祈願充能，也扣「每日一次」的池）。 |
 
-從物品施法（魔杖、法杖的法術）是之後的步驟，這些物品目前只有池。
+**從物品施放的法術**：能力寫 `spell`（法術 ID，含只有 SRD 版的法術）時，就是從物品施放的法術，不寫 `name`、`type`、`text`（名稱與施放時間讀法術），不出現在動作／附贈／反應頁，而是放在跑團法術頁的「物品」分組。不耗法術位、不要求法術在職業法表，資格就是上面的生效條件；施法時扣 `pool`（沒寫 `pool` 表示隨意施放，例如花費 0 的法術、浮空之靴）。只有 SRD 版的法術畫面顯示 SRD 版，擲骰資料見「法術」的 `srd.outcomes`。
+
+```yaml
+actions:
+  - { id: fireball, spell: fireball, pool: charges, cost: [ 1, 3 ], level: 3, saveDc: 15 }   # 1 次是 3 環，每多 1 次 +1 環
+  - { id: cure-wounds, spell: cure-wounds, pool: charges, cost: [ 1, 4 ], stats: yours }
+  - { id: suggestion, spell: suggestion, pool: suggestion, saveDc: 17, concentration: false, when: owned, note: 透過探知術感應器…也結束。 }
+```
+
+| 欄位 | 說明 |
+| --- | --- |
+| `level` | 施放的環階（固定版本，例如星辰法袍的 5 環魔法飛彈）；省略是法術本身的環階。`cost` 是範圍時，付最少花費是這個環階，每多付 1 次 +1 環；`maxLevel` 是升環上限（火球項鍊）。 |
+| `saveDc`、`attackBonus` | 物品固定的法術豁免 DC 與攻擊加值（魔杖 DC 15、爆裂頭飾 +5）。 |
+| `stats` | `yours`：用角色卡的法術豁免 DC 與法術攻擊（含物品加值）；角色沒有施法屬性時不能施放，畫面寫原因。三者都不寫表示說明沒寫（或法術不需要），畫面不顯示 DC。治療等加的施法屬性調整值一律用角色卡的數值。 |
+| `castingTime` | 覆寫施放時間：`action`、`bonus-action`、`reaction`（念珠項鍊是附贈動作）。 |
+| `concentration` | `false`：這次施放不需專注（水晶球的暗示術）；其餘照法術本身，由跑團的專注追蹤處理。 |
+| `note` | 目標限制或備註，寫在法術旁（「只能以你自己為目標。」「只影響野獸。」），以句號結尾。材料成分只顯示在法術說明，不檢查。 |
+
+- 建置檢查：法術存在、`level` 不低於法術本身、戲法不升環、多付花費不超過 9 環（或寫 `maxLevel`）、`stats` 與固定數字擇一、`concentration: false` 只用於專注法術、`castingTime` 不與法術本身相同、`option` 是這件物品的選項、`alsoPool` 是另一個池；`spell` 與 `name`／`type`／`text` 不可同時寫。
+- 只放說明、不做法術的：驚奇魔杖的隨機表、萬法帽、神秘牌組、祈神蠟燭、法力再生珍珠。藥水與油的「獲得法術效果」不算施法，改寫 `spellLinks: [ haste ]`：物品視窗多一列「法術效果：…」連到法術說明（建置檢查法術 ID）。
 
 ```yaml
 effects: { extraDamage: [ { dice: 1d6, type: cold } ] }

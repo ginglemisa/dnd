@@ -7,5 +7,8 @@ category: wondrous
 group: curio
 rarity: legendary
 attunement: true
+actions:
+  - { id: scrying, spell: scrying, saveDc: 17, when: owned }
+  - { id: detect-thoughts, spell: detect-thoughts, saveDc: 17, concentration: false, when: owned, note: 以探知術感應器 30 呎內你看得見的生物為目標；探知術結束時也結束。 }
 text: |-
   觸碰這顆水晶球時，你可以用它施放_探知術_（豁免DC 17）。此外，你可以施放_偵測思想_（豁免DC 17），以你在該法術感應器30呎內能看見的生物為目標。你不需要專注於這個_偵測思想_法術來在其持續時間內維持它，但若_探知術_法術結束，它也會結束。

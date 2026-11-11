@@ -8,5 +8,7 @@ group: wearable
 rarity: uncommon
 attunement: true
 use: worn
+actions:
+  - { id: disguise-self, spell: disguise-self, note: 帽子被取下時法術結束。 }
 text: |-
   穿戴這頂帽子時，你可以施放_易容術_法術。若帽子被取下，法術結束。

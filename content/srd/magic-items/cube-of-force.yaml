@@ -9,6 +9,13 @@ rarity: rare
 attunement: true
 pools:
   - { id: charges, label: 充能, max: 10, recover: dawn, amount: 1d6 }
+actions:
+  - { id: mage-armor, spell: mage-armor, saveDc: 17, when: owned, pool: charges }
+  - { id: shield, spell: shield, saveDc: 17, when: owned, pool: charges }
+  - { id: tiny-hut, spell: tiny-hut, saveDc: 17, when: owned, pool: charges, cost: 3 }
+  - { id: private-sanctum, spell: private-sanctum, saveDc: 17, when: owned, pool: charges, cost: 4 }
+  - { id: resilient-sphere, spell: resilient-sphere, saveDc: 17, when: owned, pool: charges, cost: 4 }
+  - { id: wall-of-force, spell: wall-of-force, saveDc: 17, when: owned, pool: charges, cost: 5 }
 text: |-
   這個方塊寬約1吋。每一面都有不同的標記。你可以按下其中一面，消耗該面所需的充能次數，藉此施放與之對應的法術（豁免DC 17），如「力場魔方各面」表所示。
 

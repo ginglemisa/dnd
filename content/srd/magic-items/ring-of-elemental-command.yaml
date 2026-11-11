@@ -21,6 +21,23 @@ pools:
   - { id: charges, label: 充能, max: 5, recover: dawn, amount: 1d4 + 1 }
 actions:
   - { id: compel, name: 元素驅使, type: magic, text: 60 呎內你看得見的一隻元素生物 DC 18 感知豁免，失敗則被魅惑到你的下個回合開始，由你決定它下個回合的移動與動作。 }
+  - { id: chain-lightning, spell: chain-lightning, saveDc: 18, option: { element: air }, pool: charges, cost: 3 }
+  - { id: feather-fall, spell: feather-fall, saveDc: 18, option: { element: air } }
+  - { id: gust-of-wind, spell: gust-of-wind, saveDc: 18, option: { element: air }, pool: charges, cost: 2 }
+  - { id: wind-wall, spell: wind-wall, saveDc: 18, option: { element: air }, pool: charges }
+  - { id: earthquake, spell: earthquake, saveDc: 18, option: { element: earth }, pool: charges, cost: 5 }
+  - { id: stone-shape, spell: stone-shape, saveDc: 18, option: { element: earth }, pool: charges, cost: 2 }
+  - { id: stoneskin, spell: stoneskin, saveDc: 18, option: { element: earth }, pool: charges, cost: 3 }
+  - { id: wall-of-stone, spell: wall-of-stone, saveDc: 18, option: { element: earth }, pool: charges, cost: 3 }
+  - { id: burning-hands, spell: burning-hands, saveDc: 18, option: { element: fire }, pool: charges }
+  - { id: fireball, spell: fireball, saveDc: 18, option: { element: fire }, pool: charges, cost: 2 }
+  - { id: fire-storm, spell: fire-storm, saveDc: 18, option: { element: fire }, pool: charges, cost: 4 }
+  - { id: wall-of-fire, spell: wall-of-fire, saveDc: 18, option: { element: fire }, pool: charges, cost: 3 }
+  - { id: create-or-destroy-water, spell: create-or-destroy-water, saveDc: 18, option: { element: water }, pool: charges }
+  - { id: ice-storm, spell: ice-storm, saveDc: 18, option: { element: water }, pool: charges, cost: 2 }
+  - { id: tsunami, spell: tsunami, saveDc: 18, option: { element: water }, pool: charges, cost: 5 }
+  - { id: wall-of-ice, spell: wall-of-ice, saveDc: 18, option: { element: water }, pool: charges, cost: 3 }
+  - { id: water-walk, spell: water-walk, saveDc: 18, option: { element: water }, pool: charges, cost: 2 }
 text: |-
   每枚_命令元素戒指_都連結到四個元素位面之一。連結的位面由DM選擇或隨機決定。例如，_命令元素戒指_（風）連結到風元素位面。
 

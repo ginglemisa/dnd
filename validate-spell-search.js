@@ -766,8 +766,8 @@ async function validateMagicItemShop(page) {
   await openGrant("bag-of-holding");
   assert.equal(await grant.locator("select, .magic-item-segmented, .inventory-stepper").count(), 0, "no options means no controls");
   await finishGrant();
-  // 速度之靴在第 5 步做成跑團按鈕，不再提示；警示權杖的法術還沒有接（從物品施法），仍提示。
-  await openGrant("rod-of-alertness");
+  // 速度之靴在第 5 步做成跑團按鈕、警示權杖在第 6 步接上法術，都不再提示；活化盾牌還沒有接，仍提示。
+  await openGrant("animated-shield");
   assert.equal(await grant.locator(".magic-item-detail__manual").textContent(), "角色卡不會自動套用這項效果，請依說明處理");
   await grant.getByRole("button", { name: "取消", exact: true }).click();
   await grant.waitFor({ state: "detached" });
@@ -917,7 +917,7 @@ async function validateMagicItemShop(page) {
   };
   await openItem("amulet");
   assert.equal(await item.locator(".magic-item-detail__subtitle").textContent(), "奇物，稀有（需同調）");
-  // 健康護符的體質已自動計算，物品視窗不再提示手動處理（提示本身由商店視窗的警示權杖檢查）。
+  // 健康護符的體質已自動計算，物品視窗不再提示手動處理（提示本身由商店視窗的活化盾牌檢查）。
   assert.equal(await item.locator(".magic-item-detail__manual").count(), 0, "the inventory dialog has no manual note for an item the sheet applies");
   assert.deepEqual(await item.locator(".inventory-item-actions .inventory-action-button").allTextContents(), ["裝備", "開始同調"], "non-consumable items have no use button; wearable items that need attunement have the wear and attunement switches");
   assert.equal(await item.locator(".inventory-item-actions .inventory-action-row__text").textContent(), "需要穿戴並同調才會生效。");
@@ -1532,6 +1532,7 @@ async function validateInventory(page) {
   await validateInventoryItemActions(page);
   await validateInventoryStacks(page);
   await validateMagicItemCharges(page);
+  await validateItemSpells(page);
 }
 
 // 魔法物品的次數池：存檔整理（滿的不記、不存在的池拿掉）、不合併、拆出的那件是滿的、匯入預檢，以及物品詳情的 −／＋ 與恢復按鈕。
@@ -1623,6 +1624,158 @@ async function validateMagicItemCharges(page) {
   await page.keyboard.press("Escape");
   await item.waitFor({ state: "detached" });
   await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
+}
+
+// 從物品施放的法術（第 6 步）：內容檔 actions 的 spell。跑團法術頁的「物品」分組與物品視窗的施法列走同一個施法視窗：
+// 不耗法術位、不看職業法表、扣物品的次數池；花費是範圍時選次數升環；DC 三種來源；不需專注的覆寫；只有 SRD 版的法術也能施放與自動擲骰。
+async function validateItemSpells(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  const item = page.locator('.app-dialog[data-variant="inventory-item"]');
+  const confirmCast = page.getByRole("button", { name: "施法", exact: true });
+  const fighter = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "5", str: "16", dex: "14", con: "12", int: "10", wis: "10", cha: "10",
+    "spellcasting-ability": "", mainHand: "", offHand: "", armor: "" };
+  const load = (state, items) => page.evaluate(([state, items]) => {
+    TabletopMode.setMode("sheet");
+    applyStateObject({ ...state, __inventory: { version: 1, items } });
+    showTab("equipment");
+  }, [state, items]);
+  const openItem = async (uid) => {
+    await page.locator(`[data-inventory-uid="${uid}"]`).click();
+    await item.waitFor();
+  };
+  const closeItem = async () => {
+    await page.keyboard.press("Escape");
+    await item.waitFor({ state: "detached" });
+  };
+  const spellRow = id => item.locator(`.inventory-action-row[data-item-spell="${id}"]`);
+  const lastToast = () => page.waitForFunction(() => document.querySelector("#app-toast > .app-toast:last-child .app-toast__message")?.textContent, null, { timeout: 2000 })
+    .then(handle => handle.jsonValue());
+
+  // 內容檔：法術能力沒有按鈕欄位（不出現在跑團的動作頁）；每個法術都查得到（含只有 SRD 版的）。
+  assert.deepEqual(await page.evaluate(() => MagicItemCatalog.getAll().flatMap(rule => MagicItemCatalog.getActions(rule.id).filter(action => action.spell)
+    .filter(action => !SpellCatalog.getItemSpell(action.spell) || action.name || action.type)).map(action => action.id)), [], "every item spell names a catalog spell and no button fields");
+
+  // 戰士拿著火球魔杖：物品視窗的施法列；選 2 次是 4 環；扣魔杖的充能、不耗法術位；確認後視窗關閉。
+  await load({ ...fighter, mainHand: "火球魔杖" }, [{ uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-fireballs" } }]);
+  await openItem("wand");
+  assert.equal(await spellRow("fireball").locator(".inventory-action-row__text").textContent(), "火球術｜消耗 1～3 次充能（剩餘 7/7）・豁免 DC 15。");
+  await spellRow("fireball").getByRole("button", { name: "從火球魔杖施放火球術" }).click();
+  await confirmCast.waitFor();
+  assert.deepEqual(await page.locator("[data-cast-item-cost] option").allTextContents(), ["1 次（3 環）", "2 次（4 環）", "3 次（5 環）"], "each extra charge raises the level");
+  await page.locator("[data-cast-item-cost]").selectOption("2");
+  assert.match(await page.locator(".tabletop-cast-summary").textContent(), /有效環位4 環消耗2 次充能（剩餘 7\/7）.*豁免 DC／攻擊豁免 DC 15/u);
+  await page.getByRole("button", { name: "取消", exact: true }).last().click();
+  await confirmCast.waitFor({ state: "detached" });
+  assert.deepEqual([await item.isVisible(), await page.evaluate(() => Inventory.getEntry("wand").charges)], [true, undefined], "cancelling spends nothing");
+  await spellRow("fireball").getByRole("button", { name: "從火球魔杖施放火球術" }).click();
+  await page.locator("[data-cast-item-cost]").selectOption("2");
+  await confirmCast.click();
+  await item.waitFor({ state: "detached" });
+  assert.deepEqual(await page.evaluate(() => Inventory.getEntry("wand").charges), { charges: 5 }, "casting spends the chosen charges");
+  assert.match(await lastToast(), /^已施放火球術（4 環；火球魔杖，消耗 2 次充能（剩餘 5\/7））/u);
+  await page.waitForFunction(() => document.activeElement?.closest?.("[data-inventory-uid]")?.dataset.inventoryUid === "wand", null, { timeout: 2000 });
+
+  // 魔杖沒拿在手上：物品沒有生效，按鈕反灰寫原因。
+  await load(fighter, [{ uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-fireballs" } }]);
+  await openItem("wand");
+  assert.deepEqual([await spellRow("fireball").locator(".inventory-action-row__text").textContent(), await spellRow("fireball").locator("button.inventory-action-button").isDisabled()],
+    ["火球術｜這件物品生效時才能施放。", true], "items that are not in effect cannot cast");
+  await closeItem();
+  // 拿在手上但次數用完：反灰寫原因。
+  await load({ ...fighter, mainHand: "火球魔杖" }, [{ uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-fireballs" }, charges: { charges: 0 } }]);
+  await openItem("wand");
+  assert.deepEqual([await spellRow("fireball").locator(".inventory-action-row__text").textContent(), await spellRow("fireball").locator("button.inventory-action-button").isDisabled()],
+    ["火球術｜消耗 1～3 次充能（剩餘 0/7）・豁免 DC 15。充能不夠（剩餘 0/7）。", true]);
+  await closeItem();
+
+  // 「用你的」DC：沒有施法屬性的戰士反灰寫原因；法師用角色卡的數字（含威力法杖 +2），只有 SRD 版的寒冰錐自動擲 8d8、不耗法術位。
+  const staff = [{ uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id: "staff-of-power" } }];
+  await load({ ...fighter, mainHand: "威力法杖" }, staff);
+  await openItem("staff");
+  assert.deepEqual([await spellRow("cone-of-cold").locator(".inventory-action-row__text").textContent(), await spellRow("cone-of-cold").locator("button.inventory-action-button").isDisabled()],
+    ["寒冰錐｜消耗 5 次充能（剩餘 20/20）。這件物品使用你的法術豁免 DC 與攻擊，但你沒有施法屬性。", true], "your-DC items need a spellcasting ability");
+  await closeItem();
+  await load({ ...fighter, class: "wizard", level: "9", int: "18", "spellcasting-ability": "int", mainHand: "威力法杖" }, staff);
+  await page.evaluate(() => DiceRoller.setEnabled(true));
+  await openItem("staff");
+  const sheetNumbers = await page.evaluate(() => [document.getElementById("spell-save-dc").value, document.getElementById("spell-attack-bonus").value]);
+  assert.ok(sheetNumbers[0] && sheetNumbers[1], "the wizard has spell numbers");
+  assert.equal(await spellRow("cone-of-cold").locator(".inventory-action-row__text").textContent(),
+    `寒冰錐｜消耗 5 次充能（剩餘 20/20）・你的豁免 DC ${sheetNumbers[0]}・攻擊 ${sheetNumbers[1]}。`, "your-DC items show the sheet's spell numbers");
+  const slotsBefore = await page.evaluate(() => [...document.querySelectorAll("#spellslot5-row input:checked")].length);
+  await spellRow("cone-of-cold").getByRole("button", { name: "從威力法杖施放寒冰錐" }).click();
+  await confirmCast.click();
+  await item.waitFor({ state: "detached" });
+  await page.waitForFunction(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1") || "[]")[0]?.label?.startsWith("寒冰錐"));
+  assert.deepEqual(await page.evaluate(() => [Inventory.getEntry("staff").charges, JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1"))[0].expression,
+    [...document.querySelectorAll("#spellslot5-row input:checked")].length]), [{ charges: 15 }, "8d8", slotsBefore], "SRD-only spells auto-roll their srd.outcomes; no slot is spent");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => DiceRoller.setEnabled(false));
+
+  // 藥水與油：只連到法術說明；只有 SRD 版的以太化顯示 SRD 版、沒有施法按鈕。
+  await load(fighter, [{ uid: "speed", quantity: 1, magic: { id: "potion-of-speed" } }, { uid: "oil", quantity: 1, magic: { id: "oil-of-etherealness" } }]);
+  await openItem("speed");
+  assert.equal(await item.locator(".inventory-action-row").first().textContent(), "法術效果：加速術");
+  await closeItem();
+  await openItem("oil");
+  await item.getByRole("button", { name: "查看以太化的法術內容" }).click();
+  const detail = page.locator(".app-dialog").last();
+  await detail.locator(".spell-version__attribution").waitFor();
+  assert.deepEqual([await detail.locator(".spell-version__tab").count(), await detail.getByRole("button", { name: "施法", exact: true }).count()], [0, 0], "spell links show the SRD text without casting");
+  await page.keyboard.press("Escape");
+  await closeItem();
+
+  // 跑團法術頁：沒有施法能力也有「物品」分組；次數用完的卡片變灰；選項限定的法術只列選了的元素；不需專注的覆寫。
+  await load({ ...fighter, mainHand: "火球魔杖" }, [
+    { uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-fireballs" }, charges: { charges: 5 } },
+    { uid: "ball", quantity: 1, attuned: true, magic: { id: "crystal-ball-of-telepathy" } },
+    { uid: "beads", quantity: 1, magic: { id: "necklace-of-fireballs" }, charges: { beads: 0 } },
+    { uid: "ring", quantity: 1, attuned: true, worn: true, magic: { id: "ring-of-elemental-command", element: "air" } }
+  ]);
+  await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
+  await page.waitForFunction(() => [...document.querySelectorAll("#tabletop-selected-spells .tabletop-spell-level h4")].some(title => title.textContent === "物品"), null, { timeout: 5000 })
+    .catch(async (error) => {
+      console.error(await page.evaluate(() => [TabletopMode.getMode(), TabletopMode.getPanel(), document.getElementById("tabletop-selected-spells")?.innerText.slice(0, 300),
+        [...document.querySelectorAll(".app-dialog")].map(dialog => dialog.innerText.slice(0, 80))]));
+      throw error;
+    });
+  const cards = await page.evaluate(() => [...[...document.querySelectorAll("#tabletop-selected-spells .tabletop-spell-level")]
+    .find(section => section.querySelector("h4").textContent === "物品").querySelectorAll(".tabletop-spell-card")].map(card => [
+    card.querySelector(".tabletop-spell-button").dataset.spellSourceKey, card.querySelector(".tabletop-spell-card__source").textContent, card.classList.contains("is-depleted")]));
+  assert.deepEqual(cards, [
+    ["magic-item:wand-of-fireballs:fireball", "火球魔杖5/7", false],
+    ["magic-item:crystal-ball-of-telepathy:scrying", "心靈感應水晶球", false],
+    ["magic-item:crystal-ball-of-telepathy:suggestion", "心靈感應水晶球1/1", false],
+    ["magic-item:necklace-of-fireballs:fireball", "火球項鍊0/9", true],
+    ["magic-item:ring-of-elemental-command:chain-lightning", "命令元素戒指（風）5/5", false],
+    ["magic-item:ring-of-elemental-command:feather-fall", "命令元素戒指（風）", false],
+    ["magic-item:ring-of-elemental-command:gust-of-wind", "命令元素戒指（風）5/5", false],
+    ["magic-item:ring-of-elemental-command:wind-wall", "命令元素戒指（風）5/5", false]
+  ], "the item group lists active item spells; options filter the element table; empty pools grey the card");
+  assert.equal(await page.locator("#tabletop-tab-spells").isHidden(), false, "the spell tab appears for item spells without spellcasting");
+  assert.equal(await page.locator("#tabletop-spells-empty").isHidden(), true);
+  const castFromPage = async (sourceKey) => {
+    await page.locator(`.tabletop-spell-button[data-spell-source-key="${sourceKey}"]`).click();
+    await confirmCast.click();
+    await confirmCast.click();
+    await confirmCast.waitFor({ state: "detached" });
+  };
+  await castFromPage("magic-item:crystal-ball-of-telepathy:suggestion");
+  assert.deepEqual(await page.evaluate(() => [TabletopMode.getConcentrationSpellId(), Inventory.getEntry("ball").charges]), ["", { suggestion: 0 }], "concentration: false does not start concentrating");
+  await castFromPage("magic-item:crystal-ball-of-telepathy:scrying");
+  assert.equal(await page.evaluate(() => TabletopMode.getConcentrationSpellId()), "scrying", "other item spells use the tabletop concentration tracking");
+  await page.evaluate(() => TabletopMode.stopConcentration(""));
+  // 祈願：扣祈願充能，也扣「每日一次」的池；今日已用過時變灰。
+  await page.evaluate(() => {
+    TabletopMode.setMode("sheet");
+    applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "5", mainHand: "吉兆之刃（長劍）", offHand: "", armor: "",
+      __inventory: { version: 1, items: [{ uid: "blade", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "luck-blade", base: "長劍" } }] } });
+    TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells");
+  });
+  await castFromPage("magic-item:luck-blade:wish");
+  assert.deepEqual(await page.evaluate(() => Inventory.getEntry("blade").charges), { wish: 0, charges: 2 }, "alsoPool spends the daily pool too");
+  await page.waitForFunction(() => document.querySelector('.tabletop-spell-button[data-spell-source-key="magic-item:luck-blade:wish"]')?.closest(".tabletop-spell-card").classList.contains("is-depleted"));
+  await page.evaluate(() => { TabletopMode.setMode("sheet"); applyStateObject({ class: "fighter", level: "5", mainHand: "", __inventory: { version: 1, items: [] } }); });
 }
 
 // 同名物品分堆：拆分、拖曳合併（醫療包總次數不變）、商店新標籤、裝備從物品欄拿 1 件、卸除成為獨立標籤與舊資料轉換。

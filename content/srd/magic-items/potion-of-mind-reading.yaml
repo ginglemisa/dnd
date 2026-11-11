@@ -7,6 +7,7 @@ category: potion
 rarity: rare
 attunement: false
 consumable: true
+spellLinks: [ detect-thoughts ]
 text: |-
   當你喝下這瓶藥水時，你獲得_偵測思想_法術（豁免DC 13）的效果，持續10分鐘（不需專注）。
 

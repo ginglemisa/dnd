@@ -11,6 +11,11 @@ hints:
   - resistances: [ cold ]
 pools:
   - { id: charges, label: 充能, max: 10, recover: dawn, amount: 1d6 + 4 }
+actions:
+  - { id: cone-of-cold, spell: cone-of-cold, stats: yours, pool: charges, cost: 5 }
+  - { id: fog-cloud, spell: fog-cloud, stats: yours, pool: charges }
+  - { id: ice-storm, spell: ice-storm, stats: yours, pool: charges, cost: 4 }
+  - { id: wall-of-ice, spell: wall-of-ice, stats: yours, pool: charges, cost: 4 }
 text: |-
   手持這根法杖時，你對冷凍傷害具有抗性。
 
