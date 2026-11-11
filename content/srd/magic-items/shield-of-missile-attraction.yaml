@@ -7,7 +7,10 @@ category: armor
 rarity: rare
 attunement: true
 base: { fixed: 盾牌 }
-manualEffect: true
+hints:
+  - text: 遠程武器攻擊造成的傷害有抗性。
+  - when: owned
+    text: 詛咒：遠程武器攻擊以你 10 呎內的生物為目標時，改以你為目標；移除盾牌也不會結束。
 text: |-
   手持這面盾牌時，你對遠程武器攻擊造成的傷害具有抗性。
 

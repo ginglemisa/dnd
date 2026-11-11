@@ -7,6 +7,9 @@ category: staff
 rarity: rare
 attunement: true
 base: { fixed: 長棍 }
+hints:
+  - panel: weapon
+    text: 命中時可花 1 次充能額外造成 2d10 黯蝕傷害，目標 DC 15 體質豁免失敗時，1 小時內使用力量或體質的檢定與豁免有劣勢。
 text: |-
   這根法杖有3次充能，每天黎明恢復1d3次已消耗的充能。
 

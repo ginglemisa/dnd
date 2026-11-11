@@ -8,6 +8,9 @@ rarity: legendary
 attunement: "由術士、契術師或法師"
 base: { fixed: 長棍 }
 effects: { attack: 2, damage: 2, spellAttack: 2, condition: held }
+hints:
+  - panel: skills
+    text: 對法術的豁免有優勢。
 text: |-
   這根法杖有50次充能，可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+2加值。你手持它時，法術攻擊檢定獲得+2加值。
 

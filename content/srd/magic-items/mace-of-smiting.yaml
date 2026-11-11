@@ -8,7 +8,9 @@ rarity: rare
 attunement: false
 base: { fixed: 硬頭錘 }
 effects: { attack: 1, damage: 1 }
-manualEffect: true
+hints:
+  - panel: weapon
+    text: 攻擊構裝生物時加值改為 +3；擲出 20 時額外 7 點鈍擊傷害（構裝生物 14 點，之後生命值 25 以下被摧毀）。
 text: |-
   使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。當你使用這件武器攻擊構裝生物時，加值增加為+3。
 

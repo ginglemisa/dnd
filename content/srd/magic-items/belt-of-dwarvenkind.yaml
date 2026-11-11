@@ -8,6 +8,12 @@ group: wearable
 rarity: rare
 attunement: true
 use: worn
+hints:
+  - languages: [ 矮人語 ]
+    darkvision: 60
+    resistances: [ poison ]
+  - panel: skills
+    text: 與矮人、灰矮人互動的魅力（遊說）檢定有優勢；避免或結束中毒狀態的豁免有優勢。
 manualEffect: true
 text: |-
   穿戴這條腰帶時，你獲得以下益處：

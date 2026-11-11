@@ -8,5 +8,8 @@ group: wearable
 rarity: legendary
 attunement: true
 use: wornOrHeld
+hints:
+  - panel: skills
+    text: 為控制湮滅法球進行的智力（奧秘）檢定有優勢。
 text: |-
   手持或穿戴這個護符時，你為控制_湮滅法球_而進行的任何智力（奧秘）檢定都具有優勢。此外，當你在控制_湮滅法球_的狀態下開始你的回合時，你可以進行魔法動作，將其移動10呎，再加上等同於你智力調整值10倍的額外呎數。這個移動不必沿直線進行。

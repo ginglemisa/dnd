@@ -8,6 +8,9 @@ group: wearable
 rarity: uncommon
 attunement: true
 use: worn
+hints:
+  - panel: skills
+    text: 避免或結束中毒狀態的豁免有優勢。
 text: |-
   穿戴這件墜飾時，你可以進行魔法動作，恢復2d4 + 2點生命值。此特性使用後，直到下次黎明前都無法再次使用。
 

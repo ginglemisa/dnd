@@ -8,5 +8,8 @@ group: wearable
 rarity: rare
 attunement: true
 use: worn
+hints:
+  - immunities: [ poison ]
+    text: 免疫中毒狀態。
 text: |-
   這條精緻的銀鍊上掛著一枚明亮式切割的黑色寶石墜飾。穿戴它時，你對中毒狀態與毒素傷害免疫。

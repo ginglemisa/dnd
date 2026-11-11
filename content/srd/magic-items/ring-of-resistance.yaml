@@ -11,16 +11,16 @@ options:
   - id: damageType
     label: 傷害類型
     choices:
-      - { value: acid, label: 強酸 }
-      - { value: cold, label: 冷凍 }
-      - { value: fire, label: 火焰 }
-      - { value: force, label: 力場 }
-      - { value: lightning, label: 閃電 }
-      - { value: necrotic, label: 黯蝕 }
-      - { value: poison, label: 毒素 }
-      - { value: psychic, label: 心靈 }
-      - { value: radiant, label: 光耀 }
-      - { value: thunder, label: 雷鳴 }
+      - { value: acid, label: 強酸, hints: [ { resistances: [ acid ] } ] }
+      - { value: cold, label: 冷凍, hints: [ { resistances: [ cold ] } ] }
+      - { value: fire, label: 火焰, hints: [ { resistances: [ fire ] } ] }
+      - { value: force, label: 力場, hints: [ { resistances: [ force ] } ] }
+      - { value: lightning, label: 閃電, hints: [ { resistances: [ lightning ] } ] }
+      - { value: necrotic, label: 黯蝕, hints: [ { resistances: [ necrotic ] } ] }
+      - { value: poison, label: 毒素, hints: [ { resistances: [ poison ] } ] }
+      - { value: psychic, label: 心靈, hints: [ { resistances: [ psychic ] } ] }
+      - { value: radiant, label: 光耀, hints: [ { resistances: [ radiant ] } ] }
+      - { value: thunder, label: 雷鳴, hints: [ { resistances: [ thunder ] } ] }
 text: |-
   穿戴這枚戒指時，你對一種傷害類型具有抗性。戒指上的寶石標示該類型，由DM選擇，或擲下表來隨機決定。
 

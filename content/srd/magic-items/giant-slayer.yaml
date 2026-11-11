@@ -8,7 +8,9 @@ rarity: rare
 attunement: false
 base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
 effects: { attack: 1, damage: 1 }
-manualEffect: true
+hints:
+  - panel: weapon
+    text: 命中巨人時額外造成 2d6 傷害（與武器相同類型），巨人須通過 DC 15 力量豁免，否則倒地。
 text: |-
   使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
 

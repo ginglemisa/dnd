@@ -8,6 +8,7 @@ group: wearable
 rarity: uncommon
 attunement: true
 use: worn
+effects: { weapons: { names: [ 長弓, 短弓 ], damage: 2 } }
 manualEffect: true
 text: |-
   穿戴這對護腕時，你擁有長弓與短弓的熟練，且使用此類武器進行的傷害擲骰獲得+2加值。

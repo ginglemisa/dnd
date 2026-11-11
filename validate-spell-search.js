@@ -1864,7 +1864,7 @@ async function validateInventoryStacks(page) {
       MagicItemShop.renderDetail(box, id);
       return box.querySelector(".magic-item-detail__manual")?.textContent || "";
     };
-    result.notes = ["defender", "ammunition-plus", "flame-tongue"].map(note);
+    result.notes = ["thunderous-greatclub", "ammunition-plus", "flame-tongue", "defender"].map(note);
     return result;
   }, [blank]);
   assert.deepEqual(magicEquip, {
@@ -1909,7 +1909,8 @@ async function validateInventoryStacks(page) {
     attunedStack: [false, 0],
     afterRemove: 2,
     fixedQuantity: 1,
-    notes: ["固定加值會自動計算，其餘效果請依說明處理", "角色卡不會自動套用這項效果，請依說明處理", "角色卡不會自動套用這項效果，請依說明處理"]
+    // 防禦者的加值轉移已做完，不再提示；雷鳴巨棒的額外傷害會算，力量 20 還沒有。
+    notes: ["部分效果會自動計算，其餘請依說明處理", "角色卡不會自動套用這項效果，請依說明處理", "角色卡不會自動套用這項效果，請依說明處理", ""]
   }, "magic and plain items with the same base stay apart in every equipment path, and attunement follows its limits");
 
   // 物品欄滿 300 筆又要多開一筆時裝備失敗：下拉改回原本的選擇並提示；×1 的標籤不用多開一筆，照常裝備。

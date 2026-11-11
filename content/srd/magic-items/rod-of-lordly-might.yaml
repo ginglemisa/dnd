@@ -10,11 +10,14 @@ base: { fixed: 硬頭錘 }
 effects: { attack: 3, damage: 3 }
 forms:
   - { id: mace, label: 原本形態（硬頭錘）, base: 硬頭錘 }
-  - { id: flame-longsword, label: 按鈕 1：火焰之刃（長劍）, base: 長劍, noEffects: true }
-  - { id: flame-shortsword, label: 按鈕 1：火焰之刃（短劍）, base: 短劍, noEffects: true }
+  - { id: flame-longsword, label: 按鈕 1：火焰之刃（長劍）, base: 長劍, noEffects: true, effects: { extraDamage: [ { dice: 2d6, type: fire } ] } }
+  - { id: flame-shortsword, label: 按鈕 1：火焰之刃（短劍）, base: 短劍, noEffects: true, effects: { extraDamage: [ { dice: 2d6, type: fire } ] } }
   - { id: battleaxe, label: 按鈕 2：戰斧, base: 戰斧 }
   - { id: spear, label: 按鈕 3：短矛, base: 短矛 }
-  - { id: other, label: 按鈕 4～6：其他形態（依說明處理） }
+  - { id: other, label: 按鈕 4～6：其他形態（依說明處理）, hints: [ { panel: skills, text: 按鈕 5 攻城錘：為突破門、路障等障礙進行的力量（運動）檢定 +10。 } ] }
+hints:
+  - panel: weapon
+    text: 近戰命中時可用汲取生命或麻痺（DC 17 體質豁免，各每日一次，見說明）。
 text: |-
   這根權杖有凸緣狀的頂端，並且作為一把魔法硬頭錘，使用它進行的攻擊檢定與傷害擲骰獲得+3加值。權杖具有六個與按鈕相關的特性，這些按鈕沿著權杖的柄排成一列。它還有另外三項特性，詳述如下。
 

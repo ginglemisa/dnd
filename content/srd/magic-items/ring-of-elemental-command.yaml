@@ -11,10 +11,12 @@ options:
   - id: element
     label: 元素位面
     choices:
-      - { value: air, label: 風 }
-      - { value: earth, label: 土 }
-      - { value: fire, label: 火 }
-      - { value: water, label: 水 }
+      - { value: air, label: 風, hints: [ { languages: [ 風族語 ], resistances: [ lightning ] } ] }
+      - { value: earth, label: 土, hints: [ { languages: [ 土族語 ], resistances: [ acid ] } ] }
+      - { value: fire, label: 火, hints: [ { languages: [ 火族語 ], immunities: [ fire ] } ] }
+      - { value: water, label: 水, hints: [ { languages: [ 水族語 ], text: 可在水下呼吸。 } ] }
+hints:
+  - text: 對元素生物的攻擊檢定有優勢，元素生物對你的攻擊檢定有劣勢。
 text: |-
   每枚_命令元素戒指_都連結到四個元素位面之一。連結的位面由DM選擇或隨機決定。例如，_命令元素戒指_（風）連結到風元素位面。
 

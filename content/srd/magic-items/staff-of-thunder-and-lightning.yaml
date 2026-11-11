@@ -8,6 +8,9 @@ rarity: very-rare
 attunement: true
 base: { fixed: 長棍 }
 effects: { attack: 2, damage: 2 }
+hints:
+  - panel: weapon
+    text: 近戰命中時可用閃電（額外 2d6 閃電傷害）或雷鳴（DC 17 體質豁免，失敗則震懾），各每日一次。
 text: |-
   這根法杖可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+2加值。它還具有下列額外特性。這些特性中的任一項使用後，直到下次黎明前都無法再次使用。
 

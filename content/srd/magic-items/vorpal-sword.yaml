@@ -8,7 +8,9 @@ rarity: legendary
 attunement: true
 base: { from: [ 長柄刀, 巨劍, 長劍, 彎刀 ] }
 effects: { attack: 3, damage: 3 }
-manualEffect: true
+hints:
+  - panel: weapon
+    text: 無視揮砍傷害抗性；擲出 20 時斬下一個頭（無法斬首的生物改受額外 30 點揮砍傷害，見說明）。
 text: |-
   使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+3加值。此外，此武器無視對揮砍傷害的抗性。
 

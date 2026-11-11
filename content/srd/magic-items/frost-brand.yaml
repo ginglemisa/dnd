@@ -7,7 +7,11 @@ category: weapon
 rarity: very-rare
 attunement: true
 base: { from: [ 長柄刀, 巨劍, 長劍, 刺劍, 彎刀, 短劍 ] }
-manualEffect: true
+effects: { extraDamage: [ { dice: 1d6, type: cold } ] }
+hints:
+  - resistances: [ fire ]
+  - panel: weapon
+    text: 冰點以下的溫度中發光；拔出時可熄滅周圍 30 呎內非魔法的火焰（1 小時一次）。
 text: |-
   當你以這件魔法武器進行攻擊檢定並命中時，目標額外受到1d6冷凍傷害。此外，只要你手持這件武器，你對火焰傷害具有抗性。
 

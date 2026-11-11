@@ -8,6 +8,11 @@ group: wearable
 rarity: rare
 attunement: true
 use: worn
+hints:
+  - darkvision: 120
+    text: 真實視覺 120 呎。
+  - panel: skills
+    text: 依賴視覺的感知（察覺）檢定有優勢。
 text: |-
   這件法袍裝飾著眼睛狀的圖案。你穿戴這件法袍時，會獲得下列益處：
 

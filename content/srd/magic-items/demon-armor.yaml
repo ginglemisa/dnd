@@ -7,8 +7,10 @@ category: armor
 rarity: very-rare
 attunement: true
 base: { any: [ light-armor, medium-armor, heavy-armor ], label: "任意輕甲、中甲或重甲" }
-effects: { ac: 1 }
-manualEffect: true
+effects: { ac: 1, unarmedStrike: { dice: 1d8, type: slashing, attack: 1, damage: 1 } }
+hints:
+  - languages: [ 深淵語 ]
+    text: 徒手打擊造成 1d8 揮砍傷害，命中與傷害 +1（攻擊列的武藝會自動計算）。詛咒：穿上後無法脫下；對惡魔的攻擊檢定有劣勢，對抗惡魔法術與特殊能力的豁免有劣勢。
 text: |-
   穿戴這件護甲時，你獲得+1護甲等級加值，並且你懂深淵語。此外，護甲上帶爪的護手讓你的徒手打擊造成1d8揮砍傷害，而非一般的鈍擊傷害，並且你的徒手打擊的攻擊檢定與傷害擲骰獲得+1加值。
 

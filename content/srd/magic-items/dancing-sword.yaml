@@ -7,6 +7,9 @@ category: weapon
 rarity: very-rare
 attunement: true
 base: { from: [ 巨劍, 長劍, 刺劍, 彎刀, 短劍 ] }
+hints:
+  - panel: weapon
+    text: 拋出後懸停攻擊，第 4 次攻擊後飛回（見說明）。
 manualEffect: true
 text: |-
   你可以進行附贈動作，把這件魔法武器拋向空中。這麼做時，武器開始懸停，飛行至多30呎，並攻擊其自身5呎內你選擇的一個生物。武器使用你的攻擊檢定，並在傷害擲骰上加上你的屬性調整值。

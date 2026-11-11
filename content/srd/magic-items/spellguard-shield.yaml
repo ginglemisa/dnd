@@ -7,6 +7,8 @@ category: armor
 rarity: very-rare
 attunement: true
 base: { fixed: 盾牌 }
-manualEffect: true
+hints:
+  - panel: skills
+    text: 對法術與其他魔法效果的豁免有優勢；法術攻擊檢定對你有劣勢。
 text: |-
   手持這面盾牌時，你對法術與其他魔法效果的豁免具有優勢，且法術攻擊檢定對你具有劣勢。

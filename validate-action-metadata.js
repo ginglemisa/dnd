@@ -1202,8 +1202,9 @@ async function verifyEquipmentLoadout(browser, url) {
       ["+7", "1d8+4鈍擊"], "Martial Arts adds the magic bonus");
     assert.deepEqual((await magicNumbers({ mainHand: "陽炎劍", ...inventoryOf({ uid: "sun", itemId: "長劍", quantity: 1, magic: { id: "sun-blade" } }) })).main,
       ["+6", "1d10+3揮砍"], "an item that needs attunement does nothing until attuned");
+    // 陽炎劍同調後還改成光耀傷害（第 2 步的詞彙：damageType）。
     assert.deepEqual((await magicNumbers({ mainHand: "陽炎劍", ...inventoryOf({ uid: "sun", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "sun-blade" } }) })).main,
-      ["+8", "1d10+5揮砍"], "attuned items apply");
+      ["+8", "1d10+5光耀"], "attuned items apply");
     const details = await page.evaluate(() => { const result = calculateHandAttacks()[0].details; return [result.magicLabel, result.magicAttackBonus, result.magicDamageBonus, renderAttackCalculationPopup(result, "hit").includes("陽炎劍")]; });
     assert.deepEqual(details, ["陽炎劍", 2, 2, true], "attack details list the magic bonus");
     assert.match(await page.locator("#equipment-loadout-summary-content").textContent(), /陽炎劍：.*魔法 \+2/u, "the loadout summary names the magic weapon and its bonus");
@@ -1260,16 +1261,81 @@ async function verifyEquipmentLoadout(browser, url) {
         mace: ["王者權杖", "王者權杖", "+9", "1d6+6鈍擊"],
         battleaxe: ["王者權杖", "王者權杖", "+9", "1d10+6揮砍"],
         spear: ["王者權杖", "王者權杖", "+9", "1d8+6穿刺"],
-        "flame-longsword": ["王者權杖", "王者權杖", "+6", "1d10+3揮砍"],
-        "flame-shortsword": ["王者權杖", "王者權杖", "+6", "1d6+3穿刺"],
+        "flame-longsword": ["王者權杖", "王者權杖", "+6", "1d10+3揮砍+2d6火焰"],
+        "flame-shortsword": ["王者權杖", "王者權杖", "+6", "1d6+3穿刺+2d6火焰"],
         other: ["王者權杖", "王者權杖", "+9", "1d6+6鈍擊"]
       },
       saved: { id: "rod-of-lordly-might", form: "flame-longsword" },
       field: "王者權杖",
-      reloaded: ["王者權杖", "王者權杖", "+6", "1d10+3揮砍"],
+      reloaded: ["王者權杖", "王者權杖", "+6", "1d10+3揮砍+2d6火焰"],
       back: { id: "rod-of-lordly-might" },
       bad: false
     }, "the Rod of Lordly Might changes weapon data with its form while the equipment field keeps its name");
+    // 第 2 步的詞彙：額外傷害骰（固定類型接在後面、同武器類型併進骰子）、傷害類型、靈巧、投擲、熟練、指定武器加值、徒手打擊；
+    // 都跟著那一手與同調，攻擊列、計算浮層、裝備摘要與跑團武器卡一致。
+    const frost = { uid: "frost", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "frost-brand" } };
+    assert.deepEqual(await magicNumbers({ mainHand: "霜銘（長劍）", ...inventoryOf(frost) }).then(result => result.main), ["+6", "1d10+3揮砍+1d6冷凍"], "Frost Brand adds cold damage after the weapon damage");
+    assert.deepEqual(await page.evaluate(() => {
+      const details = calculateHandAttacks()[0].details;
+      const summary = document.getElementById("equipment-loadout-summary-content").textContent;
+      return { popup: renderAttackCalculationPopup(details, "damage").includes("霜銘（長劍）額外傷害</span><strong>1d6 冷凍"), summary: [summary.includes("1d10 揮砍＋1d6 冷凍"), summary.includes("冰點以下的溫度中發光")] };
+    }), { popup: true, summary: [true, true] }, "the damage popup and the loadout summary list the extra die and the weapon note");
+    assert.deepEqual(await magicNumbers({ mainHand: "霜銘（長劍）", ...inventoryOf({ ...frost, attuned: false }) }).then(result => result.main), ["+6", "1d10+3揮砍"], "Frost Brand needs attunement");
+    assert.deepEqual(await magicNumbers({ mainHand: "長劍", offHand: "惡毒武器（短劍）", ...inventoryOf({ uid: "plain", itemId: "長劍", quantity: 1 }, { uid: "vicious", itemId: "短劍", quantity: 1, magic: { id: "vicious-weapon" } }) }),
+      { main: ["+6", "1d8+3揮砍"], off: ["+6", "1d6+2d6穿刺"], ac: "12", dexSave: "+2" }, "same-type extra dice join the weapon die, even in the off hand without the ability modifier");
+    // 陽炎劍：靈巧（敏捷較高時用敏捷）、熟練短劍也算熟練；武僧熟練短劍（輕型軍用）但不熟練長劍。
+    const sun = { uid: "sun", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "sun-blade" } };
+    assert.deepEqual(await magicNumbers({ class: "monk", str: "10", dex: "16", wis: "14", mainHand: "陽炎劍", ...inventoryOf(sun) }).then(result => result.main), ["+8", "1d10+5光耀"], "the Sun Blade is finesse and proficient through the shortsword");
+    assert.deepEqual(await page.evaluate(() => [calculateHandAttacks()[0].details.proficient, document.getElementById("equipment-loadout-summary-content").querySelectorAll(".equipment-proficiency-warning").length]), [true, 0], "no proficiency warning for the Sun Blade");
+    assert.deepEqual(await magicNumbers({ class: "monk", str: "10", dex: "16", wis: "14", mainHand: "陽炎劍", ...inventoryOf({ ...sun, attuned: false }) }).then(result => result.main), ["+0", "1d10揮砍"], "an unattuned Sun Blade is a plain longsword the monk is not trained with");
+    // 矮人飛錘、特技師長棍：投擲射程加進武器屬性；兩用武器雙手時列出投擲時的傷害骰。
+    await magicNumbers({ mainHand: "矮人飛錘", ...inventoryOf({ uid: "thrower", itemId: "戰錘", quantity: 1, attuned: true, magic: { id: "dwarven-thrower" } }) });
+    assert.deepEqual(await page.evaluate(() => {
+      const details = calculateHandAttacks()[0].details;
+      return [document.getElementById("equipment-loadout-summary-content").textContent.includes("投擲 (射程 20/60)"), details.thrownDie, document.getElementById("atk-main-dmg").value];
+    }), [true, "1d8", "1d10+6鈍擊"], "the Dwarven Thrower gains the thrown property");
+    // 射手護腕：穿著時長弓、短弓傷害 +2，其他武器不變。
+    const bracersOn = { uid: "archery", quantity: 1, attuned: true, worn: true, magic: { id: "bracers-of-archery" } };
+    assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf({ uid: "bow", itemId: "長弓", quantity: 1 }, bracersOn) }).then(result => result.main), ["+5", "1d8+4穿刺"], "Bracers of Archery add damage to longbows");
+    assert.deepEqual(await page.evaluate(() => renderAttackCalculationPopup(calculateHandAttacks()[0].details, "damage").includes("射手護腕")), true, "the damage popup names the bracers");
+    assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf({ uid: "bow", itemId: "長弓", quantity: 1 }, { ...bracersOn, worn: false }) }).then(result => result.main), ["+5", "1d8+2穿刺"], "bracers in the pack add nothing");
+    assert.deepEqual(await magicNumbers({ mainHand: "長劍", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, bracersOn) }).then(result => result.main), ["+6", "1d10+3揮砍"], "bracers leave other weapons alone");
+    // 惡魔護甲：武藝改為 1d8 揮砍（武藝骰較大時用武藝骰），命中與傷害 +1；沒穿就不算。
+    const demon = { uid: "demon", itemId: "皮甲", quantity: 1, attuned: true, magic: { id: "demon-armor" } };
+    const monk = { class: "monk", str: "10", dex: "16", wis: "14", mainHand: "武藝" };
+    assert.deepEqual(await magicNumbers({ ...monk, level: "1", armor: "惡魔護甲（皮甲）", ...inventoryOf(demon) }).then(result => result.main), ["+3", "1d8+1揮砍"], "Demon Armor turns unarmed strikes into 1d8 slashing with +1");
+    assert.deepEqual(await magicNumbers({ ...monk, level: "5", armor: "惡魔護甲（皮甲）", ...inventoryOf(demon) }).then(result => result.main), ["+4", "1d8+1揮砍"], "Demon Armor and a 1d8 Martial Arts die give 1d8");
+    // 網站等級上限 8，武藝骰最大 1d8；直接以較大的骰子確認取較大的那個。
+    assert.deepEqual(await page.evaluate(() => [
+      withMagicWeaponEffects({ 名稱: "武藝", 傷害: "1d10 鈍擊" }, { unarmed: { dice: "1d8", type: "slashing" } }).傷害,
+      withMagicWeaponEffects({ 名稱: "武藝", 傷害: "1d6 鈍擊" }, { unarmed: { dice: "1d8", type: "slashing" } }).傷害
+    ]), ["1d10 揮砍", "1d8 揮砍"], "a larger Martial Arts die wins");
+    assert.deepEqual(await magicNumbers({ ...monk, level: "1", ...inventoryOf(demon) }).then(result => result.main), ["+5", "1d6+3鈍擊"], "Demon Armor in the pack changes nothing");
+    // 跑團武器卡：額外傷害可以擲（略過類型文字），武器說明接在備註框；提示依同調與裝備位置出現在跑團總覽與技能頁籤。
+    await magicNumbers({ mainHand: "霜銘（長劍）", ...inventoryOf(frost) });
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); });
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-magic-note")?.textContent.includes("冰點以下"));
+    assert.equal(await page.evaluate(() => document.querySelector('#tabletop-panel-actions .tabletop-weapon-fields .tabletop-inline-roll[aria-label*="傷害"]')?.disabled === false || !DiceRoller.isEnabled()), true, "the damage with an extra die stays rollable");
+    const hints = extra => page.evaluate(([base, extra]) => {
+      applyStateObject({ ...base, ...extra });
+      return getActiveMagicEffects().hints.map(hint => `${hint.panel}|${hint.label}|${hint.detail}`);
+    }, [magicBase, extra]);
+    assert.deepEqual(await hints({ mainHand: "霜銘（長劍）", ...inventoryOf(frost) }), ["overview|霜銘（長劍）|火焰傷害抗性。"], "Frost Brand resists fire while held");
+    assert.deepEqual(await hints(inventoryOf(frost)), [], "Frost Brand in the pack gives no resistance");
+    assert.deepEqual(await hints(inventoryOf({ uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-dwarvenkind" } })), [
+      "overview|矮人腰帶|毒素傷害抗性；黑暗視覺 60 呎；懂矮人語。",
+      "skills|矮人腰帶|與矮人、灰矮人互動的魅力（遊說）檢定有優勢；避免或結束中毒狀態的豁免有優勢。"
+    ], "structured words make fixed sentences, skill hints go to the skills panel");
+    assert.deepEqual(await hints(inventoryOf({ uid: "ring", quantity: 1, worn: true, magic: { id: "ring-of-resistance", damageType: "thunder" } })), ["overview|抗性戒指（雷鳴）|雷鳴傷害抗性。"], "hints can come from the chosen option");
+    assert.deepEqual(await hints(inventoryOf({ uid: "axe", itemId: "戰斧", quantity: 1, attuned: true, magic: { id: "berserker-axe" } })).then(list => list.map(item => item.split("|")[0])), ["overview"], "a curse marked when: owned shows without holding the axe");
+    assert.deepEqual(await hints(inventoryOf({ uid: "boots", quantity: 1, magic: { id: "boots-of-elvenkind" } })), [], "boots in the pack give no advantage");
+    assert.deepEqual(await hints(inventoryOf({ uid: "boots", quantity: 1, worn: true, magic: { id: "boots-of-elvenkind" } })), ["overview|精靈之靴|隱匿檢定有優勢。腳步不會發出聲音。"], "worn boots give stealth advantage");
+    await page.evaluate(() => TabletopMode.setPanel("overview"));
+    await page.waitForFunction(() => document.getElementById("tabletop-overview-rule-summary").textContent.includes("精靈之靴：隱匿檢定有優勢"));
+    await hints(inventoryOf({ uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-dwarvenkind" } }));
+    await page.evaluate(() => TabletopMode.setPanel("skills"));
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-skills .tabletop-defense-summary__list")?.textContent.includes("矮人腰帶：與矮人、灰矮人互動"));
+    await page.evaluate(() => { TabletopMode.setPanel("overview"); TabletopMode.setMode("sheet"); });
     // 魔法款沿用基本款的規則：熟練、護甲訓練、力量需求、重甲、雙手與攻擊列名稱。
     assert.deepEqual(await page.evaluate(([base]) => {
       const held = (extra, ...items) => applyStateObject({ ...base, ...extra, __inventory: { version: 1, items } });

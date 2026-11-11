@@ -8,6 +8,9 @@ group: wearable
 rarity: uncommon
 attunement: true
 use: worn
+hints:
+  - resistances: [ cold ]
+    text: 不需額外保護就能忍受華氏 0 度以下的低溫。
 text: |-
   這雙帶毛的靴子貼腳又溫暖。穿戴它們時，你獲得以下益處。
 

@@ -7,7 +7,11 @@ category: weapon
 rarity: very-rare
 attunement: true
 base: { fixed: 長棍 }
-effects: { attack: 2, damage: 2 }
+effects: { attack: 2, damage: 2, thrown: [ 30, 120 ] }
+hints:
+  - advantage: [ 體操 ]
+  - panel: weapon
+    text: 體操優勢限長棍與 10 呎長桿形態；攻擊偏轉與投擲限長棍形態；投擲後飛回手中。
 manualEffect: true
 text: |-
   使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+2加值。

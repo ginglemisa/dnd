@@ -14,7 +14,7 @@ options:
     choices:
       - { value: absorption, label: 吸收, rarity: very-rare }
       - { value: agility, label: 靈活, rarity: very-rare }
-      - { value: awareness, label: 警覺, rarity: rare }
+      - { value: awareness, label: 警覺, rarity: rare, hints: [ { advantage: [ 先攻, 察覺 ] } ] }
       - { value: fortitude, label: 堅忍, rarity: very-rare }
       - { value: greater-absorption, label: 高等吸收, rarity: legendary }
       - { value: insight, label: 洞悉, rarity: very-rare }

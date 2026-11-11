@@ -9,6 +9,9 @@ rarity: legendary
 attunement: "由術士、契術師或法師"
 use: worn
 effects: { spellAttack: 2, spellSaveDc: 2 }
+hints:
+  - panel: skills
+    text: 對法術與其他魔法效果的豁免有優勢。
 manualEffect: true
 text: |-
   這件優雅的衣物以精緻的布料製成，並裝飾著符文。

@@ -7,6 +7,7 @@ category: armor
 rarity: uncommon
 attunement: false
 base: { fixed: 盾牌 }
-manualEffect: true
+hints:
+  - advantage: [ 先攻, 察覺 ]
 text: |-
   手持這面盾牌時，你的先攻擲骰與感知（察覺）檢定具有優勢。盾牌上飾有一個眼睛的符號。

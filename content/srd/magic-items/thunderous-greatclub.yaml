@@ -7,6 +7,10 @@ category: weapon
 rarity: very-rare
 attunement: true
 base: { fixed: 巨棒 }
+effects: { extraDamage: [ { dice: 1d8, type: thunder } ] }
+hints:
+  - panel: weapon
+    text: 對未被穿戴或攜帶的物體額外造成 3d8 雷鳴傷害。
 manualEffect: true
 text: |-
   當你與這件魔法武器同調時，你的力量為20，除非你的力量原本就等於或高於該數值。此武器對其擊中的任何生物造成額外1d8雷鳴傷害，並對其擊中、未被穿戴或攜帶的物體造成額外3d8雷鳴傷害。

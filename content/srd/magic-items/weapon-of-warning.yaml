@@ -7,7 +7,10 @@ category: weapon
 rarity: uncommon
 attunement: true
 base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
-manualEffect: true
+hints:
+  - when: owned
+    advantage: [ 先攻 ]
+    text: 30 呎內的盟友先攻擲骰也有優勢；戰鬥開始時喚醒自然睡眠的對象。
 text: |-
   只要此武器在你伸手可及之處且你與它同調，你和你30呎內的盟友就獲得以下益處。
 

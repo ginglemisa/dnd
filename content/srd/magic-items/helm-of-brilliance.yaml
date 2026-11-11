@@ -8,6 +8,8 @@ group: wearable
 rarity: very-rare
 attunement: true
 use: worn
+hints:
+  - text: 頭盔至少有一顆紅寶石時，火焰傷害抗性。
 text: |-
   這頂頭盔鑲有1d10顆鑽石、2d10顆紅寶石、3d10顆火蛋白石與4d10顆蛋白石。從頭盔上撬下的任何寶石都會碎成粉末。當所有寶石都被移除或摧毀時，頭盔失去魔力。
 

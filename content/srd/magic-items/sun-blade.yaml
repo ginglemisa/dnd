@@ -7,7 +7,10 @@ category: weapon
 rarity: rare
 attunement: true
 base: { fixed: 長劍 }
-effects: { attack: 2, damage: 2 }
+effects: { attack: 2, damage: 2, finesse: true, damageType: radiant, proficiencyAs: [ 長劍, 短劍 ] }
+hints:
+  - panel: weapon
+    text: 命中不死生物時額外造成 1d8 光耀傷害。
 manualEffect: true
 text: |-
   這件物品看起來像是一個劍柄。

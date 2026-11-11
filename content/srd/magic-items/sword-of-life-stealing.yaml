@@ -7,6 +7,8 @@ category: weapon
 rarity: rare
 attunement: true
 base: { from: [ 長柄刀, 巨劍, 長劍, 刺劍, 彎刀, 短劍 ] }
-manualEffect: true
+hints:
+  - panel: weapon
+    text: 擲出 20 時，非構裝、非不死的目標額外受到 15 點黯蝕傷害，你獲得等量臨時生命值。
 text: |-
   當你以這件魔法武器攻擊一個生物，且攻擊檢定的d20擲出20時，若該目標不是構裝生物或不死生物，則額外受到15點黯蝕傷害，且你獲得等同於所受黯蝕傷害量的臨時生命值。

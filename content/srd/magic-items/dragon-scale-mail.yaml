@@ -11,17 +11,20 @@ options:
   - id: dragon
     label: 龍種
     choices:
-      - { value: black, label: 黑龍 }
-      - { value: blue, label: 藍龍 }
-      - { value: brass, label: 黃銅龍 }
-      - { value: bronze, label: 青銅龍 }
-      - { value: copper, label: 赤銅龍 }
-      - { value: gold, label: 金龍 }
-      - { value: green, label: 綠龍 }
-      - { value: red, label: 紅龍 }
-      - { value: silver, label: 銀龍 }
-      - { value: white, label: 白龍 }
+      - { value: black, label: 黑龍, hints: [ { resistances: [ acid ] } ] }
+      - { value: blue, label: 藍龍, hints: [ { resistances: [ lightning ] } ] }
+      - { value: brass, label: 黃銅龍, hints: [ { resistances: [ fire ] } ] }
+      - { value: bronze, label: 青銅龍, hints: [ { resistances: [ lightning ] } ] }
+      - { value: copper, label: 赤銅龍, hints: [ { resistances: [ acid ] } ] }
+      - { value: gold, label: 金龍, hints: [ { resistances: [ fire ] } ] }
+      - { value: green, label: 綠龍, hints: [ { resistances: [ poison ] } ] }
+      - { value: red, label: 紅龍, hints: [ { resistances: [ fire ] } ] }
+      - { value: silver, label: 銀龍, hints: [ { resistances: [ cold ] } ] }
+      - { value: white, label: 白龍, hints: [ { resistances: [ cold ] } ] }
 effects: { ac: 1 }
+hints:
+  - panel: skills
+    text: 對抗龍類吐息武器的豁免有優勢。
 manualEffect: true
 text: |-
   龍鱗甲由某一種龍的鱗片製成。有時龍會收集自己脫落的鱗片並贈予他人。其他時候，獵人會小心保存死去巨龍的獸皮。無論是哪種情況，_龍鱗甲_都極為珍貴。

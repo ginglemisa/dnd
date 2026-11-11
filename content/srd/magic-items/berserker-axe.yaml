@@ -8,6 +8,11 @@ rarity: rare
 attunement: true
 base: { from: [ 戰斧, 巨斧, 長戟 ] }
 effects: { attack: 1, damage: 1 }
+hints:
+  - when: owned
+    text: 用這件武器以外的武器攻擊有劣勢；持有期間受到傷害時須通過 DC 15 感知豁免，否則陷入狂暴。
+  - panel: weapon
+    text: 狂暴期間把最近的生物視為敵人並攻擊它（見說明）。
 manualEffect: true
 text: |-
   使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。此外，當你與這件武器同調時，你已達到的每一個等級都使你的生命值上限增加1。

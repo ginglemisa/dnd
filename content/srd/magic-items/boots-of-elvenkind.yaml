@@ -8,5 +8,8 @@ group: wearable
 rarity: uncommon
 attunement: false
 use: worn
+hints:
+  - advantage: [ 隱匿 ]
+    text: 腳步不會發出聲音。
 text: |-
   穿戴這雙靴子時，無論你走過什麼表面，你的腳步都不會發出聲音。你在敏捷（隱匿）檢定上也具有優勢。

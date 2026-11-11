@@ -8,6 +8,9 @@ rarity: very-rare
 attunement: true
 base: { fixed: 長棍 }
 effects: { attack: 3, damage: 3 }
+hints:
+  - panel: weapon
+    text: 近戰命中時可花最多 3 次充能，每次額外造成 1d6 力場傷害。
 text: |-
   這根法杖可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+3加值。
 

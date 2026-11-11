@@ -9,6 +9,9 @@ rarity: legendary
 attunement: true
 use: carried
 effects: { ac: 1 }
+hints:
+  - panel: skills
+    text: 對法術的豁免有優勢。
 text: |-
   這枚甲蟲形狀的徽章帶在你身上時，提供三種益處。
 

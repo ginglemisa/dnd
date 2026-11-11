@@ -7,6 +7,8 @@ category: staff
 rarity: very-rare
 attunement: "由德魯伊、術士、契術師或法師"
 base: { fixed: 長棍 }
+hints:
+  - resistances: [ cold ]
 text: |-
   手持這根法杖時，你對冷凍傷害具有抗性。
 
