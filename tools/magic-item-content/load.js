@@ -1,7 +1,7 @@
 // 讀取 content/srd/magic-items 的魔法物品內容檔（一件一檔），做 schema 驗證與跨資料檢查。任何錯誤都丟出 ContentError。
 "use strict";
 const path = require("path");
-const { ROOT, loadEquipmentData, loadSpellCatalog, loadMagicItemCatalog } = require("../content/site-sources");
+const { ROOT, loadEquipmentData, loadSpellCatalog, loadMagicItemCatalog, loadSkillAbilities } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile, listYaml } = require("../content/yaml");
 
@@ -10,6 +10,10 @@ const WHERE = path.relative(ROOT, DIR).replace(/\\/g, "/");
 // 彈藥在 equipment-data.js 只有名稱對照，沒有獨立清單；這裡列出物品欄使用的品名。
 const AMMUNITION = Object.freeze(["箭矢", "弩矢", "子彈，火器", "彈丸，投石索", "針"]);
 const RESERVED_OPTION_IDS = new Set(["id", "base"]);
+// 只用於武器類（有基本款且不是護甲、盾牌）的 effects；finesse、thrown 另外要固定基本款。
+const WEAPON_EFFECT_KEYS = Object.freeze(["extraDamage", "damageType", "finesse", "thrown", "proficiencyAs"]);
+// 提示裡產生固定說法的詞，只放在跑團總覽（panel 省略或 overview）。
+const STRUCTURED_HINT_KEYS = Object.freeze(["resistances", "immunities", "darkvision", "languages", "advantage"]);
 
 // 「任意某類」的展開清單：品名與 equipment-data.js 相同。
 function loadBaseLists() {
@@ -59,6 +63,42 @@ function checkBase(item, at, lists, known, errors) {
   [base.fixed, ...(base.from || [])].filter(Boolean).filter(name => !known.has(name)).forEach(name => errors.push(`${at}：基本款「${name}」不是 equipment-data.js 的武器、護甲或盾牌`));
 }
 
+// 武器類：有基本款且不是護甲類別（武器、法杖、權杖）。效果加在拿著它的那一手。
+function isWeaponLike(item) {
+  return Boolean(item.base) && item.category !== "armor";
+}
+
+// 武器的屬性欄位最多 4 個（屬性1～屬性4）；靈巧、投擲會補進空的欄位。
+function propertySlots(name) {
+  const data = loadEquipmentData();
+  const weapon = [...data.weapons_simple_melee, ...data.weapons_simple_ranged, ...data.weapons_martial_melee, ...data.weapons_martial_ranged].find(entry => entry["名稱"] === name);
+  if (!weapon) return null;
+  return [1, 2, 3, 4].filter(index => !String(weapon[`屬性${index}`] ?? "").trim() || /^-+$/.test(String(weapon[`屬性${index}`]).trim())).length;
+}
+
+function checkWeaponEffects(effects, at, { item, weaponNames }, errors) {
+  const keys = WEAPON_EFFECT_KEYS.filter(key => effects[key] !== undefined);
+  if (keys.length && !isWeaponLike(item)) errors.push(`${at}：${keys.join("、")} 只用於武器類（有基本款且不是護甲、盾牌）`);
+  const added = ["finesse", "thrown"].filter(key => effects[key] !== undefined);
+  if (added.length && item.base?.fixed === undefined) errors.push(`${at}：${added.join("、")} 只用於固定基本款的物品`);
+  if (added.length && item.base?.fixed !== undefined && propertySlots(item.base.fixed) < added.length) errors.push(`${at}：基本款「${item.base.fixed}」的屬性欄位不夠放 ${added.join("、")}`);
+  if (effects.thrown && effects.thrown[0] > effects.thrown[1]) errors.push(`${at}：thrown 的一般射程不可大於遠射程`);
+  [...(effects.proficiencyAs || []), ...(effects.weapons?.names || [])].filter(name => !weaponNames.has(name)).forEach(name => errors.push(`${at}：「${name}」不是 equipment-data.js 的武器`));
+}
+
+function checkHints(hints, at, { item, skills }, errors) {
+  (hints || []).forEach((hint, index) => {
+    const where = `${at} hints[${index}]`;
+    const structured = STRUCTURED_HINT_KEYS.filter(key => hint[key] !== undefined);
+    if (!structured.length && !hint.text) errors.push(`${where}：要有 text 或 ${STRUCTURED_HINT_KEYS.join("、")} 其中之一`);
+    if (structured.length && (hint.panel || "overview") !== "overview") errors.push(`${where}：${structured.join("、")} 只放在跑團總覽（panel 省略或 overview）`);
+    if (hint.panel === "weapon" && !isWeaponLike(item)) errors.push(`${where}：panel: weapon 只用於武器類`);
+    if (hint.panel === "weapon" && hint.when) errors.push(`${where}：武器說明跟著拿在手上的武器，不寫 when`);
+    (hint.advantage || []).filter(target => target !== "先攻" && !Object.hasOwn(skills, target)).forEach(target => errors.push(`${where}：advantage 的「${target}」不是技能 ID 或「先攻」`));
+    if (hint.text && !/[。！？）]$/.test(hint.text)) errors.push(`${where}：text 以句號結尾`);
+  });
+}
+
 function checkEffects(effects, at, { bonusOption, allowCondition }, errors) {
   if (!effects) return;
   const values = Object.entries(effects).filter(([key]) => key !== "condition");
@@ -68,7 +108,8 @@ function checkEffects(effects, at, { bonusOption, allowCondition }, errors) {
   if (effects.condition && ["ac", "saves", "spellAttack", "spellSaveDc"].every(key => effects[key] === undefined)) errors.push(`${at}：effects.condition 只適用 ac、saves、spellAttack、spellSaveDc`);
 }
 
-function checkOptions(item, at, damageLabels, errors) {
+function checkOptions(item, at, context, errors) {
+  const { damageLabels } = context;
   const options = item.options || [];
   const ids = options.map(option => option.id);
   if (new Set(ids).size !== ids.length) errors.push(`${at}：options 的 id 重複`);
@@ -80,14 +121,20 @@ function checkOptions(item, at, damageLabels, errors) {
     if (option.choices.some(choice => choice.rarity) && !option.choices.every(choice => choice.rarity)) errors.push(`${at} ${option.id}：rarity 須每個 choice 都寫或都不寫`);
     if (option.id === "bonus" && !values.every(value => Number.isInteger(value) && value > 0)) errors.push(`${at} bonus：value 須是正整數`);
     if (option.id === "damageType") option.choices.filter(choice => damageLabels[choice.value] !== choice.label).forEach(choice => errors.push(`${at} damageType：「${choice.value}」應對應 ${damageLabels[choice.value] || "SpellCatalog.damageTypeLabels 的傷害類型"}`));
-    option.choices.forEach(choice => checkEffects(choice.effects, `${at} ${option.id}:${choice.value}`, { bonusOption: false, allowCondition: false }, errors));
+    option.choices.forEach((choice) => {
+      const where = `${at} ${option.id}:${choice.value}`;
+      checkEffects(choice.effects, where, { bonusOption: false, allowCondition: false }, errors);
+      if (choice.effects) checkWeaponEffects(choice.effects, where, { item, ...context }, errors);
+      checkHints(choice.hints, where, { item, ...context }, errors);
+    });
   }
   if (item.rarity === "varies" && withRarity.length !== 1) errors.push(`${at}：rarity 為 varies 時，須剛好一組選項帶 rarity`);
   if (item.rarity !== "varies" && withRarity.length) errors.push(`${at}：選項帶 rarity 時，物品的 rarity 應為 varies`);
   if (item.rarityText && item.rarity !== "varies") errors.push(`${at}：rarityText 只用於 varies`);
 }
 
-function checkItem(item, { lists, known, damageLabels, equipmentNames }, errors) {
+function checkItem(item, context, errors) {
+  const { lists, known, equipmentNames } = context;
   const at = item.file;
   if (item.equipmentName && !equipmentNames.has(item.equipmentName)) errors.push(`${at}：equipmentName「${item.equipmentName}」不是 equipment-data.js 的品名`);
   if (item.id !== expectedId(item.nameEn)) errors.push(`${at}：id 應為 ${expectedId(item.nameEn)}（由 nameEn 轉成）`);
@@ -99,9 +146,19 @@ function checkItem(item, { lists, known, damageLabels, equipmentNames }, errors)
   if (item.use && item.base) errors.push(`${at}：有 base 的物品用裝備欄位，不寫 use`);
   const hasEffects = Boolean(item.effects) || (item.options || []).some(option => option.choices.some(choice => choice.effects));
   if (!item.use && !item.base && hasEffects) errors.push(`${at}：有 effects 的物品須寫 use`);
+  const allHints = [...(item.hints || []), ...(item.options || []).flatMap(option => option.choices.flatMap(choice => choice.hints || [])), ...(item.forms || []).flatMap(form => form.hints || [])];
+  if (!item.use && !item.base && allHints.some(hint => hint.when !== "owned")) errors.push(`${at}：有 hints 的物品須寫 use（或 hints 寫 when: owned）`);
   if (item.use && item.effects?.condition === "held") errors.push(`${at}：寫了 use 的物品不用 effects.condition: held`);
-  checkOptions(item, at, damageLabels, errors);
+  checkOptions(item, at, context, errors);
   checkEffects(item.effects, at, { bonusOption: (item.options || []).some(option => option.id === "bonus"), allowCondition: true }, errors);
+  if (item.effects) checkWeaponEffects(item.effects, at, { item, ...context }, errors);
+  checkHints(item.hints, at, { item, ...context }, errors);
+  (item.forms || []).forEach((form) => {
+    const where = `${at} 形態 ${form.id}`;
+    checkEffects(form.effects, where, { bonusOption: false, allowCondition: false }, errors);
+    if (form.effects) checkWeaponEffects(form.effects, where, { item, ...context }, errors);
+    checkHints(form.hints, where, { item, ...context }, errors);
+  });
   const tokens = (item.displayName || "").match(/\{[^}]*\}/g) || [];
   const allowed = new Set([...(item.base ? ["{base}"] : []), ...(item.options || []).map(option => `{${option.id}}`)]);
   tokens.filter(token => !allowed.has(token)).forEach(token => errors.push(`${at}：displayName 的 ${token} 不是基本款或選項`));
@@ -157,7 +214,14 @@ function loadMagicItems() {
     items.push({ ...data, file: where });
   }
   const lists = loadBaseLists();
-  const context = { lists, known: knownEquipment(lists), damageLabels: loadSpellCatalog().damageTypeLabels, equipmentNames: new Set(Object.keys(loadEquipmentData().EQUIPMENT_ENGLISH_NAMES)) };
+  const context = {
+    lists,
+    known: knownEquipment(lists),
+    damageLabels: loadSpellCatalog().damageTypeLabels,
+    equipmentNames: new Set(Object.keys(loadEquipmentData().EQUIPMENT_ENGLISH_NAMES)),
+    weaponNames: new Set([...lists["simple-weapon"], ...lists["martial-weapon"]]),
+    skills: loadSkillAbilities()
+  };
   items.forEach(item => checkItem(item, context, errors));
   ["id", "name", "nameEn"].forEach(field => checkUnique(items, field, errors));
   if (errors.length) throw new ContentError(`魔法物品內容檢查失敗（${errors.length} 項）：\n- ${errors.join("\n- ")}`);

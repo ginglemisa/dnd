@@ -81,10 +81,10 @@
     return Object.keys(FEAT_TYPE_LABELS);
   }
 
-  // 傷害類型（種族內容檔的 resistance 等）的顯示名稱。
+  // 傷害類型（種族內容檔的 resistance、魔法物品的額外傷害與抗性等）的顯示名稱，與 SpellCatalog.damageTypeLabels 相同。
   const DAMAGE_TYPE_LABELS = Object.freeze({
-    acid: "強酸", cold: "冷凍", fire: "火焰", lightning: "閃電", necrotic: "黯蝕", poison: "毒素",
-    psychic: "心靈", radiant: "光耀", force: "力場"
+    acid: "強酸", bludgeoning: "鈍擊", cold: "冷凍", fire: "火焰", force: "力場", lightning: "閃電", necrotic: "黯蝕",
+    piercing: "穿刺", poison: "毒素", psychic: "心靈", radiant: "光耀", slashing: "揮砍", thunder: "雷鳴"
   });
 
   /** 傷害類型 ID 的顯示名稱（例如 poison →「毒素」）；不認得時為空字串。建置產生種族表格文字時也讀這裡。 */
@@ -706,13 +706,37 @@
   }
 
   // 目前是否穿甲、持盾（防禦護腕的「沒穿護甲且沒用盾牌」）；未受盾牌訓練也算持盾。
+  // handBases：主手、副手的基本款品名（魔法款回基本款，武僧的「武藝」原樣），給 effects.weapons 與 unarmedStrike 比對。
   function readMagicEffectContext() {
-    const armorName = globalScope.document?.getElementById?.("armor")?.value || "";
+    const field = id => globalScope.document?.getElementById?.(id)?.value || "";
+    const armorName = field("armor");
     const armorIsShield = globalScope.isShieldItem?.(armorName) === true;
+    const baseName = name => (name && globalScope.getEquipmentBaseName?.(name)) || name;
     return {
       wearingArmor: Boolean(armorName) && !armorIsShield,
-      usingShield: armorIsShield || globalScope.isEffectiveEquippedShield?.() === true
+      usingShield: armorIsShield || globalScope.isEffectiveEquippedShield?.() === true,
+      handBases: { mainHand: baseName(field("mainHand")), offHand: baseName(field("offHand")) }
     };
+  }
+
+  // 武僧武藝的攻擊列名稱（index.html 的 getMonkMartialArtsWeapon）：魔法物品的 unarmedStrike 只加在這一手。
+  const UNARMED_ATTACK_NAME = "武藝";
+
+  function emptyMagicHand() {
+    return { attack: 0, damage: 0, label: "", sources: [], extraDamage: [], damageType: "", finesse: false, thrown: null, proficiencyAs: [], unarmed: null, notes: [] };
+  }
+
+  // 提示的固定說法（hints 的結構化詞）接上自由文字，例如「火焰傷害抗性；懂矮人語。」。
+  function formatMagicItemHint(hint) {
+    const labels = types => types.map(getDamageTypeLabel).join("、");
+    const parts = [
+      hint.resistances && `${labels(hint.resistances)}傷害抗性`,
+      hint.immunities && `免疫${labels(hint.immunities)}傷害`,
+      hint.darkvision && `黑暗視覺 ${hint.darkvision} 呎`,
+      hint.languages && `懂${hint.languages.join("、")}`,
+      hint.advantage && `${hint.advantage.map(target => target === "先攻" ? "先攻擲骰" : `${target}檢定`).join("、")}有優勢`
+    ].filter(Boolean);
+    return `${parts.length ? `${parts.join("；")}。` : ""}${hint.text || ""}`;
   }
 
   /**
@@ -725,17 +749,32 @@
    * - condition held 要裝備在手上，unarmored 要沒穿護甲且沒用盾牌。
    * - spellAttack、spellSaveDc：法術攻擊與法術豁免 DC 加值，條件同 saves。
    * - sources：不靠裝備位置的加值來源 [{ label, ac, saves, spellAttack, spellSaveDc }]，裝備摘要顯示用。
-   * context 可傳 { wearingArmor, usingShield }，省略時讀目前的裝備欄位。
+   * - hands 的其他欄位（只影響那一手的武器）：sources [{ label, attack, damage }]（attack、damage 的各來源；label 是來源名稱接起來）、
+   *   extraDamage [{ dice, type, label }]（type 為傷害類型 ID 或 weapon）、damageType、finesse、thrown [一般, 遠]、proficiencyAs、
+   *   unarmed { dice, type, label }（這一手是武藝時的 unarmedStrike）、notes（武器說明的提示文字）。
+   *   weapons（射手護腕等）與 unarmedStrike 來自裝備著的物品，依那一手的基本款（context.handBases）套用。
+   * - hints：提示 [{ uid, label, panel, detail, advantage }]，同一件物品在同一處合成一筆；panel 為 overview 或 skills。
+   *   有基本款的物品要裝備著（拿在手上或穿著），沒有基本款的依使用方式；hint.when 為 owned 時持有就算。
+   * context 可傳 { wearingArmor, usingShield, handBases }，省略時讀目前的裝備欄位。
    */
   function getActiveMagicEffects(context = readMagicEffectContext()) {
     const result = {
-      hands: { mainHand: { attack: 0, damage: 0, label: "" }, offHand: { attack: 0, damage: 0, label: "" } },
+      hands: { mainHand: emptyMagicHand(), offHand: emptyMagicHand() },
       ac: { armor: 0, shield: 0, other: 0 },
       saves: 0,
       spellAttack: 0,
       spellSaveDc: 0,
-      sources: []
+      sources: [],
+      hints: []
     };
+    const addHandBonus = (hand, label, attack, damage) => {
+      if (!attack && !damage) return;
+      hand.attack += attack || 0;
+      hand.damage += damage || 0;
+      hand.sources.push({ label, attack: attack || 0, damage: damage || 0 });
+      hand.label = hand.sources.map(source => source.label).join("、");
+    };
+    const handBases = context.handBases || {};
     const catalog = globalScope.MagicItemCatalog;
     const inventory = globalScope.Inventory;
     if (!catalog || !inventory) return result;
@@ -744,9 +783,30 @@
       if (!rule || (rule.attunement && !entry.attuned)) return;
       const use = catalog.getUse(rule.id);
       const inHand = entry.slot === "mainHand" || entry.slot === "offHand";
-      if ((use === "worn" && !entry.worn) || (use === "held" && !inHand) || (use === "wornOrHeld" && !entry.worn && !inHand)) return;
-      const effects = catalog.getEffects(entry.magic.id, inventory.getMagicSelection(entry));
+      const usable = !((use === "worn" && !entry.worn) || (use === "held" && !inHand) || (use === "wornOrHeld" && !entry.worn && !inHand));
+      // 有基本款的物品要裝備著（拿在手上或穿著）；沒有基本款的依使用方式。
+      const equipped = rule.base ? Boolean(entry.slot) : usable;
+      const selection = inventory.getMagicSelection(entry);
+      const label = inventory.getLabel(entry);
       const hand = result.hands[entry.slot] || null;
+      catalog.getHints(rule.id, selection).forEach((hint) => {
+        if (hint.when !== "owned" && !equipped) return;
+        const panel = hint.panel || "overview";
+        const detail = formatMagicItemHint(hint);
+        if (panel === "weapon") {
+          if (hand) hand.notes.push(detail);
+          return;
+        }
+        const existing = result.hints.find(item => item.uid === entry.uid && item.panel === panel);
+        if (existing) {
+          existing.detail += detail;
+          existing.advantage.push(...(hint.advantage || []));
+        } else {
+          result.hints.push({ uid: entry.uid, label, panel, detail, advantage: [...(hint.advantage || [])] });
+        }
+      });
+      if (!usable) return;
+      const effects = catalog.getEffects(entry.magic.id, selection);
       // 防禦者：玩家把部分加值轉到 AC 時，攻擊與傷害減少、AC 增加相同數值（裝備在手上且已同調才有 getBonusTransfer）。
       const transferred = hand ? inventory.getBonusTransfer?.(entry.uid)?.value || 0 : 0;
       if (transferred) {
@@ -755,12 +815,25 @@
       }
       if (effects.condition === "held" && !hand) return;
       if (effects.condition === "unarmored" && (context.wearingArmor || context.usingShield)) return;
-      if (hand && (effects.attack || effects.damage)) {
-        hand.attack += effects.attack || 0;
-        hand.damage += effects.damage || 0;
-        hand.label = inventory.getLabel(entry);
+      if (hand) {
+        addHandBonus(hand, label, effects.attack, effects.damage);
+        (effects.extraDamage || []).forEach(extra => hand.extraDamage.push({ ...extra, label }));
+        if (effects.damageType) hand.damageType = effects.damageType;
+        if (effects.finesse) hand.finesse = true;
+        if (effects.thrown) hand.thrown = [...effects.thrown];
+        hand.proficiencyAs.push(...(effects.proficiencyAs || []));
       }
-      const source = { label: inventory.getLabel(entry), ac: transferred, saves: effects.saves || 0, spellAttack: effects.spellAttack || 0, spellSaveDc: effects.spellSaveDc || 0 };
+      // 裝備著的物品對特定武器（射手護腕）與徒手打擊（惡魔護甲）的效果，依兩手目前的基本款套用。
+      if (equipped) {
+        Object.entries(result.hands).forEach(([slot, target]) => {
+          if (effects.weapons?.names.includes(handBases[slot])) addHandBonus(target, label, effects.weapons.attack, effects.weapons.damage);
+          if (effects.unarmedStrike && handBases[slot] === UNARMED_ATTACK_NAME) {
+            target.unarmed = { dice: effects.unarmedStrike.dice, type: effects.unarmedStrike.type, label };
+            addHandBonus(target, label, effects.unarmedStrike.attack, effects.unarmedStrike.damage);
+          }
+        });
+      }
+      const source = { label, ac: transferred, saves: effects.saves || 0, spellAttack: effects.spellAttack || 0, spellSaveDc: effects.spellSaveDc || 0 };
       result.ac.other += transferred;
       if (effects.ac) {
         const kind = inventory.getCatalogItem(entry.itemId)?.kind;

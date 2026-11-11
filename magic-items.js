@@ -128,23 +128,43 @@
     return forms ? forms.find(form => form.id === selection?.form) || forms[0] : null;
   }
 
-  // 第一批自動計算的固定數值：{ attack?, damage?, ac?, saves?, condition? }，數值已代入 bonus 選項；沒有時為空物件。
+  // 合併多個來源的 effects：數字相加，清單（extraDamage、proficiencyAs）接在後面，其餘以後面的為準。
+  const LIST_EFFECT_KEYS = new Set(["extraDamage", "proficiencyAs"]);
+  function mergeEffect(result, key, value) {
+    if (typeof value === "number") result[key] = (Number(result[key]) || 0) + value;
+    else if (LIST_EFFECT_KEYS.has(key)) result[key] = [...(result[key] || []), ...value];
+    else result[key] = value;
+  }
+
+  // 自動計算的 effects（詞彙見 content/README.md 的「魔法物品」）：物品本身（形態 noEffects 時略過）、目前形態、所選選項依序合併，
+  // bonus 已代入 bonus 選項的值；沒有時為空物件。回傳新的物件，呼叫端可以修改。
   function getEffects(id, selection) {
     const item = rule(id);
     const result = {};
     if (!item) return result;
     const options = item.options || [];
     const bonus = selectedChoice(options.find(option => option.id === "bonus") || { choices: [] }, selection)?.value;
-    const itemEffects = getForm(id, selection)?.noEffects ? {} : item.effects || {};
+    const form = getForm(id, selection);
+    const itemEffects = form?.noEffects ? {} : item.effects || {};
     for (const [key, value] of Object.entries(itemEffects)) {
-      if (key === "condition") result.condition = value;
-      else if (value !== "bonus") result[key] = value;
+      if (value !== "bonus") result[key] = Array.isArray(value) ? [...value] : value;
       else if (bonus !== undefined) result[key] = bonus;
     }
-    for (const option of options) {
-      for (const [key, value] of Object.entries(selectedChoice(option, selection)?.effects || {})) result[key] = (result[key] || 0) + value;
-    }
+    const extra = [form?.effects, ...options.map(option => selectedChoice(option, selection)?.effects)].filter(Boolean);
+    extra.forEach(effects => Object.entries(effects).forEach(([key, value]) => mergeEffect(result, key, value)));
     return result;
+  }
+
+  // 提示（YAML 的 hints）：物品本身、目前形態、所選選項的提示依序列出，每筆是內容檔的原樣物件（呼叫端不要修改）。
+  function getHints(id, selection) {
+    const item = rule(id);
+    if (!item) return [];
+    const form = getForm(id, selection);
+    return [
+      ...(item.hints || []),
+      ...(form?.hints || []),
+      ...(item.options || []).flatMap(option => selectedChoice(option, selection)?.hints || [])
+    ];
   }
 
   // 稀有度 key；隨選項變動且還沒選時為 null。
@@ -221,6 +241,7 @@
     getEquipmentVariants,
     resolveEquipmentName,
     getEffects,
+    getHints,
     getForm,
     getRarity,
     getRarityLabel,
