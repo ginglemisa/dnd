@@ -1386,25 +1386,26 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.deepEqual(await hints(inventoryOf({ uid: "boots", quantity: 1, worn: true, magic: { id: "boots-of-elvenkind" } })), ["overview|精靈之靴|隱匿檢定有優勢。腳步不會發出聲音。"], "worn boots give stealth advantage");
     await page.evaluate(() => TabletopMode.setPanel("overview"));
     await page.waitForFunction(() => document.getElementById("tabletop-overview-rule-summary").textContent.includes("精靈之靴：隱匿檢定有優勢"));
-    // 無條件優勢：角色卡技能格與跑團技能按鈕在技能名稱下方加「優勢」標籤，報讀與滑鼠提示寫出來源；先攻格放在數值旁。
+    // 無條件優勢：跑團技能按鈕加「優勢」標籤（先攻格放在數值旁），報讀與滑鼠提示寫出來源；
+    // 角色卡技能頁不放標籤，改在技能名稱旁放 ✦（使用者決定），aria-label 與浮層寫「優勢・精靈之靴」。
     await page.evaluate(() => TabletopMode.setPanel("skills"));
     await page.waitForFunction(() => document.querySelector("#tabletop-skill-values .magic-advantage-tag"));
     assert.deepEqual(await page.evaluate(() => {
       const tagged = selector => [...document.querySelectorAll(selector)].filter(item => item.querySelector(".magic-advantage-tag"));
       const tabletop = tagged("#tabletop-skill-values .tabletop-skill-value");
-      const sheet = tagged("#tab-skills .skill-cell");
       return {
         tabletop: tabletop.map(item => [item.querySelector(".tabletop-skill-value__label").textContent, item.querySelector("button").getAttribute("aria-label").endsWith("；優勢（精靈之靴）")]),
-        sheet: sheet.map(cell => [cell.querySelector(".skill-tip").textContent, cell.querySelector(".magic-advantage-tag").title, cell.querySelector(".skill-name").lastElementChild.className])
+        sheetTags: document.querySelectorAll("#tab-skills .magic-advantage-tag").length,
+        sheet: [...document.querySelectorAll("#tab-skills .skill-effect-tip")].map(tip => [tip.closest(".skill-cell")?.querySelector(".skill-tip").textContent, tip.getAttribute("aria-label"), tip.textContent])
       };
-    }), { tabletop: [["隱匿", true]], sheet: [["隱匿", "優勢：精靈之靴", "magic-advantage-tag"]] }, "worn boots tag stealth under its name on the sheet and in tabletop mode");
+    }), { tabletop: [["隱匿", true]], sheetTags: 0, sheet: [["隱匿", "隱匿：優勢・精靈之靴", "✦"]] }, "worn boots tag stealth in tabletop mode and mark it with ✦ on the sheet");
     await hints(inventoryOf({ uid: "boots", quantity: 1, magic: { id: "boots-of-elvenkind" } }));
-    await page.waitForFunction(() => document.querySelectorAll("#tab-skills .magic-advantage-tag, #tabletop-skill-values .magic-advantage-tag").length === 0);
+    await page.waitForFunction(() => document.querySelectorAll("#tab-skills .skill-effect-tip, #tabletop-skill-values .magic-advantage-tag").length === 0);
     await hints({ offHand: "警戒之盾", ...inventoryOf({ uid: "sentinel", itemId: "盾牌", quantity: 1, magic: { id: "sentinel-shield" } }) });
     await page.evaluate(() => TabletopMode.setPanel("overview"));
     await page.waitForFunction(() => document.querySelector("#tabletop-initiative .magic-advantage-tag"));
-    assert.deepEqual(await page.evaluate(() => [document.querySelector("#tabletop-initiative .magic-advantage-tag").title, document.querySelector("#tabletop-initiative button").getAttribute("aria-label").endsWith("；優勢（警戒之盾）"), document.querySelector('#tab-skills .skill-cell:has(#prof-察覺) .magic-advantage-tag')?.title]),
-      ["優勢：警戒之盾", true, "優勢：警戒之盾"], "the Sentinel Shield tags initiative and perception");
+    assert.deepEqual(await page.evaluate(() => [document.querySelector("#tabletop-initiative .magic-advantage-tag").title, document.querySelector("#tabletop-initiative button").getAttribute("aria-label").endsWith("；優勢（警戒之盾）"), document.querySelector('#tab-skills .skill-cell:has(#prof-察覺) .skill-effect-tip')?.dataset.tipText]),
+      ["優勢：警戒之盾", true, "優勢・警戒之盾"], "the Sentinel Shield tags initiative and perception");
     await hints(inventoryOf({ uid: "boots", quantity: 1, worn: true, magic: { id: "boots-of-elvenkind" } }));
     await hints(inventoryOf({ uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-dwarvenkind" } }));
     await page.evaluate(() => TabletopMode.setPanel("skills"));
@@ -1528,6 +1529,27 @@ async function verifyEquipmentLoadout(browser, url) {
     // 裝備摘要的「魔法物品」列寫出加值來源。
     await sheetNumbers(inventoryOf(worn("gloves", "gloves-of-thievery"), worn("stone", "ioun-stone", { kind: "mastery" }), axe));
     assert.deepEqual(await page.evaluate(() => Array.from(document.querySelectorAll("#equipment-loadout-summary-content .equipment-summary-row"), row => row.textContent).filter(text => text.includes("巧手+5") || text.includes("熟練加值+1") || text.includes("生命值上限每級+1")).length > 0), true, "the summary lists the new magic bonuses");
+    // 技能頁的 ✦：技能專屬的效果（優勢、技能加值）在技能名稱旁，同一技能多個來源寫在同一個浮層；
+    // 所有檢定與熟練加值只在「技能」標題旁放一個；點了開規則說明浮層。沒有物品時都不出現。
+    const skillTips = extra => page.evaluate(([base, extra]) => {
+      applyStateObject({ ...base, ...extra });
+      return {
+        cells: [...document.querySelectorAll("#tab-skills .skill-cell .skill-effect-tip")].map(tip => [tip.dataset.skill, tip.dataset.tipText]),
+        heading: document.querySelector("#skill-bonus-section h3 .skill-effect-tip")?.dataset.tipText || ""
+      };
+    }, [magicBase, extra]);
+    assert.deepEqual(await skillTips(inventoryOf()), { cells: [], heading: "" }, "no ✦ on the skills page without magic items");
+    assert.deepEqual(await skillTips(inventoryOf({ ...worn("gloves", "gloves-of-thievery"), attuned: false }, worn("elven", "cloak-of-elvenkind"), { ...worn("boots", "boots-of-elvenkind"), attuned: false }, luckstone, worn("stone", "ioun-stone", { kind: "mastery" }))), {
+      cells: [["巧手", "+5・竊賊手套"], ["隱匿", "優勢・精靈斗篷、精靈之靴"]],
+      heading: "所有屬性檢定 +1・幸運石；熟練加值 +1・艾恩石（精進）"
+    }, "skill-specific effects mark that skill, effects on every skill mark the heading");
+    const tabBeforeSkills = await page.evaluate(() => document.querySelector(".tab-content:not([hidden])")?.id.replace(/^tab-/u, "") || "");
+    await page.evaluate(() => showTab("skills"));
+    await page.locator("#skill-bonus-section h3 .skill-effect-tip").click();
+    assert.deepEqual(await page.evaluate(() => [getComputedStyle(document.getElementById("skillPopup")).display, document.querySelector("#skillPopup .title").textContent, document.querySelector("#skillPopup .monster-detail-line").textContent.trim()]),
+      ["block", "技能", "所有屬性檢定 +1・幸運石；熟練加值 +1・艾恩石（精進）"], "the heading ✦ opens the rule popup");
+    await page.keyboard.press("Escape");
+    if (tabBeforeSkills) await page.evaluate(tab => showTab(tab), tabBeforeSkills);
     // 自動計算關閉時，技能欄是玩家手填的數字，加上竊賊手套也不變。
     assert.deepEqual(await page.evaluate(([base, inventory]) => {
       applyStateObject({ ...base, "auto-calculate-key-stats-toggle": false, "skill-巧手": "+1" });

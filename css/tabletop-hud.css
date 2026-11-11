@@ -391,6 +391,37 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
 
 >>>>
 
+/* 魔法物品給的優勢：跑團技能按鈕與先攻格的小標籤，外觀同跑團武器卡的精通標籤（角色卡技能頁改用 ✦）。 */
+.magic-advantage-tag {
+  display: block;
+  justify-self: start;
+  width: max-content;
+  margin-top: 0.1rem;
+  padding: 0 0.45rem;
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+:where(html:not([data-ui-theme="warm"])) .magic-advantage-tag {
+  border: 1px solid rgba(255, 128, 42, 0.58);
+  border-radius: 999px;
+  background: rgba(255, 128, 42, 0.12);
+  color: #a44505;
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .magic-advantage-tag {
+  color: #ffb27a;
+}
+
+:where(html[data-ui-theme="warm"]) .magic-advantage-tag {
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
 .tabletop-skill-value__name .magic-advantage-tag {
   margin-top: 0;
 }

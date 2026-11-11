@@ -672,8 +672,11 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   }
 }
 
-/* 魔法物品改變屬性時調整值旁的 ✦（.skill-tip 按鈕，點了開規則說明浮層寫有效值與物品）；沒有物品影響時不出現。 */
-.modifier button.ability-effect-tip {
+/* 魔法物品的 ✦（.skill-tip 按鈕，點了開規則說明浮層寫內容與物品）：屬性格調整值旁（有效值），
+   技能頁的技能名稱旁（優勢、技能加值）與「技能」標題旁（所有檢定、熟練加值）。沒有物品影響時不出現。 */
+.modifier button.ability-effect-tip,
+.skill-name button.skill-effect-tip,
+.skill-section-heading button.skill-effect-tip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -694,16 +697,30 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
 }
 
 .modifier button.ability-effect-tip:hover,
-.modifier button.ability-effect-tip:active {
+.modifier button.ability-effect-tip:active,
+.skill-name button.skill-effect-tip:hover,
+.skill-name button.skill-effect-tip:active,
+.skill-section-heading button.skill-effect-tip:hover,
+.skill-section-heading button.skill-effect-tip:active {
   background: transparent;
   color: var(--accent);
   box-shadow: none;
   transform: none;
 }
 
-.modifier button.ability-effect-tip:focus-visible {
+.modifier button.ability-effect-tip:focus-visible,
+.skill-name button.skill-effect-tip:focus-visible,
+.skill-section-heading button.skill-effect-tip:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
+}
+
+/* 技能頁的 ✦ 接在文字後面：上下負邊距抵掉 24px 點擊範圍，格子與標題高度不變。 */
+.skill-name button.skill-effect-tip,
+.skill-section-heading button.skill-effect-tip {
+  margin: -0.25rem 0 -0.25rem 0.1rem;
+  vertical-align: middle;
+  font-weight: 400;
 }
 
 /* ===== Skills ===== */
@@ -927,38 +944,6 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
 
 .skill-cell:has(input[data-skill-rank]:checked) .skill-name {
   font-weight: 800;
-}
-
-/* 魔法物品給的優勢：技能名稱下方的小標籤（跑團技能按鈕、先攻格共用），外觀同跑團武器卡的精通標籤。
-   技能格最小高度足夠放兩行，有標籤的格子高度與其他格相同。 */
-.magic-advantage-tag {
-  display: block;
-  justify-self: start;
-  width: max-content;
-  margin-top: 0.1rem;
-  padding: 0 0.45rem;
-  font-size: var(--fs-xs);
-  font-weight: 900;
-  line-height: 1.35;
-  white-space: nowrap;
-}
-
-:where(html:not([data-ui-theme="warm"])) .magic-advantage-tag {
-  border: 1px solid rgba(255, 128, 42, 0.58);
-  border-radius: 999px;
-  background: rgba(255, 128, 42, 0.12);
-  color: #a44505;
-}
-
-html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .magic-advantage-tag {
-  color: #ffb27a;
-}
-
-:where(html[data-ui-theme="warm"]) .magic-advantage-tag {
-  border: 1px solid var(--warning-border);
-  border-radius: var(--radius-sm);
-  background: var(--warning-soft);
-  color: var(--warning);
 }
 
 /* 分組標題已列屬性；這段文字留給跑團模式讀取，不重複顯示。 */
