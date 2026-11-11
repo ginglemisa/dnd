@@ -61,14 +61,21 @@ function checkSpell(spell, where, errors) {
     const sameClasses = [...spell.srd.classes].sort().join() === [...spell.classes].sort().join();
     if (sameClasses) errors.push(`${where}：srd.classes 與 classes 相同，不需另寫`);
   }
+  // srd.outcomes：只有 SRD 版的法術從魔法物品施放時的擲骰資料；有 site 的法術寫在 site.outcomes。
+  if (spell.srd?.outcomes && spell.site) errors.push(`${where}：srd.outcomes 只用於沒有 site 的法術（有 site 的寫在 site.outcomes）`);
+  checkOutcomes(spell, spell.srd?.outcomes, `${where} srd.outcomes`, errors);
   if (!spell.site) return;
   if (spell.level > 0 && Boolean(spell.upcast) !== UPCAST_TEXT.test(spell.site.body)) {
     errors.push(`${where}：${spell.upcast ? "upcast: true 但網站版說明沒有以更高環位施放的段落" : "網站版說明有以更高環位施放的段落，但沒有 upcast: true"}`);
   }
   if (!spell.classes.length) errors.push(`${where}：有 site 的法術至少要在一個職業法表`);
   if (spell.site.wildCompanion && spell.id !== "find-familiar") errors.push(`${where}：site.wildCompanion 只用於 find-familiar`);
-  (spell.site.outcomes || []).forEach((outcome, index) => {
-    const at = `${where} site.outcomes[${index}]`;
+  checkOutcomes(spell, spell.site.outcomes, `${where} site.outcomes`, errors);
+}
+
+function checkOutcomes(spell, outcomes, where, errors) {
+  (outcomes || []).forEach((outcome, index) => {
+    const at = `${where}[${index}]`;
     if (outcome.kind !== "attack" && !outcome.formula && outcome.fixed === undefined) errors.push(`${at}：需要 formula 或 fixed`);
     if (outcome.kind === "attack" && (outcome.formula || outcome.fixed !== undefined)) errors.push(`${at}：attack 不寫 formula、fixed`);
     if ((outcome.cantripAt5 || outcome.repeatAt5) && spell.level !== 0) errors.push(`${at}：cantripAt5、repeatAt5 只用於戲法`);

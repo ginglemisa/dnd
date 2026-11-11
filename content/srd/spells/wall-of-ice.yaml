@@ -21,6 +21,9 @@ srd:
     牆壁是可以受到傷害、因而可被突破的物體。它的AC為12，每10呎區段有30生命值，並對冷凍、毒素與心靈傷害具有免疫，且對火焰傷害具有易傷。將一段10呎的牆壁降至0生命值會將其摧毀，並在牆壁原本佔據的空間留下一片冰冷的空氣層。
 
     生物在一個回合內第一次穿過冰冷的空氣層時，進行一次體質豁免，豁免失敗時受到5d6冷凍傷害，成功時受到一半傷害。_使用更高環階法術位。_ 每高於6環一個環階，牆壁出現時造成的傷害增加2d6，且穿過冰冷空氣層的傷害增加1d6。
+  outcomes:
+    - { kind: damage, formula: 10d6, damageType: cold, autoOnCast: true, context: 冰牆出現時的區域傷害擲一次；豁免依規則處理 }
+    - { kind: damage, formula: 5d6, damageType: cold, autoOnCast: false, context: 之後穿過冰冷空氣層時 }
 en:
   material: a piece of quartz
   body: |-

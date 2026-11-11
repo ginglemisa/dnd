@@ -15,6 +15,8 @@ srd:
     射程內出現一場火焰風暴。風暴的區域由最多十個10呎立方體組成，你可以隨意安排其排列方式。每個立方體必須至少與另一個立方體相連。區域內的每個生物進行一次敏捷豁免，豁免失敗時受到7d10火焰傷害，成功時傷害減半。
 
     區域內未被穿戴或攜帶的易燃物體開始燃燒。
+  outcomes:
+    - { kind: damage, formula: 7d10, damageType: fire, autoOnCast: true, context: 區域傷害擲一次；豁免依規則處理 }
 en:
   body: |-
     A storm of fire appears within range. The area of the storm consists of up to ten 10-foot Cubes, which you arrange as you like. Each Cube must be contiguous with at least one other Cube. Each creature in the area makes a Dexterity saving throw, taking 7d10 Fire damage on a failed save or half as much damage on a successful one.

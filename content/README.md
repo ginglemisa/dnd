@@ -543,10 +543,11 @@ en:
 | `srd.classes` | SRD 的職業清單，只在有 `site`、且與 `classes` 不同時才寫。只用於查閱與搜尋的職業分類（兩者的聯集），不影響職業法表與準備法術。建置檢查職業 ID，`tools/spell-reference/validate.js --srd` 與 SRD 比對。 |
 | `site.tabletop` | 跑團版說明（跑團動作分頁與跑團法術詳情）；省略時用 `site.body`。目前沒有法術使用。 |
 | `site.wildCompanion` | 德魯伊荒野夥伴施放時的跑團說明（特例，只有 `find-familiar`）：`castingTime`、`components`（不含材料）、`duration`、`body`，學派與射程同法術。只有跑團的荒野夥伴動作與法術頁的荒野夥伴法術詳情使用；SRD 版、法術書、搜尋與其他職業仍是一般版本。 |
+| `srd.outcomes` | 只有 SRD 版（沒有 `site`）的法術從魔法物品施放時的擲骰資料，格式同 `site.outcomes`；只補施法當下就有骰子的法術（例如寒冰錐、醫療術），沒有骰子的不寫。不會讓法術變成角色可用的法術（沒有 `playable`，也不進 `spell-id-baseline.json`），畫面仍顯示 SRD 版。 |
 | `site.outcomes` | 跑團施法結果（擲骰按鈕）：`kind`（`damage`／`healing`／`temporary-hp`／`attack`）、`formula` 或 `fixed`、`cantripAt5`、`upcastDice`、`damageType`（或可選的 `damageTypes`）、`autoOnCast`（施法時自動擲骰）、`context` 等，欄位說明見格式定義。 |
 
 - 建置檢查：格式、檔名、名稱不重複、成分與材料、觸發條件、`upcast` 與網站版說明、`outcomes` 的骰式與升環欄位，以及 `spell-id-baseline.json`（只列有 `site` 的法術；新增可用法術或移除 `site` 都須確認後更新基準檔）。
-- `npm run build` 產生根目錄的 `spell-content.generated.js`：`spellRules`（全部法術的規則；`playable` 為角色可用）、`spellText`（網站版的 `desc` 標頭＋說明、`header` 標頭各項、`tabletop`、`wildCompanion`）。網站經 `spell-list.js` 的 `SpellCatalog` 讀取，不從說明文字反推規則。`spell-srd.generated.js` 是 SRD 版的 HTML，網站第一次切到「SRD 版」時才載入，離線版內嵌。英文原文不寫進任何產生檔。
+- `npm run build` 產生根目錄的 `spell-content.generated.js`：`spellRules`（全部法術的規則；`playable` 為角色可用；只有 SRD 版的法術有 `srd.outcomes` 時也帶 `outcomes`，經 `SpellCatalog.getItemSpell()`／`resolveCastOutcomes()` 只供物品施法）、`spellText`（網站版的 `desc` 標頭＋說明、`header` 標頭各項、`tabletop`、`wildCompanion`）。網站經 `spell-list.js` 的 `SpellCatalog` 讀取，不從說明文字反推規則。`spell-srd.generated.js` 是 SRD 版的 HTML，網站第一次切到「SRD 版」時才載入，離線版內嵌。英文原文不寫進任何產生檔。
 - SRD 譯文的用語與檢查見 [tools/spell-reference/README.md](../tools/spell-reference/README.md)。
 
 ### 私人法術（尚未啟用）

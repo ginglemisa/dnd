@@ -19,6 +19,9 @@ srd:
     蟲群出現時，其中的每個生物都要進行一次體質豁免；豁免失敗時，受到4d10穿刺傷害，豁免成功則受到一半傷害。生物在某回合第一次進入法術區域，或在該區域內結束其回合時，也要進行此豁免。生物每回合只需進行一次此豁免。
 
     _使用更高環階法術位。_ 所用法術位的環階每比5環高一環，傷害增加1d10。
+  outcomes:
+    - { kind: damage, formula: 4d10, damageType: piercing, autoOnCast: true, context: 蟲群出現時的區域傷害擲一次；豁免依規則處理 }
+    - { kind: damage, formula: 4d10, damageType: piercing, autoOnCast: false, context: 之後進入區域或在其中結束回合時 }
 en:
   material: a locust
   body: |-

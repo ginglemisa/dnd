@@ -453,6 +453,12 @@
     return Number(level) === 0 ? "戲法" : `${Number(level)} 環`;
   }
 
+  // 「豁免 DC 15・攻擊 +5」（只列有的數字）。
+  function formatCastNumbers(numbers) {
+    return [Number.isInteger(numbers.saveDc) ? `豁免 DC ${numbers.saveDc}` : "",
+      Number.isInteger(numbers.attackBonus) ? `攻擊 ${numbers.attackBonus < 0 ? "" : "+"}${numbers.attackBonus}` : ""].filter(Boolean).join("・");
+  }
+
   function createSummaryRow(term, detail) {
     const row = createElement("div", "tabletop-cast-summary__row");
     row.append(createElement("dt", "", term), createElement("dd", "", detail));
@@ -808,7 +814,10 @@
       )) || null;
   }
 
+  // castResult.scroll（法術卷軸）或 castResult.numbers（魔法物品固定的數字）：{ saveDc?, attackBonus? }，取代角色的法術攻擊並寫在擲骰說明。
   function buildRollEntries(entry, castResult) {
+    const numbers = castResult.scroll ? { ...castResult.scroll, label: "法術卷軸" }
+      : castResult.numbers ? { label: "物品", ...castResult.numbers } : null;
     const modifiers = getSpellOutcomeModifiers(entry, castResult);
     const spellcastingModifier = parseModifier(getFieldValue("spell-adjustment")) ?? 0;
     return globalScope.SpellCatalog.resolveCastOutcomes(entry.spellId, {
@@ -831,9 +840,7 @@
       const modifierText = outcome.modifierLabels.length
         ? `；已套用：${outcome.modifierLabels.join("、")}`
         : "";
-      const scrollText = castResult.scroll
-        ? `；法術卷軸：豁免 DC ${castResult.scroll.saveDc}・攻擊 +${castResult.scroll.attackBonus}`
-        : "";
+      const scrollText = numbers ? `；${numbers.label}：${formatCastNumbers(numbers)}` : "";
       const result = Object.freeze({
         expression: outcome.expression,
         fixed: outcome.fixed,
@@ -841,7 +848,7 @@
         detail: `${castResult.fiendishVigor ? "邪魔活力：2d4 視為 8；" : ""}${outcome.context || "依術文處理"}${modifierText}${scrollText}`
       });
       if (outcome.attack !== "spell") return [result];
-      const attackBonus = castResult.scroll ? castResult.scroll.attackBonus : parseModifier(getFieldValue("spell-attack-bonus"));
+      const attackBonus = Number.isInteger(numbers?.attackBonus) ? numbers.attackBonus : parseModifier(getFieldValue("spell-attack-bonus"));
       if (attackBonus === null) throw new Error("Missing spell attack bonus");
       return [Object.freeze({
         expression: `1d20${attackBonus < 0 ? "" : "+"}${attackBonus}`,

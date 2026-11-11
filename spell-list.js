@@ -54,9 +54,10 @@ globalThis.SpellCatalog = (() => {
     return Object.freeze(frozen);
   }
 
-  // 跑團施法結果（內容檔的 site.outcomes）：骰式、升環骰、傷害類型等。
-  const outcomeMetadataBySpellId = Object.freeze(Object.fromEntries(Object.keys(spellsById)
-    .map(spellId => [spellId, Object.freeze(spellRules[spellId].outcomes.map(freezeOutcome))])));
+  // 跑團施法結果（內容檔的 site.outcomes；只有 SRD 版的法術是 srd.outcomes，只供從魔法物品施放）：骰式、升環骰、傷害類型等。
+  // 施法用的資料（outcomes、getCastMetadata）涵蓋全部法術；角色可用與否仍只看 playable（getSpell 等 API）。
+  const outcomeMetadataBySpellId = Object.freeze(Object.fromEntries(Object.keys(spellRules)
+    .map(spellId => [spellId, Object.freeze((spellRules[spellId].outcomes || []).map(freezeOutcome))])));
 
   // 有傷害結果的戲法可從跑團施法（另有克敵機先以攻擊結果施法）。
   const TABLETOP_DAMAGE_CANTRIP_IDS = Object.freeze(Object.keys(spellsById).filter(spellId => (
@@ -75,7 +76,7 @@ globalThis.SpellCatalog = (() => {
   }
 
   function resolveCastOutcomes(spellId, options = {}) {
-    const spell = spellsById[spellId];
+    const spell = typeof spellId === "string" && Object.hasOwn(spellRules, spellId) ? spellRules[spellId] : null;
     if (!spell) return Object.freeze([]);
     const effectiveLevel = Math.max(spell.level, Number.parseInt(options.effectiveLevel, 10) || spell.level);
     const characterLevel = Math.max(1, Number.parseInt(options.characterLevel, 10) || 1);
@@ -158,15 +159,16 @@ globalThis.SpellCatalog = (() => {
     return Object.freeze(resolved);
   }
 
+  // tabletopCast：角色可以從跑團法術頁施放（只有角色可用的法術）；只有 SRD 版的法術只能從魔法物品施放。
   const castMetadataBySpellId = Object.freeze(Object.fromEntries(
-    Object.values(spellsById).map(spell => [spell.spellId, Object.freeze({
-      spellId: spell.spellId,
-      baseLevel: spell.level,
-      tabletopCast: spell.level > 0 || outcomeMetadataBySpellId[spell.spellId].length > 0,
-      ritual: Boolean(spellRules[spell.spellId].ritual),
-      ritualExtraTime: spellRules[spell.spellId].ritual ? "額外 10 分鐘" : "",
-      hasUpcastEffect: Boolean(spellRules[spell.spellId].upcast),
-      outcomes: outcomeMetadataBySpellId[spell.spellId]
+    Object.entries(spellRules).map(([spellId, rules]) => [spellId, Object.freeze({
+      spellId,
+      baseLevel: rules.level,
+      tabletopCast: Boolean(rules.playable) && (rules.level > 0 || outcomeMetadataBySpellId[spellId].length > 0),
+      ritual: Boolean(rules.ritual),
+      ritualExtraTime: rules.ritual ? "額外 10 分鐘" : "",
+      hasUpcastEffect: Boolean(rules.upcast),
+      outcomes: outcomeMetadataBySpellId[spellId]
     })])
   ));
 
@@ -355,7 +357,26 @@ globalThis.SpellCatalog = (() => {
     return Object.hasOwn(data, spellId) ? data[spellId] : null;
   }
 
-  // 專注：目錄內的法術讀規則欄位；目錄外的法術物件（自創法術）讀其 concentration。
+  // 從魔法物品施放的法術（含只有 SRD 版、角色不能學的法術）：名稱、環階、施法時間、專注、儀式、成分；
+  // playable 為角色可用的法術（才有網站版說明）。只給物品施法使用，不會讓法術出現在職業法表、準備法術或搜尋的可用法術。
+  const itemSpellsById = Object.freeze(Object.fromEntries(Object.entries(spellRules).map(([spellId, rules]) => [spellId, Object.freeze({
+    spellId,
+    nameZh: rules.name,
+    nameEn: rules.nameEn,
+    get name() { return `${this.nameZh} ${this.nameEn}`; },
+    level: rules.level,
+    playable: Boolean(rules.playable),
+    castingTimes: Object.freeze(rules.castingTime.map(time => typeof time === "string" ? time : Object.freeze({ ...time }))),
+    concentration: Boolean(rules.concentration),
+    ritual: Boolean(rules.ritual),
+    hasMaterial: rules.components.includes("M")
+  })])));
+
+  function getItemSpell(spellId) {
+    return typeof spellId === "string" && Object.hasOwn(itemSpellsById, spellId) ? itemSpellsById[spellId] : undefined;
+  }
+
+  // 專注：目錄內的法術讀規則欄位；目錄外的法術物件（自創法術、只有 SRD 版的物品法術）讀其 concentration。
   function isConcentration(spellOrId) {
     const header = getSpellHeader(spellOrId);
     if (header) return header.concentration;
@@ -390,6 +411,7 @@ globalThis.SpellCatalog = (() => {
     getWildCompanionText,
     getReferenceSpell,
     getAllReferenceSpells,
+    getItemSpell,
     hasSrdText,
     loadSrdText,
     isConcentration,

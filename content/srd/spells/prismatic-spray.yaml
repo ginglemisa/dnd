@@ -26,6 +26,8 @@ srd:
     | 6 | **靛。** *豁免失敗：* 目標陷入束縛狀態，並在其每個回合結束時進行一次體質豁免。若其豁免成功三次，該狀態結束。若其豁免失敗三次，它會陷入石化狀態，直到被如*高等復原術*法術之類的效果解放。成功與失敗不需要連續；同時記錄兩者，直到目標累積到其中一種達到三次。 |
     | 7 | **紫。** *豁免失敗：* 目標陷入失明狀態，並在你的下一個回合開始時進行一次感知豁免。豁免成功時，該狀態結束。豁免失敗時，該狀態結束，且該生物被傳送到另一個位面（由DM選擇）。 |
     | 8 | **特殊。** 目標被兩道光線擊中。擲兩次，遇到8則重擲。 |
+  outcomes:
+    - { kind: damage, formula: 12d6, autoOnCast: true, context: 每個目標擲 1d8 決定光線；紅、橙、黃、綠、藍分別是火焰、強酸、閃電、毒素、冷凍傷害（見說明） }
 en:
   body: |-
     Eight rays of light flash from you in a 60-foot Cone. Each creature in the Cone makes a Dexterity saving throw. For each target, roll 1d8 to determine which color ray affects it, consulting the Prismatic Rays table.
