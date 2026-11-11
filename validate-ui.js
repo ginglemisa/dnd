@@ -4916,6 +4916,37 @@ async function verifyInventoryPersistence(browser, url) {
       assert.equal(await sharedRing.getByRole("button", { name: /穿上|卸下/u }).count(), 0, "share mode cannot wear or take off rings");
       assert.match(await sharedRing.locator(".inventory-item-actions").innerText(), /穿戴中、同調中/u, "share mode shows the worn state");
     } finally { await equippedShared.close(); }
+    // 第 8 步：裝備中的彈藥（ammo）存在那一筆上，留在箭袋裡也一樣；autosave、JSON、分享都還原，加值跟著長弓。分享模式只顯示狀態、不能換。
+    const ammoState = { class: "fighter", level: "5", str: "16", dex: "14", mainHand: "長弓", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "bow", itemId: "長弓", quantity: 1 },
+      { uid: "quiver", itemId: "箭袋", quantity: 1 },
+      { uid: "plus", itemId: "箭矢", quantity: 12, in: "quiver", magic: { id: "ammunition-plus", bonus: 1 }, ammo: true },
+      { uid: "plain", itemId: "箭矢", quantity: 20, in: "quiver" }
+    ] } };
+    const ammoSnapshot = target => target.evaluate(() => ({ state: Inventory.getState().items, attack: [document.getElementById("atk-main-hit").value, document.getElementById("atk-main-dmg").value] }));
+    const ammoExpected = { state: ammoState.__inventory.items, attack: ["+6", "1d8+3穿刺"] };
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, ammoState);
+    assert.deepEqual(await ammoSnapshot(page), ammoExpected, "the equipped ammunition applies its bonus");
+    await page.goto(url);
+    assert.deepEqual(await ammoSnapshot(page), ammoExpected, "autosave restores the equipped ammunition");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await ammoSnapshot(page), ammoExpected, "JSON restores the equipped ammunition");
+    assert.deepEqual(await page.evaluate(() => [true, "yes", 1].map(ammo => {
+      try { validateCharacterState({ class: "fighter", __inventory: { version: 1, items: [{ uid: "a", itemId: "箭矢", quantity: 1, ammo }] } }); return "accepted"; } catch (error) { return "rejected"; }
+    })), ["accepted", "rejected", "rejected"], "the import precheck only accepts a boolean ammo field");
+    const ammoHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const ammoShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = ammoHash;
+      await ammoShared.goto(sharedUrl.href);
+      await ammoShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await ammoSnapshot(ammoShared), ammoExpected, "share restores the equipped ammunition");
+      await ammoShared.evaluate(() => InventoryUI.openItemDialog("plus"));
+      const sharedAmmo = ammoShared.locator('.app-dialog[data-variant="inventory-item"]');
+      await sharedAmmo.waitFor();
+      assert.equal(await sharedAmmo.getByRole("button", { name: /裝備箭矢|卸下箭矢/u }).count(), 0, "share mode cannot change the equipped ammunition");
+      assert.match(await sharedAmmo.locator(".inventory-item-actions").innerText(), /裝備中。跑團模式擲短弓、長弓的命中時扣 1 枚。/u, "share mode shows the ammunition state");
+    } finally { await ammoShared.close(); }
     // 次數池的剩餘次數（charges）存在那一筆物品上，autosave、JSON、分享都還原；舊資料沒有這個欄位就是滿的。
     // 分享模式可以調整次數（和法術位一樣只在頁面記憶體），看的人的本機存檔不變。
     const chargesState = { class: "fighter", level: "5", mainHand: "", offHand: "", armor: "", __inventory: { version: 1, items: [

@@ -1300,6 +1300,15 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.deepEqual(await page.evaluate(() => renderAttackCalculationPopup(calculateHandAttacks()[0].details, "damage").includes("射手護腕")), true, "the damage popup names the bracers");
     assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf({ uid: "bow", itemId: "長弓", quantity: 1 }, { ...bracersOn, worn: false }) }).then(result => result.main), ["+5", "1d8+2穿刺"], "bracers in the pack add nothing");
     assert.deepEqual(await magicNumbers({ mainHand: "長劍", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, bracersOn) }).then(result => result.main), ["+6", "1d10+3揮砍"], "bracers leave other weapons alone");
+    // 第 8 步：裝備中的魔法彈藥加在拿著對應武器的那一手（長弓配箭矢）；沒裝備、種類不同或只是普通彈藥都不加。
+    const bow = { uid: "bow", itemId: "長弓", quantity: 1 };
+    const arrows = (extra = {}) => ({ uid: "arrows", itemId: "箭矢", quantity: 20, magic: { id: "ammunition-plus", bonus: 1 }, ...extra });
+    assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf(bow, arrows({ ammo: true })) }).then(result => result.main), ["+6", "1d8+3穿刺"], "equipped +1 arrows add to the longbow");
+    assert.deepEqual(await page.evaluate(() => [renderAttackCalculationPopup(calculateHandAttacks()[0].details, "hit").includes("箭矢+1"), document.getElementById("equipment-loadout-summary-content").textContent.includes("魔法 +1")]), [true, true], "the hit popup and the loadout summary name the ammunition");
+    assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf(bow, arrows()) }).then(result => result.main), ["+5", "1d8+2穿刺"], "arrows that are not equipped add nothing");
+    assert.deepEqual(await magicNumbers({ mainHand: "輕弩", ...inventoryOf({ uid: "xbow", itemId: "輕弩", quantity: 1 }, arrows({ ammo: true })) }).then(result => result.main), ["+5", "1d8+2穿刺"], "arrows do not fit a crossbow");
+    assert.deepEqual(await magicNumbers({ mainHand: "長劍", offHand: "手弩", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, { uid: "hxbow", itemId: "手弩", quantity: 1 }, { uid: "bolts", itemId: "弩矢", quantity: 10, magic: { id: "ammunition-plus", bonus: 3 }, ammo: true }) }),
+      { main: ["+6", "1d8+3揮砍"], off: ["+8", "1d6+3穿刺"], ac: "12", dexSave: "+2" }, "+3 bolts only boost the hand crossbow in the off hand");
     // 惡魔護甲：武藝改為 1d8 揮砍（武藝骰較大時用武藝骰），命中與傷害 +1；沒穿就不算。
     const demon = { uid: "demon", itemId: "皮甲", quantity: 1, attuned: true, magic: { id: "demon-armor" } };
     const monk = { class: "monk", str: "10", dex: "16", wis: "14", mainHand: "武藝" };
@@ -1316,6 +1325,30 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); });
     await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-magic-note")?.textContent.includes("冰點以下"));
     assert.equal(await page.evaluate(() => document.querySelector('#tabletop-panel-actions .tabletop-weapon-fields .tabletop-inline-roll[aria-label*="傷害"]')?.disabled === false || !DiceRoller.isEnabled()), true, "the damage with an extra die stays rollable");
+    // 第 8 步：跑團武器卡顯示裝備中的彈藥，按命中擲骰扣 1 枚；最後 1 枚用掉時從物品欄移除並提示，之後不再扣。沒裝備或種類不同時不扣、不顯示。
+    const diceWasOn = await page.evaluate(() => DiceRoller.isEnabled());
+    await page.evaluate(([base, extra]) => { applyStateObject({ ...base, ...extra }); DiceRoller.setEnabled(true); }, [magicBase, { mainHand: "長弓", ...inventoryOf(
+      { uid: "bow", itemId: "長弓", quantity: 1 },
+      { uid: "arrows", itemId: "箭矢", quantity: 2, magic: { id: "ammunition-plus", bonus: 1 }, ammo: true },
+      { uid: "bolts", itemId: "弩矢", quantity: 5 }) }]);
+    const ammoLine = () => page.evaluate(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent ?? null);
+    const fireBow = () => page.evaluate(() => document.querySelector('#tabletop-panel-actions [aria-label="擲主手 長弓命中"]').click());
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢+1 剩 2");
+    assert.equal(await page.evaluate(() => document.querySelector('#tabletop-panel-actions [aria-label="擲主手 長弓命中"]').textContent), "+6", "the tabletop hit includes the arrow bonus");
+    await fireBow();
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢+1 剩 1");
+    assert.equal(await page.evaluate(() => Inventory.getEntry("arrows").quantity), 1, "a hit roll uses one arrow");
+    await fireBow();
+    await page.waitForFunction(() => !Inventory.getEntry("arrows"));
+    assert.match(await page.locator("#app-toast > .app-toast:last-child .app-toast__message").textContent(), /箭矢\+1用完了，已從物品欄移除；之後擲命中不再扣彈藥。/u, "the last arrow is removed with a notice");
+    await page.waitForFunction(() => !document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo"));
+    await fireBow();
+    assert.deepEqual(await page.evaluate(() => [Inventory.entries().map(entry => [entry.uid, entry.quantity]), document.querySelector('#tabletop-panel-actions [aria-label="擲主手 長弓命中"]').textContent]),
+      [[["bow", 1], ["bolts", 5]], "+5"], "without equipped ammunition nothing is used and the bonus is gone");
+    await page.evaluate(() => Inventory.setAmmo("bolts", true));
+    await fireBow();
+    assert.deepEqual([await page.evaluate(() => Inventory.getEntry("bolts").quantity), await ammoLine()], [5, null], "bolts are not used by a longbow");
+    await page.evaluate(on => DiceRoller.setEnabled(on), diceWasOn);
     const hints = extra => page.evaluate(([base, extra]) => {
       applyStateObject({ ...base, ...extra });
       return getActiveMagicEffects().hints.map(hint => `${hint.panel}|${hint.label}|${hint.detail}`);

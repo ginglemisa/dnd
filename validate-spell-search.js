@@ -1533,6 +1533,7 @@ async function validateInventory(page) {
   await validateInventoryStacks(page);
   await validateMagicItemCharges(page);
   await validateItemSpells(page);
+  await validateMagicAmmunition(page);
 }
 
 // 魔法物品的次數池：存檔整理（滿的不記、不存在的池拿掉）、不合併、拆出的那件是滿的、匯入預檢，以及物品詳情的 −／＋ 與恢復按鈕。
@@ -1623,6 +1624,112 @@ async function validateMagicItemCharges(page) {
   assert.equal(await item.locator(".inventory-item-actions .inventory-action-button", { hasText: "使用" }).count(), 0, "containers of ounces are pools, not consumables");
   await page.keyboard.press("Escape");
   await item.waitFor({ state: "detached" });
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
+}
+
+// 彈藥（第 8 步）：普通與魔法彈藥都能在物品詳情「裝備」，同時只能一種；裝備中的可以留在箭袋、拆分與合併。
+// 彈藥種類由品名對到武器屬性「彈藥 (…；箭矢)」；裝備中的魔法彈藥加值只加在拿著對應武器的那一手，荒野形態不算。
+async function validateMagicAmmunition(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  const data = await page.evaluate(() => {
+    applyStateObject({ class: "fighter", level: "5", str: "16", dex: "14", mainHand: "長弓", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "bow", itemId: "長弓", quantity: 1 },
+      { uid: "q", itemId: "箭袋", quantity: 1 },
+      { uid: "a1", itemId: "箭矢", quantity: 20, in: "q", ammo: true },
+      { uid: "a2", itemId: "箭矢", quantity: 10, magic: { id: "ammunition-plus", bonus: 2 }, ammo: true },
+      { uid: "b", itemId: "弩矢", quantity: 5 },
+      { uid: "rope", itemId: "繩索", quantity: 1, ammo: true }
+    ] } });
+    const ammoUids = () => Inventory.entries().filter(entry => entry.ammo).map(entry => entry.uid);
+    const main = () => [document.getElementById("atk-main-hit").value, document.getElementById("atk-main-dmg").value];
+    const result = {
+      restored: [ammoUids(), Inventory.getEntry("a1").in],
+      types: ["箭矢", "弩矢", "子彈，火器", "彈丸，投石索", "針", "繩索"].map(name => Inventory.getAmmunitionType(name)),
+      weapons: ["長弓", "輕弩", "手弩", "投石索", "吹箭筒", "火繩槍", "長劍", "長弓+1"].map(name => Inventory.getWeaponAmmunition(name)),
+      users: [Inventory.getAmmunitionWeapons("箭矢"), Inventory.getAmmunitionWeapons("子彈，火器"), Inventory.getAmmunitionWeapons("繩索")],
+      plain: main(),
+      refuse: Inventory.setAmmo("rope", true)
+    };
+    result.swap = [Inventory.setAmmo("a2", true), ammoUids()];
+    result.magic = [main(), getActiveMagicEffects().hands.mainHand.label];
+    result.wildShape = getActiveMagicEffects({ wildShape: { armor: true, shield: true } }).hands.mainHand.attack;
+    Inventory.restore(Inventory.getState());
+    result.saved = Inventory.getState().items.filter(item => item.ammo).map(item => item.uid);
+    const part = Inventory.split("a2", 4);
+    result.split = [Inventory.getEntry("a2").ammo, Inventory.getEntry(part).ammo];
+    Inventory.merge("a2", part);
+    result.merged = [Inventory.getEntry(part).quantity, ammoUids()];
+    Inventory.update(part, { quantity: 3 });
+    result.quantity = [Inventory.getEntry(part).quantity, ammoUids()];
+    applyStateObject({ ...collectStateObject(), mainHand: "輕弩", __inventory: { version: 1, items: [{ uid: "x", itemId: "輕弩", quantity: 1 }, ...Inventory.getState().items] } });
+    result.otherWeapon = getActiveMagicEffects().hands.mainHand.attack;
+    result.off = [Inventory.setAmmo(part, false), ammoUids()];
+    result.part = part;
+    result.preflight = [true, false, "yes", 1].map(ammo => isValidInventoryState({ version: 1, items: [{ quantity: 1, itemId: "箭矢", ammo }] }));
+    return result;
+  });
+  assert.deepEqual(data.restored, [["a1"], "q"], "only the first ammunition entry stays equipped, it can stay in the quiver, and non-ammunition drops the field");
+  assert.deepEqual(data.types, ["箭矢", "弩矢", "子彈", "彈丸", "針", ""], "the ammunition type is the item name before the comma");
+  assert.deepEqual(data.weapons, ["箭矢", "弩矢", "弩矢", "彈丸", "針", "子彈", "", ""], "weapons read their ammunition from the 彈藥 property");
+  assert.deepEqual(data.users, [["短弓", "長弓"], ["火繩槍", "手槍"], []], "the weapons that use each ammunition come from the equipment data");
+  assert.deepEqual(data.plain, ["+5", "1d8+2穿刺"], "plain ammunition adds nothing");
+  assert.deepEqual(data.refuse, { ok: false, previous: "" }, "only ammunition can be equipped as ammunition");
+  assert.deepEqual(data.swap, [{ ok: true, previous: "箭矢" }, ["a2"]], "equipping another ammunition takes the old one off");
+  assert.deepEqual(data.magic, [["+7", "1d8+4穿刺"], "箭矢+2"], "equipped magic arrows add to the longbow hand");
+  assert.equal(data.wildShape, 0, "Wild Shape drops the ammunition bonus with other items");
+  assert.deepEqual(data.saved, ["a2"], "the equipped ammunition is saved on the entry");
+  assert.deepEqual(data.split, [true, undefined], "the split-off part is not equipped");
+  assert.deepEqual(data.merged, [10, [data.part]], "merging the equipped part into the other keeps one equipped entry with both quantities");
+  assert.deepEqual(data.quantity, [3, [data.part]], "equipped ammunition can change its quantity");
+  assert.equal(data.otherWeapon, 0, "arrows do not boost a crossbow");
+  assert.deepEqual(data.off, [{ ok: true, previous: "" }, []], "ammunition can be taken off");
+  assert.deepEqual(data.preflight, [true, true, false, false], "the import preflight accepts only a boolean ammo field");
+
+  // 物品詳情：所有彈藥都有「裝備」，說明列出用這種彈藥的武器；換裝備時提示原本那種；標籤標示裝備中但留在箭袋裡。
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [
+    { uid: "q", itemId: "箭袋", quantity: 1 },
+    { uid: "a1", itemId: "箭矢", quantity: 20, in: "q" },
+    { uid: "a2", itemId: "箭矢", quantity: 10, magic: { id: "ammunition-plus", bonus: 1 } },
+    { uid: "rope", itemId: "繩索", quantity: 1 }
+  ] }));
+  const item = page.locator('.app-dialog[data-variant="inventory-item"]');
+  await page.locator('[aria-controls="tab-equipment"]').click();
+  const open = async (uid) => {
+    await page.evaluate(id => InventoryUI.openItemDialog(id), uid);
+    await item.waitFor();
+  };
+  const close = async () => {
+    await page.keyboard.press("Escape");
+    await item.waitFor({ state: "detached" });
+  };
+  await open("a1");
+  const row = item.locator(".inventory-action-row", { hasText: "跑團模式擲短弓、長弓的命中時扣 1 枚。" });
+  assert.equal(await row.count(), 1, "plain arrows explain which weapons use them");
+  assert.equal(await row.getByRole("button", { name: "裝備箭矢" }).getAttribute("aria-pressed"), "false");
+  await row.getByRole("button", { name: "裝備箭矢" }).click();
+  await page.waitForFunction(() => Inventory.getEntry("a1").ammo === true);
+  assert.equal(await item.locator(".inventory-holding .inventory-tag__badge", { hasText: "裝備中" }).isVisible(), true, "the dialog marks the equipped ammunition");
+  assert.equal(await item.getByRole("button", { name: "卸下箭矢" }).getAttribute("aria-pressed"), "true");
+  await close();
+  await page.locator('[data-inventory-toggle="q"]').click();
+  assert.deepEqual(await page.evaluate(() => {
+    const tag = document.querySelector('[data-inventory-uid="a1"]');
+    return [tag.classList.contains("is-equipped"), tag.closest(".is-fixed") === null, Inventory.getEntry("a1").in];
+  }), [true, true, "q"], "equipped ammunition looks equipped but stays movable inside the quiver");
+  await open("a2");
+  await item.getByRole("button", { name: "裝備箭矢+1" }).click();
+  await page.waitForFunction(() => Inventory.getEntry("a2").ammo === true && !Inventory.getEntry("a1").ammo);
+  assert.match(await page.locator("#app-toast > .app-toast:last-child .app-toast__message").textContent(), /改為裝備箭矢\+1（原本是箭矢）。/u, "swapping names the ammunition taken off");
+  await close();
+  await open("rope");
+  assert.equal(await item.getByRole("button", { name: /^裝備繩索$/u }).count(), 0, "other items have no ammunition button");
+  await close();
+  // 窄螢幕：彈藥列不超出視窗。
+  await page.setViewportSize({ width: 375, height: 800 });
+  await open("a2");
+  assert.equal(await item.evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth + 1), true, "the ammunition row fits a 375px dialog");
+  await close();
+  await page.setViewportSize({ width: 1100, height: 850 });
   await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
 }
 
@@ -2174,7 +2281,7 @@ async function validateInventoryStacks(page) {
       MagicItemShop.renderDetail(box, id);
       return box.querySelector(".magic-item-detail__manual")?.textContent || "";
     };
-    // 部分自動計算（吉兆之刃：祈願留到從物品施法）、沒有自動計算（彈藥、巨人之力藥水）、全部完成（防禦者、雷鳴巨棒與焰舌在第 5 步做成跑團按鈕後也不再提示）。
+    // 部分自動計算（吉兆之刃：祈願留到從物品施法）、沒有自動計算（巨人之力藥水）、全部完成（彈藥+N 在第 8 步裝備後自動算，防禦者、雷鳴巨棒與焰舌在第 5 步做成跑團按鈕後也不再提示）。
     result.notes = ["luck-blade", "ammunition-plus", "potion-of-giant-strength", "defender", "thunderous-greatclub", "flame-tongue"].map(note);
     return result;
   }, [blank]);
@@ -2221,7 +2328,7 @@ async function validateInventoryStacks(page) {
     afterRemove: 2,
     fixedQuantity: 1,
     // 防禦者的加值轉移已做完，不再提示；雷鳴巨棒的額外傷害會算，力量 20 還沒有。
-    notes: ["部分效果會自動計算，其餘請依說明處理", "角色卡不會自動套用這項效果，請依說明處理", "角色卡不會自動套用這項效果，請依說明處理", "", "", ""]
+    notes: ["部分效果會自動計算，其餘請依說明處理", "", "角色卡不會自動套用這項效果，請依說明處理", "", "", ""]
   }, "magic and plain items with the same base stay apart in every equipment path, and attunement follows its limits");
 
   // 物品欄滿 300 筆又要多開一筆時裝備失敗：下拉改回原本的選擇並提示；×1 的標籤不用多開一筆，照常裝備。
