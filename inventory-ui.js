@@ -2273,6 +2273,8 @@
   // 是 AGENTS.md「DiceRoller 是擲骰與歷史的唯一入口」的例外。到期時間只在記憶體：重新整理、關閉頁面、載入另一個角色或匯入都重新計時；分享模式不計時。
   // 背景分頁或手機鎖屏時計時器會被放慢，所以回到頁面（visibilitychange／focus／pageshow）時再比對時鐘。
   const devourTimers = new Map();
+  // 正在詢問要不要移除的吞噬袋：視窗開著時不重新計時。
+  const devourPending = new Set();
   const DEVOUR_RETRY_MS = 1000;
 
   function rollHiddenMinutes(dice) {
@@ -2305,7 +2307,7 @@
       const dice = api().getMagicContainer(entry)?.devour;
       if (!dice || !all.some(item => item.in === entry.uid)) return;
       filled.add(entry.uid);
-      if (devourTimers.has(entry.uid)) return;
+      if (devourTimers.has(entry.uid) || devourPending.has(entry.uid)) return;
       const minutes = rollHiddenMinutes(dice);
       if (!minutes) return;
       devourTimers.set(entry.uid, { due: Date.now() + minutes * 60000, handle: 0 });
@@ -2332,14 +2334,24 @@
     clearDevourTimer(uid);
     if (!entry) return;
     const label = api().getLabel(entry);
-    const eaten = api().emptyContainer(uid);
+    const eaten = api().formatContents(uid);
     if (!eaten) return;
-    globalScope.AppDialog.showMessage({
+    // 刪除玩家資料要先確認（主管決定）：主要按鈕「從物品欄移除」；「先保留」或關閉視窗時這次計時結束，袋子裡還有東西就重新計時。
+    devourPending.add(uid);
+    globalScope.AppDialog.requestDecision({
       title: label,
       message: `${label}把裡面的東西吞掉了！`,
       renderContent: (body) => {
-        body.append(el("p", "", eaten), el("p", "", "這些物品已從物品欄移除。"));
-      }
+        body.append(el("p", "", eaten), el("p", "", "要從物品欄移除這些物品嗎？"));
+      },
+      actions: [
+        { label: "先保留", value: "keep" },
+        { label: "從物品欄移除", intent: "primary", value: "remove" }
+      ]
+    }).then((choice) => {
+      devourPending.delete(uid);
+      if (choice === "remove") api().emptyContainer(uid);
+      syncDevourTimers("");
     });
   }
 

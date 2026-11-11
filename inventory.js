@@ -22,7 +22,7 @@
  *   （箭矢、弩矢、子彈、彈丸、針），對到武器屬性「彈藥 (射程…；箭矢)」的最後一詞（getWeaponAmmunition()）。
  * - 沒有基本款、內容檔寫了 container 的魔法物品（次元袋、吞噬袋等）是容器，存檔格式不變（舊存檔的這些袋子以前不是容器，一筆多件時載入拆成一件一筆）。
  *   container.extradimensional 的容器裡（含更深層）的物品不算重量，容器本身照算；兩個異次元容器互放只由 getExtradimensionalNesting() 回報給介面提示，不刪除。
- *   container.devour 的計時與吞噬在 inventory-ui.js，這裡只提供 emptyContainer()。
+ *   container.devour 的計時與吞噬在 inventory-ui.js，這裡只提供 formatContents() 與 emptyContainer()。
  * - 手持類的非武器魔法物品（魔杖等，MagicItemCatalog.isHandHeld）沒有基本款，也可以放進主手或副手：裝備欄位存它的顯示名稱，同樣以 slot 標記。
  * - charges 是魔法物品次數池（MagicItemCatalog.getPools：充能、每日一次、冷卻、珠子等）目前這件的剩餘次數 { 池 id: 0～99 }，只有 magic 的筆才有；
  *   沒寫的池表示滿的（取得時都是滿的），滿了就拿掉。一筆多件時其餘件數都是滿的，拆分、穿上或裝備拆出的那件也是滿的。有次數池的物品不合併。
@@ -1350,12 +1350,17 @@
     return result;
   }
 
-  /** 移除容器裡的所有物品（含更深層）；回傳被移除物品的文字寫法（formatText 的寫法），沒有東西時回傳空字串。 */
+  /** 容器裡的物品（含更深層）的文字寫法（formatText 的寫法，例如「背包（繩索）、口糧 ×3」）；空的回傳空字串。 */
+  function formatContents(uid) {
+    return entries.filter(entry => entry.in === uid).map(entry => formatEntry(entry, entries)).join("、");
+  }
+
+  /** 移除容器裡的所有物品（含更深層）；回傳被移除物品的文字寫法（formatContents()），沒有東西時回傳空字串。 */
   function emptyContainer(uid) {
     const container = entries.find(entry => entry.uid === uid);
     const removed = container ? descendantsOf(uid) : new Set();
     if (!removed.size) return "";
-    const text = entries.filter(entry => entry.in === uid).map(entry => formatEntry(entry, entries)).join("、");
+    const text = formatContents(uid);
     removed.forEach(item => bonusTransfers.delete(item));
     commit(entries.filter(entry => !removed.has(entry.uid)).map(copyEntry), "remove");
     return text;
@@ -1437,6 +1442,7 @@
       return container ? { ...container } : null;
     },
     getExtradimensionalNesting,
+    formatContents,
     emptyContainer,
     entries: () => entries.map(copyEntry),
     getEntry: uid => {
