@@ -499,7 +499,8 @@
       race: document.getElementById("race")?.value || "",
       level: document.getElementById("level")?.value || "",
       wisdomScore: (globalScope.getEffectiveAbilityValue?.("wis") ?? document.getElementById("wis")?.value) || "10",
-      charismaScore: (globalScope.getEffectiveAbilityValue?.("cha") ?? document.getElementById("cha")?.value) || "10"
+      charismaScore: (globalScope.getEffectiveAbilityValue?.("cha") ?? document.getElementById("cha")?.value) || "10",
+      proficiencyBonus: globalScope.getProficiencyBonus?.()
     });
   }
 

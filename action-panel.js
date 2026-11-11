@@ -207,8 +207,9 @@
     return Number(document.getElementById("level")?.value) || 1;
   }
 
+  // 角色卡的熟練加值（含魔法物品，index.html 的 getProficiencyBonus）；沒有時依等級。
   function getProficiencyBonus() {
-    return globalScope.calculateProficiencyBonus?.(getCharacterLevel()) || 2;
+    return globalScope.getProficiencyBonus?.() ?? (globalScope.calculateProficiencyBonus?.(getCharacterLevel()) || 2);
   }
 
   function getSelectedFeatNames() {
@@ -398,6 +399,7 @@
     return {
       level: getCharacterLevel(),
       levelBlank: !field("level"),
+      proficiencyBonus: getProficiencyBonus(),
       abilityScores: Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map(id => [id, readAbilityScore(id)]))
     };
   }

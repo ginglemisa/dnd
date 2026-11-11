@@ -1521,7 +1521,8 @@ function updateHPDisplay() {
     level: document.getElementById("level").value || "1",
     constitutionScore: getEffectiveAbilityValue("con") || "10",
     race: document.getElementById("race").value,
-    hasToughFeat: hasSelectedFeat("強韌體魄")
+    hasToughFeat: hasSelectedFeat("強韌體魄"),
+    magicHitPointsPerLevel: getActiveMagicEffects().hitPointsPerLevel
   });
   document.getElementById("hp-display").value = String(maxHp);
 }
@@ -1803,6 +1804,7 @@ function updateSpeedDisplay() {
   const armorName = document.getElementById("armor")?.value || "";
   const armor = getArmorByName(armorName);
   const hasShield = isShieldItem(armorName) || isEffectiveEquippedShield();
+  const magic = getActiveMagicEffects();
   speedDisplay.value = window.calculateCharacterSpeed({
     baseSpeed: document.getElementById("speed-input")?.value,
     race: document.getElementById("race")?.value,
@@ -1812,10 +1814,20 @@ function updateSpeedDisplay() {
     isWearingArmor: Boolean(armorName) && !isShieldItem(armorName),
     isWearingHeavyArmor: armor?.分類 === "重甲",
     armorStrengthRequirement: armor?.力量需求,
-    strengthScore: getEffectiveAbilityValue("str"),
+    ...getMagicSpeedOptions(magic),
+    strengthScore: getEffectiveAbilityValue("str", magic),
     hasShield,
     hasSpeedyFeat: hasSelectedFeat("迅捷步法")
   }) || "--";
+}
+
+// 魔法物品給 calculateCharacterSpeed 的選項：速度至少（跑跳之靴）、不因護甲力量需求降速（跑跳之靴；秘銀護甲沒有力量需求，效果相同）。
+// 角色卡速度欄與 PDF 速度欄共用（pdf-launcher.js 帶進匯出選項）。
+function getMagicSpeedOptions(magic = getActiveMagicEffects()) {
+  return {
+    minimumSpeed: magic.movement.minimum,
+    ignoreArmorStrength: magic.movement.ignoreArmorStrength.length > 0 || magic.armor.noStrengthRequirement
+  };
 }
 
 const SEARCH_EXPERT_SKILLS = new Set(["洞悉", "調查", "察覺"]);
@@ -2237,7 +2249,8 @@ function updateACDisplay() {
   const hasShield = (hasOffHandShield || hasArmorShield)
     && !(hasOffHandShield && hasArmorShield)
     && isShieldProficient();
-  const magicAc = getActiveMagicEffects().ac;
+  const magic = getActiveMagicEffects();
+  const magicAc = magic.ac;
   const armorClass = calculateArmorClass({
     armor,
     hasArmor,
@@ -2250,6 +2263,8 @@ function updateACDisplay() {
     hasAnyShield: hasOffHandShield || hasArmorShield,
     hasShield,
     hasDefenseFightingStyle: hasDefenseFightingStyleFeat(),
+    // 大法師法袍：沒穿護甲時基礎 AC 15＋敏捷，和無甲防禦取最高。
+    unarmoredBaseAc: magic.unarmoredAc,
     // 魔法盾牌的加值和一般盾牌同一個條件（未受盾牌訓練時不算）。
     magicBonus: (armor ? magicAc.armor : 0) + (hasShield ? magicAc.shield : 0) + magicAc.other
   });
@@ -3162,14 +3177,15 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 
 <script>
 // 屬性調整值用有效值（屬性欄的原值加上生效中的魔法物品，character-rules.js 的 getEffectiveAbilityValue）。
-function getModifier(statId) {
-  return calculateAbilityModifier(getEffectiveAbilityValue(statId) || "10");
+// effects 可傳已算好的 getActiveMagicEffects()（荒野形態的跑團畫面傳只含護甲與盾牌的結果）。
+function getModifier(statId, effects) {
+  return calculateAbilityModifier(getEffectiveAbilityValue(statId, effects) || "10");
 }
 
-/** 依等級回傳熟練加值（先做完整 1~20 規則，未來你擴充等級也不用再改） */
-function getProficiencyBonus() {
+/** 依等級回傳熟練加值，加上魔法物品（艾恩石精進，getActiveMagicEffects().proficiencyBonus）；effects 同 getModifier。 */
+function getProficiencyBonus(effects = getActiveMagicEffects()) {
   const lvl = parseInt(document.getElementById("level")?.value || "1", 10);
-  return calculateProficiencyBonus(lvl);
+  return calculateProficiencyBonus(lvl) + (effects.proficiencyBonus || 0);
 }
 
 // 種族的勾選框資源（種族內容檔 kind: checkboxes，例如吐息元素）：container 為包住勾選框的元素，checkbox 為勾選框 ID 前綴。
@@ -3269,8 +3285,8 @@ function writeDerivedCheckValue(input, value) {
 }
 
 // 守護靈氣的豁免加值只在跑團模式顯示（失能時移除），角色卡保留一般數值。
-function getSaveTotal(ability, proficient) {
-  return getModifier(ability) + (proficient ? getProficiencyBonus() : 0) + getActiveMagicEffects().saves;
+function getSaveTotal(ability, proficient, effects = getActiveMagicEffects()) {
+  return getModifier(ability, effects) + (proficient ? getProficiencyBonus(effects) : 0) + effects.saves;
 }
 
 function getNextSaveText(ability) {
@@ -3352,47 +3368,48 @@ function updatePassivePerceptionDisplay() {
   passivePerception.value = perceptionRaw ? String(10 + parseSignedValue(perceptionRaw)) : "";
 }
 
-function updateAutomaticInitiative() {
-  const dexRaw = getEffectiveAbilityValue("dex");
-  const initiative = document.getElementById("initiative-input");
-  if (!initiative || !isAutomaticKeyStatsEnabled()) return;
-  if (!dexRaw) {
-    initiative.value = "";
-    return;
-  }
-  const dexScore = Number.parseInt(dexRaw, 10);
-  if (!Number.isFinite(dexScore)) {
-    initiative.value = "";
-    return;
-  }
+// 先攻的計算值；敏捷空白或無法判讀時為 null。effects 同 getModifier。
+function getInitiativeTotal(effects = getActiveMagicEffects()) {
+  const dexScore = Number.parseInt(getEffectiveAbilityValue("dex", effects), 10);
+  if (!Number.isFinite(dexScore)) return null;
   const dexMod = calculateAbilityModifier(dexScore);
   const hasAlertFeat = hasSelectedFeat(ALERT_FEAT_NAME);
+  const proficiencyBonus = getProficiencyBonus(effects);
   const jackOfAllTradesBonus = getJackOfAllTradesBonus(
     document.getElementById("class")?.value,
     document.getElementById("level")?.value,
-    hasAlertFeat
+    hasAlertFeat,
+    proficiencyBonus
   );
-  initiative.value = formatSignedValue(dexMod + (hasAlertFeat ? getProficiencyBonus() : jackOfAllTradesBonus));
+  return dexMod + (hasAlertFeat ? proficiencyBonus : jackOfAllTradesBonus);
 }
 
-function getSkillTotals() {
+function updateAutomaticInitiative() {
+  const initiative = document.getElementById("initiative-input");
+  if (!initiative || !isAutomaticKeyStatsEnabled()) return;
+  const total = getInitiativeTotal();
+  initiative.value = total === null ? "" : formatSignedValue(total);
+}
+
+// 技能檢定的計算值（Map：技能 → 數字）。effects 同 getModifier；魔法物品的技能加值（skills）與所有檢定加值（checks）也加在這裡。
+function getSkillTotals(effects = getActiveMagicEffects()) {
   const skillMap = CharacterSkillAbilities;
   const totals = new Map();
 
   const selectedClass = document.getElementById("class")?.value || "";
   const level = parseInt(document.getElementById("level")?.value || "1", 10);
-  const proficiencyBonus = getProficiencyBonus();
+  const proficiencyBonus = getProficiencyBonus(effects);
   // 選項的 grants.checkBonus（魔術使、巫祝）：這些技能檢定加上屬性調整值（至少 min）。
   const skillCheckBonuses = new Map();
   getActiveClassGrants().forEach(({ grants }) => {
     if (!grants.checkBonus) return;
-    const bonus = Math.max(grants.checkBonus.min, getModifier(grants.checkBonus.ability));
+    const bonus = Math.max(grants.checkBonus.min, getModifier(grants.checkBonus.ability, effects));
     grants.checkBonus.skills.forEach(skill => skillCheckBonuses.set(skill, (skillCheckBonuses.get(skill) || 0) + bonus));
   });
 
   for (const skill in skillMap) {
     const ab = skillMap[skill];
-    const mod = getModifier(ab);
+    const mod = getModifier(ab, effects);
     const profInput = document.getElementById("prof-" + skill);
     const expInput = document.getElementById("exp-" + skill);
     const input = document.getElementById("skill-" + skill);
@@ -3401,11 +3418,27 @@ function getSkillTotals() {
     const skillProficiencyBonus = expInput.checked ? proficiencyBonus * 2 : (profInput.checked ? proficiencyBonus : 0);
     const featureBonus = skillCheckBonuses.get(skill) || 0;
     const jackOfAllTradesBonus = getJackOfAllTradesBonus(
-      selectedClass, level, profInput.checked || expInput.checked
+      selectedClass, level, profInput.checked || expInput.checked, proficiencyBonus
     );
-    totals.set(skill, mod + skillProficiencyBonus + featureBonus + jackOfAllTradesBonus);
+    const magicBonus = (effects.skills?.[skill] || 0) + (effects.checks || 0);
+    totals.set(skill, mod + skillProficiencyBonus + featureBonus + jackOfAllTradesBonus + magicBonus);
   }
   return totals;
+}
+
+// 技能（skill-*）、豁免（save-*）與先攻（initiative-input）的計算值；不是這三種或屬性空白時為 null。
+// 跑團的荒野形態以 effects 傳只含穿戴中護甲與盾牌的結果，比較兩者就是其他魔法物品加上的部分（tabletop-mode.js）。
+function getDerivedCheckTotal(id, effects = getActiveMagicEffects()) {
+  if (/^save-(str|dex|con|int|wis|cha)$/.test(id)) {
+    const ability = id.slice(5);
+    return isAbilityScoreBlank(ability) ? null : getSaveTotal(ability, document.getElementById("prof-" + ability)?.checked === true, effects);
+  }
+  if (id.startsWith("skill-")) {
+    const skill = id.slice(6);
+    return Object.hasOwn(CharacterSkillAbilities, skill) && !isAbilityScoreBlank(CharacterSkillAbilities[skill]) ? getSkillTotals(effects).get(skill) ?? null : null;
+  }
+  if (id === "initiative-input") return getInitiativeTotal(effects);
+  return null;
 }
 
 function getNextSkillTexts() {
@@ -3983,9 +4016,11 @@ function withMagicWeaponEffects(weapon, magicHand) {
   return Object.keys(changes).length ? { ...weapon, ...changes } : weapon;
 }
 
-// 這一手的武器是否熟練：原本的武器熟練，或魔法武器的 proficiencyAs（熟練其中任一件武器就算，陽炎劍）。
-function isHandWeaponProficient(weapon, magicHand) {
+// 這一手的武器是否熟練：原本的武器熟練，或魔法武器的 proficiencyAs（熟練其中任一件武器就算，陽炎劍），
+// 或生效中魔法物品的 proficiencies（射手護腕的長弓、短弓，依基本款）。不改職業的武器熟練，所以精通選項不變。
+function isHandWeaponProficient(weapon, magicHand, effects = getActiveMagicEffects()) {
   if (isWeaponProficient(weapon)) return true;
+  if (weapon && effects.weaponProficiencies.includes(getEquipmentRuleName(weapon))) return true;
   return (magicHand?.proficiencyAs || []).some(name => isWeaponProficient(getWeaponByName(name)));
 }
 
@@ -4117,8 +4152,10 @@ function getArmorTrainingProficiencies() {
   return new Set(armor.map(id => ARMOR_TRAINING_LABELS[id]));
 }
 
+// 穿著的魔法護甲寫了 trained（精靈鏈甲）時，未受過該類別訓練也算受過訓練。
 function isArmorProficient(armor) {
-  return Boolean(armor?.分類) && getArmorTrainingProficiencies().has(armor.分類);
+  if (!armor?.分類) return false;
+  return getArmorTrainingProficiencies().has(armor.分類) || getActiveMagicEffects().armor.trained;
 }
 
 function isShieldProficient() {
@@ -4623,8 +4660,9 @@ function updateEquipmentLoadoutSummary() {
   const armorDetails = armor ? [
     `AC ${armor.AC}`,
     magic.ac.armor ? `魔法 AC${formatSigned(magic.ac.armor)}` : "",
-    hasMeaningfulEquipmentValue(armor.力量需求) ? `力量需求 ${String(armor.力量需求).replace(/^力量\s*/u, "")}` : "",
-    hasMeaningfulEquipmentValue(armor.隱匿懲罰) ? buildStealthPenaltyDetail(armor.隱匿懲罰) : ""
+    // 秘銀護甲沒有力量需求，也不會讓隱匿有劣勢。
+    hasMeaningfulEquipmentValue(armor.力量需求) && !magic.armor.noStrengthRequirement ? `力量需求 ${String(armor.力量需求).replace(/^力量\s*/u, "")}` : "",
+    hasMeaningfulEquipmentValue(armor.隱匿懲罰) && !magic.armor.noStealthDisadvantage ? buildStealthPenaltyDetail(armor.隱匿懲罰) : ""
   ].filter(Boolean) : [];
   const weaponWarning = (weapon, hand) => {
     if (!weapon) return "";
@@ -4642,7 +4680,10 @@ function updateEquipmentLoadoutSummary() {
     armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warningKey: armorWarning }),
     magic.sources.length && buildEquipmentSummaryRow("魔法物品", "魔法物品", magic.sources.map(source => [
       source.label, source.ac ? `AC${formatSigned(source.ac)}` : "", source.saves ? `豁免${formatSigned(source.saves)}` : "",
-      source.spellAttack ? `法術命中${formatSigned(source.spellAttack)}` : "", source.spellSaveDc ? `法術DC${formatSigned(source.spellSaveDc)}` : ""
+      source.spellAttack ? `法術命中${formatSigned(source.spellAttack)}` : "", source.spellSaveDc ? `法術DC${formatSigned(source.spellSaveDc)}` : "",
+      ...Object.entries(source.skills || {}).map(([skill, bonus]) => `${skill}${formatSigned(bonus)}`),
+      source.checks ? `屬性檢定${formatSigned(source.checks)}` : "", source.proficiencyBonus ? `熟練加值${formatSigned(source.proficiencyBonus)}` : "",
+      source.hitPointsPerLevel ? `生命值上限每級${formatSigned(source.hitPointsPerLevel)}` : ""
     ].filter(Boolean).join(" ")))
   ].filter(Boolean);
   // 摘要重建時保留傷害按鈕的焦點（選擇視窗關閉後回到同一手的按鈕）。
@@ -5942,8 +5983,11 @@ function applyStateObjectNow(data) {
   window.InventoryUI?.syncEquippedSlots({ restoring: true });
   window.refreshAbilityScoreDisplays?.();
   refreshMagicSpellCastingStats();
+  // 有魔法物品的生命值上限加值（狂戰斧）才重算；沒有的角色維持存檔裡的數字。
+  if (getActiveMagicEffects().hitPointsPerLevel) updateHPDisplay();
   updateACDisplay();
   updateSpeedDisplay();
+  syncProficiencyUseChecks();
   updateClassFeatureChoiceReminder();
   if (subclassReplaced) {
     window.AppDialog?.notify(`無法辨識存檔中的子職，已改為「${window.getSelectedSubclass?.(data.class)?.name || ""}」。`, { tone: "warning" });
@@ -7000,6 +7044,13 @@ window.addEventListener("DOMContentLoaded", async function() {
     if (magicKey === activeMagicEffectsKey && event.detail?.reason !== "form") return;
     activeMagicEffectsKey = magicKey;
     updateACDisplay();
+    // 生命值上限（狂戰斧）、速度（跑跳之靴、秘銀護甲）與熟練加值的次數（艾恩石精進）也跟著魔法物品變。
+    if (!characterStateLoadDepth) {
+      updateHPDisplay();
+      updateSpeedDisplay();
+      updateAutomaticInitiative();
+    }
+    syncProficiencyUseChecks();
     // 載入存檔時由 applyStateObjectNow 最後算一次；這裡算會用到還沒還原完的欄位。
     if (isAutomaticKeyStatsEnabled() && !characterStateLoadDepth) updateSpellCastingStats();
     else populateHandAttacks();

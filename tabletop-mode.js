@@ -1259,6 +1259,7 @@
     const options = {
       className: value("class"), race: value("race"), level: value("level"),
       wisdomScore: readAbilityScore("wis") || "", charismaScore: readAbilityScore("cha") || "",
+      proficiencyBonus: globalScope.getProficiencyBonus?.(),
       raceChoice: getSelectedRaceChoice(), druidLand: value("druid-land"),
       hasTravelCompanion: Boolean(globalScope.hasSelectedFeat?.("最佳旅伴")),
       spellSlotGroups: slots.map(group => ({ level: group.level, ids: group.controls.map(control => control.id) })),
@@ -1577,11 +1578,20 @@
     return globalScope.getEffectiveAbilityValue?.(ability) ?? document.getElementById(ability)?.value ?? "";
   }
 
-  // 魔法物品改變屬性時的有效值與來源；荒野形態的力敏體換成野獸數值，不算。
+  // 魔法物品改變屬性時的有效值與來源；荒野形態的力敏體換成野獸數值，心智屬性用原值（物品只留穿戴中的護甲與盾牌）。
   function getAbilityEffect(ability) {
     if (getDruidForm() && ["str", "dex", "con"].includes(ability)) return null;
-    const effective = globalScope.getEffectiveAbilityScore?.(ability);
+    const effective = globalScope.getEffectiveAbilityScore?.(ability, getMagicEffects());
     return effective?.changed ? effective : null;
+  }
+
+  // 跑團畫面用的魔法物品效果（character-rules.js 的 getActiveMagicEffects）：荒野形態只留穿戴中的魔法護甲與盾牌，
+  // 其他物品的加值、提示、優勢、屬性與移動都不算（形態選擇視窗的「穿著」才算穿戴中）。
+  function getMagicEffects() {
+    if (!globalScope.getActiveMagicEffects) return null;
+    if (!getDruidForm()) return globalScope.getActiveMagicEffects();
+    const equipment = combatState.druid.equipment;
+    return globalScope.getActiveMagicEffects({ wildShape: { armor: equipment.armor === "wear", shield: equipment.off === "wear" } });
   }
 
   function getDruidForm() {
@@ -1604,18 +1614,23 @@
     const original = fallback ?? read(id);
     const beast = getDruidForm();
     if (!beast) return original;
-    // 角色自己的屬性用有效值（含魔法物品）：技能、豁免欄已含有效值的調整值，換算時先扣掉這個。
-    const own = key => Number(readAbilityScore(key) || "0");
+    // 荒野形態只留穿戴中的魔法護甲與盾牌（getMagicEffects）：角色自己的屬性是這時的有效值（心智屬性就是原值），
+    // 技能、豁免、先攻欄裡其他魔法物品加上的部分（屬性、技能加值、檢定加值、熟練加值、豁免加值）先扣掉，再換成野獸的屬性。
+    // 自動計算關閉時欄位是玩家手填的數字，當作沒有物品加值，只換算屬性。
+    const formEffects = getMagicEffects();
+    const own = key => Number(globalScope.getEffectiveAbilityValue?.(key, formEffects) ?? read(key)) || 0;
     const score = key => ["str", "dex", "con"].includes(key) ? beast.abilities[key] : own(key);
     const mod = key => globalScope.calculateAbilityModifier(score(key));
     const signed = value => globalScope.formatSignedValue(value);
-    const check = (ability, beastTotal) => signed(globalScope.calculateWildShapeCheck(Number(original), own(ability), score(ability), beastTotal));
+    const magicPart = () => {
+      if (!globalScope.isAutomaticKeyStatsEnabled?.() || typeof globalScope.getDerivedCheckTotal !== "function") return 0;
+      const withItems = globalScope.getDerivedCheckTotal(id);
+      const inForm = globalScope.getDerivedCheckTotal(id, formEffects);
+      return Number.isFinite(withItems) && Number.isFinite(inForm) ? withItems - inForm : 0;
+    };
+    const check = (ability, beastTotal) => signed(globalScope.calculateWildShapeCheck(Number(original) - magicPart(), own(ability), score(ability), beastTotal));
     if (/^(str|dex|con|int|wis|cha)-mod$/.test(id)) return signed(mod(id.slice(0, 3)));
-    if (/^save-(str|dex|con|int|wis|cha)$/.test(id)) {
-      // 豁免欄含魔法物品的加值；荒野形態只有穿戴中的護甲與盾牌保留，先扣掉（手動填的數字不動）。
-      const magicSaves = globalScope.isAutomaticKeyStatsEnabled?.() ? globalScope.getActiveMagicEffects?.().saves || 0 : 0;
-      return signed(globalScope.calculateWildShapeCheck(Number(original) - magicSaves, own(id.slice(5)), score(id.slice(5)), beast.saves?.[id.slice(5)]));
-    }
+    if (/^save-(str|dex|con|int|wis|cha)$/.test(id)) return check(id.slice(5), beast.saves?.[id.slice(5)]);
     if (id.startsWith("skill-")) {
       const key = id.slice(6);
       const ability = globalScope.CharacterSkillAbilities?.[key];
@@ -1639,7 +1654,7 @@
         || (state.equipment.armor === "wear" && globalScope.isShieldItem?.(armorName)))
         && globalScope.isShieldProficient?.() !== false;
       // 只有穿戴中的魔法護甲與盾牌加值保留，其他持有物不算。
-      const magicAc = globalScope.getActiveMagicEffects?.().ac;
+      const magicAc = formEffects?.ac;
       const shieldMagic = shield ? magicAc?.shield || 0 : 0;
       if (armor) return String(globalScope.calculateArmorClass({ armor, hasArmor: true, className: "druid",
         dexterityScore: score("dex"), constitutionScore: score("con"), wisdomScore: score("wis"), charismaScore: score("cha"),
@@ -2348,10 +2363,11 @@
     return globalScope.getArmorByName?.(armorName)?.分類 === "重甲";
   }
 
+  // 熟練加值含魔法物品（index.html 的 getProficiencyBonus）；荒野形態只算穿戴中的護甲與盾牌。
   function getCharacterProficiencyBonus() {
     const level = Number.parseInt(document.getElementById("level")?.value || "", 10);
     if (!Number.isInteger(level) || level < 1) return null;
-    const proficiencyBonus = Number(globalScope.calculateProficiencyBonus?.(level));
+    const proficiencyBonus = Number(globalScope.getProficiencyBonus?.(getMagicEffects()) ?? globalScope.calculateProficiencyBonus?.(level));
     return Number.isFinite(proficiencyBonus) ? proficiencyBonus : null;
   }
 
@@ -2474,8 +2490,9 @@
   }
 
   // 魔法物品的提示（內容檔 hints；getActiveMagicEffects() 只列目前生效的）：標題是物品名稱，panel 為 overview 或 skills。
+  // 荒野形態只列穿戴中的魔法護甲與盾牌的提示（getMagicEffects）。
   function getMagicItemHintEntries(panel) {
-    return (globalScope.getActiveMagicEffects?.().hints || [])
+    return (getMagicEffects()?.hints || [])
       .filter(hint => hint.panel === panel)
       .map(hint => ({ label: hint.label, detail: hint.detail }));
   }
@@ -2684,7 +2701,8 @@
     if (!elements.skillValues) return;
 
     // 魔法物品的無條件優勢：技能名稱下方的「優勢」標籤（index.html 的 createMagicAdvantageTag，角色卡技能格共用）。
-    const advantages = onboardingSkillPreview ? {} : globalScope.getMagicItemAdvantages?.() || {};
+    const magicEffects = getMagicEffects();
+    const advantages = onboardingSkillPreview || !magicEffects ? {} : globalScope.getMagicItemAdvantages?.(magicEffects) || {};
     const skills = Array.from(
       document.querySelectorAll("#tab-skills .skill-grid .skill-cell")
     ).flatMap(cell => {
@@ -2835,7 +2853,8 @@
     );
     elements.initiative.replaceChildren(initiativeButton);
     // 魔法物品給的先攻優勢：「優勢」標籤放在數值右邊（上下排會讓整排關鍵數值卡片長高）。
-    const initiativeAdvantage = onboardingKeyStatPreview ? [] : globalScope.getMagicItemAdvantages?.()["先攻"] || [];
+    const magicEffects = getMagicEffects();
+    const initiativeAdvantage = onboardingKeyStatPreview || !magicEffects ? [] : globalScope.getMagicItemAdvantages?.(magicEffects)["先攻"] || [];
     if (initiativeAdvantage.length && globalScope.createMagicAdvantageTag) {
       elements.initiative.appendChild(globalScope.createMagicAdvantageTag(initiativeAdvantage));
       initiativeButton.setAttribute("aria-label", `${initiativeButton.getAttribute("aria-label")}；優勢（${initiativeAdvantage.join("、")}）`);
