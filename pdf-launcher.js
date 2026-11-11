@@ -211,6 +211,16 @@ function getSavedAvatarForPdf() {
   return typeof isValidTabletopAvatar === "function" && isValidTabletopAvatar(value) ? value : "";
 }
 
+// 這兩個檔案只在部署時放上網站（見 site.yml），路徑與 pdf-export.js 的官方角色卡設定相同。
+const OFFICIAL_SHEET_ASSET_PATHS = ['5e_char_sheet_of.pdf', 'fonts/AdobeFanHeitiStd-Bold.otf'];
+
+// 確定找不到（404）才算缺檔；網路錯誤維持顯示，交給匯出時的錯誤畫面處理。
+function checkOfficialSheetMissing() {
+  return Promise.all(OFFICIAL_SHEET_ASSET_PATHS.map((path) =>
+    fetch(path, { method: 'HEAD', cache: 'no-store' }).then((response) => response.status === 404, () => false)
+  )).then((missing) => missing.some(Boolean));
+}
+
 function showPdfExportModal(state, reminders, exportPdfBtn) {
   return new Promise((resolve) => {
     const prevFocus = document.activeElement;
@@ -253,7 +263,11 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     const savedAvatar = window.SHARE_MODE ? "" : getSavedAvatarForPdf();
     if (raceChoice && !result[raceChoice.key]) steps.push("race");
     steps.push("format");
-    let idx=0, busy=false, lastMode=null, formatError='', selectedNameMeasurement=null, invalidNameField='';
+    let idx=0, busy=false, lastMode=null, formatError='', selectedNameMeasurement=null, invalidNameField='', officialSheetMissing=false;
+    checkOfficialSheetMissing().then((missing)=>{
+      officialSheetMissing=missing;
+      if(missing&&overlay.isConnected&&steps[idx]==='sheet'&&!busy) render();
+    });
 
     function close(v, restoreFocus=true){ document.removeEventListener('keydown', onKeyDown, true); overlay.remove(); if(restoreFocus)(exportPdfBtn||prevFocus)?.focus?.(); resolve(v); }
     function getFocusable(){ return Array.from(card.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled); }
@@ -355,7 +369,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         [
           ['third-party','第三方角色卡','橫式雙頁版面；可編輯表單版約 6 MB，美觀易讀版約 1 MB。'],
           ['official','官方角色卡','直式雙頁官方版面；可編輯版約 6 MB，不可編輯版約 1 MB。']
-        ].forEach(([value,title,description])=>{
+        ].filter(([value])=>value!=='official'||!officialSheetMissing).forEach(([value,title,description])=>{
           const button=document.createElement('button'); button.type='button'; button.className='pdf-export-choice-option';
           const strong=document.createElement('strong'); strong.textContent=title;
           const detail=document.createElement('span'); detail.textContent=description;

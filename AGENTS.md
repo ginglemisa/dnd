@@ -83,7 +83,8 @@
 * 回歸測試只在本機推送前執行。GitHub Actions（`.github/workflows/site.yml`）在 push 到 `main` 時建置、產生離線角色卡並部署 GitHub Pages，不跑回歸測試。
 * `twd20.html` 是 Actions 產生的衍生產物，不提交、不手改。離線版除了停用 PDF 匯出，功能應與網頁版相同；不含私人內容，分享只產生正式站的永久網址。
 * 改動可能影響離線版（載入順序、內嵌的 script／CSS／圖片、新增產物檔、路徑或離線分享）時，自行在本機執行 `npm run build:offline`（先 `npm run build`；腳本內含自身驗證），測完刪除產物。
-* **部署時併入的額外頁面**：`site.yml` 有一段會在部署時從另一個 repo 取得少量靜態頁面，細節看該段流程。這些頁面不進本 repo；來源有變動時不會自動部署，變動後要到 GitHub Actions 手動執行「網站上線」。
+* **部署時併入的額外檔案**：`site.yml` 有一段會在部署時從另一個 repo 取得少量靜態頁面與官方角色卡的 PDF 資源，細節看該段流程。這些檔案不進本 repo；來源有變動時不會自動部署，變動後要到 GitHub Actions 手動執行「網站上線」。
+  * 本機開發與測試需要的 PDF 資源用 `npm run assets:private` 複製（不提交）；`npm test` 開始前會自動補上缺少的檔案，新的 worktree 也一樣。
   * 移除頁面但保留來源 repo：刪掉來源 repo 裡的檔案，再手動執行一次。
   * 永久停用：先刪該段流程使用的 secret，手動執行一次並確認頁面消失，最後才刪來源 repo。
   * secret 還在時不要直接刪來源 repo：取檔失敗會讓每次部署都失敗，整個網站無法更新，這些頁面也會停留在上一版。

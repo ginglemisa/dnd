@@ -4,7 +4,7 @@
 #   class-content.private.generated.js 在上線建置一律是空檔（網站固定會載入它；私人內容包只存在使用者電腦）。
 # - 內容檔有錯時 npm run build 會失敗，不會部署，正式站維持上一個版本。
 # - 發布內容為此 commit 的 repo 檔案加上產生的檔案，以 GitHub Pages 原本使用的 Jekyll 建置。
-# - al/DnDALPG.html 與 al/DnDALDMG.html 來自私人 repo，部署時才取得，需要 secret PRIVATE_PAGES_DEPLOY_KEY；更新或刪除這些檔案後要手動重跑此流程。
+# - al/DnDALPG.html、al/DnDALDMG.html、5e_char_sheet_of.pdf 與 fonts/AdobeFanHeitiStd-Bold.otf 來自私人 repo，部署時才取得，需要 secret PRIVATE_PAGES_DEPLOY_KEY；更新或刪除這些檔案後要手動重跑此流程。
 name: 網站上線
 
 on:
@@ -75,6 +75,11 @@ jobs:
           for page in DnDALPG.html DnDALDMG.html; do
             if [ -f "_private_pages/$page" ]; then
               cp "_private_pages/$page" _publish/al/
+            fi
+          done
+          for asset in 5e_char_sheet_of.pdf fonts/AdobeFanHeitiStd-Bold.otf; do
+            if [ -f "_private_pages/$asset" ]; then
+              cp "_private_pages/$asset" "_publish/$asset"
             fi
           done
 
