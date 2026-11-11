@@ -145,7 +145,7 @@
   <script src="tabletop-mode.js?v=20261112-wild-shape-slots" defer></script>
   <script src="tabletop-druid.js?v=20261111-merge-main" defer></script>
   <script src="tabletop-resources.js?v=20261112-wild-shape-slots" defer></script>
-  <script src="tabletop-actions.js?v=20261112-wild-shape-slots" defer></script>
+  <script src="tabletop-actions.js?v=20261112-beast-weapon-magic" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261111-magic-effects-6" defer></script>
   <script src="legal-modal.js?v=20261110-safari" defer></script>
@@ -4796,19 +4796,22 @@ function updateEquipmentLoadoutSummary() {
 
 // 動作命中傷害
 // options.shillelaghHand：跑團模式依橡棍術持續效果指定生效的一手（null 為不生效）；沒給時依角色卡的「☐橡棍術」。
+// options.magicEffects：要用的魔法物品效果（荒野形態傳 TabletopMode.getMagicEffects()，依變身時每一格的選擇）；沒給時是目前全部生效的物品。
+// options.ignoreMagicEffects：完全不算魔法物品的武器效果（武器資料本身的比較用）。
 function calculateHandAttacks(options = {}) {
   const hasTwoWeaponFighting = hasTwoWeaponFightingStyleFeat();
   const hasArcheryFightingStyle = hasArcheryFightingStyleFeat();
   const shillelaghTargetHand = Object.hasOwn(options, "shillelaghHand") ? options.shillelaghHand : getSheetShillelaghHand();
   const offHandAsMain = isOffHandAlternateMain();
-  const magicHands = getActiveMagicEffects().hands;
+  const magicEffects = options.magicEffects || getActiveMagicEffects();
+  const magicHands = magicEffects.hands;
   const hands = [
     { key: "main", selectId: "mainHand", prefix: "atk-main", usesMainHandRules: true },
     { key: "off", selectId: "offHand", prefix: "atk-off", usesMainHandRules: offHandAsMain }
   ];
   return hands.map(hand => {
     const weaponName = document.getElementById(hand.selectId).value;
-    // 魔法加值跟著那一手的武器；options.ignoreMagicEffects 是荒野形態（只有穿戴中的護甲與盾牌加值保留）。
+    // 魔法加值跟著那一手的武器（荒野形態時那一手選了持用才有，見 options.magicEffects）。
     const magicHand = options.ignoreMagicEffects ? null : magicHands[hand.selectId];
     // 魔法武器改變的傷害類型、靈巧、投擲與徒手打擊直接換進武器資料，下面的判斷都讀換過的資料。
     const weapon = withMagicWeaponEffects(getWeaponOrShieldByName(weaponName), magicHand);
@@ -4823,7 +4826,7 @@ function calculateHandAttacks(options = {}) {
     const cls = document.getElementById("class")?.value || "";
     const isRanged = isRangedWeapon(weapon);
     const isDexEligible = weaponHasProp(weapon, "靈巧");
-    const pb = getProficiencyBonus();
+    const pb = getProficiencyBonus(magicEffects);
     const pactWeapon = isPactWeaponHand(hand.key);
     const originalDamageType = getWeaponOwnDamageType(weapon);
     const damageTypeChoice = getHandDamageTypeChoiceKind(hand.key, { shillelaghHand: shillelaghTargetHand });
@@ -4831,7 +4834,7 @@ function calculateHandAttacks(options = {}) {
     const oneHandedDie = weapon.傷害.split(/\s+/u)[0];
     const versatileDie = getHandVersatileDie(weapon, hand.key);
     const weaponDamage = `${versatileDie || oneHandedDie} ${damageType}`;
-    const proficient = isMonkMartialArts || pactWeapon ? true : isHandWeaponProficient(weapon, magicHand);
+    const proficient = isMonkMartialArts || pactWeapon ? true : isHandWeaponProficient(weapon, magicHand, magicEffects);
     const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive(weaponName) && isMonkWeapon(weapon);
     const shillelaghEffect = hand.key === shillelaghTargetHand
       ? getPreparedShillelaghEffect(weaponName, strMod, damageType)

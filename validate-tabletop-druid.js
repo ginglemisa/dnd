@@ -251,6 +251,36 @@ async function checkWildShapeEquipmentChoices(page) {
   await page.evaluate(() => { TabletopMode.commitDruidOperation("end", {}, TabletopMode.getDruidContext().token); TabletopMode.setMode("sheet"); });
 }
 
+// 荒野形態的武器攻擊卡：主手選持用時列在野獸攻擊下方，用野獸的力量算，魔法武器的加值照算（變身選擇的新規則）；預設融入時沒有武器卡。
+async function checkWildShapeMagicWeaponCard(page) {
+  await page.evaluate(() => {
+    TabletopMode.setMode("sheet");
+    TabletopMode.applyState({});
+    applyStateObject({ __autoCalculatedChecks: true, class: "druid", level: "8", str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40", armor: "", offHand: "", offHandAsMain: false, mainHand: "長劍+1",
+      __inventory: { version: 1, items: [{ uid: "sword", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } }] } });
+    TabletopMode.setMode("tabletop");
+    TabletopMode.setPanel("actions");
+  });
+  const card = main => page.evaluate(async (main) => {
+    const c = () => TabletopMode.getDruidContext();
+    TabletopMode.commitDruidOperation("end", {}, c().token);
+    TabletopMode.setBuiltInResourceSpent("druid-wild-shape", 0, 3);
+    TabletopMode.commitDruidOperation("known", { keys: ["wolf"] }, c().token);
+    TabletopMode.commitDruidOperation("shape", { key: "wolf", equipment: { armor: "merge", main, off: "merge", other: "merge" } }, c().token);
+    for (let i = 0; i < 20 && !document.querySelector("#tabletop-weapon-summary .druid-beast-attacks"); i += 1) await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const section = document.querySelector('#tabletop-weapon-summary section[aria-label="主手武器攻擊"]');
+    return section ? section.innerText.replace(/\s+/gu, " ") : "";
+  }, main);
+  // 德魯伊不熟練長劍；狼的力量 14（+2）。副手空著，長劍是兩用武器，用雙手骰 1d10。
+  const worn = await card("wear");
+  assert.match(worn, /長劍\+1/u, "the held magic sword gets a weapon card in wild shape");
+  assert.match(worn, /命中 \+3/u, "the card adds the sword's +1 to the wolf's Strength modifier");
+  assert.match(worn, /1d10\+3揮砍/u, "the damage adds the sword's +1 to the wolf's Strength modifier");
+  assert.equal(await card("merge"), "", "a merged main hand has no weapon card");
+  await page.evaluate(() => { TabletopMode.commitDruidOperation("end", {}, TabletopMode.getDruidContext().token); TabletopMode.setMode("sheet"); });
+}
+
 // 魔法物品的跑團按鈕（第 5 步）也跟著變身時每一格的選擇：只有副手選穿著時只剩騎士之盾的按鈕（隱身斗篷在「其他」格，預設融入），併入時都沒有。
 async function checkMagicItemButtonsInWildShape(page) {
   await page.evaluate(() => {
@@ -881,6 +911,7 @@ async function main() {
     await checkMagicItemsInWildShape(page);
     await checkMagicEffectsInWildShape(page);
     await checkWildShapeEquipmentChoices(page);
+    await checkWildShapeMagicWeaponCard(page);
     await checkMagicItemButtonsInWildShape(page);
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Druid status card, strips, known forms, shape cards, attack cards, recharge, resources, cancellation, alternate payment, autosave and responsive layout passed.");
