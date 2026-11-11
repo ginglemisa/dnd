@@ -1602,6 +1602,19 @@
     return globalScope.BeastCatalog?.get(form.key) || null;
   }
 
+  // 魔法物品給的其他移動方式（getActiveMagicEffects().movement），例如「，游泳 60、攀爬 30」：多個來源取最大，
+  // 「等於速度」（speed）跟著 walk（目前的步行速度，含大步奔行）；walk 不是數字時略過等於速度的來源。沒有時為空字串。
+  function getMagicMovementText(walk) {
+    const movement = getMagicEffects()?.movement;
+    if (!movement) return "";
+    const parts = [["swim", "游泳"], ["climb", "攀爬"], ["fly", "飛行"]].flatMap(([mode, label]) => {
+      const values = movement[mode].map(source => source.value === "speed" ? walk : source.value).filter(Number.isFinite);
+      if (!values.length) return [];
+      return [`${label} ${Math.max(...values)}${mode === "fly" && movement.hover.length ? "（懸停）" : ""}`];
+    });
+    return parts.length ? `，${parts.join("、")}` : "";
+  }
+
   // 變形中數值旁的標記「(狼)」：比照樹膚術的「(樹膚)」，只標屬性（力敏體）、AC 與速度。
   function getDruidFormMarks() {
     const beast = getDruidForm();
@@ -2650,10 +2663,15 @@
     if (!elements.abilityModifiers) return;
 
     const formMarks = getDruidFormMarks();
+    const checkEffects = getMagicEffects();
+    const checkSources = (checkEffects?.sources || []).filter(source => source.checks).map(source => source.label);
     const values = ABILITY_KEYS.map(ability => {
       const label = getAbilityLabel(ability);
       // 只讀調整值本身（.modifier-main），不含角色卡的 ✦ 標記。
-      const value = getDruidEffectiveValue(`${ability}-mod`, getReadOnlySourceValue(document.querySelector(`#${ability}-mod .modifier-main`) || document.getElementById(`${ability}-mod`)));
+      const modifier = getDruidEffectiveValue(`${ability}-mod`, getReadOnlySourceValue(document.querySelector(`#${ability}-mod .modifier-main`) || document.getElementById(`${ability}-mod`)));
+      // 屬性檢定的魔法物品加值（幸運石，effects.checks）加在擲骰的數字上，來源寫在數值旁。
+      const checkBonus = parseRollModifier(modifier) === null ? 0 : checkEffects?.checks || 0;
+      const value = checkBonus ? globalScope.formatSignedValue(parseRollModifier(modifier) + checkBonus) : modifier;
       const item = createReadOnlyValue(
         label,
         value,
@@ -2665,13 +2683,14 @@
       // 魔法物品改變的屬性比照形態標記寫出物品「+5 (巨人之力腰帶（山丘）)」，名稱長時在格內換行。
       // 物品名稱放在擲骰按鈕外，窄螢幕時換到數值下方整行。
       const magic = getAbilityEffect(ability);
+      const magicSources = [...new Set([...(magic?.sources || []), ...(checkBonus ? checkSources : [])])];
       if (formMarks.length && ["str", "dex", "con"].includes(ability)) {
         renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, formMarks);
-      } else if (magic) {
+      } else if (magicSources.length) {
         renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, []);
         const source = document.createElement("span");
         source.className = "tabletop-ac-effect-label tabletop-ability-modifier__source";
-        source.textContent = `(${magic.sources.join("、")})`;
+        source.textContent = `(${magicSources.join("、")})`;
         item.classList.add("tabletop-ability-modifier--magic");
         item.append(source);
       }
@@ -2865,13 +2884,16 @@
         "speed-display",
         " 呎"
       ));
+    // 魔法物品的游泳、攀爬、飛行接在步行速度後面（荒野形態用野獸的速度，不算）。
+    const baseSpeedText = document.getElementById("speed-display")?.value.trim() || "";
+    const walkSpeed = baseSpeedText && Number.isFinite(Number(baseSpeedText)) ? Number(baseSpeedText) : null;
+    if (!getDruidForm() && !combatState.longstriderActive) elements.speed.textContent += getMagicMovementText(walkSpeed);
 
     if (combatState.longstriderActive) {
       const beast = getDruidForm();
-      const baseSpeed = document.getElementById("speed-display")?.value.trim() || "";
       const speed = beast
         ? Object.entries(beast.speeds).map(([label, feet]) => `${label} ${feet + (hasSelectedFeat("迅捷步法") ? 10 : 0) + 10} 呎`).join("、")
-        : baseSpeed && Number.isFinite(Number(baseSpeed)) ? `${Number(baseSpeed) + 10} 呎` : "—";
+        : walkSpeed !== null ? `${walkSpeed + 10} 呎${getMagicMovementText(walkSpeed + 10)}` : "—";
       renderEffectStat(elements.speed, speed, [...formMarks, "(大步)"]);
     } else if (formMarks.length) {
       renderEffectStat(elements.speed, elements.speed.textContent, formMarks);
