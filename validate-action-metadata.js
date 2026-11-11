@@ -1486,9 +1486,12 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.deepEqual(plain.checks, ["+2", "+3", "+2", "+6", "10", "+2"], "baseline checks without magic items");
     assert.deepEqual((await sheetNumbers({ ...inventoryOf(worn("gloves", "gloves-of-thievery")) })).checks[0], "+7", "Gloves of Thievery add 5 to Sleight of Hand while worn");
     assert.deepEqual((await sheetNumbers({ ...inventoryOf({ ...worn("gloves", "gloves-of-thievery"), worn: false }) })).checks[0], "+2", "Gloves of Thievery in the pack add nothing");
-    // 幸運石：技能（含被動察覺）與豁免 +1；先攻不加（專案資料沒寫先攻屬於屬性檢定）。
-    assert.deepEqual((await sheetNumbers({ "prof-str": true, ...inventoryOf({ uid: "luck", quantity: 1, attuned: true, magic: { id: "stone-of-good-luck" } }) })).checks,
-      ["+3", "+4", "+3", "+7", "11", "+2"], "the Stone of Good Luck adds 1 to skills, passive Perception and saves but not initiative");
+    // 幸運石：技能（含被動察覺）、豁免與先攻 +1（先攻是使用者決定），PDF 先攻欄同一個數字。
+    const luckstone = { uid: "luck", quantity: 1, attuned: true, magic: { id: "stone-of-good-luck" } };
+    assert.deepEqual((await sheetNumbers({ "prof-str": true, ...inventoryOf(luckstone) })).checks,
+      ["+3", "+4", "+3", "+7", "11", "+3"], "the Stone of Good Luck adds 1 to skills, passive Perception, saves and initiative");
+    assert.equal(await page.evaluate(() => buildPdfFieldPayload(collectStateObject()).initiative1), "+3", "the PDF initiative box includes the Stone of Good Luck");
+    assert.deepEqual((await sheetNumbers(inventoryOf({ ...luckstone, attuned: false }))).checks[5], "+2", "an unattuned Stone of Good Luck adds nothing to initiative");
     // 艾恩石（精進）：熟練加值 +1，熟練的豁免與武器攻擊跟著變。
     const masteryNumbers = await sheetNumbers({ mainHand: "長劍", "prof-str": true, ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, worn("stone", "ioun-stone", { kind: "mastery" })) });
     assert.deepEqual([masteryNumbers.checks[3], masteryNumbers.attack, plain.attack, await page.evaluate(() => getProficiencyBonus())], ["+7", "+7", "+6", 4], "the Ioun Stone of Mastery raises the proficiency bonus by 1");
@@ -1536,6 +1539,16 @@ async function verifyEquipmentLoadout(browser, url) {
       syncAutomaticKeyStatsMode();
       return manual;
     }, [magicBase, inventoryOf(worn("gloves", "gloves-of-thievery"))]), "+1", "manual skill values stay when automatic calculation is off");
+    // 自動計算關閉時，先攻欄是玩家手填的數字，加上幸運石也不變。
+    assert.deepEqual(await page.evaluate(([base, inventory]) => {
+      applyStateObject({ ...base, "auto-calculate-key-stats-toggle": false, "initiative-input": "+0" });
+      applyStateObject({ ...base, "auto-calculate-key-stats-toggle": false, "initiative-input": "+0", ...inventory });
+      const manual = document.getElementById("initiative-input").value;
+      document.getElementById("auto-calculate-key-stats-toggle").checked = true;
+      writeDerivedChecks();
+      syncAutomaticKeyStatsMode();
+      return manual;
+    }, [magicBase, inventoryOf(luckstone)]), "+0", "a manual initiative stays when automatic calculation is off");
     // 跑團：速度格寫出游泳、攀爬、飛行（多來源取最大，等於速度的跟著目前速度），屬性檢定按鈕加上幸運石。
     const tabletopSpeed = async extra => {
       await page.evaluate(([base, extra]) => { applyStateObject({ ...base, "speed-input": "30", ...extra }); TabletopMode.setMode("tabletop"); TabletopMode.setPanel("overview"); }, [magicBase, extra]);
@@ -1551,6 +1564,10 @@ async function verifyEquipmentLoadout(browser, url) {
       const strength = document.querySelector("#tabletop-ability-modifiers .tabletop-ability-modifier");
       return [strength.querySelector(".tabletop-ability-modifier__value").textContent, document.querySelector("#str-mod .modifier-main").textContent];
     }), ["+4", "+3"], "the tabletop ability check adds the Stone of Good Luck while the sheet modifier stays");
+    assert.deepEqual(await page.evaluate(() => {
+      const button = document.querySelector("#tabletop-initiative button");
+      return [button.textContent.trim(), document.getElementById("initiative-input").value];
+    }), ["+3", "+3"], "tabletop initiative uses the same number with the Stone of Good Luck");
     await page.evaluate(() => TabletopMode.setMode("sheet"));
     // 第 5 步：魔法物品的能力依動作類型放在跑團的動作、附贈、反應頁；扣次數的按鈕在物品名稱後寫剩餘次數，不夠時變灰；
     // 使用時扣那件物品的池（固定花費先確認，可變花費選次數）；沒拿在手上的魔杖沒有按鈕；可以在「管理」隱藏。

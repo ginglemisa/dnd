@@ -112,7 +112,7 @@
           "additionalProperties": { "type": "integer", "minimum": 1 },
           "description": "技能檢定的固定加值：技能 ID（character-rules.js 的 CharacterSkillAbilities）→ 加值，例如竊賊手套 { 巧手: 5 }。只在自動計算開啟時寫進技能欄；有條件的加值寫 hints。"
         },
-        "checks": { "type": "integer", "minimum": 1, "description": "所有屬性檢定的固定加值：加在每個技能檢定與跑團的屬性檢定按鈕（幸運石）。豁免另寫 saves。" },
+        "checks": { "type": "integer", "minimum": 1, "description": "所有屬性檢定的固定加值：加在每個技能檢定、先攻與跑團的屬性檢定按鈕（幸運石）。豁免另寫 saves。" },
         "proficiencyBonus": { "type": "integer", "minimum": 1, "description": "熟練加值增加的點數（艾恩石精進）：用到熟練加值的技能、豁免、攻擊、法術數值與次數都跟著變。" },
         "hitPoints": {
           "type": "object",

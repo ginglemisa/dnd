@@ -159,7 +159,7 @@ async function checkMagicEffectsInWildShape(page) {
     const value = id => TabletopMode.getDruidEffectiveValue(id, id === "int-mod" ? document.querySelector("#int-mod .modifier-main").textContent : document.getElementById(id).value);
     const tags = Array.from(document.querySelectorAll("#tabletop-skill-values .magic-advantage-tag"), tag => tag.title);
     return {
-      checks: [value("int-mod"), value("skill-調查"), value("save-wis"), value("save-dex")],
+      checks: [value("int-mod"), value("skill-調查"), value("save-wis"), value("save-dex"), value("initiative-input")],
       sources: Array.from(document.querySelectorAll("#tabletop-ability-modifiers .tabletop-ability-modifier__source"), item => item.textContent),
       tags, initiative: document.querySelector("#tabletop-initiative .magic-advantage-tag")?.title || "",
       hints: Array.from(document.querySelectorAll("#tabletop-overview-rule-summary .tabletop-defense-summary__item"), item => item.textContent).filter(text => /精靈之靴|警戒之盾|幸運石|游泳戒指/.test(text)).map(text => text.split("：")[0]),
@@ -181,11 +181,11 @@ async function checkMagicEffectsInWildShape(page) {
     TabletopMode.setMode("tabletop");
     TabletopMode.setPanel("overview");
   });
-  const sheet = await page.evaluate(() => ["int-mod", "skill-調查", "save-wis", "save-dex"].map(id => id === "int-mod" ? document.querySelector("#int-mod .modifier-main").textContent : document.getElementById(id).value));
-  assert.deepEqual(sheet, ["+4", "+5", "+9", "+3"], "the sheet counts the headband, luckstone and Ioun Stone of Mastery");
+  const sheet = await page.evaluate(() => ["int-mod", "skill-調查", "save-wis", "save-dex", "initiative-input"].map(id => id === "int-mod" ? document.querySelector("#int-mod .modifier-main").textContent : document.getElementById(id).value));
+  assert.deepEqual(sheet, ["+4", "+5", "+9", "+3", "+3"], "the sheet counts the headband, luckstone (initiative too) and Ioun Stone of Mastery");
   const normal = await read();
   assert.deepEqual([normal.checks, normal.sources.includes("(頭冠：智力頭帶)") || normal.sources.some(text => text.includes("智力頭帶")), normal.tags, normal.initiative, normal.hints, normal.speed],
-    [["+4", "+5", "+9", "+3"], true, ["優勢：精靈之靴", "優勢：警戒之盾"], "優勢：警戒之盾", ["精靈之靴", "警戒之盾"], "30 呎，游泳 40"], "outside wild shape every active item counts");
+    [["+4", "+5", "+9", "+3", "+3"], true, ["優勢：精靈之靴", "優勢：警戒之盾"], "優勢：警戒之盾", ["精靈之靴", "警戒之盾"], "30 呎，游泳 40"], "outside wild shape every active item counts");
   const shape = off => page.evaluate((off) => {
     const c = () => TabletopMode.getDruidContext();
     TabletopMode.commitDruidOperation("end", {}, c().token);
@@ -195,9 +195,9 @@ async function checkMagicEffectsInWildShape(page) {
   }, off);
   assert.equal(await shape("wear"), true);
   const worn = await read();
-  // 狼：敏捷 15（+2）；智力、感知用角色原值（12、18），熟練加值 3；幸運石、艾恩石、頭帶不算。
+  // 狼：敏捷 15（+2）；智力、感知用角色原值（12、18），熟練加值 3；幸運石（含先攻）、艾恩石、頭帶不算。
   assert.deepEqual(worn, {
-    checks: ["+1", "+1", "+7", "+2"], sources: [], tags: ["優勢：警戒之盾"], initiative: "優勢：警戒之盾", hints: ["警戒之盾"], speed: "步行 40 呎 (狼)"
+    checks: ["+1", "+1", "+7", "+2", "+2"], sources: [], tags: ["優勢：警戒之盾"], initiative: "優勢：警戒之盾", hints: ["警戒之盾"], speed: "步行 40 呎 (狼)"
   }, "wild shape keeps only the worn shield's hints and advantage, mental scores use the raw values");
   assert.equal(await shape("merge"), true);
   const merged = await read();

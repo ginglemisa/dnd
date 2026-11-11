@@ -3370,6 +3370,7 @@ function updatePassivePerceptionDisplay() {
 }
 
 // 先攻的計算值；敏捷空白或無法判讀時為 null。effects 同 getModifier。
+// 魔法物品的所有屬性檢定加值（幸運石，effects.checks）也加在先攻（使用者決定）；角色卡、跑團與 PDF 都讀這個值。
 function getInitiativeTotal(effects = getActiveMagicEffects()) {
   const dexScore = Number.parseInt(getEffectiveAbilityValue("dex", effects), 10);
   if (!Number.isFinite(dexScore)) return null;
@@ -3382,7 +3383,7 @@ function getInitiativeTotal(effects = getActiveMagicEffects()) {
     hasAlertFeat,
     proficiencyBonus
   );
-  return dexMod + (hasAlertFeat ? proficiencyBonus : jackOfAllTradesBonus);
+  return dexMod + (hasAlertFeat ? proficiencyBonus : jackOfAllTradesBonus) + (effects.checks || 0);
 }
 
 function updateAutomaticInitiative() {
@@ -6071,6 +6072,8 @@ function applyStateObjectNow(data) {
   refreshMagicSpellCastingStats();
   // 有魔法物品的生命值上限加值（狂戰斧）才重算；沒有的角色維持存檔裡的數字。
   if (getActiveMagicEffects().hitPointsPerLevel) updateHPDisplay();
+  // 有所有檢定加值（幸運石）時先攻也重算；沒有的角色維持存檔裡的數字。
+  if (getActiveMagicEffects().checks) updateAutomaticInitiative();
   updateACDisplay();
   updateSpeedDisplay();
   syncProficiencyUseChecks();
