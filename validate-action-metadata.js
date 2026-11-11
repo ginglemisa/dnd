@@ -3293,6 +3293,73 @@ async function verifyConditionEffects(browser, url) {
   }
 }
 
+// 死亡豁免：加上目前生效的魔法物品豁免加值（總值 10 以上成功，1、20 看原骰），癒合護符把原骰 9 以下改成 10。
+async function verifyDeathSaveMagicItems(browser, url) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => !!window.TabletopMode && !!window.DiceRoller && !!window.MagicItemCatalog);
+    await page.check("#legal-dismiss");
+    await page.click("#legal-close-btn");
+    const evaluate = (roll, options) => page.evaluate(([roll, options]) => {
+      const { outcome, successes, failures, restoredHp, die, total } = TabletopMode.logic.evaluateDeathSaveRoll(roll, options);
+      return { outcome, successes, failures, restoredHp, die, total };
+    }, [roll, options]);
+    // 不傳加值時與只看原骰相同。
+    assert.deepEqual(await page.evaluate(() => [9, 10, 1, 20].map(roll => TabletopMode.logic.evaluateDeathSaveRoll(roll).outcome)), ["failure", "success", "failure", "revive"]);
+    assert.equal((await evaluate(1)).failures, 2);
+    assert.deepEqual(await evaluate(8, { bonus: 2 }), { outcome: "success", successes: 1, failures: 0, restoredHp: 0, die: 8, total: 10 }, "a save bonus counts toward 10");
+    assert.deepEqual(await evaluate(7, { bonus: 2 }), { outcome: "failure", successes: 0, failures: 1, restoredHp: 0, die: 7, total: 9 });
+    assert.deepEqual(await evaluate(1, { bonus: 9 }), { outcome: "failure", successes: 0, failures: 2, restoredHp: 0, die: 1, total: 10 }, "a natural 1 stays two failures whatever the bonus");
+    assert.equal((await evaluate(20, { bonus: -3 })).outcome, "revive", "a natural 20 revives whatever the bonus");
+    assert.deepEqual(await evaluate(3, { minimum: 10 }), { outcome: "success", successes: 1, failures: 0, restoredHp: 0, die: 10, total: 10 }, "the periapt raises 9 or lower to 10");
+    assert.deepEqual(await evaluate(1, { minimum: 10, bonus: 2 }), { outcome: "success", successes: 1, failures: 0, restoredHp: 0, die: 10, total: 12 }, "the periapt also raises a natural 1");
+    assert.equal((await evaluate(15, { minimum: 10 })).die, 15);
+
+    const staff = { uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id: "staff-of-power" } };
+    const periapt = { uid: "periapt", itemId: "癒合護符", quantity: 1, attuned: true, worn: true, magic: { id: "periapt-of-wound-closure" } };
+    const setup = (items, extra = {}) => page.evaluate(([items, extra]) => {
+      applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "wizard", level: "5", str: "10", dex: "10", con: "10", int: "16", wis: "10", cha: "10",
+        hp: "0", mainHand: "", offHand: "", offHandAsMain: false, main2Shield: false, armor: "", __inventory: { version: 1, items }, ...extra });
+      TabletopMode.applyState({ activeConditions: ["unconscious", "prone", "incapacitated"] });
+      TabletopMode.setMode("tabletop");
+      TabletopMode.setPanel("overview");
+      DiceRoller.setEnabled(true);
+    }, [items, extra]);
+    const roll = page.locator("#tabletop-death-saves .tabletop-death-roll");
+    const help = () => page.locator("#tabletop-death-saves .tabletop-field-help").first().innerText();
+    await setup([]);
+    assert.equal(await roll.innerText(), "死亡豁免", "no bonus keeps the plain button");
+    assert.match(await help(), /^目前為昏迷；死亡豁免 10\+ 成功，1＝2 次失敗，20＝恢復 1 HP。$/u);
+    await setup([staff], { mainHand: "威力法杖" });
+    assert.equal(await roll.innerText(), "死亡豁免 +2", "the held staff adds its save bonus");
+    assert.match(await help(), /豁免加值 \+2（威力法杖）。$/u);
+    // 擲骰帶加值：原骰 8 +2 = 10 成功。
+    await page.evaluate(() => { window.__realRandom = crypto.getRandomValues; crypto.getRandomValues = values => { values[0] = 7; return values; }; });
+    await roll.click();
+    await page.evaluate(() => { crypto.getRandomValues = window.__realRandom; });
+    assert.equal((await page.evaluate(() => TabletopMode.collectState())).deathSaveSuccesses, 1, "8 +2 is a success");
+    await page.waitForFunction(() => document.getElementById("tabletop-live-status").textContent === "死亡豁免擲出 8 +2 = 10：成功，目前成功 1/3。");
+    // 癒合護符沒穿上不算；穿上後原骰 3 改為 10。
+    await setup([staff, { ...periapt, worn: false }], { mainHand: "威力法杖" });
+    assert.doesNotMatch(await help(), /癒合護符/u, "an unworn periapt does nothing");
+    await setup([staff, periapt], { mainHand: "威力法杖" });
+    assert.match(await help(), /豁免加值 \+2（威力法杖）；癒合護符：原骰 9 以下改為 10。$/u);
+    await page.evaluate(() => TabletopMode.applyState({ deathSaveSuccesses: 0, deathSaveFailures: 0 }));
+    await page.evaluate(() => { window.__realRandom = crypto.getRandomValues; crypto.getRandomValues = values => { values[0] = 2; return values; }; });
+    await roll.click();
+    await page.evaluate(() => { crypto.getRandomValues = window.__realRandom; });
+    await page.waitForFunction(() => document.getElementById("tabletop-live-status").textContent === "死亡豁免擲出 3（癒合護符改為 10）+2 = 12：成功，目前成功 1/3。");
+    assert.deepEqual(errors, [], "browser runtime errors");
+  } finally {
+    await context.close();
+  }
+}
+
 async function verifyMergedActionUi(browser, url) {
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -3768,6 +3835,7 @@ async function main() {
     await verifyUiAndPersistence(page, url);
     await verifyClassTabletopUpdates(page);
     await verifyConditionEffects(browser, url);
+    await verifyDeathSaveMagicItems(browser, url);
     await verifyManualWeaponVisibility(page, url);
     await verifyEquipmentLoadout(browser, url);
     await verifyAutomaticFeatRows(browser, url);

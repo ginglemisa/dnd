@@ -741,6 +741,7 @@ text: |-
 | `hitPoints` | `{ perLevel: 1, when?: owned }`：每個角色等級增加的生命值上限（狂戰斧，`when: owned` 同調就算）。只在自動計算開啟時寫進生命值上限。 |
 | `proficiencies` | `[長弓, 短弓]`：擁有這些武器的熟練（射手護腕，依基本款）。只影響攻擊列與裝備摘要的「未熟練」，不改職業的武器熟練，所以武器精通的選項不變。 |
 | `trained` | `true`：未受過這件護甲所屬類別的訓練時也視為受過訓練（精靈鏈甲）。只用於護甲類，穿著時才算。 |
+| `deathSaveMinimum` | 死亡豁免的原骰低於這個數字時改成這個數字（癒合護符 `10`，原骰 1 也改，變成成功）；擲出 20 仍恢復 1 HP。死亡豁免另加目前生效的 `saves`，總值 10 以上成功，擲出 1、20 看原骰。 |
 | `unarmoredAc` | 沒穿護甲時的基礎 AC＝這個值＋敏捷調整值（大法師法袍 15；可以用盾牌），和無甲防禦等算法取最高。 |
 | `noStrengthRequirement`、`noStealthDisadvantage` | `true`：這件護甲沒有力量需求、不讓隱匿有劣勢（秘銀護甲）。只用於護甲類；裝備摘要不顯示這兩項，速度不因力量需求降低。 |
 | `movement` | `{ swim?, climb?, fly?, hover?, minimum?, ignoreArmorStrength? }`：`swim`／`climb`／`fly` 是呎數或 `speed`（等於目前步行速度），寫在跑團速度那一格（「30 呎，游泳 60、攀爬 30」，多個來源取最大，等於速度的跟著目前速度與大步奔行）；`hover: true` 要和 `fly` 一起寫；`minimum` 是步行速度至少的呎數、`ignoreArmorStrength: true` 是不因護甲力量需求降速（跑跳之靴），這兩項角色卡與 PDF 的速度欄也算。角色卡速度欄只算步行。 |

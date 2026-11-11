@@ -547,8 +547,14 @@
     });
   }
 
-  function evaluateDeathSaveRoll(roll) {
+  // 死亡豁免判定：roll 是 d20 原骰。options.bonus 是豁免加值（目前生效的魔法物品 saves），
+  // options.minimum 是原骰下限（癒合護符：原骰低於它時改成它）。原骰 20 恢復 1 HP；
+  // 套用下限後原骰仍是 1 時計 2 次失敗；其餘總值（原骰或改後的值＋加值）10 以上成功。
+  // 不傳 options 時與只看原骰的舊算法相同。
+  function evaluateDeathSaveRoll(roll, options = {}) {
     const numeric = Number(roll);
+    const bonus = Number.isSafeInteger(options?.bonus) ? options.bonus : 0;
+    const minimum = Number.isSafeInteger(options?.minimum) ? Math.max(1, Math.min(20, options.minimum)) : 1;
 
     if (
       !Number.isSafeInteger(numeric)
@@ -569,6 +575,9 @@
       return Object.freeze({
         valid: true,
         roll: numeric,
+        die: numeric,
+        bonus,
+        total: numeric + bonus,
         outcome: "revive",
         successes: 0,
         failures: 0,
@@ -576,10 +585,13 @@
       });
     }
 
-    if (numeric === 1) {
+    const die = Math.max(numeric, minimum);
+    const total = die + bonus;
+    const base = { valid: true, roll: numeric, die, bonus, total };
+
+    if (die === 1) {
       return Object.freeze({
-        valid: true,
-        roll: numeric,
+        ...base,
         outcome: "failure",
         successes: 0,
         failures: 2,
@@ -587,10 +599,9 @@
       });
     }
 
-    if (numeric >= 10) {
+    if (total >= 10) {
       return Object.freeze({
-        valid: true,
-        roll: numeric,
+        ...base,
         outcome: "success",
         successes: 1,
         failures: 0,
@@ -599,8 +610,7 @@
     }
 
     return Object.freeze({
-      valid: true,
-      roll: numeric,
+      ...base,
       outcome: "failure",
       successes: 0,
       failures: 1,
@@ -3084,12 +3094,15 @@
               : "死亡豁免"
           );
       const canRoll = !sacrificed && !combatState.deathSaveStable;
+      // 擲骰帶上魔法物品的豁免加值；判定用按下當時的加值與癒合護符下限（evaluateDeathSaveRoll）。
+      const modifiers = getDeathSaveModifiers();
+      const withBonus = canRoll && modifiers.bonus !== 0;
       const button = createQuickRollButton(
-        title,
+        withBonus ? `${title} ${globalScope.formatSignedValue(modifiers.bonus)}` : title,
         "死亡豁免",
-        canRoll ? { count: 1, sides: 20 } : null,
+        canRoll ? { count: 1, sides: 20, ...(modifiers.bonus ? { modifier: modifiers.bonus, includeModifier: true } : {}) } : null,
         "tabletop-inline-roll tabletop-death-roll",
-        result => recordDeathSaveRoll(result.values[0])
+        result => recordDeathSaveRoll(result.values[0], modifiers)
       );
       elements.deathTitle.replaceChildren(button);
     }
@@ -3104,8 +3117,13 @@
     elements.deathHelp.textContent =
       "目前為穩定且昏迷；受到傷害會解除穩定並增加 1 次死亡豁免失敗。";
      } else {
+    const modifiers = getDeathSaveModifiers();
+    const notes = [
+      modifiers.bonus ? `豁免加值 ${globalScope.formatSignedValue(modifiers.bonus)}（${modifiers.bonusSources.join("、")}）` : "",
+      modifiers.minimum ? `${modifiers.minimumSources.join("、")}：原骰 ${modifiers.minimum - 1} 以下改為 ${modifiers.minimum}` : ""
+    ].filter(Boolean);
     elements.deathHelp.textContent =
-      "目前為昏迷；死亡豁免 10+ 成功，1＝2 次失敗，20＝恢復 1 HP。";
+      `目前為昏迷；死亡豁免 10+ 成功，1＝2 次失敗，20＝恢復 1 HP。${notes.length ? `${notes.join("；")}。` : ""}`;
      }
     }
 
@@ -3834,9 +3852,34 @@
     );
   }
 
-  function recordDeathSaveRoll(roll) {
+  // 死亡豁免目前的豁免加值與原骰下限（跑團用的魔法物品效果，荒野形態沿用 getMagicEffects 的過濾）。
+  function getDeathSaveModifiers() {
+    const effects = getMagicEffects();
+    const bonus = Number.isSafeInteger(effects?.saves) ? effects.saves : 0;
+    const minimum = effects?.deathSave?.minimum || 0;
+    return {
+      bonus,
+      bonusSources: (effects?.sources || []).filter(source => source.saves).map(source => source.label),
+      minimum,
+      minimumSources: minimum ? [...effects.deathSave.sources] : []
+    };
+  }
+
+  // 結果訊息裡的擲骰部分，例如「7」「7 +2 = 9」「7（癒合護符改為 10）+2 = 12」。
+  function formatDeathSaveRoll(evaluation, modifiers) {
+    const changed = evaluation.die !== undefined && evaluation.die !== evaluation.roll;
+    const dieText = changed
+      ? `${evaluation.roll}（${modifiers.minimumSources.join("、")}改為 ${evaluation.die}）`
+      : String(evaluation.roll);
+    if (!evaluation.bonus) return dieText;
+    const sign = evaluation.bonus < 0 ? "-" : "+";
+    return `${dieText}${changed ? "" : " "}${sign}${Math.abs(evaluation.bonus)} = ${evaluation.total}`;
+  }
+
+  function recordDeathSaveRoll(roll, modifiers = getDeathSaveModifiers()) {
     const evaluation =
-      evaluateDeathSaveRoll(roll);
+      evaluateDeathSaveRoll(roll, modifiers);
+    const rollText = evaluation.valid ? formatDeathSaveRoll(evaluation, modifiers) : "";
 
     if (!evaluation.valid) {
       return Object.freeze({
@@ -3937,7 +3980,7 @@
         );
       } else {
         markStateChanged(
-          `死亡豁免擲出 ${evaluation.roll}：成功，目前成功 ${combatState.deathSaveSuccesses}/3。`
+          `死亡豁免擲出 ${rollText}：成功，目前成功 ${combatState.deathSaveSuccesses}/3。`
         );
       }
 
@@ -3957,18 +4000,18 @@
       result.heroicSacrifice
     ) {
       const failureLabel =
-        evaluation.roll === 1
+        evaluation.die === 1
           ? "擲出 1，計 2 次失敗"
-          : `擲出 ${evaluation.roll}，失敗`;
+          : `擲出 ${rollText}，失敗`;
 
       markStateChanged(
         `死亡豁免${failureLabel}；累積 3 次失敗，${HEROIC_SACRIFICE_LABEL}。`
       );
     } else {
       const failureLabel =
-        evaluation.roll === 1
+        evaluation.die === 1
           ? "擲出 1：失敗 +2"
-          : `擲出 ${evaluation.roll}：失敗 +1`;
+          : `擲出 ${rollText}：失敗 +1`;
 
       markStateChanged(
         `死亡豁免${failureLabel}，目前失敗 ${combatState.deathSaveFailures}/3。`
