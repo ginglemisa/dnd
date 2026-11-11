@@ -1170,6 +1170,23 @@
     return { ok: true, previous };
   }
 
+  /**
+   * 用掉 1 枚裝備中的彈藥。最後 1 枚用掉時這一筆移除；物品欄還有完全相同的另一筆（同品名、同魔法選項，例如另一堆箭矢+1）時自動改裝備那一筆，
+   * 普通與魔法彈藥不互相替代。回傳 { label, removed, quantity, next }（next 是改裝備的那一筆 { uid, label, quantity } 或 null）；沒有裝備彈藥時回傳 null。
+   */
+  function useAmmo() {
+    const entry = entries.find(item => item.ammo);
+    if (!entry) return null;
+    const label = getLabel(entry);
+    const used = consume(entry.uid);
+    if (!used) return null;
+    if (!used.removed) return { label, removed: false, quantity: used.quantity, next: null };
+    const same = entries.find(item => isAmmunition(item) && (item.itemId || "") === (entry.itemId || "")
+      && magicKey(item) === magicKey(entry) && (item.name || "") === (entry.name || ""));
+    if (same) setAmmo(same.uid, true);
+    return { label, removed: true, quantity: 0, next: same ? { uid: same.uid, label: getLabel(same), quantity: same.quantity } : null };
+  }
+
   /** 目前裝備的彈藥（複本）；沒有時回傳 null。 */
   function getEquippedAmmo() {
     const entry = entries.find(item => item.ammo);
@@ -1299,6 +1316,7 @@
     setAttuned,
     setWorn,
     setAmmo,
+    useAmmo,
     getEquippedAmmo,
     isAmmunition,
     getAmmunitionType,
