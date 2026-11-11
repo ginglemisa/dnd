@@ -1666,6 +1666,14 @@ async function validateMagicAmmunition(page) {
     result.off = [Inventory.setAmmo(part, false), ammoUids()];
     result.part = part;
     result.preflight = [true, false, "yes", 1].map(ammo => isValidInventoryState({ version: 1, items: [{ quantity: 1, itemId: "箭矢", ammo }] }));
+    // useAmmo：用完時改裝完全相同的另一筆（普通彈丸換普通彈丸），魔法彈丸不替代普通的；沒有裝備時回傳 null。
+    Inventory.restore({ version: 1, items: [
+      { uid: "s1", itemId: "彈丸，投石索", quantity: 1, ammo: true },
+      { uid: "s2", itemId: "彈丸，投石索", quantity: 1, magic: { id: "ammunition-plus", bonus: 1 } },
+      { uid: "s3", itemId: "彈丸，投石索", quantity: 2 }
+    ] });
+    const shot = () => { const used = Inventory.useAmmo(); return used && [used.removed, used.quantity, used.next?.uid || "", used.next?.quantity || 0]; };
+    result.useAmmo = [shot(), shot(), shot(), shot(), Inventory.entries().map(entry => entry.uid)];
     return result;
   });
   assert.deepEqual(data.restored, [["a1"], "q"], "only the first ammunition entry stays equipped, it can stay in the quiver, and non-ammunition drops the field");
@@ -1684,6 +1692,8 @@ async function validateMagicAmmunition(page) {
   assert.equal(data.otherWeapon, 0, "arrows do not boost a crossbow");
   assert.deepEqual(data.off, [{ ok: true, previous: "" }, []], "ammunition can be taken off");
   assert.deepEqual(data.preflight, [true, true, false, false], "the import preflight accepts only a boolean ammo field");
+  assert.deepEqual(data.useAmmo, [[true, 0, "s3", 2], [false, 1, "", 0], [true, 0, "", 0], null, ["s2"]],
+    "using the last piece switches to an identical stack, magic ammunition never replaces plain, and nothing is used without equipped ammunition");
 
   // 物品詳情：所有彈藥都有「裝備」，說明列出用這種彈藥的武器；換裝備時提示原本那種；標籤標示裝備中但留在箭袋裡。
   await page.evaluate(() => Inventory.restore({ version: 1, items: [
