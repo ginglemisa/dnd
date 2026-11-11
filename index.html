@@ -107,11 +107,11 @@
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/base.css?v=20261111-menu-columns">
+  <link rel="stylesheet" href="css/base.css?v=20261111-menu-layout">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261110-safari">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/sheet-spells.css?v=20261111-menu-columns">
-  <link rel="stylesheet" href="css/utility.css?v=20261110-footer-one-line">
+  <link rel="stylesheet" href="css/sheet-spells.css?v=20261111-menu-layout">
+  <link rel="stylesheet" href="css/utility.css?v=20261111-menu-layout">
   <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
   <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
@@ -180,7 +180,7 @@
     <div id="utility-menu" class="utility-menu" aria-hidden="true" inert>
       <section class="utility-menu__section" aria-labelledby="utility-menu-view-title">
         <h2 id="utility-menu-view-title" class="utility-menu__section-title">主要功能</h2>
-        <div class="utility-menu__row utility-menu__mode-row">
+        <div class="utility-menu__grid">
           <button type="button" id="help-quick-build-btn" class="utility-menu__button utility-menu__mode-button" title="一步步完成一名 1 級角色">快速創角</button>
           <button id="set-default-abilities" type="button" class="utility-menu__button utility-menu__mode-button">決定屬性</button>
           <button type="button" id="tabletop-mode-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--tabletop" aria-label="進入跑團模式" aria-pressed="false" aria-controls="tabletop-mode" title="進入跑團模式">
@@ -199,22 +199,33 @@
             <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
-          <label class="utility-menu__setting utility-menu__setting--scroll">
-            <span>顯示▲▼</span>
-            <input id="scroll-buttons-toggle" type="checkbox" role="switch" data-state-transient="true">
-            <span class="utility-menu__switch" aria-hidden="true"></span>
-          </label>
           <label class="utility-menu__setting utility-menu__setting--dice">
             <span>擲骰功能</span>
             <input id="dice-system-toggle" type="checkbox" role="switch" data-state-transient="true">
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
-          <div class="utility-menu__setting utility-menu__theme-setting">
-            <label id="theme-toggle-label" for="theme-toggle" title="更換主題"><span id="theme-current-label" aria-live="polite">暖紙|亮</span></label>
-            <button type="button" id="color-mode-toggle" aria-label="切換為暗色" aria-pressed="false" title="切換亮色／暗色"><span aria-hidden="true">🌓</span></button>
-            <label class="utility-menu__theme-switch" title="切換經典／暖紙主題">
-              <input id="theme-toggle" type="checkbox" role="switch" aria-label="暖紙主題（關閉使用經典主題）" data-state-transient="true">
-              <span class="utility-menu__switch" aria-hidden="true"></span>
+          <label class="utility-menu__setting utility-menu__setting--scroll" title="在畫面右下角顯示回到頂端／捲到底部的按鈕">
+            <span>捲動按鈕</span>
+            <input id="scroll-buttons-toggle" type="checkbox" role="switch" data-state-transient="true">
+            <span class="utility-menu__switch" aria-hidden="true"></span>
+          </label>
+          <label class="utility-menu__setting utility-menu__setting--dark">
+            <span>暗色模式</span>
+            <input id="color-mode-toggle" type="checkbox" role="switch" data-state-transient="true">
+            <span class="utility-menu__switch" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div class="utility-menu__theme-row">
+          <span id="utility-menu-theme-title" class="utility-menu__theme-title">主題</span>
+          <!-- 原生單選鈕：方向鍵切換。#theme-toggle 是「暖紙」那一個，checked 代表暖紙主題。 -->
+          <div class="utility-menu__segmented" role="radiogroup" aria-labelledby="utility-menu-theme-title">
+            <label class="utility-menu__segment">
+              <input id="theme-classic-option" type="radio" name="utility-menu-ui-theme" value="classic" data-state-transient="true">
+              <span>經典</span>
+            </label>
+            <label class="utility-menu__segment">
+              <input id="theme-toggle" type="radio" name="utility-menu-ui-theme" value="warm" data-state-transient="true">
+              <span>暖紙</span>
             </label>
           </div>
         </div>
@@ -224,39 +235,39 @@
       <section class="utility-menu__section" aria-labelledby="utility-menu-data-title">
         <h2 id="utility-menu-data-title" class="utility-menu__section-title">角色資料</h2>
         <div class="utility-menu__grid">
-          <div class="utility-menu__row utility-menu__row--icon">
-            <button type="button" id="import-json-btn" class="utility-menu__button">匯入JSON</button>
-            <button type="button" id="open-qr-btn" class="utility-menu__button utility-menu__qr-button" aria-label="開啟 QR Code" title="QR Code">
-              <svg class="utility-menu__qr-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 3h7v7H3V3Zm2 2v3h3V5H5Zm9-2h7v7h-7V3Zm2 2v3h3V5h-3ZM3 14h7v7H3v-7Zm2 2v3h3v-3H5Zm9-2h3v3h-3v-3Zm4 0h3v3h-3v-3Zm-4 4h3v3h-3v-3Zm4 0h3v3h-3v-3Z"/>
-              </svg>
-            </button>
-            <button type="button" id="export-json-btn" class="utility-menu__button">匯出JSON</button>
-          </div>
-          <div class="utility-menu__row utility-menu__row--footer">
-            <button type="button" id="export-pdf-btn" class="utility-menu__button">輸出PDF</button>
-            <button type="button" id="open-sheet-download-btn" class="utility-menu__button utility-menu__qr-button" aria-label="角色紙下載" title="角色紙下載">
-              <svg class="utility-menu__qr-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path fill-rule="evenodd" d="M5 2h10l5 5v15H5V2Zm2 2v16h11V9h-5V4H7Zm8 .8V7h2.2L15 4.8Z"/>
-                <path d="M8.5 10.5h3.5v3.5H8.5v-3.5Zm5 .5h3v1.5h-3V11Zm0 2h3v1.5h-3V13Zm-5 3h8v1.5h-8V16Zm0 2.2h5.5v1.3H8.5v-1.3ZM8.5 6h3v1.5h-3V6Z"/>
-              </svg>
-            </button>
-            <button type="button" class="utility-menu__button share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">分享角卡</button>
-          </div>
+          <button type="button" id="import-json-btn" class="utility-menu__button">匯入JSON</button>
+          <button type="button" id="export-json-btn" class="utility-menu__button">匯出JSON</button>
+          <button type="button" id="export-pdf-btn" class="utility-menu__button">輸出PDF</button>
+          <button type="button" class="utility-menu__button share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">分享角卡</button>
         </div>
       </section>
 
       <div class="utility-menu__divider" role="separator"></div>
       <section class="utility-menu__section" aria-labelledby="utility-menu-help-title">
-        <h2 id="utility-menu-help-title" class="utility-menu__section-title">參考/教學/重置</h2>
-        <div class="utility-menu__help">
-          <button type="button" id="al-rules-btn" class="utility-menu__button utility-menu__help-wide" aria-haspopup="dialog">冒險者聯盟規則</button>
+        <h2 id="utility-menu-help-title" class="utility-menu__section-title">參考與教學</h2>
+        <div class="utility-menu__grid">
+          <button type="button" id="al-rules-btn" class="utility-menu__button" aria-haspopup="dialog">冒險者聯盟規則</button>
+          <button type="button" id="reference-deities-btn" class="utility-menu__button">認識神祇</button>
+          <button type="button" id="open-sheet-download-btn" class="utility-menu__button" aria-haspopup="dialog">
+            <svg class="utility-menu__button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5 2h10l5 5v15H5V2Zm2 2v16h11V9h-5V4H7Zm8 .8V7h2.2L15 4.8Z"/>
+              <path d="M8.5 10.5h3.5v3.5H8.5v-3.5Zm5 .5h3v1.5h-3V11Zm0 2h3v1.5h-3V13Zm-5 3h8v1.5h-8V16Zm0 2.2h5.5v1.3H8.5v-1.3ZM8.5 6h3v1.5h-3V6Z"/>
+            </svg>
+            <span>空白角色紙</span>
+          </button>
+          <button type="button" id="open-qr-btn" class="utility-menu__button" aria-haspopup="dialog" title="讓桌友掃描開啟 twD20.com">
+            <svg class="utility-menu__button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 3h7v7H3V3Zm2 2v3h3V5H5Zm9-2h7v7h-7V3Zm2 2v3h3V5h-3ZM3 14h7v7H3v-7Zm2 2v3h3v-3H5Zm9-2h3v3h-3v-3Zm4 0h3v3h-3v-3Zm-4 4h3v3h-3v-3Zm4 0h3v3h-3v-3Z"/>
+            </svg>
+            <span>網站 <span class="utility-menu__nowrap">QR Code</span></span>
+          </button>
           <button type="button" id="restart-onboarding-btn" class="utility-menu__button" title="了解欄位、裝備、法術與搜尋">認識角卡</button>
           <button type="button" id="first-table-tour-btn" class="utility-menu__button" title="角色做好了，接下來怎麼玩？">初次遊玩</button>
-          <button type="button" id="reference-deities-btn" class="utility-menu__button">認識神祉</button>
-          <button id="clear-storage-btn" class="utility-menu__button utility-menu__button--danger">清除紀錄</button>
         </div>
       </section>
+
+      <div class="utility-menu__divider utility-menu__divider--danger" role="separator"></div>
+      <button type="button" id="clear-storage-btn" class="utility-menu__clear-button">清除紀錄</button>
 
       <input type="file" id="import-json-file" accept="application/json" class="is-hidden">
     </div>
@@ -4781,21 +4792,16 @@ function setupUtilityMenu() {
   let isOpen = false;
   const themeKey = "dnd.theme.v1";
   const uiThemeKey = "dnd.uiTheme.v1";
+  // 主題是一組單選鈕：#theme-toggle 是「暖紙」，沒勾就是經典。
   const themeToggle = document.getElementById("theme-toggle");
+  const classicThemeOption = document.getElementById("theme-classic-option");
   const colorModeToggle = document.getElementById("color-mode-toggle");
-  const currentThemeLabel = document.getElementById("theme-current-label");
 
   const updateThemeControls = () => {
-    const dark = document.documentElement.dataset.theme === "dark";
     const warm = document.documentElement.dataset.uiTheme === "warm";
     if (themeToggle) themeToggle.checked = warm;
-    if (colorModeToggle) {
-      const label = dark ? "切換為亮色" : "切換為暗色";
-      colorModeToggle.setAttribute("aria-label", label);
-      colorModeToggle.setAttribute("aria-pressed", String(dark));
-      colorModeToggle.title = label;
-    }
-    if (currentThemeLabel) currentThemeLabel.textContent = `${warm ? "暖紙" : "經典"}|${dark ? "暗" : "亮"}`;
+    if (classicThemeOption) classicThemeOption.checked = !warm;
+    if (colorModeToggle) colorModeToggle.checked = document.documentElement.dataset.theme === "dark";
   };
 
   const applyTheme = (theme, { persist = true } = {}) => {
@@ -4812,21 +4818,28 @@ function setupUtilityMenu() {
   };
 
   applyTheme(document.documentElement.dataset.theme, { persist: false });
-  themeToggle?.addEventListener("change", () => {
-    const nextTheme = themeToggle.checked ? "warm" : "classic";
+  const applyUiTheme = () => {
+    const nextTheme = themeToggle?.checked ? "warm" : "classic";
     document.documentElement.dataset.uiTheme = nextTheme;
     window.dndStorage.setItem(uiThemeKey, nextTheme);
     updateThemeControls();
-  });
-  colorModeToggle?.addEventListener("click", () => {
-    applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+  };
+  themeToggle?.addEventListener("change", applyUiTheme);
+  classicThemeOption?.addEventListener("change", applyUiTheme);
+  colorModeToggle?.addEventListener("change", () => {
+    applyTheme(colorModeToggle.checked ? "dark" : "light");
   });
 
   const updateMenuHeight = () => {
     if (!isOpen) return;
     // offsetTop excludes the menu's entrance transform; include the shell border.
-    const top = shell.getBoundingClientRect().top + shell.clientTop + menu.offsetTop;
+    const shellRect = shell.getBoundingClientRect();
+    const top = shellRect.top + shell.clientTop + menu.offsetTop;
     menu.style.setProperty("--utility-menu-top", `${top}px`);
+    // 窄螢幕的全寬面板以視窗左右邊為準；選單相對導覽列定位，所以記下導覽列內框到視窗兩側的距離。
+    const shellLeft = shellRect.left + shell.clientLeft;
+    menu.style.setProperty("--utility-menu-shell-left", `${shellLeft}px`);
+    menu.style.setProperty("--utility-menu-shell-right", `${document.documentElement.clientWidth - shellLeft - shell.clientWidth}px`);
   };
   window.addEventListener("resize", updateMenuHeight);
   if (typeof ResizeObserver === "function") {
@@ -4859,12 +4872,21 @@ function setupUtilityMenu() {
   });
   menu.addEventListener("click", (event) => {
     const button = event.target.closest("button");
-    if (button && button !== colorModeToggle) setOpen(false);
+    if (button) setOpen(false);
   }, true);
 
+  // 窄螢幕開啟時頁首的 ::before 是蓋住頁面的遮罩，點到它的事件目標是頁首本身。
+  const header = shell.closest(".site-header");
+  const isBackdropTarget = (event) => event.target === header
+    && getComputedStyle(header, "::before").content !== "none";
   document.addEventListener("pointerdown", (event) => {
     if (!isOpen || shell.contains(event.target)) return;
+    // 遮罩等 click 才關閉：在 pointerdown 就關的話遮罩先消失，這次點擊會落到底下的按鈕。
+    if (isBackdropTarget(event)) return;
     setOpen(false);
+  });
+  header?.addEventListener("click", (event) => {
+    if (isOpen && isBackdropTarget(event)) setOpen(false);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -5680,12 +5702,6 @@ function closeShareModeGuideEntries({ includeTabletopTour = false } = {}) {
     control.disabled = true;
     control.title = "分享模式不提供此功能";
   });
-}
-
-// 分享模式沒有「分享角卡」，匯出 JSON 接在角色紙圖示右邊。移動 DOM 而不是只改 CSS 順序，鍵盤焦點才會照畫面順序走。
-function arrangeShareModeMenu() {
-  const exportJson = document.getElementById("export-json-btn");
-  if (exportJson) document.querySelector(".utility-menu__row--footer")?.append(exportJson);
 }
 
 // Only a successfully decoded share is locked; state collection ignores disabled.
@@ -6799,7 +6815,6 @@ window.addEventListener("DOMContentLoaded", async function() {
     control.title = "分享模式不提供此功能";
   });
   closeShareModeGuideEntries();
-  arrangeShareModeMenu();
   // 自創法術會進法術清單，要在還原角色前就緒；沒帶這些資料的舊連結從空白開始。
   window.TabletopMode?.restoreSharedActionPreferences?.(sharedData.__tabletopActionPreferences);
   applyStateObject(sharedData);
@@ -6817,7 +6832,6 @@ window.addEventListener("DOMContentLoaded", async function() {
     window.SHARE_MODE = true;
     document.documentElement.classList.add("is-share-mode");
     closeShareModeGuideEntries({ includeTabletopTour: true });
-    arrangeShareModeMenu();
     await window.AppDialog.showMessage({
       title: "分享連結讀取失敗",
       message: "網址可能過長、遭到截斷、瀏覽器不支援壓縮分享，或資料已損壞。為避免顯示錯誤角色，本頁不會讀取本機角色紀錄。",

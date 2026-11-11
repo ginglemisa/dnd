@@ -118,64 +118,117 @@ async function newUiPage(browser, options = {}) {
 
 async function verifyUtilityMenuLayout(page) {
   await page.locator("#utility-menu-toggle").click();
-  for (const [width, height] of [[390, 844], [360, 740], [320, 568], [1280, 800]]) {
+  for (const [width, height] of [[390, 844], [360, 740], [320, 568], [479, 800], [480, 800], [1280, 800]]) {
     await page.setViewportSize({ width, height });
+    await page.waitForTimeout(50);
     const layout = await page.evaluate(() => {
       const rect = selector => document.querySelector(selector).getBoundingClientRect().toJSON();
+      const menu = document.getElementById("utility-menu");
       const row = document.querySelector(".utility-menu__settings-row");
       const line = getComputedStyle(row, "::before");
+      const backdrop = getComputedStyle(document.querySelector(".site-header"), "::before");
+      const menuRect = menu.getBoundingClientRect();
       return {
+        viewport: innerWidth,
+        menu: menuRect.toJSON(),
         row: rect(".utility-menu__settings-row"),
-        dividers: [...document.querySelectorAll("#utility-menu > .utility-menu__divider")].slice(0, 2).map(el => el.getBoundingClientRect().toJSON()),
+        themeRow: rect(".utility-menu__theme-row"),
+        segments: [...document.querySelectorAll(".utility-menu__segment")].map(el => el.getBoundingClientRect().toJSON()),
+        divider: document.querySelector("#utility-menu > .utility-menu__divider").getBoundingClientRect().toJSON(),
         line: { top: parseFloat(line.top), bottom: parseFloat(line.bottom), width: line.width, content: line.content },
-        menuOverflow: document.getElementById("utility-menu").scrollWidth - document.getElementById("utility-menu").clientWidth,
+        backdrop: backdrop.content,
+        // 選單外的點：遮罩開著時點到的是頁首的遮罩，不是底下的頁面。
+        outside: document.elementFromPoint(Math.max(2, menuRect.left - 4), Math.min(innerHeight - 2, menuRect.bottom + 4))?.closest(".site-header") !== null,
+        menuOverflow: menu.scrollWidth - menu.clientWidth,
+        pageOverflow: document.documentElement.scrollWidth - innerWidth,
         settingOverflow: [...document.querySelectorAll(".utility-menu__setting")].map(el => el.scrollWidth - el.clientWidth),
         settings: [...document.querySelectorAll(".utility-menu__setting")].map(el => el.getBoundingClientRect().toJSON()),
         switches: [...document.querySelectorAll(".utility-menu__switch")].map(el => el.getBoundingClientRect().toJSON()),
-        help: [...document.querySelectorAll(".utility-menu__help button")].map(el => el.getBoundingClientRect().toJSON())
+        grids: [...menu.querySelectorAll(".utility-menu__grid")].map(grid => {
+          const buttons = [...grid.children].map(el => el.getBoundingClientRect());
+          return { columns: new Set(buttons.map(button => Math.round(button.left))).size, ids: [...grid.children].map(el => el.id || el.className),
+            rows: buttons.reduce((rows, button, index) => (index % 2 ? rows : [...rows, Math.abs(button.top - (buttons[index + 1] || button).top) < 1]), []),
+            overflow: [...grid.children].some(el => el.scrollWidth > el.clientWidth + 1) };
+        }),
+        clear: rect("#clear-storage-btn"),
+        lastDivider: rect(".utility-menu__divider--danger")
       };
     });
     assert.equal(layout.settings.length, 4);
     assert.equal(layout.switches.length, 4);
     assert.deepEqual(layout.settingOverflow, [0, 0, 0, 0], `settings fit their column at ${width}`);
-    assert(layout.menuOverflow <= 0, `menu has no horizontal scroll at ${width}`);
+    assert(layout.menuOverflow <= 0 && layout.pageOverflow <= 0, `no horizontal scroll at ${width}`);
     layout.settings.forEach((setting, index) => assert.equal(layout.switches[index].right, setting.right));
+    // 自動計算、擲骰功能、捲動按鈕、暗色模式。
     if (width < 360) {
       // 太窄放不下兩欄：照原本順序單欄排列，沒有直線。
       for (let index = 1; index < layout.settings.length; index++) assert(layout.settings[index - 1].bottom <= layout.settings[index].top);
       layout.settings.forEach(setting => { assert.equal(setting.left, layout.row.left); assert.equal(setting.right, layout.row.right); });
       assert.equal(layout.line.content, "none");
     } else {
-      // 開關分左右兩欄：自動計算｜顯示▲▼、擲骰功能｜主題；直線上下接到兩條分隔線。
-      const [auto, scroll, dice, theme] = layout.settings;
-      assert.equal(auto.top, scroll.top, `first settings row at ${width}`);
-      assert.equal(dice.top, theme.top, `second settings row at ${width}`);
-      assert(auto.bottom <= dice.top, `settings rows stack at ${width}`);
+      // 開關分左右兩欄：自動計算｜擲骰功能、捲動按鈕｜暗色模式；直線上接分隔線、下接主題列的上框線。
+      const [auto, dice, scroll, dark] = layout.settings;
+      assert.equal(auto.top, dice.top, `first settings row at ${width}`);
+      assert.equal(scroll.top, dark.top, `second settings row at ${width}`);
+      assert(auto.bottom <= scroll.top, `settings rows stack at ${width}`);
       assert.equal(auto.left, layout.row.left);
-      assert.equal(dice.left, layout.row.left);
-      assert.equal(scroll.left, theme.left);
-      assert(auto.right < scroll.left, `settings columns do not overlap at ${width}`);
-      assert.equal(theme.right, layout.row.right);
+      assert.equal(scroll.left, layout.row.left);
+      assert.equal(dice.left, dark.left);
+      assert.equal(auto.right, scroll.right, `left switches align at ${width}`);
+      assert.equal(dice.right, layout.row.right);
+      assert.equal(dark.right, layout.row.right);
+      assert(auto.right < dice.left, `settings columns do not overlap at ${width}`);
       assert.equal(layout.line.content, '""');
       assert.equal(layout.line.width, "1px");
-      assert(Math.abs((layout.row.top + layout.line.top) - layout.dividers[0].bottom) < 1, `divider line reaches the upper rule at ${width}`);
-      assert(Math.abs((layout.row.bottom - layout.line.bottom) - layout.dividers[1].top) < 1, `divider line reaches the lower rule at ${width}`);
+      assert(Math.abs((layout.row.top + layout.line.top) - layout.divider.bottom) < 1, `divider line reaches the upper rule at ${width}`);
+      assert(Math.abs((layout.row.bottom - layout.line.bottom) - layout.themeRow.top) < 1, `divider line reaches the theme row at ${width}`);
     }
-    // 參考區：冒險者聯盟規則佔滿第一列，其餘兩兩一列。
-    const [alRules, ...helpButtons] = layout.help;
-    assert.equal(alRules.left, helpButtons[0].left);
-    assert.equal(alRules.right, helpButtons[1].right);
-    assert(alRules.bottom <= helpButtons[0].top);
-    assert.equal(helpButtons[0].top, helpButtons[1].top);
-    assert.equal(helpButtons[2].top, helpButtons[3].top);
-    assert.equal(helpButtons[0].left, helpButtons[2].left);
+    // 主題：通欄一列，經典｜暖紙並排。
+    assert.equal(layout.themeRow.left, layout.row.left);
+    assert.equal(layout.themeRow.right, layout.row.right);
+    assert.equal(layout.segments[0].top, layout.segments[1].top, `theme segments share a row at ${width}`);
+    assert(layout.segments[0].right <= layout.segments[1].left);
+    // 三區按鈕都是兩欄、兩兩一列、文字不溢出；冒險者聯盟規則不再通欄。
+    assert.deepEqual(layout.grids.map(grid => grid.columns), [2, 2, 2], `button grids use two columns at ${width}`);
+    layout.grids.forEach(grid => assert(grid.rows.every(Boolean) && !grid.overflow, `button rows at ${width}: ${grid.ids}`));
+    assert.deepEqual(layout.grids[2].ids, ["al-rules-btn", "reference-deities-btn", "open-sheet-download-btn", "open-qr-btn", "restart-onboarding-btn", "first-table-tour-btn"]);
+    // 清除紀錄在分隔線之後單獨一列。
+    assert(layout.clear.top >= layout.lastDivider.bottom);
+    assert(Math.abs(layout.clear.left - layout.row.left) < 1 && Math.abs(layout.clear.right - layout.row.right) < 1);
+    if (width < 480) {
+      // 手機：左右各留 0.5rem 的全寬面板，開啟時有遮罩。
+      assert(Math.abs(layout.menu.left - 8) < 1 && Math.abs(layout.viewport - layout.menu.right - 8) < 1, `menu spans the viewport at ${width}: ${JSON.stringify(layout.menu)}`);
+      assert.equal(layout.backdrop, '""');
+      assert.equal(layout.outside, true, `backdrop covers the page at ${width}`);
+    } else {
+      assert.equal(layout.backdrop, "none");
+      assert(layout.menu.width <= 22 * 16 + 2, `menu keeps its desktop width at ${width}`);
+    }
   }
   await page.setViewportSize({ width: 390, height: 844 });
   if (process.env.DND_UI_SCREENSHOT_DIR) {
     fs.mkdirSync(process.env.DND_UI_SCREENSHOT_DIR, { recursive: true });
     await page.screenshot({ path: path.join(process.env.DND_UI_SCREENSHOT_DIR, "menu.png") });
   }
-  await page.locator("#utility-menu-toggle").click();
+  // 點遮罩關閉選單，點擊不穿透到底下的骰子按鈕。
+  await page.waitForFunction(() => innerWidth === 390 && getComputedStyle(document.querySelector(".site-header"), "::before").content !== "none");
+  await page.mouse.click(20, 830);
+  assert.equal(await page.locator("#dice-roller-modal").evaluate(el => el.classList.contains("is-open")), false, "the backdrop tap does not reach the page");
+  assert.equal(await page.locator("#utility-menu-toggle").getAttribute("aria-expanded"), "false", "tapping the backdrop closes the menu");
+  assert.equal(await page.locator("#utility-menu").getAttribute("aria-hidden"), "true");
+  assert.equal(await page.evaluate(() => document.getElementById("utility-menu").inert), true);
+  // 跑團模式的選單按鈕在右上角，手機上的選單同樣是左右各留 0.5rem 的全寬面板。
+  await page.evaluate(() => TabletopMode.setMode("tabletop"));
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.locator("#utility-menu-toggle").click();
+    const box = await page.locator("#utility-menu").boundingBox();
+    assert(Math.abs(box.x - 8) < 1 && Math.abs(width - box.x - box.width - 8) < 1, `tabletop menu spans the viewport at ${width}: ${JSON.stringify(box)}`);
+    await page.keyboard.press("Escape");
+    assert.equal(await page.evaluate(() => document.activeElement?.id), "utility-menu-toggle", "Escape returns focus to the toggle");
+  }
+  await page.evaluate(() => TabletopMode.setMode("sheet"));
+  await page.setViewportSize({ width: 390, height: 844 });
 }
 
 async function verifyAppearanceAndLayout(browser, page, url) {
@@ -194,8 +247,8 @@ async function verifyAppearanceAndLayout(browser, page, url) {
   await page.locator("#utility-menu-toggle").click();
   for (const family of ["classic", "warm"]) for (const mode of ["light", "dark"]) {
     const stateBefore = await page.evaluate(() => JSON.stringify(collectStateObject()));
-    if (await page.locator("#theme-toggle").isChecked() !== (family === "warm")) await page.locator(".utility-menu__theme-switch").click();
-    if (await page.evaluate(() => document.documentElement.dataset.theme) !== mode) await page.locator("#color-mode-toggle").click();
+    if (await page.locator("#theme-toggle").isChecked() !== (family === "warm")) await page.locator(".utility-menu__segment", { hasText: family === "warm" ? "暖紙" : "經典" }).click();
+    if (await page.evaluate(() => document.documentElement.dataset.theme) !== mode) await page.locator(".utility-menu__setting--dark").click();
     assert.deepEqual(await page.evaluate(() => [document.documentElement.dataset.uiTheme, document.documentElement.dataset.theme]), [family, mode]);
     assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject())), stateBefore, "appearance controls must not change character JSON");
     await page.reload();
@@ -304,17 +357,29 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     }
     await page.locator("#utility-menu-toggle").click();
     await screenshot(`${family}-${mode}-menu`);
-    await page.locator("#color-mode-toggle").waitFor({ state: "visible" });
+    await page.locator(".utility-menu__setting--dark").waitFor({ state: "visible" });
+    // 暗色模式是 role="switch" 的勾選框，狀態跟著目前明暗；主題是單選鈕，只有目前主題被選取。
+    assert.deepEqual(await page.evaluate(() => ({
+      dark: document.getElementById("color-mode-toggle").checked,
+      role: document.getElementById("color-mode-toggle").getAttribute("role"),
+      warm: document.getElementById("theme-toggle").checked,
+      classic: document.getElementById("theme-classic-option").checked,
+      group: document.querySelector(".utility-menu__segmented").getAttribute("role"),
+      label: document.querySelector(".utility-menu__segmented").getAttribute("aria-labelledby"),
+      stale: document.getElementById("theme-current-label")
+    })), { dark: mode === "dark", role: "switch", warm: family === "warm", classic: family === "classic", group: "radiogroup", label: "utility-menu-theme-title", stale: null });
     await page.locator("#color-mode-toggle").focus();
-    assert.equal(await page.locator("#color-mode-toggle").evaluate(el => document.activeElement === el), true, "brightness button receives keyboard focus");
+    assert.equal(await page.locator("#color-mode-toggle").evaluate(el => document.activeElement === el), true, "dark mode switch receives keyboard focus");
     await page.keyboard.press("Space");
     assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), mode === "dark" ? "light" : "dark");
-    await page.keyboard.press("Enter");
-    assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), mode, "Enter restores brightness");
-    await page.locator("#theme-toggle").focus();
     await page.keyboard.press("Space");
-    await page.keyboard.press("Space");
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), mode, "Space restores brightness");
+    await page.locator(`#${family === "warm" ? "theme-toggle" : "theme-classic-option"}`).focus();
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.uiTheme), family === "warm" ? "classic" : "warm", "arrow keys switch the theme");
+    await page.keyboard.press("ArrowLeft");
     assert.deepEqual(await page.evaluate(() => [document.documentElement.dataset.uiTheme, document.documentElement.dataset.theme]), [family, mode], "keyboard switches are independent");
+    assert.equal(await page.locator("#utility-menu").getAttribute("aria-hidden"), "false", "appearance controls keep the menu open");
     await page.locator("#utility-menu-toggle").click();
 
     for (const width of [320, 360, 390, 430, 720, 1024]) {
@@ -471,8 +536,8 @@ async function verifyAppearanceAndLayout(browser, page, url) {
   await blocked.goto(url);
   await blocked.locator("#legal-close-btn").click();
   await blocked.locator("#utility-menu-toggle").click();
-  await blocked.locator("#color-mode-toggle").click();
-  await blocked.locator(".utility-menu__theme-switch").click();
+  await blocked.locator(".utility-menu__setting--dark").click();
+  await blocked.locator(".utility-menu__segment", { hasText: "經典" }).click();
   assert.deepEqual(await blocked.evaluate(() => [document.documentElement.dataset.uiTheme, document.documentElement.dataset.theme]), ["classic", "dark"]);
   await blocked.close();
   console.log("Appearance: four themes, persistence, keyboard, blocked storage, menu, skill layouts, tabletop and Quick Build passed.");
@@ -5249,34 +5314,32 @@ async function verifyShareReadonlyMode(browser, url) {
       await page.waitForTimeout(100);
       await page.locator("#utility-menu-toggle").click();
       await page.locator("#tabletop-mode-toggle").waitFor();
-      for (const selector of ["#help-quick-build-btn", "#set-default-abilities", "#restart-onboarding-btn", "#clear-storage-btn", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn", "#open-qr-btn", ".utility-menu__row--icon"]) {
+      for (const selector of ["#help-quick-build-btn", "#set-default-abilities", "#restart-onboarding-btn", "#clear-storage-btn", ".utility-menu__divider--danger", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn"]) {
         assert.equal(await page.locator(selector).isVisible(), false, `${selector} is hidden at ${width}`);
       }
-      for (const selector of ["#tabletop-mode-toggle", "#adventure-journal-btn", "#export-json-btn", "#export-pdf-btn", "#open-sheet-download-btn", "#first-table-tour-btn", "#al-rules-btn"]) {
+      for (const selector of ["#tabletop-mode-toggle", "#adventure-journal-btn", "#export-json-btn", "#export-pdf-btn", "#open-sheet-download-btn", "#open-qr-btn", "#first-table-tour-btn", "#al-rules-btn", "#reference-deities-btn"]) {
         assert.equal(await page.locator(selector).isVisible(), true, `${selector} stays at ${width}`);
       }
-      // 沒有自動計算時，擲骰功能補到左欄第一列，右欄不動。
+      // 沒有自動計算時，其餘開關依序補位：擲骰功能｜捲動按鈕，暗色模式在下一列左欄。
       assert.equal(await page.evaluate(() => {
-        const [scroll, dice, theme] = [".utility-menu__setting--scroll", ".utility-menu__setting--dice", ".utility-menu__theme-setting"].map(selector => document.querySelector(selector).getBoundingClientRect());
+        const [dice, scroll, dark] = [".utility-menu__setting--dice", ".utility-menu__setting--scroll", ".utility-menu__setting--dark"].map(selector => document.querySelector(selector).getBoundingClientRect());
         const row = document.querySelector(".utility-menu__settings-row").getBoundingClientRect();
-        return Math.abs(dice.top - scroll.top) < 1 && Math.abs(dice.left - row.left) < 1 && Math.abs(scroll.left - theme.left) < 1 && theme.top > scroll.top;
+        return Math.abs(dice.top - scroll.top) < 1 && Math.abs(dice.left - row.left) < 1 && Math.abs(dark.left - row.left) < 1 && dark.top > dice.top;
       }), true, `share-mode settings keep two columns at ${width}`);
       assert.equal(await page.locator("#first-table-tour-btn").isDisabled(), false, "the tabletop tour stays available");
-      assert.equal(await page.evaluate(() => {
-        const help = document.querySelector(".utility-menu__help").getBoundingClientRect();
-        const buttons = ["first-table-tour-btn", "reference-deities-btn"].map(id => document.getElementById(id).getBoundingClientRect());
-        return Math.abs(buttons[0].left - help.left) < 1 && Math.abs(buttons[1].right - help.right) < 1 && buttons.every(button => Math.abs(button.top - buttons[0].top) < 1);
-      }), true, `help row leaves no holes at ${width}`);
-      // 匯出 JSON 在角色紙圖示右邊，同一列填滿，鍵盤焦點也照這個順序。
-      assert.equal(await page.evaluate(() => {
-        const pdf = document.getElementById("export-pdf-btn").getBoundingClientRect();
-        const sheet = document.getElementById("open-sheet-download-btn").getBoundingClientRect();
-        const json = document.getElementById("export-json-btn").getBoundingClientRect();
-        const footer = document.querySelector(".utility-menu__row--footer").getBoundingClientRect();
-        return Math.abs(pdf.left - footer.left) < 1 && sheet.left > pdf.right && json.left > sheet.right && Math.abs(json.right - footer.right) < 1
-          && Math.abs((json.top + json.bottom) - (sheet.top + sheet.bottom)) < 2 && Math.abs(pdf.width - json.width) < 1
-          && document.querySelector(".utility-menu__row--footer").lastElementChild?.id === "export-json-btn";
-      }), true, `menu rows leave no holes at ${width}`);
+      // 隱藏的按鈕不佔格：每區照 DOM 順序兩兩一列，只有最後一格可能空著；畫面順序就是鍵盤焦點順序。
+      assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll("#utility-menu .utility-menu__grid")].map(grid => {
+        const box = grid.getBoundingClientRect();
+        const visible = [...grid.children].filter(button => button.getClientRects().length);
+        return visible.every((button, index) => {
+          const rect = button.getBoundingClientRect();
+          const previous = visible[index - 1]?.getBoundingClientRect();
+          const column = index % 2 === 0 ? Math.abs(rect.left - box.left) < 1 : Math.abs(rect.right - box.right) < 1;
+          const row = !previous || (index % 2 ? Math.abs(rect.top - previous.top) < 1 : rect.top >= previous.bottom);
+          return column && row;
+        }) && visible.map(button => button.id);
+      })), [["tabletop-mode-toggle", "adventure-journal-btn"], ["export-json-btn", "export-pdf-btn"],
+        ["al-rules-btn", "reference-deities-btn", "open-sheet-download-btn", "open-qr-btn", "first-table-tour-btn"]], `menu rows leave no holes at ${width}`);
       await page.locator("#utility-menu-toggle").click();
     }
     await page.setViewportSize({ width: 1100, height: 900 });

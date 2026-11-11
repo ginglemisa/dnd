@@ -949,24 +949,6 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .spell-picker-selected-tog
   #spellbook-card > summary { gap: 6px; }
 }
 
-.utility-menu__help {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.utility-menu__help .utility-menu__help-wide {
-  grid-column: 1 / -1;
-}
-
-.utility-menu__help .utility-menu__button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding-inline: 0.4rem;
-}
-
 .spell-picked-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

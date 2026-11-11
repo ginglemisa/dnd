@@ -91,8 +91,8 @@ html[data-view-mode="tabletop"] .share-mode-tip__heading {
   padding-inline-end: 52px;
 }
 
-/* 分享模式少掉的選單項目；匯出 JSON 由 arrangeShareModeMenu 移到下一列，這一列就空了。其他列維持原本的欄位比例。 */
-html.is-share-mode :is(#help-quick-build-btn, #set-default-abilities, #restart-onboarding-btn, #clear-storage-btn, .utility-menu__row--icon, .share-url-btn, .utility-menu__setting--auto-calc) {
+/* 分享模式少掉的選單項目直接隱藏（不只停用），其餘按鈕依序補進兩欄網格，畫面順序與鍵盤焦點順序一致。 */
+html.is-share-mode :is(#help-quick-build-btn, #set-default-abilities, #restart-onboarding-btn, #clear-storage-btn, .utility-menu__divider--danger, #import-json-btn, .share-url-btn, .utility-menu__setting--auto-calc) {
   display: none;
 }
 
