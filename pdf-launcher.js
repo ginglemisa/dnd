@@ -50,7 +50,7 @@ async function ensurePdfExportReady() {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
       await loadScriptOnce("pdf-field-map.js?v=20261110-feat-pdf-lines");
-      await loadScriptOnce("pdf-export.js?v=20261105-pdf-edit-size");
+      await loadScriptOnce("pdf-export.js?v=20261111-serif-big5");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -539,7 +539,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     render();
 
     // Modal 先顯示，再於背景準備可編輯版共用的 PDF 範本與 Noto Sans TC。
-    // 美觀易讀版的 Source Han Serif 仍會等到使用者選擇該格式後才下載。
+    // 美觀易讀版的宋體仍會等到使用者選擇該格式後才下載。
     ensurePdfExportReady()
       .then(() => window.preloadPdfExportAssets?.({ outputMode: 'editable' }))
       .catch((error) => {
