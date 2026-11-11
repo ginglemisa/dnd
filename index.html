@@ -109,7 +109,7 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261110-safari">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261111-magic-abilities">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261111-magic-effects-5">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261112-magic-effects-8b">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261111-magic-abilities">
   <link rel="stylesheet" href="css/utility.css?v=20261110-footer-one-line">
   <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
@@ -138,14 +138,14 @@
   <script src="spell-list.js?v=20261111-magic-effects-6" defer></script>
   <script src="condition.js?v=20261111-magic-abilities" defer></script>
   <script src="action-panel.js?v=20261111-magic-effects-4" defer></script>
-  <script src="character-rules.js?v=20261111-magic-effects-8" defer></script>
+  <script src="character-rules.js?v=20261112-magic-effects-8b" defer></script>
   <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261111-magic-effects-7" defer></script>
   <script src="tabletop-druid.js?v=20261111-merge-main" defer></script>
   <script src="tabletop-resources.js?v=20261111-magic-effects-5" defer></script>
-  <script src="tabletop-actions.js?v=20261111-magic-effects-8" defer></script>
+  <script src="tabletop-actions.js?v=20261112-magic-effects-8b" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261111-magic-effects-6" defer></script>
   <script src="legal-modal.js?v=20261110-safari" defer></script>
@@ -3172,8 +3172,8 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="equipment-data.js?v=20261109-item-actions" defer></script>
 <script src="search.js?v=20261109-magic-version" defer></script>
 <script src="equipment-shop.js?v=20261111-magic-toggle" defer></script>
-<script src="inventory.js?v=20261112-magic-effects-9c" defer></script>
-<script src="inventory-ui.js?v=20261112-magic-effects-9d" defer></script>
+<script src="inventory.js?v=20261112-magic-effects-8b" defer></script>
+<script src="inventory-ui.js?v=20261112-magic-effects-8b" defer></script>
 <script src="magic-item-shop.js?v=20261111-magic-toggle" defer></script>
 
 <script>
@@ -5351,7 +5351,9 @@ function isValidInventoryState(value) {
   return value.items.every(entry => entry && typeof entry === "object" && !Array.isArray(entry)
     && Object.keys(entry).every(key => INVENTORY_ENTRY_KEYS.has(key))
     && ["uid", "itemId", "name", "in", "source", "spellId"].every(key => entry[key] === undefined || (typeof entry[key] === "string" && entry[key].length <= 64))
-    && Number.isInteger(entry.quantity) && entry.quantity >= 1 && entry.quantity <= 9999
+    // 彈藥是唯一可以 ×0 的物品（用完後保留）；彈藥種類與 Inventory 相同（商店「彈藥」群組）。
+    && Number.isInteger(entry.quantity) && entry.quantity <= 9999
+    && (entry.quantity >= 1 || (entry.quantity === 0 && Boolean(window.Inventory?.getAmmunitionType?.(entry.itemId))))
     && (entry.weight === undefined || (typeof entry.weight === "number" && Number.isFinite(entry.weight) && entry.weight >= 0 && entry.weight <= 9999))
     && (entry.container === undefined || typeof entry.container === "boolean")
     && (entry.uses === undefined || (Number.isInteger(entry.uses) && entry.uses >= 1 && entry.uses <= 9999))

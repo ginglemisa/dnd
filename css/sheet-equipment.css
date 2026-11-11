@@ -2725,6 +2725,12 @@ button.inventory-over__hide:is(:hover, :active) {
   border-style: dashed;
 }
 
+/* ×0 的彈藥（用完後保留）：整個標籤變灰。 */
+.inventory-tag.is-empty {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
 .inventory-attuned-badge,
 .inventory-tag__badge {
   color: var(--accent-strong);

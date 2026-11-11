@@ -185,10 +185,16 @@
     return itemId === SPELL_SCROLL_ID && typeof value === "string" && SPELL_ID_PATTERN.test(value) ? value : "";
   }
 
-  function clampQuantity(value) {
+  // 數量至少 min（一般物品 1；彈藥 0，見 minQuantity）；不是數字時為 1。
+  function clampQuantity(value, min = 1) {
     const number = Math.floor(Number(value));
-    if (!Number.isFinite(number) || number < 1) return 1;
-    return Math.min(number, LIMITS.quantity);
+    if (!Number.isFinite(number)) return 1;
+    return Math.min(Math.max(number, min), LIMITS.quantity);
+  }
+
+  // 彈藥是物品欄唯一可以 ×0 的物品：用完後保留這一筆（裝備中的仍是裝備中，只是不能再射擊），由玩家自己刪除。
+  function minQuantity(itemId) {
+    return getAmmunitionType(itemId) ? 0 : 1;
   }
 
   function cleanText(value) {
@@ -232,7 +238,7 @@
     const magic = cleanMagic(raw.magic);
     const name = magic ? "" : cleanText(raw.name);
     if (!itemId && !name && !magic) return null;
-    const entry = { uid: typeof raw.uid === "string" && UID_PATTERN.test(raw.uid) ? raw.uid : "", quantity: clampQuantity(raw.quantity) };
+    const entry = { uid: typeof raw.uid === "string" && UID_PATTERN.test(raw.uid) ? raw.uid : "", quantity: clampQuantity(raw.quantity, minQuantity(itemId)) };
     if (itemId) entry.itemId = itemId;
     // 舊版「祭祀長袍」是保留寫法的顯示名稱，品名統一後不再保留。
     if (name && name !== itemId && !(rawItemId === "長袍" && name === "祭祀長袍")) entry.name = name;
@@ -709,7 +715,7 @@
     const next = entries.map(copyEntry);
     const entry = next.find(item => item.uid === uid);
     if (!entry) return false;
-    if (changes.quantity !== undefined && !entry.slot && !entry.attuned && !entry.worn) entry.quantity = clampQuantity(changes.quantity);
+    if (changes.quantity !== undefined && !entry.slot && !entry.attuned && !entry.worn) entry.quantity = clampQuantity(changes.quantity, minQuantity(entry.itemId));
     if (changes.in !== undefined && !entry.slot && !entry.worn) {
       const target = changes.in ? getContainerTargets(uid).find(item => item.uid === changes.in) : null;
       if (target) entry.in = target.uid;
@@ -867,6 +873,13 @@
       }
       delete entry.uses;
       used = 1;
+    }
+    // 彈藥用到 0 時保留這一筆（×0），已經是 0 就沒有東西可用。
+    if (isAmmunition(entry)) {
+      if (entry.quantity < 1) return null;
+      entry.quantity = Math.max(0, entry.quantity - used);
+      commit(next, "consume");
+      return { removed: false, quantity: entry.quantity, uses: 0, emptied: false };
     }
     if (entry.quantity <= used) {
       remove(uid);
@@ -1210,21 +1223,47 @@
     return { ok: true, previous };
   }
 
+  // 完全相同的另一堆還有彈藥的（同品名、同魔法選項；普通與魔法、+1 與 +2 不互相替代）。
+  function findSameAmmo(entry) {
+    return entries.find(item => item.uid !== entry.uid && item.quantity > 0 && isAmmunition(item) && (item.itemId || "") === (entry.itemId || "")
+      && magicKey(item) === magicKey(entry) && (item.name || "") === (entry.name || "")) || null;
+  }
+
+  // 空的那堆卸下、放到身上（最外層、×0，不刪），改裝備 next 那一堆。
+  function switchAmmo(empty, next) {
+    const list = entries.map(copyEntry);
+    list.forEach((item) => {
+      if (item.uid === empty.uid) {
+        delete item.ammo;
+        delete item.in;
+      }
+      if (item.uid === next.uid) item.ammo = true;
+    });
+    commit(list, "ammo");
+  }
+
   /**
-   * 用掉 1 枚裝備中的彈藥。最後 1 枚用掉時這一筆移除；物品欄還有完全相同的另一筆（同品名、同魔法選項，例如另一堆箭矢+1）時自動改裝備那一筆，
-   * 普通與魔法彈藥不互相替代。回傳 { label, removed, quantity, next }（next 是改裝備的那一筆 { uid, label, quantity } 或 null）；沒有裝備彈藥時回傳 null。
+   * 用掉 1 枚裝備中的彈藥（跑團擲命中）。彈藥用到 0 時保留這一筆、仍是裝備中；物品欄還有完全相同、還有彈藥的另一堆時自動改裝備那一堆，
+   * 空的那堆放到身上（不刪）。裝備中的已經是 0 時先試著換裝，換不到就不扣。
+   * 回傳 { label, empty, quantity, next }：empty 表示這次沒有彈藥可用（沒扣），quantity 是剛用掉的那一堆剩下的數量，
+   * next 是改裝備的那一堆 { uid, label, quantity } 或 null；沒有裝備彈藥時回傳 null。
    */
   function useAmmo() {
-    const entry = entries.find(item => item.ammo);
+    let entry = entries.find(item => item.ammo);
     if (!entry) return null;
+    if (entry.quantity < 1) {
+      const same = findSameAmmo(entry);
+      if (!same) return { label: getLabel(entry), empty: true, quantity: 0, next: null };
+      switchAmmo(entry, same);
+      entry = entries.find(item => item.uid === same.uid);
+    }
     const label = getLabel(entry);
     const used = consume(entry.uid);
     if (!used) return null;
-    if (!used.removed) return { label, removed: false, quantity: used.quantity, next: null };
-    const same = entries.find(item => isAmmunition(item) && (item.itemId || "") === (entry.itemId || "")
-      && magicKey(item) === magicKey(entry) && (item.name || "") === (entry.name || ""));
-    if (same) setAmmo(same.uid, true);
-    return { label, removed: true, quantity: 0, next: same ? { uid: same.uid, label: getLabel(same), quantity: same.quantity } : null };
+    const current = entries.find(item => item.uid === entry.uid);
+    const same = used.quantity === 0 && current ? findSameAmmo(current) : null;
+    if (same) switchAmmo(current, same);
+    return { label, empty: false, quantity: used.quantity, next: same ? { uid: same.uid, label: getLabel(same), quantity: same.quantity } : null };
   }
 
   /** 目前裝備的彈藥（複本）；沒有時回傳 null。 */
@@ -1394,7 +1433,7 @@
   }
 
   function formatEntry(entry, list) {
-    const label = `${getLabel(entry)}${entry.quantity > 1 ? ` ×${entry.quantity}` : ""}`;
+    const label = `${getLabel(entry)}${entry.quantity !== 1 ? ` ×${entry.quantity}` : ""}`;
     const children = list.filter(item => item.in === entry.uid);
     return children.length ? `${label}（${children.map(child => formatEntry(child, list)).join("、")}）` : label;
   }

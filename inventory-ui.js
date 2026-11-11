@@ -78,7 +78,7 @@
   }
 
   function entryText(entry) {
-    return `${api().getLabel(entry)}${entry.quantity > 1 ? ` ×${entry.quantity}` : ""}`;
+    return `${api().getLabel(entry)}${entry.quantity !== 1 ? ` ×${entry.quantity}` : ""}`;
   }
 
   // 只以文字管理時「自訂物品」看不到，焦點改回「⋯ 更多」。
@@ -856,12 +856,15 @@
           if (used) ctx.afterUse(used);
         }, `飲用${label}`)));
       } else {
-        rows.push(actionRow("", actionButton("使用", () => {
+        const use = actionButton("使用", () => {
           const used = api().consume(entry.uid);
           if (!used) return;
           globalScope.AppDialog.notify(`已使用${label}，${used.removed ? `${label}已用完` : quantityText(entry, used.quantity)}。`, { tone: "info" });
           ctx.afterUse(used);
-        }, `使用${label}`)));
+        }, `使用${label}`);
+        // ×0 的彈藥沒有東西可用。
+        use.disabled = entry.quantity < 1;
+        rows.push(actionRow("", use));
       }
     }
     const wearRow = entry.magic && magicRule ? buildWearAttunementRow(entry, magicRule, label, ctx) : null;
@@ -1230,7 +1233,8 @@
             const current = api().getEntry(uid) || entry;
             if (current.slot || current.worn) return "saved";
             const quantity = api().isContainer(current) ? current.quantity : controls.stepper.read();
-            if (quantity === 0) {
+            // 彈藥可以 ×0（用完後保留，由玩家自己刪除），其他物品數量 0 是刪除。
+            if (quantity === 0 && !api().isAmmunition(current)) {
               const choice = await globalScope.AppDialog.requestDecision({
                 title: `刪除${api().getLabel(entry)}？`,
                 message: "數量為 0，確認後會從物品欄刪除這項物品。",
@@ -1393,6 +1397,8 @@
     // 裝備中的彈藥：外觀和裝備中的物品一樣，但留在原處（可以在箭袋裡）、可以移動。
     if (entry.ammo) tag.classList.add("is-equipped");
     if (api().isCustom(entry)) tag.classList.add("is-custom");
+    // ×0 的彈藥（只有彈藥能是 0）：標籤變灰。
+    if (entry.quantity === 0) tag.classList.add("is-empty");
     if (entry.attuned) {
       tag.classList.add("is-attuned");
       tag.appendChild(el("span", "inventory-tag__badge", "同調"));

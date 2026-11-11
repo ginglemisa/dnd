@@ -871,7 +871,8 @@
       if (effects.condition === "held" && !hand) return;
       if (effects.condition === "unarmored" && (context.wearingArmor || context.usingShield)) return;
       // 裝備中的魔法彈藥：命中與傷害加值加到拿著「用這種彈藥的武器」的那一手（依兩手目前的基本款，例如箭矢對短弓、長弓）。
-      if (entry.ammo) {
+      // ×0 的彈藥仍是裝備中，但沒有彈藥可射，加值不算。
+      if (entry.ammo && entry.quantity > 0) {
         const ammunition = inventory.getAmmunitionType(entry.itemId);
         Object.entries(result.hands).forEach(([slot, target]) => {
           if (ammunition && inventory.getWeaponAmmunition(handBases[slot]) === ammunition) addHandBonus(target, label, effects.attack, effects.damage);

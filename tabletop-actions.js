@@ -280,15 +280,16 @@
     return { uid: ammo.uid, label: inventory.getLabel(ammo), quantity: ammo.quantity };
   }
 
-  // 擲了用裝備中彈藥的武器的命中：扣 1 枚。最後 1 枚用掉時這一筆從物品欄移除；還有完全相同的另一筆時自動改用那一筆（Inventory.useAmmo），
-  // 沒有就是沒有裝備彈藥、之後不再扣。
+  // 擲了用裝備中彈藥的武器的命中：扣 1 枚（Inventory.useAmmo）。用到 0 時這一筆保留（×0）、仍是裝備中，之後擲命中不扣並提示彈藥用完；
+  // 還有完全相同的另一堆時自動改用那一堆，空的那堆放到身上。
   function useHandAmmo(hand) {
     if (globalScope.TabletopMode?.getDruidForm?.() || !getHandAmmo(hand)) return;
     const used = globalScope.Inventory.useAmmo();
-    if (!used?.removed) return;
-    globalScope.AppDialog?.notify?.(used.next
-      ? `${used.label}用完了，已從物品欄移除；改用另一筆${used.next.label}（剩 ${used.next.quantity}）。`
-      : `${used.label}用完了，已從物品欄移除；之後擲命中不再扣彈藥。`, { tone: "info" });
+    if (!used) return;
+    const notify = text => globalScope.AppDialog?.notify?.(text, { tone: "info" });
+    if (used.empty) notify(`彈藥用完：${used.label}剩 0，這次沒有扣。`);
+    else if (used.next) notify(`${used.label}用完了，空的那堆放到身上；改用另一筆${used.next.label}（剩 ${used.next.quantity}）。`);
+    else if (used.quantity === 0) notify(`${used.label}用完了（×0，仍是裝備中）；之後擲命中不再扣彈藥。`);
   }
 
   function hasWeaponData(weapon) {
