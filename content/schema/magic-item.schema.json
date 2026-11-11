@@ -41,6 +41,13 @@
       ],
       "description": "屬性的三種寫法：{ set }、{ bonus, max }、{ setBonus, max, from }。"
     },
+    "movementSpeed": {
+      "oneOf": [
+        { "type": "integer", "minimum": 5, "multipleOf": 5 },
+        { "const": "speed", "description": "等於目前的步行速度。" }
+      ],
+      "description": "呎數，或 speed（等於目前的步行速度）。"
+    },
     "dice": { "type": "string", "pattern": "^[1-9]\\d*d(4|6|8|10|12|20)$", "description": "骰式，例如 1d6、2d6。" },
     "effects": {
       "type": "object",
@@ -98,6 +105,43 @@
             "cha": { "$ref": "#/definitions/abilityEffect" }
           },
           "description": "屬性的有效值（屬性欄保留原值，不存檔）：原值 → 加值（夾上限）→ 與設定值比，取最高。只在物品生效時（已同調、穿戴或手持）算。"
+        },
+        "skills": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "integer", "minimum": 1 },
+          "description": "技能檢定的固定加值：技能 ID（character-rules.js 的 CharacterSkillAbilities）→ 加值，例如竊賊手套 { 巧手: 5 }。只在自動計算開啟時寫進技能欄；有條件的加值寫 hints。"
+        },
+        "checks": { "type": "integer", "minimum": 1, "description": "所有屬性檢定的固定加值：加在每個技能檢定與跑團的屬性檢定按鈕（幸運石）。豁免另寫 saves。" },
+        "proficiencyBonus": { "type": "integer", "minimum": 1, "description": "熟練加值增加的點數（艾恩石精進）：用到熟練加值的技能、豁免、攻擊、法術數值與次數都跟著變。" },
+        "hitPoints": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["perLevel"],
+          "properties": {
+            "perLevel": { "type": "integer", "minimum": 1, "description": "每個角色等級增加的生命值上限。" },
+            "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就算，不看裝備位置（狂戰斧）。省略時和其他效果相同。" }
+          },
+          "description": "生命值上限加值（只在自動計算開啟時寫進生命值上限）。"
+        },
+        "proficiencies": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "擁有這些武器的熟練（equipment-data.js 的品名，魔法款依基本款），例如射手護腕的長弓、短弓。只影響攻擊列與裝備摘要，不改職業的武器熟練與精通選項。" },
+        "trained": { "const": true, "description": "未受過這件護甲所屬類別的訓練時，也視為受過訓練（精靈鏈甲）。只用於護甲類。" },
+        "unarmoredAc": { "type": "integer", "minimum": 10, "description": "沒穿護甲時的基礎 AC＝這個值＋敏捷調整值（大法師法袍；可以用盾牌）。和無甲防禦等其他算法取最高。" },
+        "noStrengthRequirement": { "const": true, "description": "這件護甲沒有力量需求（秘銀護甲）。只用於護甲類。" },
+        "noStealthDisadvantage": { "const": true, "description": "這件護甲不會讓敏捷（隱匿）檢定有劣勢（秘銀護甲）。只用於護甲類。" },
+        "movement": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "swim": { "$ref": "#/definitions/movementSpeed", "description": "游泳速度。" },
+            "climb": { "$ref": "#/definitions/movementSpeed", "description": "攀爬速度。" },
+            "fly": { "$ref": "#/definitions/movementSpeed", "description": "飛行速度。" },
+            "hover": { "const": true, "description": "飛行時可以懸停（要和 fly 一起寫）。" },
+            "minimum": { "type": "integer", "minimum": 5, "description": "步行速度至少為這個值（原本較高時用原本的）。" },
+            "ignoreArmorStrength": { "const": true, "description": "力量未達護甲需求時不降低速度。" }
+          },
+          "description": "移動方式：跑團速度那一格寫出游泳、攀爬、飛行（多個來源取最大）；角色卡速度欄只算步行。荒野形態不算。"
         },
         "unarmedStrike": {
           "type": "object",

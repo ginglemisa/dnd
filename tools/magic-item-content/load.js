@@ -12,6 +12,8 @@ const AMMUNITION = Object.freeze(["箭矢", "弩矢", "子彈，火器", "彈丸
 const RESERVED_OPTION_IDS = new Set(["id", "base"]);
 // 只用於武器類（有基本款且不是護甲、盾牌）的 effects；finesse、thrown 另外要固定基本款。
 const WEAPON_EFFECT_KEYS = Object.freeze(["extraDamage", "damageType", "finesse", "thrown", "proficiencyAs"]);
+// 只用於護甲類（category: armor）的 effects：講的是這件護甲本身。
+const ARMOR_EFFECT_KEYS = Object.freeze(["trained", "noStrengthRequirement", "noStealthDisadvantage"]);
 // 提示裡產生固定說法的詞，只放在跑團總覽（panel 省略或 overview）。
 const STRUCTURED_HINT_KEYS = Object.freeze(["resistances", "immunities", "darkvision", "languages", "advantage"]);
 
@@ -83,7 +85,9 @@ function checkWeaponEffects(effects, at, { item, weaponNames }, errors) {
   if (added.length && item.base?.fixed === undefined) errors.push(`${at}：${added.join("、")} 只用於固定基本款的物品`);
   if (added.length && item.base?.fixed !== undefined && propertySlots(item.base.fixed) < added.length) errors.push(`${at}：基本款「${item.base.fixed}」的屬性欄位不夠放 ${added.join("、")}`);
   if (effects.thrown && effects.thrown[0] > effects.thrown[1]) errors.push(`${at}：thrown 的一般射程不可大於遠射程`);
-  [...(effects.proficiencyAs || []), ...(effects.weapons?.names || [])].filter(name => !weaponNames.has(name)).forEach(name => errors.push(`${at}：「${name}」不是 equipment-data.js 的武器`));
+  [...(effects.proficiencyAs || []), ...(effects.weapons?.names || []), ...(effects.proficiencies || [])].filter(name => !weaponNames.has(name)).forEach(name => errors.push(`${at}：「${name}」不是 equipment-data.js 的武器`));
+  const armorKeys = ARMOR_EFFECT_KEYS.filter(key => effects[key] !== undefined);
+  if (armorKeys.length && item.category !== "armor") errors.push(`${at}：${armorKeys.join("、")} 只用於護甲類`);
 }
 
 function checkHints(hints, at, { item, skills }, errors) {
@@ -99,8 +103,10 @@ function checkHints(hints, at, { item, skills }, errors) {
   });
 }
 
-function checkEffects(effects, at, { bonusOption, allowCondition }, errors) {
+function checkEffects(effects, at, { bonusOption, allowCondition, skills }, errors) {
   if (!effects) return;
+  Object.keys(effects.skills || {}).filter(skill => !Object.hasOwn(skills, skill)).forEach(skill => errors.push(`${at}：skills 的「${skill}」不是技能 ID`));
+  if (effects.movement?.hover && !effects.movement.fly) errors.push(`${at}：movement.hover 要和 fly 一起寫`);
   const values = Object.entries(effects).filter(([key]) => key !== "condition");
   if (!values.length) errors.push(`${at}：effects 沒有數值`);
   if (values.some(([, value]) => value === "bonus") && !bonusOption) errors.push(`${at}：effects 用 bonus 須有 bonus 選項`);
@@ -123,7 +129,7 @@ function checkOptions(item, at, context, errors) {
     if (option.id === "damageType") option.choices.filter(choice => damageLabels[choice.value] !== choice.label).forEach(choice => errors.push(`${at} damageType：「${choice.value}」應對應 ${damageLabels[choice.value] || "SpellCatalog.damageTypeLabels 的傷害類型"}`));
     option.choices.forEach((choice) => {
       const where = `${at} ${option.id}:${choice.value}`;
-      checkEffects(choice.effects, where, { bonusOption: false, allowCondition: false }, errors);
+      checkEffects(choice.effects, where, { bonusOption: false, allowCondition: false, skills: context.skills }, errors);
       if (choice.effects) checkWeaponEffects(choice.effects, where, { item, ...context }, errors);
       checkHints(choice.hints, where, { item, ...context }, errors);
     });
@@ -150,12 +156,12 @@ function checkItem(item, context, errors) {
   if (!item.use && !item.base && allHints.some(hint => hint.when !== "owned")) errors.push(`${at}：有 hints 的物品須寫 use（或 hints 寫 when: owned）`);
   if (item.use && item.effects?.condition === "held") errors.push(`${at}：寫了 use 的物品不用 effects.condition: held`);
   checkOptions(item, at, context, errors);
-  checkEffects(item.effects, at, { bonusOption: (item.options || []).some(option => option.id === "bonus"), allowCondition: true }, errors);
+  checkEffects(item.effects, at, { bonusOption: (item.options || []).some(option => option.id === "bonus"), allowCondition: true, skills: context.skills }, errors);
   if (item.effects) checkWeaponEffects(item.effects, at, { item, ...context }, errors);
   checkHints(item.hints, at, { item, ...context }, errors);
   (item.forms || []).forEach((form) => {
     const where = `${at} 形態 ${form.id}`;
-    checkEffects(form.effects, where, { bonusOption: false, allowCondition: false }, errors);
+    checkEffects(form.effects, where, { bonusOption: false, allowCondition: false, skills: context.skills }, errors);
     if (form.effects) checkWeaponEffects(form.effects, where, { item, ...context }, errors);
     checkHints(form.hints, where, { item, ...context }, errors);
   });

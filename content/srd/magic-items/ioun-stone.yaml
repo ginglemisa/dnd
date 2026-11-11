@@ -20,7 +20,7 @@ options:
       - { value: insight, label: 洞悉, rarity: very-rare, effects: { abilities: { wis: { bonus: 2, max: 20 } } } }
       - { value: intellect, label: 智識, rarity: very-rare, effects: { abilities: { int: { bonus: 2, max: 20 } } } }
       - { value: leadership, label: 領導, rarity: very-rare, effects: { abilities: { cha: { bonus: 2, max: 20 } } } }
-      - { value: mastery, label: 精進, rarity: legendary }
+      - { value: mastery, label: 精進, rarity: legendary, effects: { proficiencyBonus: 1 } }
       - { value: protection, label: 防護, rarity: rare, effects: { ac: 1 } }
       - { value: regeneration, label: 再生, rarity: legendary }
       - { value: reserve, label: 儲存, rarity: rare }

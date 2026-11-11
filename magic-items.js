@@ -128,13 +128,17 @@
     return forms ? forms.find(form => form.id === selection?.form) || forms[0] : null;
   }
 
-  // 合併多個來源的 effects：數字相加，清單（extraDamage、proficiencyAs）接在後面，abilities 依屬性合併，其餘以後面的為準。
-  const LIST_EFFECT_KEYS = new Set(["extraDamage", "proficiencyAs"]);
+  // 合併多個來源的 effects：數字相加，清單（extraDamage、proficiencyAs、proficiencies）接在後面，abilities、movement 依欄位合併，
+  // skills 依技能相加，其餘以後面的為準。
+  const LIST_EFFECT_KEYS = new Set(["extraDamage", "proficiencyAs", "proficiencies"]);
   function mergeEffect(result, key, value) {
     if (typeof value === "number") result[key] = (Number(result[key]) || 0) + value;
     else if (LIST_EFFECT_KEYS.has(key)) result[key] = [...(result[key] || []), ...value];
-    else if (key === "abilities") result[key] = { ...result[key], ...value };
-    else result[key] = value;
+    else if (key === "abilities" || key === "movement") result[key] = { ...result[key], ...value };
+    else if (key === "skills") {
+      result[key] = { ...result[key] };
+      Object.entries(value).forEach(([skill, bonus]) => { result[key][skill] = (result[key][skill] || 0) + bonus; });
+    } else result[key] = value;
   }
 
   // 自動計算的 effects（詞彙見 content/README.md 的「魔法物品」）：物品本身（形態 noEffects 時略過）、目前形態、所選選項依序合併，
@@ -148,7 +152,7 @@
     const form = getForm(id, selection);
     const itemEffects = form?.noEffects ? {} : item.effects || {};
     for (const [key, value] of Object.entries(itemEffects)) {
-      if (value !== "bonus") result[key] = Array.isArray(value) ? [...value] : key === "abilities" ? { ...value } : value;
+      if (value !== "bonus") result[key] = Array.isArray(value) ? [...value] : value && typeof value === "object" ? { ...value } : value;
       else if (bonus !== undefined) result[key] = bonus;
     }
     const extra = [form?.effects, ...options.map(option => selectedChoice(option, selection)?.effects)].filter(Boolean);

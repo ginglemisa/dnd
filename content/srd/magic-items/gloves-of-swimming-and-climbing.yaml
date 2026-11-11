@@ -8,6 +8,7 @@ group: wearable
 rarity: uncommon
 attunement: true
 use: worn
+effects: { movement: { climb: speed, swim: speed } }
 hints:
   - panel: skills
     text: 攀爬或游泳的力量（運動）檢定 +5。

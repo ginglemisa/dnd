@@ -8,6 +8,8 @@ group: wearable
 rarity: uncommon
 attunement: true
 use: worn
+hints:
+  - text: 擲生命骰恢復生命值時，恢復的生命值加倍。
 text: |-
   穿戴這件墜飾時，你獲得下列益處。
 

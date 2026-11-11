@@ -7,5 +7,7 @@ category: ring
 rarity: rare
 attunement: true
 use: worn
+hints:
+  - text: 困難地形不會讓你額外花費移動力；魔法不能降低你的速度，也不能使你陷入麻痺或束縛。
 text: |-
   你穿戴這枚戒指時，困難地形不會讓你額外花費移動力。此外，魔法既不能降低你的任何速度，也不能使你陷入麻痺或束縛狀態。

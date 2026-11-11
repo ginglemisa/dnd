@@ -8,5 +8,8 @@ group: wearable
 rarity: uncommon
 attunement: true
 use: worn
+effects: { movement: { swim: 60 } }
+hints:
+  - text: 可在水下呼吸。
 text: |-
   穿戴這件斗篷時，你可以在水下呼吸，並具有60呎的游泳速度。

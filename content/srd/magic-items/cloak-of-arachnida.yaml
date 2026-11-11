@@ -8,6 +8,7 @@ group: wearable
 rarity: very-rare
 attunement: true
 use: worn
+effects: { movement: { climb: speed } }
 hints:
   - resistances: [ poison ]
 text: |-

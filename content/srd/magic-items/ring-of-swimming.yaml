@@ -7,5 +7,6 @@ category: ring
 rarity: uncommon
 attunement: false
 use: worn
+effects: { movement: { swim: 40 } }
 text: |-
   穿戴這枚戒指時，你擁有40呎的游泳速度。
