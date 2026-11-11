@@ -1738,7 +1738,7 @@
 
   function ensureWizard() {
     let modal = document.getElementById("quick-build-wizard");
-    if (modal) return modal;
+    if (modal) return modal;
     modal = document.createElement("div");
     modal.id = "quick-build-wizard";
     modal.inert = true;
@@ -1779,7 +1779,7 @@
     return modal;
   }
 
-  function ensureSpellDetailModal() {
+  function ensureSpellDetailModal() {
     let modal = document.getElementById("quick-build-spell-detail");
     if (modal) return modal;
     modal = document.createElement("div");
@@ -2530,7 +2530,7 @@
       && rituals.length === 2 && new Set(rituals).size === 2;
   }
 
-  function ensurePactTomeModal() {
+  function ensurePactTomeModal() {
     let modal = document.getElementById("quick-build-pact-tome");
     if (modal) return modal;
     modal = document.createElement("div");
@@ -2836,20 +2836,7 @@
     return [selection.label, items.join("、"), currency, loadoutText].filter(Boolean).join("｜") || "無";
   }
 
-  function sourceAwareAcquisitions(type, predicate = () => true, formatSource = item => item.source?.feature
-    ? `${item.source?.label || item.sourceType}：${item.source.feature}`
-    : (item.source?.label || item.sourceType || "未知來源")) {
-    // 創角小幫手目前只支援 1 級；保留未來等級取得資料，待升級功能完成後再顯示。
-    const entries = (draft.acquisitions[type] || []).filter(item => acquisitionAppliesAtLevel(item) && predicate(item));
-    if (!entries.length) return "無";
-    return entries.map(item => {
-      const source = formatSource(item);
-      const gainedAt = Number(item.content?.gainedAt) > 1 ? `，${item.content.gainedAt} 級取得` : "";
-      const sourceText = `${source}${gainedAt}`;
-      return sourceText ? `${item.name}（${sourceText}）` : item.name;
-    }).join("、");
-  }
-
+  // 創角小幫手目前只支援 1 級；保留未來等級取得資料，待升級功能完成後再顯示。
   function groupedSourceAcquisitions(type, predicate = () => true, formatSource = item => item.source?.label || item.sourceType || "未知來源") {
     const entries = (draft.acquisitions[type] || []).filter(item => acquisitionAppliesAtLevel(item) && predicate(item));
     if (!entries.length) return "無";
@@ -2877,18 +2864,42 @@
     return feature;
   }
 
+  // 總覽的「種族」：可選體型的種族（人類、提夫林）把體型寫在種族名稱後面。
+  function raceReviewLabel() {
+    const label = draft.selections.race?.label;
+    if (!label) return "無";
+    const size = draft.choices.raceOptions?.size;
+    return (raceRules(draft.choices.race)?.sizes || []).includes(size) ? `${label}（${size}）` : label;
+  }
+
+  // 總覽的「種族選項」只列血統類選擇；種族給的技能、專長與法術已在「能力與取得內容」依來源列出，不重複。
   function raceOptionSummary() {
     const options = draft.choices.raceOptions || {};
-    const labels = { ancestry: raceRules(draft.choices.race)?.choice?.label || "血統", lineage: "傳承／血統", legacy: "邪魔遺贈", size: "體型", skill: "技能", cantrip: "戲法", feat: "起源專長" };
-    const details = Object.entries(options)
-      .filter(([key, value]) => labels[key] && typeof value === "string" && value)
-      .map(([key, value]) => `${labels[key]}：${key === "cantrip" ? spellNameZh(value) : key === "feat" ? humanOriginFeatLabel(value) : key === "ancestry" && draft.choices.race === "goliath" ? raceChoiceOption("goliath", options)?.label || value : value}`);
-    const featOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
-    if (featOptions.spellClass) details.push(`魔法學徒職業：${CLASS_LABELS[featOptions.spellClass] || featOptions.spellClass}`);
-    if (Array.isArray(featOptions.cantrips) && featOptions.cantrips.some(Boolean)) details.push(`魔法學徒戲法：${featOptions.cantrips.filter(Boolean).map(spellNameZh).join("、")}`);
-    if (Array.isArray(featOptions.levelOneSpells) && featOptions.levelOneSpells.some(Boolean)) details.push(`魔法學徒一環法術：${featOptions.levelOneSpells.filter(Boolean).map(spellNameZh).join("、")}`);
-    if (Array.isArray(featOptions.proficiencies) && featOptions.proficiencies.some(Boolean)) details.push(`熟習：${featOptions.proficiencies.filter(Boolean).map(value => value.replace(/^skill:/u, "技能：").replace(/^tool:/u, "工具：")).join("、")}`);
-    return details.join("；") || "無額外選項";
+    const choice = raceRules(draft.choices.race)?.choice;
+    const value = choice ? options[choice.draftField] : "";
+    if (typeof value !== "string" || !value) return "無";
+    const display = draft.choices.race === "goliath" ? raceChoiceOption("goliath", options)?.label || value : value;
+    return `${choice.label}：${display}`;
+  }
+
+  // 總覽的「專長」：有指定法術列表的專長（魔法學徒）把職業和來源寫在同一組括號，例如「魔法學徒（牧師，人類）」。
+  function featReviewSummary() {
+    const entries = (draft.acquisitions.feats || []).filter(item => acquisitionAppliesAtLevel(item) && item.content?.type !== "fightingStyle");
+    if (!entries.length) return "無";
+    return entries.map(item => {
+      const sourceLabel = item.source?.label || item.sourceType || "未知來源";
+      const gainedAt = Number(item.content?.gainedAt) > 1 ? `，${item.content.gainedAt} 級取得` : "";
+      let featId = item.name;
+      let spellClass = "";
+      if (item.sourceType === "background") {
+        const feat = presetBackground(item.sourceId)?.rules.feat;
+        if (feat?.spellList) ({ id: featId, spellList: spellClass } = feat);
+      } else if (item.sourceType === "race" && item.name === "魔法學徒") {
+        spellClass = draft.choices.raceOptions?.featOptions?.spellClass || "";
+      }
+      const classLabel = MAGIC_INITIATE_SPELL_CLASSES.has(spellClass) ? CLASS_LABELS[spellClass] : "";
+      return classLabel ? `${featId}（${classLabel}，${sourceLabel}${gainedAt}）` : `${item.name}（${sourceLabel}${gainedAt}）`;
+    }).join("、");
   }
 
   function renderLevelOneReview(body) {
@@ -2922,7 +2933,7 @@
       <section class="quick-build-choice-panel quick-build-review-panel"><h4>背景、種族與職業</h4><dl class="quick-build-summary-list">
         ${summaryField("背景", draft.selections.background?.label || "無")}
         ${summaryField("背景屬性加值", backgroundBonuses)}
-        ${summaryField("種族", draft.selections.race?.label || "無")}
+        ${summaryField("種族", raceReviewLabel())}
         ${summaryField("種族選項", raceOptionSummary())}
         ${summaryField("職業", `${draft.selections.class?.label || "無"}${classContent.classTypeLabel ? `（${classContent.classTypeLabel}）` : ""}`)}
         ${summaryField("陣營", alignmentLabel() || "無")}
@@ -2936,7 +2947,7 @@
       <section class="quick-build-choice-panel quick-build-review-panel"><h4>能力與取得內容</h4><dl class="quick-build-summary-list">
         ${summaryField("1 級職業特性", levelOneFeatureNames(draft.choices.class).join("、") || "無")}
         ${summaryField("職業選項", levelOneOptions)}
-        ${summaryField("專長", sourceAwareAcquisitions("feats", item => item.content?.type !== "fightingStyle", item => item.source?.label || item.sourceType || "未知來源"))}
+        ${summaryField("專長", featReviewSummary())}
         ${summaryField("戰鬥風格", fightingStyle)}
         ${summaryField("武器精通", weaponMasteries)}
         ${summaryField("技能熟練", groupedSourceAcquisitions("skills"), true)}

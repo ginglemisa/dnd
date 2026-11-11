@@ -1790,6 +1790,29 @@ async function verifyQuickBuildRaceCards(browser, url) {
           quickBuild.close(false);
         }
       }
+      // 1 級總覽：體型併進種族、種族選項只列血統類選擇，種族給的技能／專長／法術只在「能力與取得內容」出現；
+      // 魔法學徒把職業與來源寫在同一組括號。
+      const review = async (background, race, raceOptions) => {
+        const draft = quickBuild.createDraft();
+        Object.assign(draft.choices, { background, race, raceOptions, class: "druid" });
+        draft.ui.currentStepId = "level-one-review";
+        localStorage.setItem(quickBuild.storageKey, JSON.stringify(draft));
+        quickBuild.open();
+        await wait();
+        const rows = Object.fromEntries(Array.from(document.querySelectorAll("#quick-build-wizard .quick-build-review-panel dt"), dt => [dt.textContent.trim(), dt.nextElementSibling.textContent.trim()]));
+        quickBuild.close(false);
+        return rows;
+      };
+      const human = await review("sage", "human", { size: "小型", skill: "求生", feat: "魔法學徒", featOptions: { spellClass: "cleric", cantrips: ["resistance", "spare-the-dying"], levelOneSpells: ["guiding-bolt"] } });
+      if (human["種族"] !== "人類（小型）" || "種族選項" in human) found.push(`review human race rows: ${JSON.stringify([human["種族"], human["種族選項"]])}`);
+      if (human["專長"] !== "魔法學徒（法師，賢者）、魔法學徒（牧師，人類）") found.push(`review feats: ${human["專長"]}`);
+      if (!human["技能熟練"]?.includes("求生（人類）") || !human["法術"]?.includes("（人類）")) found.push(`review human acquisitions: ${JSON.stringify([human["技能熟練"], human["法術"]])}`);
+      const elf = await review("soldier", "elf", { lineage: getAllRaceRules().elf.choice.options[0].draftValue, skill: "察覺" });
+      if (elf["種族"] !== "精靈" || elf["種族選項"] !== `精靈傳承：${getAllRaceRules().elf.choice.options[0].draftValue}`) found.push(`review elf: ${JSON.stringify([elf["種族"], elf["種族選項"]])}`);
+      const tiefling = await review("soldier", "tiefling", { size: "中型", legacy: getAllRaceRules().tiefling.choice.options[0].draftValue });
+      if (tiefling["種族"] !== "提夫林（中型）" || !tiefling["種族選項"]?.startsWith("邪魔遺贈：")) found.push(`review tiefling: ${JSON.stringify([tiefling["種族"], tiefling["種族選項"]])}`);
+      const dwarf = await review("soldier", "dwarf", {});
+      if (dwarf["種族"] !== "矮人" || "種族選項" in dwarf || dwarf["專長"] !== "兇蠻打手（士兵）") found.push(`review dwarf: ${JSON.stringify([dwarf["種族"], dwarf["種族選項"], dwarf["專長"]])}`);
       return found;
     });
     assert.deepEqual(problems, [], "quick build race cards, lineage notes and summaries cover every race content option");
