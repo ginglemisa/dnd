@@ -510,6 +510,11 @@ itemOnlySpellIds.forEach(spellId => {
   assert.equal(catalog.canCastFromTabletop(spellId), false, `${spellId} 只能從魔法物品施放`);
   assert(catalog.getCastMetadata(spellId).outcomes.length, `${spellId} 要有擲骰資料`);
   assert.equal(catalog.getItemSpell(spellId).playable, false);
+  // 職業法表與準備法術都讀 getSpellIds／getClassIds（只含角色可用的法術）。
+  assert.deepEqual([...catalog.getClassIds(spellId)], [], `${spellId} 不在任何職業法表`);
+  ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"].forEach(classId => {
+    assert(!catalog.getSpellIds(classId, catalog.getItemSpell(spellId).level).includes(spellId), `${spellId} 不能在 ${classId} 準備`);
+  });
 });
 assert(!spellIds.some(spellId => itemOnlySpellIds.includes(spellId)), "getAllSpells 不含只有 SRD 版的法術");
 assert.deepEqual(JSON.parse(fs.readFileSync("spell-id-baseline.json", "utf8")).filter(spellId => itemOnlySpellIds.includes(spellId)), [],
