@@ -35,6 +35,7 @@
     barkskinActive: false,
     longstriderActive: false,
     shillelaghActive: false,
+    droppedHands: null,
     endedConcentrations: Object.freeze([]),
     builtInResourceUsage: Object.freeze({}),
     customResources: Object.freeze([])
@@ -632,6 +633,7 @@
     barkskinActive: DEFAULT_COMBAT_STATE.barkskinActive,
     longstriderActive: DEFAULT_COMBAT_STATE.longstriderActive,
     shillelaghActive: DEFAULT_COMBAT_STATE.shillelaghActive,
+    droppedHands: DEFAULT_COMBAT_STATE.droppedHands,
     endedConcentrations: [],
     builtInResourceUsage: {},
     customResources: [],
@@ -640,6 +642,8 @@
   let tabletopActionPreferences = null;
 
   let undoSnapshot = null;
+  // 還原存檔（applyState）時不卸下手持物：角色卡欄位由存檔決定。
+  let restoringState = false;
   let initialized = false;
   let scheduledRender = 0;
   // Onboarding-only example values; never written to character data or storage.
@@ -894,6 +898,24 @@
     return [...active];
   }
 
+  // 昏迷時掉落的手持物（index.html 的 dropHeldEquipment 回傳的 saved）：撿回前保留，存檔與 JSON 帶，分享不帶（即時戰鬥狀態）。
+  function normalizeDroppedHands(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    const text = item => (typeof item === "string" && item.length <= 100 ? item : "");
+    const dropped = {
+      mainHand: text(value.mainHand),
+      offHand: text(value.offHand),
+      main2Shield: value.main2Shield === true,
+      main2ShieldItem: text(value.main2ShieldItem)
+    };
+    return dropped.mainHand || dropped.offHand || dropped.main2Shield ? dropped : null;
+  }
+
+  function getDroppedHandLabels(dropped = combatState.droppedHands) {
+    if (!dropped) return [];
+    return [dropped.mainHand, dropped.offHand, dropped.main2Shield ? dropped.main2ShieldItem || "盾牌" : ""].filter(Boolean);
+  }
+
   function normalizeCombatState(data = {}) {
     const rawConditions = Array.isArray(data.activeConditions)
       ? data.activeConditions
@@ -984,6 +1006,7 @@
       barkskinActive: data.barkskinActive === true,
       longstriderActive: data.longstriderActive === true,
       shillelaghActive: data.shillelaghActive === true,
+      droppedHands: normalizeDroppedHands(data.droppedHands),
       endedConcentrations: normalizeEndedConcentrations(data.endedConcentrations),
       builtInResourceUsage: normalizeBuiltInResourceUsage(data.builtInResourceUsage),
       customResources: normalizeCustomResources(data.customResources),
@@ -1021,7 +1044,9 @@
         ...combatState.builtInResourceUsage
       },
       customResources:
-        combatState.customResources.map(resource => ({ ...resource }))
+        combatState.customResources.map(resource => ({ ...resource })),
+      // 沒有掉落的東西時省略，舊資料與一般存檔的格式不變。
+      ...(combatState.droppedHands ? { droppedHands: { ...combatState.droppedHands } } : {})
     };
   }
 
@@ -1519,7 +1544,11 @@
     const droppedShillelagh = next.includes("unconscious") && combatState.shillelaghActive;
     if (droppedShillelagh) combatState.shillelaghActive = false;
     if (next.includes("unconscious") && !previous.includes("unconscious")) {
-      globalScope.AppDialog?.notify(droppedShillelagh ? "你手上的東西因昏迷掉落，橡棍術結束。" : "你手上的東西因昏迷掉落。", { tone: "warning" });
+      // 主手、副手（主手 2）與主手 2 的盾牌清空、回到物品欄，記下原本的選擇讓醒來後撿回；還原存檔時不動角色卡。
+      const dropped = restoringState ? null : globalScope.dropHeldEquipment?.() || null;
+      if (dropped) combatState.droppedHands = normalizeDroppedHands(dropped.saved);
+      const items = dropped?.labels?.length ? `：${dropped.labels.join("、")}` : "";
+      globalScope.AppDialog?.notify(`你手上的東西因昏迷掉落${items}${droppedShillelagh ? "，橡棍術結束" : ""}。`, { tone: "warning" });
     }
     return changed || droppedShillelagh;
   }
@@ -3056,6 +3085,65 @@
       .replaceChildren(...buttons);
   }
 
+  // 昏迷時掉落的手持物（combatState.droppedHands）：昏迷中只顯示，醒來後可「撿回」或「不用了」。
+  function renderDroppedHands() {
+    const container = document.getElementById("tabletop-dropped-hands");
+    if (!container) return;
+    const labels = getDroppedHandLabels();
+    container.hidden = !labels.length;
+    if (!labels.length) {
+      container.replaceChildren();
+      return;
+    }
+    const unconscious = combatState.activeConditions.includes("unconscious");
+    const text = document.createElement("p");
+    text.className = "tabletop-dropped-hands__text";
+    text.textContent = `昏迷時掉落：${labels.join("、")}${unconscious ? "（醒來後可撿回）" : ""}`;
+    if (unconscious) {
+      container.replaceChildren(text);
+      return;
+    }
+    const actions = document.createElement("div");
+    actions.className = "tabletop-dropped-hands__actions";
+    const pickUp = document.createElement("button");
+    pickUp.type = "button";
+    pickUp.dataset.droppedHands = "pick-up";
+    pickUp.textContent = "撿回";
+    pickUp.setAttribute("aria-label", `撿回${labels.join("、")}`);
+    pickUp.addEventListener("click", () => pickUpDroppedHands());
+    const dismiss = document.createElement("button");
+    dismiss.type = "button";
+    dismiss.dataset.droppedHands = "dismiss";
+    dismiss.textContent = "不用了";
+    dismiss.setAttribute("aria-label", "不撿回昏迷時掉落的物品");
+    dismiss.addEventListener("click", () => dismissDroppedHands());
+    actions.append(pickUp, dismiss);
+    container.replaceChildren(text, actions);
+  }
+
+  // 撿回昏迷時掉落的東西（index.html 的 restoreHeldEquipment）：只填空著的欄位，物品欄沒有的跳過。昏迷中不能撿。
+  function pickUpDroppedHands() {
+    const dropped = combatState.droppedHands;
+    if (!dropped || combatState.activeConditions.includes("unconscious")) return null;
+    const result = globalScope.restoreHeldEquipment?.(dropped) || { restored: [], missing: getDroppedHandLabels(dropped) };
+    combatState.droppedHands = null;
+    const parts = [
+      result.restored.length ? `已撿回${result.restored.join("、")}` : "",
+      result.missing.length ? `${result.missing.join("、")}不在物品欄或那隻手已有東西，未裝備` : ""
+    ].filter(Boolean);
+    const message = `${parts.join("；")}。`;
+    if (result.missing.length) globalScope.AppDialog?.notify(message, { tone: "warning" });
+    markStateChanged(message);
+    return result;
+  }
+
+  function dismissDroppedHands() {
+    if (!combatState.droppedHands) return false;
+    combatState.droppedHands = null;
+    markStateChanged("已清除昏迷時掉落的物品紀錄。");
+    return true;
+  }
+
   function renderDeathSaves() {
     if (!elements.deathSaves) {
       return;
@@ -3247,6 +3335,7 @@
     renderHealth();
     renderConditions();
     renderDeathSaves();
+    renderDroppedHands();
   }
 
   function render() {
@@ -3278,6 +3367,20 @@
     const previousConditions = combatState.activeConditions;
     combatState =
       normalizeCombatState(data);
+    restoringState = true;
+    try {
+      applyRestoredState(previousConditions);
+    } finally {
+      restoringState = false;
+    }
+
+    undoSnapshot = null;
+
+    render();
+    emitStateChange();
+  }
+
+  function applyRestoredState(previousConditions) {
     updateActiveConditions(combatState.activeConditions, previousConditions);
 
     if (
@@ -3291,11 +3394,6 @@
     } else if (readCurrentHp() === 0) {
       enterDeathSaveCondition();
     }
-
-    undoSnapshot = null;
-
-    render();
-    emitStateChange();
   }
 
   function handleLifeOperation(
@@ -5587,6 +5685,8 @@
     applyState,
 
     recordDeathSaveRoll,
+    pickUpDroppedHands,
+    dismissDroppedHands,
 
     refresh: render,
     setOnboardingKeyStatPreview(active) {

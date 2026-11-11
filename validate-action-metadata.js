@@ -1942,10 +1942,11 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.click("#tabletop-condition-manage");
     await page.locator('input[data-condition-option="unconscious"]').check();
     await page.locator("#tabletop-condition-form").getByRole("button", { name: "套用", exact: true }).click();
-    await page.locator(".app-toast__message").filter({ hasText: /^你手上的東西因昏迷掉落，橡棍術結束。$/u }).first().waitFor();
+    await page.locator(".app-toast__message").filter({ hasText: /^你手上的東西因昏迷掉落：長棍，橡棍術結束。$/u }).first().waitFor();
     assert.equal(await page.evaluate(() => TabletopMode.getPersistentSpellEffects().find(effect => effect.spellId === "shillelagh").active), false, "falling unconscious ends Shillelagh");
-    await page.evaluate(() => TabletopMode.setPanel("actions"));
-    await tabletopDamageIs("1d8鈍擊");
+    // 昏迷時長棍掉落：主手清空、回到物品欄，記下原本的選擇讓醒來後撿回。
+    assert.equal(await page.inputValue("#mainHand"), "", "falling unconscious drops the quarterstaff");
+    assert.deepEqual(await page.evaluate(() => TabletopMode.collectState().droppedHands), { mainHand: "長棍", offHand: "", main2Shield: false, main2ShieldItem: "" });
     await page.evaluate(() => TabletopMode.setPanel("spells"));
     await castShillelagh();
     assert.match(await page.locator(".app-dialog .tabletop-cast-form__error").innerText(), /昏迷/u, "an unconscious character cannot cast Shillelagh");
@@ -3360,6 +3361,115 @@ async function verifyDeathSaveMagicItems(browser, url) {
   }
 }
 
+// 昏迷時手上的東西掉落：主手、副手（主手 2）與主手 2 的盾牌清空、回到物品欄；醒來後可撿回。
+async function verifyUnconsciousDropsHands(browser, url) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => !!window.TabletopMode && !!window.DiceRoller && !!window.MagicItemCatalog);
+    await page.check("#legal-dismiss");
+    await page.click("#legal-close-btn");
+    const staff = { uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id: "staff-of-power" } };
+    const shield = { uid: "shield", itemId: "盾牌", quantity: 1 };
+    const base = { __spellManagement: { version: 2, manual: false, entries: [] }, __autoCalculatedChecks: true, class: "wizard", level: "5", str: "10", dex: "10", con: "10", int: "16", wis: "10", cha: "10",
+      hp: "20", mainHand: "威力法杖", offHand: "盾牌", offHandAsMain: false, main2Shield: false, armor: "", __inventory: { version: 1, items: [staff, shield, { uid: "plain", itemId: "長棍", quantity: 1 }] } };
+    const load = state => page.evaluate((state) => {
+      applyStateObject(state);
+      TabletopMode.applyState({});
+      TabletopMode.setMode("tabletop");
+      TabletopMode.setPanel("overview");
+      DiceRoller.setEnabled(true);
+    }, state);
+    await load(base);
+    const hands = () => page.evaluate(() => ({
+      mainHand: document.getElementById("mainHand").value, offHand: document.getElementById("offHand").value,
+      main2Shield: document.getElementById("main2Shield").checked,
+      slots: Inventory.entries().filter(entry => entry.slot).map(entry => entry.slot).sort()
+    }));
+    const state = () => page.evaluate(() => TabletopMode.collectState());
+    const row = page.locator("#tabletop-dropped-hands");
+    const toast = pattern => page.locator(".app-toast__message").filter({ hasText: pattern }).first().waitFor();
+    const life = async (operation, amount) => {
+      await page.fill("#tabletop-life-amount", String(amount));
+      await page.locator(`#tabletop-life-form button[value="${operation}"]`).click();
+    };
+    assert.deepEqual(await hands(), { mainHand: "威力法杖", offHand: "盾牌", main2Shield: false, slots: ["mainHand", "offHand"] });
+    assert.equal(await row.isHidden(), true, "nothing dropped yet");
+    assert.equal(Object.hasOwn(await state(), "droppedHands"), false, "the saved state has no droppedHands until something drops");
+
+    // 受傷降到 0：昏迷、手上的東西掉落；手持才算的 +2 不再算進死亡豁免。
+    await life("damage", 30);
+    await toast(/^你手上的東西因昏迷掉落：威力法杖、盾牌。$/u);
+    assert.deepEqual(await hands(), { mainHand: "", offHand: "", main2Shield: false, slots: [] }, "the held items go back to the inventory");
+    assert.deepEqual((await state()).droppedHands, { mainHand: "威力法杖", offHand: "盾牌", main2Shield: false, main2ShieldItem: "" });
+    assert.equal(await page.locator("#tabletop-death-saves .tabletop-death-roll").innerText(), "死亡豁免", "the dropped staff no longer adds to death saves");
+    assert.equal(await row.innerText(), "昏迷時掉落：威力法杖、盾牌（醒來後可撿回）");
+    assert.equal(await row.locator("button").count(), 0, "no pick-up while unconscious");
+
+    // JSON 與 autosave 帶著掉落紀錄，載入時不再卸下、不改裝備欄；分享和其他即時戰鬥狀態一樣不帶。
+    // 自動計算開關不帶：applyStateObject 會派送 change，跳出「開啟自動計算」確認（與本測試無關）。
+    const saved = await page.evaluate(() => { const { "auto-calculate-key-stats-toggle": toggle, ...data } = collectStateObject(); return data; });
+    assert.deepEqual(saved.droppedHands, { mainHand: "威力法杖", offHand: "盾牌", main2Shield: false, main2ShieldItem: "" });
+    assert.equal(Object.hasOwn(await page.evaluate(() => collectShareState()), "droppedHands"), false, "share links leave out the live drop record");
+    await page.evaluate(state => applyStateObject(state), { ...saved, mainHand: "威力法杖", offHand: "" });
+    assert.equal((await hands()).mainHand, "威力法杖", "loading an unconscious character keeps its saved equipment");
+    assert.deepEqual((await state()).droppedHands, saved.droppedHands, "loading keeps the drop record");
+    await page.evaluate(state => applyStateObject(state), saved);
+    assert.deepEqual(await hands(), { mainHand: "", offHand: "", main2Shield: false, slots: [] });
+
+    // 醒來後撿回。
+    await load(base);
+    await life("damage", 30);
+    await life("heal", 5);
+    assert.equal(await row.locator(".tabletop-dropped-hands__text").innerText(), "昏迷時掉落：威力法杖、盾牌");
+    await row.getByRole("button", { name: "撿回威力法杖、盾牌" }).click();
+    assert.deepEqual(await hands(), { mainHand: "威力法杖", offHand: "盾牌", main2Shield: false, slots: ["mainHand", "offHand"] }, "picking up re-equips both hands");
+    await page.waitForFunction(() => document.getElementById("tabletop-live-status").textContent === "已撿回威力法杖、盾牌。");
+    assert.equal(await row.isHidden(), true);
+    assert.equal(Object.hasOwn(await state(), "droppedHands"), false);
+
+    // 手動勾昏迷也會掉落；醒來後自己拿了別的東西，那隻手不覆蓋，只撿回空著的手；「不用了」清掉紀錄。
+    await page.click("#tabletop-condition-manage");
+    await page.locator('input[data-condition-option="unconscious"]').check();
+    await page.locator("#tabletop-condition-form").getByRole("button", { name: "套用", exact: true }).click();
+    assert.equal((await hands()).mainHand, "", "a manually added unconscious condition drops the items too");
+    await page.evaluate(() => TabletopMode.applyState({ ...TabletopMode.collectState(), activeConditions: [] }));
+    await page.evaluate(() => { const select = document.getElementById("mainHand"); select.value = "長棍"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+    await row.getByRole("button", { name: "撿回威力法杖、盾牌" }).click();
+    await toast(/^已撿回盾牌；威力法杖不在物品欄或那隻手已有東西，未裝備。$/u);
+    assert.deepEqual(await hands(), { mainHand: "長棍", offHand: "盾牌", main2Shield: false, slots: ["mainHand", "offHand"] });
+    await page.evaluate(() => TabletopMode.applyState({ droppedHands: { mainHand: "長棍", offHand: "", main2Shield: false, main2ShieldItem: "" } }));
+    await row.getByRole("button", { name: "不撿回昏迷時掉落的物品" }).click();
+    assert.equal(await row.isHidden(), true);
+    assert.equal(Object.hasOwn(await state(), "droppedHands"), false);
+
+    // 主手 2 與盾牌：三個都卸下，撿回時盾牌重新勾選。
+    const fighter = { ...base, class: "fighter", mainHand: "長劍", offHand: "短劍", offHandAsMain: true, main2Shield: true,
+      __inventory: { version: 1, items: [{ uid: "sword", itemId: "長劍", quantity: 1 }, { uid: "short", itemId: "短劍", quantity: 1 }, shield] } };
+    await load(fighter);
+    assert.deepEqual(await hands(), { mainHand: "長劍", offHand: "短劍", main2Shield: true, slots: ["mainHand", "offHand", "shield"] });
+    await life("damage", 99);
+    await toast(/^你手上的東西因昏迷掉落：長劍、短劍、盾牌。$/u);
+    assert.deepEqual(await hands(), { mainHand: "", offHand: "", main2Shield: false, slots: [] });
+    await life("heal", 5);
+    await row.getByRole("button", { name: "撿回長劍、短劍、盾牌" }).click();
+    assert.deepEqual(await hands(), { mainHand: "長劍", offHand: "短劍", main2Shield: true, slots: ["mainHand", "offHand", "shield"] });
+
+    // 手上沒東西時維持原本的提示。
+    await load({ ...base, mainHand: "", offHand: "" });
+    await life("damage", 30);
+    await toast(/^你手上的東西因昏迷掉落。$/u);
+    assert.equal(await row.isHidden(), true);
+    assert.deepEqual(errors, [], "browser runtime errors");
+  } finally {
+    await context.close();
+  }
+}
+
 async function verifyMergedActionUi(browser, url) {
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -3836,6 +3946,7 @@ async function main() {
     await verifyClassTabletopUpdates(page);
     await verifyConditionEffects(browser, url);
     await verifyDeathSaveMagicItems(browser, url);
+    await verifyUnconsciousDropsHands(browser, url);
     await verifyManualWeaponVisibility(page, url);
     await verifyEquipmentLoadout(browser, url);
     await verifyAutomaticFeatRows(browser, url);

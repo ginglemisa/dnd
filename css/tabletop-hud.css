@@ -698,6 +698,38 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
   margin: 0;
 }
 
+/* 昏迷時掉落的手持物（tabletop-mode.js 的 renderDroppedHands）：狀態列下方一整列，醒來後有「撿回」「不用了」。 */
+.tabletop-dropped-hands {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.5rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+}
+
+.tabletop-dropped-hands__text {
+  min-width: 0;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.tabletop-dropped-hands__actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.tabletop-dropped-hands__actions button {
+  width: auto;
+  min-height: 36px;
+  padding: 0.32rem 0.6rem;
+  font-size: var(--fs-xs);
+}
+
 .tabletop-condition-tag {
   min-height: 36px;
   padding: 0.3rem 0.55rem;

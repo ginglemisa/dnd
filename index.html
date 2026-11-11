@@ -116,7 +116,7 @@
   <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/tabletop.css?v=20261111-magic-effects-6">
-  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261111-magic-effects-5">
+  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261111-magic-effects-7">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
   <link rel="stylesheet" href="css/quick-build.css?v=20261110-safari">
@@ -389,6 +389,7 @@
       <div id="tabletop-active-conditions" class="tabletop-active-conditions" aria-live="polite">
         <p class="tabletop-condition-empty">目前沒有標記狀態或危害。</p>
       </div>
+      <div id="tabletop-dropped-hands" class="tabletop-dropped-hands" hidden></div>
     </section>
         </div>
       </div>
@@ -3839,6 +3840,72 @@ function getMain2ShieldLabel() {
   return held ? window.Inventory.getEquipmentValue(held) || "盾牌" : "盾牌";
 }
 
+// 跑團模式的昏迷（tabletop-mode.js）：手上的東西掉落。清空主手、副手（主手 2），取消主手 2 的盾牌，物品回到物品欄；
+// 契約、橡棍等各手的勾選與主手 2 的盾牌下拉保留原值。回傳卸下前的選擇與掉落物品的名稱，手上沒東西時回傳 null。
+function dropHeldEquipment() {
+  const mainHand = document.getElementById("mainHand");
+  const offHand = document.getElementById("offHand");
+  const shieldToggle = document.getElementById("main2Shield");
+  // 載入存檔途中（生命值欄位還原成 0）不動裝備欄位，以存檔為準。
+  if (!mainHand || !offHand || characterStateLoadDepth) return null;
+  const saved = {
+    mainHand: mainHand.value,
+    offHand: offHand.disabled ? "" : offHand.value,
+    main2Shield: isOffHandAlternateMain() && shieldToggle?.checked === true,
+    main2ShieldItem: document.getElementById("main2ShieldItem")?.value || ""
+  };
+  if (!saved.mainHand && !saved.offHand && !saved.main2Shield) return null;
+  const labels = [saved.mainHand, saved.offHand, saved.main2Shield ? getMain2ShieldLabel() : ""].filter(Boolean);
+  if (saved.main2Shield) {
+    shieldToggle.checked = false;
+    shieldToggle.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  [mainHand, offHand].forEach((select) => {
+    if (select.disabled || !select.value) return;
+    select.value = "";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  return { saved, labels };
+}
+
+// 撿回 dropHeldEquipment() 卸下的物品：只填目前空著的欄位，物品欄已經沒有的（下拉沒有這個選項）跳過。
+// 回傳 { restored, missing }：撿回與沒撿回的物品名稱。
+function restoreHeldEquipment(saved = {}) {
+  const restored = [];
+  const missing = [];
+  [["mainHand", saved.mainHand], ["offHand", saved.offHand]].forEach(([id, value]) => {
+    const select = document.getElementById(id);
+    if (!value || !select) return;
+    if (select.disabled || select.value) {
+      missing.push(value);
+      return;
+    }
+    select.value = value;
+    if (select.value !== value) {
+      select.value = "";
+      missing.push(value);
+      return;
+    }
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    restored.push(value);
+  });
+  if (saved.main2Shield) {
+    const shieldToggle = document.getElementById("main2Shield");
+    const label = saved.main2ShieldItem || "盾牌";
+    syncMain2ShieldControl({ legalize: false });
+    if (shieldToggle && !shieldToggle.checked && !shieldToggle.disabled && isMain2ShieldEligible()) {
+      const shieldSelect = document.getElementById("main2ShieldItem");
+      if (shieldSelect && saved.main2ShieldItem) shieldSelect.dataset.choice = saved.main2ShieldItem;
+      shieldToggle.checked = true;
+      shieldToggle.dispatchEvent(new Event("change", { bubbles: true }));
+      restored.push(getMain2ShieldLabel() || label);
+    } else {
+      missing.push(label);
+    }
+  }
+  return { restored, missing };
+}
+
 function isEffectiveEquippedShield() {
   return isEffectiveShieldEquippedForState({
     offHandAsMain: isOffHandAlternateMain(),
@@ -5639,6 +5706,7 @@ const SHARE_TABLETOP_STATE_KEYS = new Set([
   "barkskinActive",
   "longstriderActive",
   "shillelaghActive",
+  "droppedHands",
   "temporaryHp",
   "deathSaveSuccesses",
   "deathSaveFailures",
