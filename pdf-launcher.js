@@ -71,6 +71,15 @@ function getPdfAbilityScores() {
   return Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].flatMap(id => typeof window.getEffectiveAbilityValue === "function" ? [[id, window.getEffectiveAbilityValue(id)]] : []));
 }
 
+// PDF 用到的魔法物品數值：熟練加值（艾恩石精進）與速度選項（跑跳之靴、秘銀護甲，index.html 的 getMagicSpeedOptions），
+// 和角色卡同一個來源；由匯出選項帶給 buildPdfFieldPayload。
+function getPdfMagicOptions() {
+  return {
+    magicProficiencyBonus: window.getActiveMagicEffects?.().proficiencyBonus || 0,
+    magicSpeedOptions: window.getMagicSpeedOptions?.() || {}
+  };
+}
+
 function buildPdfPrecheckMessages() {
   const reminders = [];
   const requiredSelectIds = [
@@ -288,7 +297,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       try {
         await ensurePdfExportReady();
         const {includeAvatar,...chosen}=result;
-        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:'',customSpells:window.TabletopCustomSpells?.getPdfSpells() || [],weaponDamageTypeNotes:window.getWeaponDamageTypePdfNotes?.() || {},hasSpeedyFeat:window.hasSelectedFeat?.("迅捷步法") === true,abilityScores:getPdfAbilityScores()};
+        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:'',customSpells:window.TabletopCustomSpells?.getPdfSpells() || [],weaponDamageTypeNotes:window.getWeaponDamageTypePdfNotes?.() || {},hasSpeedyFeat:window.hasSelectedFeat?.("迅捷步法") === true,abilityScores:getPdfAbilityScores(),...getPdfMagicOptions()};
         await window.preloadPdfExportAssets?.(exportOptions);
         render('progress',nameMeasurement?.shrinks
           ? `角色名稱將以 ${nameMeasurement.fontSize.toFixed(1)} pt 輸出，製作中…`
@@ -634,6 +643,7 @@ async function downloadQuickBuildCompactPdf() {
       weaponDamageTypeNotes: window.getWeaponDamageTypePdfNotes?.() || {},
       hasSpeedyFeat: window.hasSelectedFeat?.("迅捷步法") === true,
       abilityScores: getPdfAbilityScores(),
+      ...getPdfMagicOptions(),
       ...getPdfRaceChoiceOptions(state),
       outputMode: "compact",
       sheetTemplate: "official"

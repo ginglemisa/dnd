@@ -1416,6 +1416,88 @@ async function verifyEquipmentLoadout(browser, url) {
     const speedWith = extra => page.evaluate(([base, extra]) => { applyStateObject({ ...base, str: "10", armor: "鎖子甲", ...extra }); return document.getElementById("speed-display").value; }, [magicBase, extra]);
     const mail = { uid: "mail", itemId: "鎖子甲", quantity: 1 };
     assert.deepEqual([await speedWith(inventoryOf(mail)), await speedWith(inventoryOf(mail, { uid: "gauntlets", quantity: 1, attuned: true, worn: true, magic: { id: "gauntlets-of-ogre-power" } }))], ["20", "30"], "the armor Strength requirement reads the effective Strength");
+    // 第 4 步：技能、檢定、熟練加值、生命值、AC、護甲與武器熟練、速度（內容檔 effects；不改玩家的欄位原值）。
+    const worn = (uid, id, extra = {}) => ({ uid, quantity: 1, worn: true, attuned: true, magic: { id, ...extra } });
+    const sheetNumbers = extra => page.evaluate(([base, extra]) => {
+      applyStateObject({ ...base, "speed-input": "30", ...extra });
+      const value = id => document.getElementById(id).value;
+      const summary = document.getElementById("equipment-loadout-summary-content").textContent;
+      return {
+        checks: [value("skill-巧手"), value("skill-運動"), value("save-dex"), value("save-str"), value("passive-perception"), value("initiative-input")],
+        attack: value("atk-main-hit"), hp: value("hp-display"), ac: value("ac-display"), speed: value("speed-display"),
+        warnings: ["未熟練", "力量需求", "懲罰"].filter(text => summary.includes(text))
+      };
+    }, [magicBase, extra]);
+    const plain = await sheetNumbers({ mainHand: "長劍", "prof-str": true, ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }) });
+    assert.deepEqual(plain.checks, ["+2", "+3", "+2", "+6", "10", "+2"], "baseline checks without magic items");
+    assert.deepEqual((await sheetNumbers({ ...inventoryOf(worn("gloves", "gloves-of-thievery")) })).checks[0], "+7", "Gloves of Thievery add 5 to Sleight of Hand while worn");
+    assert.deepEqual((await sheetNumbers({ ...inventoryOf({ ...worn("gloves", "gloves-of-thievery"), worn: false }) })).checks[0], "+2", "Gloves of Thievery in the pack add nothing");
+    // 幸運石：技能（含被動察覺）與豁免 +1；先攻不加（專案資料沒寫先攻屬於屬性檢定）。
+    assert.deepEqual((await sheetNumbers({ "prof-str": true, ...inventoryOf({ uid: "luck", quantity: 1, attuned: true, magic: { id: "stone-of-good-luck" } }) })).checks,
+      ["+3", "+4", "+3", "+7", "11", "+2"], "the Stone of Good Luck adds 1 to skills, passive Perception and saves but not initiative");
+    // 艾恩石（精進）：熟練加值 +1，熟練的豁免與武器攻擊跟著變。
+    const masteryNumbers = await sheetNumbers({ mainHand: "長劍", "prof-str": true, ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, worn("stone", "ioun-stone", { kind: "mastery" })) });
+    assert.deepEqual([masteryNumbers.checks[3], masteryNumbers.attack, plain.attack, await page.evaluate(() => getProficiencyBonus())], ["+7", "+7", "+6", 4], "the Ioun Stone of Mastery raises the proficiency bonus by 1");
+    // 狂戰斧：同調就每級 +1 生命值上限（不用拿在手上）。
+    const axe = { uid: "axe", itemId: "戰斧", quantity: 1, attuned: true, magic: { id: "berserker-axe" } };
+    assert.deepEqual([(await sheetNumbers(inventoryOf(axe))).hp, (await sheetNumbers(inventoryOf({ ...axe, attuned: false }))).hp, plain.hp], ["44", "39", "39"], "the attuned Berserker Axe adds 1 hit point per level");
+    // 射手護腕：長弓、短弓熟練（法師）；精靈鏈甲：視為受過訓練；秘銀護甲：沒有力量需求與隱匿劣勢。
+    const bowWizard = extra => sheetNumbers({ class: "wizard", mainHand: "長弓", ...inventoryOf({ uid: "bow", itemId: "長弓", quantity: 1 }, ...extra) });
+    assert.deepEqual([(await bowWizard([])).attack, (await bowWizard([])).warnings, (await bowWizard([worn("bracers", "bracers-of-archery")])).attack, (await bowWizard([worn("bracers", "bracers-of-archery")])).warnings],
+      ["+2", ["未熟練"], "+5", []], "Bracers of Archery grant longbow proficiency");
+    const armorNamed = (id, base) => page.evaluate(([id, base]) => MagicItemCatalog.getDisplayName(id, { base }), [id, base]);
+    const elvenChain = await armorNamed("elven-chain", "鎖子甲");
+    const mithral = await armorNamed("mithral-armor", "鎖子甲");
+    assert.deepEqual((await sheetNumbers({ class: "wizard", armor: elvenChain, ...inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1, magic: { id: "elven-chain" } }) })).warnings, ["力量需求", "懲罰"], "Elven Chain counts as trained armor");
+    assert.deepEqual((await sheetNumbers({ class: "wizard", armor: "鎖子甲", ...inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1 }) })).warnings, ["未熟練", "力量需求", "懲罰"], "plain chain mail still warns a wizard");
+    const mithralSheet = await sheetNumbers({ str: "10", armor: mithral, ...inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1, magic: { id: "mithral-armor" } }) });
+    assert.deepEqual([mithralSheet.speed, mithralSheet.warnings], ["30", []], "Mithral Armor has no Strength requirement or stealth disadvantage");
+    // 大法師法袍：沒穿護甲時基礎 AC 15＋敏捷（可以用盾牌）；穿護甲時不算。
+    const archmagiRobe = worn("robe", "robe-of-the-archmagi");
+    assert.deepEqual([
+      (await sheetNumbers({ class: "wizard", ...inventoryOf(archmagiRobe) })).ac,
+      (await sheetNumbers({ class: "wizard", ...inventoryOf({ ...archmagiRobe, worn: false }) })).ac,
+      (await sheetNumbers({ class: "fighter", offHand: "盾牌", ...inventoryOf(archmagiRobe, { uid: "shield", itemId: "盾牌", quantity: 1 }) })).ac,
+      (await sheetNumbers({ class: "fighter", armor: "皮甲", ...inventoryOf(archmagiRobe, { uid: "leather", itemId: "皮甲", quantity: 1 }) })).ac
+    ], ["17", "12", "19", "13"], "the Robe of the Archmagi sets an unarmored base AC of 15 plus Dexterity");
+    // 跑跳之靴：速度至少 30，不因護甲力量需求降速。
+    const boots = worn("boots", "boots-of-striding-and-springing");
+    assert.deepEqual([
+      (await sheetNumbers({ "speed-input": "25", ...inventoryOf(boots) })).speed,
+      (await sheetNumbers({ "speed-input": "25", ...inventoryOf({ ...boots, worn: false }) })).speed,
+      (await sheetNumbers({ str: "10", armor: "鎖子甲", ...inventoryOf(boots, mail) })).speed,
+      (await sheetNumbers({ "speed-input": "35", ...inventoryOf(boots) })).speed
+    ], ["30", "25", "30", "35"], "Boots of Striding and Springing keep the speed at least 30 and ignore the armor Strength requirement");
+    // 裝備摘要的「魔法物品」列寫出加值來源。
+    await sheetNumbers(inventoryOf(worn("gloves", "gloves-of-thievery"), worn("stone", "ioun-stone", { kind: "mastery" }), axe));
+    assert.deepEqual(await page.evaluate(() => Array.from(document.querySelectorAll("#equipment-loadout-summary-content .equipment-summary-row"), row => row.textContent).filter(text => text.includes("巧手+5") || text.includes("熟練加值+1") || text.includes("生命值上限每級+1")).length > 0), true, "the summary lists the new magic bonuses");
+    // 自動計算關閉時，技能欄是玩家手填的數字，加上竊賊手套也不變。
+    assert.deepEqual(await page.evaluate(([base, inventory]) => {
+      applyStateObject({ ...base, "auto-calculate-key-stats-toggle": false, "skill-巧手": "+1" });
+      applyStateObject({ ...base, "auto-calculate-key-stats-toggle": false, "skill-巧手": "+1", ...inventory });
+      const manual = document.getElementById("skill-巧手").value;
+      // 還原成自動計算（不經開關的確認視窗）。
+      document.getElementById("auto-calculate-key-stats-toggle").checked = true;
+      writeDerivedChecks();
+      syncAutomaticKeyStatsMode();
+      return manual;
+    }, [magicBase, inventoryOf(worn("gloves", "gloves-of-thievery"))]), "+1", "manual skill values stay when automatic calculation is off");
+    // 跑團：速度格寫出游泳、攀爬、飛行（多來源取最大，等於速度的跟著目前速度），屬性檢定按鈕加上幸運石。
+    const tabletopSpeed = async extra => {
+      await page.evaluate(([base, extra]) => { applyStateObject({ ...base, "speed-input": "30", ...extra }); TabletopMode.setMode("tabletop"); TabletopMode.setPanel("overview"); }, [magicBase, extra]);
+      return page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => setTimeout(() => resolve(document.getElementById("tabletop-speed").textContent.trim()), 50))));
+    };
+    assert.equal(await tabletopSpeed(inventoryOf(worn("gloves", "gloves-of-swimming-and-climbing"), worn("manta", "cloak-of-the-manta-ray"), { uid: "ring", quantity: 1, worn: true, magic: { id: "ring-of-swimming" } })),
+      "30 呎，游泳 60、攀爬 30", "tabletop speed lists swim and climb speeds, the largest source wins");
+    assert.equal(await tabletopSpeed(inventoryOf(worn("ring", "ring-of-elemental-command", { element: "air" }))), "30 呎，飛行 30（懸停）", "the Ring of Air Elemental Command flies at the walking speed and hovers");
+    assert.equal(await tabletopSpeed(inventoryOf({ ...worn("gloves", "gloves-of-swimming-and-climbing"), worn: false })), "30 呎", "unworn items add no movement");
+    await tabletopSpeed(inventoryOf({ uid: "luck", quantity: 1, attuned: true, magic: { id: "stone-of-good-luck" } }));
+    await page.waitForFunction(() => document.querySelector("#tabletop-ability-modifiers .tabletop-ability-modifier__source")?.textContent === "(幸運石)");
+    assert.deepEqual(await page.evaluate(() => {
+      const strength = document.querySelector("#tabletop-ability-modifiers .tabletop-ability-modifier");
+      return [strength.querySelector(".tabletop-ability-modifier__value").textContent, document.querySelector("#str-mod .modifier-main").textContent];
+    }), ["+4", "+3"], "the tabletop ability check adds the Stone of Good Luck while the sheet modifier stays");
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
     // 點 ✦ 在規則說明浮層顯示有效值與物品。
     await abilityNumbers(inventoryOf(giantBelt));
     const previousTab = await page.evaluate(() => document.querySelector(".tab-content:not([hidden])")?.id.replace(/^tab-/u, "") || "");

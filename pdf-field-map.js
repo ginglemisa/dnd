@@ -373,14 +373,14 @@
     return /^\+\d{2}$/.test(text) ? text.slice(1) : text;
   }
 
+  // 魔法物品的熟練加值（艾恩石精進）：buildPdfFieldPayload 執行期間由 options.magicProficiencyBonus 設定，結束時歸零。
+  let pdfMagicProficiencyBonus = 0;
+
   function getProficiencyBonusByLevel(level) {
     const lv = Number.parseInt(level, 10);
     if (!Number.isFinite(lv) || lv <= 0) return '';
-    if (lv >= 17) return '+6';
-    if (lv >= 13) return '+5';
-    if (lv >= 9) return '+4';
-    if (lv >= 5) return '+3';
-    return '+2';
+    const base = lv >= 17 ? 6 : lv >= 13 ? 5 : lv >= 9 ? 4 : lv >= 5 ? 3 : 2;
+    return `+${base + pdfMagicProficiencyBonus}`;
   }
 
   function getPdfProficiencyValueByLevel(level) {
@@ -1193,11 +1193,22 @@ function isWeaponRowEmpty(payload, slot) {
       armorStrengthRequirement: armor?.力量需求,
       strengthScore: state.str,
       hasShield: isShield(armorName) || hasEffectiveShieldForPdf(state),
-      hasSpeedyFeat: options.hasSpeedyFeat === true
+      hasSpeedyFeat: options.hasSpeedyFeat === true,
+      // 魔法物品的速度選項（速度至少、不因護甲力量需求降速），由匯出流程以 options.magicSpeedOptions 傳入。
+      ...(options.magicSpeedOptions || {})
     });
   }
 
   function buildPdfFieldPayload(sourceState, options = {}) {
+    pdfMagicProficiencyBonus = Number(options.magicProficiencyBonus) || 0;
+    try {
+      return buildPdfFieldPayloadNow(sourceState, options);
+    } finally {
+      pdfMagicProficiencyBonus = 0;
+    }
+  }
+
+  function buildPdfFieldPayloadNow(sourceState, options = {}) {
     // 屬性格與用到屬性的數字寫有效值：匯出流程以 options.abilityScores 傳入頁面算好的有效值（魔法物品），存檔本身仍是原值。
     const state = options.abilityScores ? { ...sourceState, ...options.abilityScores } : sourceState;
     const payload = {};

@@ -1510,6 +1510,10 @@
       customSpells: exportOptions.customSpells || [],
       weaponDamageTypeNotes: exportOptions.weaponDamageTypeNotes || {},
       hasSpeedyFeat: exportOptions.hasSpeedyFeat === true,
+      // 魔法物品：屬性有效值、熟練加值與速度選項（pdf-launcher.js 帶入），存檔本身不變。
+      abilityScores: exportOptions.abilityScores,
+      magicProficiencyBonus: exportOptions.magicProficiencyBonus,
+      magicSpeedOptions: exportOptions.magicSpeedOptions,
       outputMode,
       sheetTemplate
     });
