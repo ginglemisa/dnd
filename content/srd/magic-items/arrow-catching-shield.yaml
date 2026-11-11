@@ -8,6 +8,8 @@ rarity: rare
 attunement: true
 base: { fixed: 盾牌 }
 manualEffect: true
+actions:
+  - { id: catch, name: 攔截箭矢, type: reaction, text: 攻擊者對你 5 呎內的目標進行遠程攻擊檢定時，改為由你成為那次攻擊的目標。 }
 text: |-
   當你持用這面盾牌時，你對遠程攻擊檢定的護甲等級獲得+2加值。此加值與盾牌原有的AC加值疊加。
 

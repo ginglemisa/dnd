@@ -8,6 +8,8 @@ group: tool
 rarity: rare
 attunement: false
 weight: 4
+actions:
+  - { id: unfold, name: 展開／摺回, type: magic, when: owned, text: 第一命令詞展開成划艇，第二命令詞展開成龍骨船，第三命令詞在船上沒有生物時摺回木盒。 }
 text: |-
   這件物體外觀是一個長12吋、寬6吋、深6吋的木盒。它重4磅，且能浮在水面。它可以打開來存放物品。這件物品另有三個命令詞，各需要進行魔法動作才能使用：
 

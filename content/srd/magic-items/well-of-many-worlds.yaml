@@ -7,6 +7,10 @@ category: wondrous
 group: tool
 rarity: legendary
 attunement: false
+pools:
+  - { id: cooldown, label: 開啟傳送門, max: 1, recover: cooldown, cooldown: 1d8 小時 }
+actions:
+  - { id: open, name: 開啟傳送門, type: magic, pool: cooldown, when: owned, text: 把布展開放在堅硬表面，形成通往其他世界或位面的雙向傳送門（由 DM 決定），直到 5 呎內的生物以魔法動作摺起。 }
 text: |-
   這塊質地細緻、如絲綢般柔軟的黑布，被摺疊成手帕大小。它可以展開成直徑6呎的圓形布面。
 

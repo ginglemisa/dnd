@@ -7,6 +7,9 @@ category: wondrous
 group: tool
 rarity: uncommon
 attunement: true
+actions:
+  - { id: ride, name: 騎乘掃帚, type: magic, when: owned, text: 跨坐時讓掃帚懸停，飛行速度 50 呎（承載超過 200 磅時 30 呎，最多 400 磅）；著陸或不再騎乘時停止懸停。 }
+  - { id: send, name: 送出／召回掃帚, type: magic, when: owned, text: 說出你熟悉、1 英里內的地點，讓掃帚獨自前往；或使用命令詞讓 1 英里內的掃帚回到你身邊。 }
 text: |-
   這把木掃帚在你跨坐其上並進行魔法動作讓它懸停在你身下之前，功能與普通掃帚無異；懸停之後，就可以騎乘它在空中飛行。它的飛行速度為50呎。它最多可承載400磅，但承載超過200磅時，飛行速度變為30呎。當你著陸或不再騎乘時，掃帚就會停止懸停。
 
