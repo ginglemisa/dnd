@@ -107,15 +107,15 @@
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/base.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/base.css?v=20261111-menu-columns">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261110-safari">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/sheet-spells.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/sheet-spells.css?v=20261111-menu-columns">
   <link rel="stylesheet" href="css/utility.css?v=20261110-footer-one-line">
   <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
   <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/tabletop.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/tabletop.css?v=20261111-al-rules">
   <link rel="stylesheet" href="css/tabletop-hud.css?v=20261110-safari">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261110-safari">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
@@ -141,7 +141,7 @@
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261110-safari" defer></script>
-  <script src="tabletop-druid.js?v=20261109-primal-strike-note" defer></script>
+  <script src="tabletop-druid.js?v=20261111-dice-label" defer></script>
   <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
   <script src="tabletop-actions.js?v=20261108-wild-shape-savage" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
@@ -155,6 +155,7 @@
   <script src="class-option-memory.js?v=20261106-background-memory" defer></script>
   <script src="page-swipe.js?v=20261110-page-swipe" defer></script>
   <script src="deity-info.js" defer></script>
+  <script src="al-rules.js?v=20261111-al-rules-2" defer></script>
 
 </head>
 <body>
@@ -194,22 +195,22 @@
       <fieldset class="utility-menu__settings" aria-label="操作設定">
         <div class="utility-menu__settings-row">
           <label class="utility-menu__setting utility-menu__setting--auto-calc" title="開啟時自動計算最大 HP、AC、先攻、速度、被動察覺、技能與豁免；關閉後可自行輸入。">
-            <span>自動計算數值</span>
+            <span>自動計算</span>
             <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
-          <label class="utility-menu__setting">
-            <span>顯示▲▼按鈕</span>
+          <label class="utility-menu__setting utility-menu__setting--scroll">
+            <span>顯示▲▼</span>
             <input id="scroll-buttons-toggle" type="checkbox" role="switch" data-state-transient="true">
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
-          <label class="utility-menu__setting">
-            <span>開啟擲骰功能</span>
+          <label class="utility-menu__setting utility-menu__setting--dice">
+            <span>擲骰功能</span>
             <input id="dice-system-toggle" type="checkbox" role="switch" data-state-transient="true">
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
           <div class="utility-menu__setting utility-menu__theme-setting">
-            <label id="theme-toggle-label" for="theme-toggle">更換主題：<span id="theme-current-label" aria-live="polite">暖紙 | 亮</span></label>
+            <label id="theme-toggle-label" for="theme-toggle" title="更換主題"><span id="theme-current-label" aria-live="polite">暖紙|亮</span></label>
             <button type="button" id="color-mode-toggle" aria-label="切換為暗色" aria-pressed="false" title="切換亮色／暗色"><span aria-hidden="true">🌓</span></button>
             <label class="utility-menu__theme-switch" title="切換經典／暖紙主題">
               <input id="theme-toggle" type="checkbox" role="switch" aria-label="暖紙主題（關閉使用經典主題）" data-state-transient="true">
@@ -249,6 +250,7 @@
       <section class="utility-menu__section" aria-labelledby="utility-menu-help-title">
         <h2 id="utility-menu-help-title" class="utility-menu__section-title">參考/教學/重置</h2>
         <div class="utility-menu__help">
+          <button type="button" id="al-rules-btn" class="utility-menu__button utility-menu__help-wide" aria-haspopup="dialog">冒險者聯盟規則</button>
           <button type="button" id="restart-onboarding-btn" class="utility-menu__button" title="了解欄位、裝備、法術與搜尋">認識角卡</button>
           <button type="button" id="first-table-tour-btn" class="utility-menu__button" title="角色做好了，接下來怎麼玩？">初次遊玩</button>
           <button type="button" id="reference-deities-btn" class="utility-menu__button">認識神祉</button>
@@ -4793,7 +4795,7 @@ function setupUtilityMenu() {
       colorModeToggle.setAttribute("aria-pressed", String(dark));
       colorModeToggle.title = label;
     }
-    if (currentThemeLabel) currentThemeLabel.textContent = `${warm ? "暖紙" : "經典"} | ${dark ? "暗" : "亮"}`;
+    if (currentThemeLabel) currentThemeLabel.textContent = `${warm ? "暖紙" : "經典"}|${dark ? "暗" : "亮"}`;
   };
 
   const applyTheme = (theme, { persist = true } = {}) => {

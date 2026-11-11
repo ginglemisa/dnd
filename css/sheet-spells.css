@@ -955,6 +955,10 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .spell-picker-selected-tog
   gap: 8px;
 }
 
+.utility-menu__help .utility-menu__help-wide {
+  grid-column: 1 / -1;
+}
+
 .utility-menu__help .utility-menu__button {
   display: flex;
   align-items: center;
