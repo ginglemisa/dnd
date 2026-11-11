@@ -120,11 +120,11 @@
     return `消耗 ${range} 次${state.pool.label}${state.alsoPool ? `與 1 次${state.alsoPool.label}` : ""}`;
   }
 
-  // 物品法術的說明列：「火球魔杖：消耗 1～3 次充能（剩餘 5/7）・豁免 DC 15。只能以你自己為目標。」
-  function getItemSpellSummary(entry, state = getItemSpellState(entry)) {
+  // 物品法術的說明：「消耗 1～3 次充能（剩餘 5/7）・豁免 DC 15。只能以你自己為目標。」；withItem 時前面加「火球魔杖：」。
+  function getItemSpellSummary(entry, { state = getItemSpellState(entry), withItem = true } = {}) {
     const cost = getItemSpellCostText(entry, state);
     const parts = [cost ? `${cost}（剩餘 ${state.pool.left}/${state.pool.max}）` : "隨意施放", state.numbersText].filter(Boolean);
-    return `${entry.itemSpell.label}：${parts.join("・")}。${entry.itemSpell.action.note || ""}`;
+    return `${withItem ? `${entry.itemSpell.label}：` : ""}${parts.join("・")}。${entry.itemSpell.action.note || ""}`;
   }
 
   function requiresConcentration(entry, castResult = null) {
@@ -317,7 +317,7 @@
     content.appendChild(createElement("p", "tabletop-spell-detail__english", spell.nameEn));
     if (entry?.itemSpell) {
       const state = getItemSpellState(entry);
-      content.appendChild(createElement("p", "tabletop-spell-detail__source", getItemSpellSummary(entry, state)));
+      content.appendChild(createElement("p", "tabletop-spell-detail__source", getItemSpellSummary(entry, { state })));
       if (state.blocked) content.appendChild(createElement("p", "druid-resource-note", state.blocked));
     } else if (entry?.sourceLabel) {
       content.appendChild(createElement("p", "tabletop-spell-detail__source", entry.sourceLabel));
@@ -1188,7 +1188,8 @@
   }
 
   // 從魔法物品施放：不耗法術位，確認後扣物品的次數池；擲骰開著時自動擲骰（物品固定的 DC／攻擊寫在擲骰說明）。
-  async function castItemSpell(entry, trigger = null) {
+  // afterCommit()：扣完次數、擲骰前呼叫（物品欄關閉物品視窗），回傳之後要還焦點的元素。
+  async function castItemSpell(entry, trigger = null, { afterCommit = null } = {}) {
     if (globalScope.TabletopMode?.getDruidForm?.()) {
       globalScope.AppDialog?.notify("荒野形態期間不能施法；未消耗次數。");
       return false;
@@ -1203,7 +1204,7 @@
       restoreStableFocus(entry.spellId, trigger, entry.sourceKey);
       return false;
     }
-    await completeCast(entry, castResult, trigger);
+    await completeCast(entry, castResult, afterCommit?.() || trigger);
     return true;
   }
 
@@ -1232,7 +1233,8 @@
     if (!entry && globalScope.TabletopCustomSpells?.getSpell(spellId)) {
       return globalScope.TabletopCustomSpells.showDetail({ spellId }, trigger, { castable: true });
     }
-    const spell = entry?.spell || globalScope.SpellCatalog?.getSpell(spellId);
+    // 用 ID 開啟時沒有施法按鈕；只有 SRD 版的法術（物品法術、藥水的法術效果）也能查看。
+    const spell = entry?.spell || globalScope.SpellCatalog?.getSpell(spellId) || globalScope.SpellCatalog?.getItemSpell?.(spellId);
     if (!spell || !globalScope.AppDialog) return;
     const currentId = globalScope.TabletopMode?.getConcentrationSpellId?.() || "";
     const actions = [{ label: "關閉", value: "close" }];

@@ -7,6 +7,7 @@ category: potion
 rarity: rare
 attunement: false
 consumable: true
+spellLinks: [ bless ]
 text: |-
   喝下這瓶藥水時，你獲得10點臨時生命值，持續1小時。在相同的持續時間內，你處於_祝福術_法術的效果之下（不需專注）。
 

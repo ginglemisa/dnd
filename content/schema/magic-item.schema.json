@@ -319,6 +319,7 @@
         "hints": { "$ref": "#/definitions/hints" },
         "pools": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/pool" }, "description": "次數池（充能、每日一次、冷卻、珠子等）。" },
         "actions": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/action" }, "description": "能力：跑團模式的動作、附贈、反應按鈕。" },
+        "spellLinks": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }, "description": "藥水與油「獲得某法術的效果」：物品詳情多一列「法術效果：…」連到法術說明（不是施法）。" },
         "displayName": { "type": "string", "minLength": 1, "description": "選定後的顯示名稱樣板：{base} 為基本款，{選項 ID} 為該選項的 label。省略時為「名稱（基本款、選項）」。" },
         "consumable": { "const": true, "description": "用掉就減 1。" },
         "forms": { "type": "array", "minItems": 2, "items": { "$ref": "#/definitions/form" }, "description": "可切換的形態（王者權杖）：物品視窗的「目前形態」下拉，存在這一筆的 magic.form。裝備欄位的值不變。" },

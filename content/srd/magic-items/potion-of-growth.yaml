@@ -7,6 +7,7 @@ category: potion
 rarity: uncommon
 attunement: false
 consumable: true
+spellLinks: [ enlarge-reduce ]
 text: |-
   喝下這瓶藥水時，你獲得_變巨術/縮小術_法術的「變巨」效果，持續10分鐘（不需專注）。
 

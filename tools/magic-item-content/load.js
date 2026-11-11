@@ -178,6 +178,7 @@ function checkItem(item, context, errors) {
   if (Boolean(item.siteText) !== Boolean(item.sitePrice)) errors.push(`${at}：siteText 與 sitePrice 要一起寫`);
   if (/[A-Za-z]{4,}/.test(item.text)) errors.push(`${at}：text 只放中文，不放英文內文`);
   checkPoolsAndActions(item, at, context, errors);
+  (item.spellLinks || []).filter(id => !context.spells.getItemSpell(id)).forEach(id => errors.push(`${at}：spellLinks 的「${id}」不是法術 ID`));
 }
 
 // 次數池與能力：id 不重複、能力扣的池存在、cost 要和 pool 一起寫、[最少, 最多] 不超過池的最大值；

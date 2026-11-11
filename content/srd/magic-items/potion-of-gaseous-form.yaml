@@ -7,6 +7,7 @@ category: potion
 rarity: rare
 attunement: false
 consumable: true
+spellLinks: [ gaseous-form ]
 text: |-
   喝下這瓶藥水時，你獲得_氣化形體_法術的效果，持續1小時（不需專注），或直到你以附贈動作結束該效果為止。
 
