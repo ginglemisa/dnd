@@ -2182,7 +2182,7 @@ async function verifyFeatEligibilityWarnings(browser, url) {
     await page.evaluate(() => {
       window.validatePdfCharacterName = async () => ({ fits: true });
       window.validatePdfEnglishName = async () => ({ fits: true });
-      window.exportCharacterPdfFromState = async state => { window.__featWarningPdfExport = state; };
+      window.exportCharacterPdfFromState = async (state, options) => { window.__featWarningPdfExport = state; window.__featWarningPdfOptions = options; };
     });
     await page.click("#utility-menu-toggle");
     await page.click("#export-pdf-btn");
@@ -2201,6 +2201,9 @@ async function verifyFeatEligibilityWarnings(browser, url) {
     await page.waitForFunction(() => !!window.__featWarningPdfExport);
     assert.equal(await page.evaluate(() => window.__featWarningPdfExport["speed-display"]), "30", "forced PDF uses gated numeric values");
     assert.equal(await page.evaluate(() => window.__featWarningPdfExport["derived-feat-fighter-level-4"]), "迅捷步法", "forced PDF preserves selected feat");
+    assert.equal(await page.evaluate(() => window.__featWarningPdfOptions.hasSpeedyFeat), false, "export flow passes the gated Speedy result");
+    await page.addScriptTag({ path: path.join(__dirname, "pdf-field-map.js") });
+    assert.equal(await page.evaluate(() => buildPdfFieldPayload(window.__featWarningPdfExport, window.__featWarningPdfOptions).speed1), "30", "PDF speed field excludes the ineligible feat");
     console.log("Feat eligibility: selection retention, theme warnings, numeric gating, manual override, JSON/share/autosave and advisory PDF export passed.");
   } finally { await context.close(); }
 }

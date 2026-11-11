@@ -49,8 +49,8 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261111-merge-main");
-      await loadScriptOnce("pdf-export.js?v=20261105-pdf-edit-size");
+      await loadScriptOnce("pdf-field-map.js?v=20261111-merge-armor-speed");
+      await loadScriptOnce("pdf-export.js?v=20261111-armor-str-speed");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -269,7 +269,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       try {
         await ensurePdfExportReady();
         const {includeAvatar,...chosen}=result;
-        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:'',customSpells:window.TabletopCustomSpells?.getPdfSpells() || [],weaponDamageTypeNotes:window.getWeaponDamageTypePdfNotes?.() || {}};
+        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:'',customSpells:window.TabletopCustomSpells?.getPdfSpells() || [],weaponDamageTypeNotes:window.getWeaponDamageTypePdfNotes?.() || {},hasSpeedyFeat:window.hasSelectedFeat?.("迅捷步法") === true};
         await window.preloadPdfExportAssets?.(exportOptions);
         render('progress',nameMeasurement?.shrinks
           ? `角色名稱將以 ${nameMeasurement.fontSize.toFixed(1)} pt 輸出，製作中…`
@@ -613,6 +613,7 @@ async function downloadQuickBuildCompactPdf() {
       includeSpellbook: true,
       customSpells: window.TabletopCustomSpells?.getPdfSpells() || [],
       weaponDamageTypeNotes: window.getWeaponDamageTypePdfNotes?.() || {},
+      hasSpeedyFeat: window.hasSelectedFeat?.("迅捷步法") === true,
       ...getPdfRaceChoiceOptions(state),
       outputMode: "compact",
       sheetTemplate: "official"

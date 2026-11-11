@@ -1509,6 +1509,7 @@
       includeSpellbook: exportOptions.includeSpellbook !== false,
       customSpells: exportOptions.customSpells || [],
       weaponDamageTypeNotes: exportOptions.weaponDamageTypeNotes || {},
+      hasSpeedyFeat: exportOptions.hasSpeedyFeat === true,
       outputMode,
       sheetTemplate
     });
