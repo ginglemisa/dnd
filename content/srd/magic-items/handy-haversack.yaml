@@ -7,6 +7,8 @@ category: wondrous
 group: container
 rarity: rare
 attunement: false
+container:
+  extradimensional: true
 weight: 5
 text: |-
   這個背包有一個中央袋與兩個側袋，每個都是異次元空間。每個側袋最多可容納200磅物資，體積不超過25立方呎。中央袋最多可容納500磅物資，體積不超過64立方呎。無論內容物為何，便利袋的重量永遠是5磅。

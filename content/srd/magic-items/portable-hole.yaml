@@ -7,6 +7,8 @@ category: wondrous
 group: container
 rarity: rare
 attunement: false
+container:
+  extradimensional: true
 text: |-
   這塊如絲般柔軟的精緻黑布，被摺成手帕大小。展開後是直徑6呎的圓形布面。
 

@@ -323,6 +323,15 @@
         "spellLinks": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }, "description": "藥水與油「獲得某法術的效果」：物品詳情多一列「法術效果：…」連到法術說明（不是施法）。" },
         "displayName": { "type": "string", "minLength": 1, "description": "選定後的顯示名稱樣板：{base} 為基本款，{選項 ID} 為該選項的 label。省略時為「名稱（基本款、選項）」。" },
         "consumable": { "const": true, "description": "用掉就減 1。" },
+        "container": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "容器：物品欄可以把其他物品放進去（不限容量），一件一筆、不合併不拆分。只有奇物的 group: container 才寫。空物件 {} 是普通容器。",
+          "properties": {
+            "extradimensional": { "const": true, "description": "異次元空間：裡面的物品（含更深層）不算重量，容器本身照算；把一個異次元容器放進另一個時提示兩件都會被摧毀（不自動刪除）。" },
+            "devour": { "type": "string", "pattern": "^[1-9][0-9]?d(4|6|8|10|12|20)$", "description": "裡面有東西時以真實時間計時（骰式，單位分鐘），到期吃掉內容物。骰子在程式內部悄悄擲，不進擲骰歷史、不提示玩家。" }
+          }
+        },
         "forms": { "type": "array", "minItems": 2, "items": { "$ref": "#/definitions/form" }, "description": "可切換的形態（王者權杖）：物品視窗的「目前形態」下拉，存在這一筆的 magic.form。裝備欄位的值不變。" },
         "bonusTransfer": { "const": true, "description": "武器的攻擊與傷害加值可以部分或全部轉移到 AC（防禦者）。物品視窗與跑團武器卡有步進器，不存檔；要有 effects.attack。" },
         "manualEffect": { "const": true, "description": "這件物品會改變角色卡的數值或武器資料（命中、傷害、AC、豁免、屬性、速度、技能、熟練、生命值），但還有部分沒有自動計算：商店與物品欄的說明下方會提示玩家依說明處理。只做成提示的效果（抗性、優勢、詛咒等）不算自動計算。" },

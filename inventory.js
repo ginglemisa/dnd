@@ -20,6 +20,9 @@
  * - ammo 是目前裝備的彈藥（普通或魔法彈藥都可以；整個物品欄最多一筆），由玩家以 setAmmo() 開關。和穿戴不同，裝備中的彈藥可以留在容器（箭袋）裡、
  *   改數量、拆分（拆出的那筆不帶）與合併（被併掉的那筆有 ammo 時，合併後那筆繼承）。彈藥是商店「彈藥」群組的品項，種類是品名「，」前的字
  *   （箭矢、弩矢、子彈、彈丸、針），對到武器屬性「彈藥 (射程…；箭矢)」的最後一詞（getWeaponAmmunition()）。
+ * - 沒有基本款、內容檔寫了 container 的魔法物品（次元袋、吞噬袋等）是容器，存檔格式不變（舊存檔的這些袋子以前不是容器，一筆多件時載入拆成一件一筆）。
+ *   container.extradimensional 的容器裡（含更深層）的物品不算重量，容器本身照算；兩個異次元容器互放只由 getExtradimensionalNesting() 回報給介面提示，不刪除。
+ *   container.devour 的計時與吞噬在 inventory-ui.js，這裡只提供 emptyContainer()。
  * - 手持類的非武器魔法物品（魔杖等，MagicItemCatalog.isHandHeld）沒有基本款，也可以放進主手或副手：裝備欄位存它的顯示名稱，同樣以 slot 標記。
  * - charges 是魔法物品次數池（MagicItemCatalog.getPools：充能、每日一次、冷卻、珠子等）目前這件的剩餘次數 { 池 id: 0～99 }，只有 magic 的筆才有；
  *   沒寫的池表示滿的（取得時都是滿的），滿了就拿掉。一筆多件時其餘件數都是滿的，拆分、穿上或裝備拆出的那件也是滿的。有次數池的物品不合併。
@@ -311,8 +314,45 @@
     return list;
   }
 
+  // 目錄容器看品名，沒有基本款的魔法物品看內容檔的 container 詞（次元袋等），自訂物品看 container 欄位。
   function isContainerEntry(entry, kinds = staticKinds()) {
-    return Boolean(entry) && (entry.itemId ? kinds.containers.has(entry.itemId) : entry.container === true);
+    if (!entry) return false;
+    if (entry.itemId) return kinds.containers.has(entry.itemId);
+    if (entry.magic) return Boolean(magicContainer(entry));
+    return entry.container === true;
+  }
+
+  /** 魔法容器的內容檔設定 { extradimensional?, devour? }；不是魔法容器（含有基本款的魔法物品）時回傳 null。 */
+  function magicContainer(entry) {
+    if (!entry?.magic || entry.itemId) return null;
+    const container = magicRule(entry)?.container;
+    return container && typeof container === "object" ? container : null;
+  }
+
+  // 在異次元容器裡（直接或隔著其他容器）：這件物品不算重量。
+  function insideExtradimensional(entry, byUid) {
+    let parent = entry.in ? byUid.get(entry.in) : null;
+    let depth = 0;
+    while (parent && depth <= LIMITS.depth) {
+      if (magicContainer(parent)?.extradimensional) return true;
+      depth += 1;
+      parent = parent.in ? byUid.get(parent.in) : null;
+    }
+    return false;
+  }
+
+  // 舊存檔裡的魔法容器（以前不是容器）可能是一筆多件；容器一件一筆、不能拆分，所以載入時拆開。
+  // 物品欄筆數已到上限時，拆不下的件數留在原本那一筆。
+  function splitMagicContainers(list, taken) {
+    let room = LIMITS.items - list.length;
+    return list.flatMap((entry) => {
+      if (entry.quantity < 2 || room < 1 || !magicContainer(entry)) return [entry];
+      const extra = Math.min(entry.quantity - 1, room);
+      room -= extra;
+      const copies = Array.from({ length: extra }, () => ({ ...copyEntry(entry), quantity: 1, uid: nextUid(taken) }));
+      copies.forEach(copy => delete copy.ammo);
+      return [{ ...entry, quantity: entry.quantity - extra }, ...copies];
+    });
   }
 
   // 容器關係必須指向存在的容器、不能成環，且最多 LIMITS.depth 層；不符合的物品移到最外層，不刪除。
@@ -351,7 +391,7 @@
       normalized.push(entry);
     });
     normalized.forEach((entry) => { if (!entry.uid) entry.uid = nextUid(taken); });
-    return repairAmmo(repairMagicState(repairContainment(normalized)));
+    return repairAmmo(repairMagicState(repairContainment(splitMagicContainers(normalized, taken))));
   }
 
   function copyEntry(entry) {
@@ -1274,14 +1314,51 @@
 
   function getWeight(state = null) {
     const list = state ? normalizeState(state) : entries;
+    const byUid = new Map(list.map(entry => [entry.uid, entry]));
     let weight = 0;
     let unknown = 0;
     list.forEach((entry) => {
+      // 異次元容器裡的物品不算重量（容器本身照算）。
+      if (insideExtradimensional(entry, byUid)) return;
       const unit = getUnitWeight(entry);
       if (Number.isFinite(unit)) weight += unit * entry.quantity;
       else unknown += 1;
     });
     return { weight: Math.round(weight * 100) / 100, unknown };
+  }
+
+  /**
+   * 放在另一個異次元容器裡（直接或隔著其他容器）的異次元容器：[{ inner, outer }]（uid；outer 是最近的那一個）。
+   * 依說明這會摧毀兩件物品，角色卡只提示、不刪除。
+   */
+  function getExtradimensionalNesting() {
+    const byUid = new Map(entries.map(entry => [entry.uid, entry]));
+    const result = [];
+    entries.forEach((entry) => {
+      if (!magicContainer(entry)?.extradimensional) return;
+      let parent = entry.in ? byUid.get(entry.in) : null;
+      let depth = 0;
+      while (parent && depth <= LIMITS.depth) {
+        if (magicContainer(parent)?.extradimensional) {
+          result.push({ inner: entry.uid, outer: parent.uid });
+          return;
+        }
+        depth += 1;
+        parent = parent.in ? byUid.get(parent.in) : null;
+      }
+    });
+    return result;
+  }
+
+  /** 移除容器裡的所有物品（含更深層）；回傳被移除物品的文字寫法（formatText 的寫法），沒有東西時回傳空字串。 */
+  function emptyContainer(uid) {
+    const container = entries.find(entry => entry.uid === uid);
+    const removed = container ? descendantsOf(uid) : new Set();
+    if (!removed.size) return "";
+    const text = entries.filter(entry => entry.in === uid).map(entry => formatEntry(entry, entries)).join("、");
+    removed.forEach(item => bonusTransfers.delete(item));
+    commit(entries.filter(entry => !removed.has(entry.uid)).map(copyEntry), "remove");
+    return text;
   }
 
   function formatEntry(entry, list) {
@@ -1355,6 +1432,12 @@
     getMagicSelection,
     isCustom: isCustomEntry,
     isContainer: entry => isContainerEntry(entry),
+    getMagicContainer: entry => {
+      const container = magicContainer(entry);
+      return container ? { ...container } : null;
+    },
+    getExtradimensionalNesting,
+    emptyContainer,
     entries: () => entries.map(copyEntry),
     getEntry: uid => {
       const entry = entries.find(item => item.uid === uid);

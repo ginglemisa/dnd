@@ -147,6 +147,8 @@ function checkItem(item, context, errors) {
   if (item.id !== expectedId(item.nameEn)) errors.push(`${at}：id 應為 ${expectedId(item.nameEn)}（由 nameEn 轉成）`);
   if (item.category === "wondrous" && !item.group) errors.push(`${at}：奇物須有 group`);
   if (item.category !== "wondrous" && item.group) errors.push(`${at}：只有奇物寫 group`);
+  if (item.container && item.group !== "container") errors.push(`${at}：container 只用於 group: container 的奇物`);
+  if (item.container && (item.consumable || item.pools || item.use || item.base)) errors.push(`${at}：容器不寫 consumable、pools、use、base`);
   if (typeof item.attunement === "string" && !item.attunement.startsWith("由")) errors.push(`${at}：attunement 的限定條件以「由」開頭（顯示為「需由…同調」）`);
   checkBase(item, at, lists, known, errors);
   // 有基本款的物品（武器、護甲、盾牌、法杖等）用裝備欄位，不寫使用方式；其他有固定數值的物品要寫，才知道什麼時候生效。

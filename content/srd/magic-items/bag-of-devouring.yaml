@@ -7,6 +7,8 @@ category: wondrous
 group: container
 rarity: very-rare
 attunement: false
+container:
+  devour: 2d6
 text: |-
   這個袋子外觀類似_次元袋_，但實際上是一個巨大異次元生物的進食孔口。把袋子內外翻轉可以關閉這個孔口。
 
