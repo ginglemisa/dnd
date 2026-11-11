@@ -732,6 +732,17 @@ text: |-
 | `weapons` | `{ names: [長弓, 短弓], attack?, damage? }`：拿這些武器（依基本款）攻擊時的命中、傷害加值，例如射手護腕。 |
 | `unarmedStrike` | `{ dice: 1d8, type: slashing, attack?, damage? }`：徒手打擊的傷害骰與類型，以及命中、傷害加值（惡魔護甲）。武僧的武藝骰較大時用武藝骰。角色卡只有武僧的「武藝」有攻擊列，其他職業的徒手打擊請另寫 `hints`。 |
 | `abilities` | 屬性的有效值，鍵是 `str`、`dex`、`con`、`int`、`wis`、`cha`，每個屬性擇一寫法：`{ set: 19 }`（屬性變成這個值，原本較高時用原本的）、`{ bonus: 2, max: 20 }`（增加，最高到上限，不會降低）、`{ setBonus: 4, max: 30, from: [物品 id…] }`（`from` 物品同時生效時，它們的 `set` 再增加，例如雷神之錘加在巨人之力腰帶上；建置檢查 `from` 的物品要有同一個屬性的 `set`）。每種寫法都可加 `when: owned`：持有（需同調的已同調）就算，不看穿戴或手持（雷鳴巨棒、雷神之錘的說明只寫同調）。算法：原值 → 加值依序加上（各自夾上限）→ 與設定值比 → 取最高。屬性欄只存原值，有效值不存檔（`character-rules.js` 的 `getEffectiveAbilityScore()` 回傳數值與決定它的物品名稱）。可用於任何類別；沒寫 `when` 時生效條件同其他效果（有基本款的武器要拿在手上）。手冊、藥水這類永久或暫時改屬性的物品不寫，只留說明。 |
+| `skills` | `{ 巧手: 5 }`：技能檢定的固定加值（竊賊手套），鍵是技能 ID（建置檢查）。自動計算開啟時寫進技能欄；有條件的加值（攀爬時、破門時）寫 `hints`。 |
+| `checks` | 所有屬性檢定的固定加值（幸運石）：加在每個技能檢定與跑團的屬性檢定按鈕。先攻不加（專案資料沒寫先攻屬於屬性檢定），豁免另寫 `saves`。 |
+| `proficiencyBonus` | 熟練加值增加的點數（艾恩石精進）：技能、豁免、先攻（警覺）、攻擊、法術數值、熟練加值次數的資源與 PDF 都跟著變。 |
+| `hitPoints` | `{ perLevel: 1, when?: owned }`：每個角色等級增加的生命值上限（狂戰斧，`when: owned` 同調就算）。只在自動計算開啟時寫進生命值上限。 |
+| `proficiencies` | `[長弓, 短弓]`：擁有這些武器的熟練（射手護腕，依基本款）。只影響攻擊列與裝備摘要的「未熟練」，不改職業的武器熟練，所以武器精通的選項不變。 |
+| `trained` | `true`：未受過這件護甲所屬類別的訓練時也視為受過訓練（精靈鏈甲）。只用於護甲類，穿著時才算。 |
+| `unarmoredAc` | 沒穿護甲時的基礎 AC＝這個值＋敏捷調整值（大法師法袍 15；可以用盾牌），和無甲防禦等算法取最高。 |
+| `noStrengthRequirement`、`noStealthDisadvantage` | `true`：這件護甲沒有力量需求、不讓隱匿有劣勢（秘銀護甲）。只用於護甲類；裝備摘要不顯示這兩項，速度不因力量需求降低。 |
+| `movement` | `{ swim?, climb?, fly?, hover?, minimum?, ignoreArmorStrength? }`：`swim`／`climb`／`fly` 是呎數或 `speed`（等於目前步行速度），寫在跑團速度那一格（「30 呎，游泳 60、攀爬 30」，多個來源取最大，等於速度的跟著目前速度與大步奔行）；`hover: true` 要和 `fly` 一起寫；`minimum` 是步行速度至少的呎數、`ignoreArmorStrength: true` 是不因護甲力量需求降速（跑跳之靴），這兩項角色卡與 PDF 的速度欄也算。角色卡速度欄只算步行。 |
+
+荒野形態的跑團畫面只算穿戴中的魔法護甲與盾牌（`getActiveMagicEffects({ wildShape })`）：其他物品的屬性、技能、檢定、熟練、豁免加值、提示、優勢與移動都不算，心智屬性用原值；角色卡的數字不變。
 
 **`hints`（提示）**，可寫在物品、選項的 `choices` 與 `forms`，是清單，每筆：
 
@@ -755,7 +766,7 @@ hints:
     text: 冰點以下的溫度中發光；拔出時可熄滅周圍 30 呎內非魔法的火焰（1 小時一次）。
 ```
 
-- 建置檢查：格式、`id` 與 `nameEn` 對應、中英文名不重複、奇物的 `group`、`base` 的品名與分類、選項與稀有度的對應、`bonus` 與傷害類型、`effects`（武器類專用的詞、武器品名、屬性欄位、`abilities.*.from` 的物品）、`hints`（位置、技能 ID、句號）、`use`（有 `base` 不寫、有 `effects` 或 `hints` 必寫）、`displayName` 的代入標記、魔法武器、護甲與手持物品的可能名稱彼此唯一且不與普通品名相撞、說明沒有英文內文，以及 `magic-item-id-baseline.json`（`items` 為物品 id，`options` 為「物品 id:選項 id:選項值」）。
+- 建置檢查：格式、`id` 與 `nameEn` 對應、中英文名不重複、奇物的 `group`、`base` 的品名與分類、選項與稀有度的對應、`bonus` 與傷害類型、`effects`（武器類、護甲類專用的詞、武器品名、技能 ID、`movement.hover` 要有 `fly`、屬性欄位、`abilities.*.from` 的物品）、`hints`（位置、技能 ID、句號）、`use`（有 `base` 不寫、有 `effects` 或 `hints` 必寫）、`displayName` 的代入標記、魔法武器、護甲與手持物品的可能名稱彼此唯一且不與普通品名相撞、說明沒有英文內文，以及 `magic-item-id-baseline.json`（`items` 為物品 id，`options` 為「物品 id:選項 id:選項值」）。
 - `npm run build` 產生根目錄的 `magic-item-content.generated.js`（規則與名稱，網頁一開始就載入）與 `magic-item-text.generated.js`（說明本文的 HTML，第一次需要時才載入，離線版內嵌）。Markdown 在建置時轉成 HTML，執行時不解析。
 - 網站經 `magic-items.js` 的 `MagicItemCatalog` 讀取，不從顯示文字反推規則：`getAll()`、`get(id)`、`getByEquipmentName(name)`、`getCategories()`、`getBaseChoices(id)`、`getDisplayName(id, selection)`、`getEquipmentVariants()`、`resolveEquipmentName(name)`（裝備欄位的魔法款名稱查回 `{ name, id, selection, base }`；手持類物品的 `base` 是空字串）、`getEffects(id, selection)`（物品、形態、選項的 `effects` 合併）、`getHints(id, selection)`（物品、形態、選項的 `hints`）、`getForm(id, selection)`、`getRarity(id, selection)`、`getRarityLabel(rarity)`、`getSubtitle(id)`、`getHeal(id, selection)`、`loadText()`、`getText(id)`（回傳 `{ html }` 的 Promise）。`selection` 是 `{ base: 基本款品名, <選項 id>: 選項值 }`。
 

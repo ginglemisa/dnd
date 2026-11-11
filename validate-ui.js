@@ -481,6 +481,16 @@ async function verifyPdf(page, fieldsOnly) {
     const pick = payload => [payload.strMod1, payload.str1, payload.conMod1, payload.con1, payload.speed1];
     return [pick(buildPdfFieldPayload(state)), pick(buildPdfFieldPayload(state, { abilityScores: { str: "19", con: "19" } }))];
   }), [["10", "0", "12", "+1", "20"], ["19", "+4", "19", "+4", "30"]], "PDF ability boxes use the effective scores passed by the page");
+  // 魔法物品的熟練加值（艾恩石精進）與速度選項（跑跳之靴：速度至少 30、不因力量需求降速）由匯出選項帶入，和角色卡一致。
+  assert.deepEqual(await page.evaluate(() => {
+    const state = { class: "fighter", level: "5", str: "10", armor: "鎖子甲", "speed-input": "25" };
+    const pick = payload => [payload.proficiencyBonus1, payload.speed1];
+    return [
+      pick(buildPdfFieldPayload(state)),
+      pick(buildPdfFieldPayload(state, { magicProficiencyBonus: 1, magicSpeedOptions: { minimumSpeed: 30, ignoreArmorStrength: true } })),
+      pick(buildPdfFieldPayload(state))
+    ];
+  }), [["+3", "15"], ["+4", "30"], ["+3", "15"]], "PDF proficiency bonus and speed use the magic item options and reset afterwards");
   await page.evaluate(() => {
     for (const key of ["derived-feat-human-origin", "derived-feat-lessons-1", "derived-feat-lessons-2", "derived-feat-fighter-level-4", "derived-feat-warlock-level-8", "feat-0"]) {
       if (!buildPdfFieldPayload({ [key]: "強韌體魄" }).feats1.includes("HP上限+等級×2")) throw new Error(`PDF feat source: ${key}`);

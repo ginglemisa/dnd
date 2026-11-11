@@ -49,8 +49,8 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261111-magic-abilities");
-      await loadScriptOnce("pdf-export.js?v=20261111-armor-str-speed");
+      await loadScriptOnce("pdf-field-map.js?v=20261111-magic-effects-4");
+      await loadScriptOnce("pdf-export.js?v=20261111-magic-effects-4");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
