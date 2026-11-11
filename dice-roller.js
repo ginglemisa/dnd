@@ -1,5 +1,7 @@
 (function initDiceRoller() {
   const DICE_SIDES = Object.freeze([100, 20, 12, 10, 8, 6, 4]);
+  // 骰式另外認得 d3（魔法物品的恢復量 1d3 等）；骰子面板只有上面那幾種實體骰。
+  const EXPRESSION_SIDES = Object.freeze([...DICE_SIDES, 3]);
   const STORAGE_KEY = "dnd.diceSystemEnabled.v1";
   const HISTORY_STORAGE_KEY = "dnd.diceRollHistory.v1";
   const getDiceAsset = () => document.documentElement.dataset.uiTheme === "warm"
@@ -9,7 +11,7 @@
   const REDUCED_MOTION_ROLL_MS = 100;
   const LONG_PRESS_MS = 1300;
   const HISTORY_LIMIT = 66;
-  const DIE_EXPRESSION_SOURCE = String.raw`\d+\s*d\s*(?:100|20|12|10|8|6|4)`;
+  const DIE_EXPRESSION_SOURCE = String.raw`\d+\s*d\s*(?:100|20|12|10|8|6|4|3)(?!\d)`;
   const EXPRESSION_PATTERN = new RegExp(
     `${DIE_EXPRESSION_SOURCE}(?:\\s*[+-]\\s*(?:${DIE_EXPRESSION_SOURCE}|\\d+))*`,
     "i"
@@ -55,7 +57,7 @@
           if (entry && typeof entry.legacyText === "string") return Object.freeze({ legacyText: entry.legacyText });
           if (!entry || typeof entry !== "object" || typeof entry.expression !== "string") return null;
           const values = Array.isArray(entry.values)
-            ? entry.values.filter(value => Number.isSafeInteger(value?.value) && DICE_SIDES.includes(value?.sides))
+            ? entry.values.filter(value => Number.isSafeInteger(value?.value) && EXPRESSION_SIDES.includes(value?.sides))
             : [];
           return Object.freeze({
             label: String(entry.label || "").trim(),
@@ -529,7 +531,7 @@
       const compactMatch = matchedExpression.replace(/\s+/g, "").toLowerCase();
       if (compactSource !== compactMatch) return null;
 
-      const termPattern = /([+-]?)\s*(?:(\d+)\s*d\s*(100|20|12|10|8|6|4)|(\d+))/gi;
+      const termPattern = /([+-]?)\s*(?:(\d+)\s*d\s*(100|20|12|10|8|6|4|3)(?!\d)|(\d+))/gi;
       const terms = [];
       let totalDice = 0;
       for (const match of matchedExpression.matchAll(termPattern)) {
@@ -537,7 +539,7 @@
         if (match[2] && match[3]) {
           const count = Number(match[2]);
           const sides = Number(match[3]);
-          if (!Number.isSafeInteger(count) || count < 1 || !DICE_SIDES.includes(sides)) return null;
+          if (!Number.isSafeInteger(count) || count < 1 || !EXPRESSION_SIDES.includes(sides)) return null;
           totalDice += count;
           if (totalDice > 100) return null;
           terms.push(Object.freeze({ type: "dice", sign, count, sides }));

@@ -8,6 +8,7 @@ rarity: very-rare
 attunement: true
 base: { fixed: 彎刀 }
 effects: { attack: 2, damage: 2 }
-manualEffect: true
+actions:
+  - { id: attack, name: 急速攻擊, type: bonus, text: 用急速彎刀進行一次攻擊（命中與傷害照攻擊列的這把武器）。每個回合一次。 }
 text: |-
   使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+2加值。此外，你可以在自己的每個回合以附贈動作使用它進行一次攻擊。

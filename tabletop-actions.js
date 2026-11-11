@@ -86,13 +86,120 @@
         customActionId: action.id
       }));
     const spellSource = api?.getSourceLabels?.().spell || "法術";
-    const all = [...officialOptions, ...(globalScope.TabletopDruid?.getActionOptions?.(mode) || []), ...customOptions]
+    const all = [...officialOptions, ...(globalScope.TabletopDruid?.getActionOptions?.(mode) || []), ...getMagicItemActionOptions(mode), ...customOptions]
       .filter(option => option.source !== spellSource && !option.spellId);
     return {
       all,
       visible: all.filter(option => !hiddenKeys.has(option.preferenceKey)
         && !(option.legacyKeys || []).some(key => hiddenKeys.has(getOfficialHiddenKey(mode, key))))
     };
+  }
+
+  // 魔法物品的能力（YAML 的 actions，經 getActiveMagicEffects().actions；荒野形態由 TabletopMode.getMagicEffects() 只留穿戴中的護甲與盾牌）。
+  // 動作、魔法動作、攻擊動作在動作頁，附贈、反應各在自己的頁。key 是 magic-item-<物品 id>-<能力 id>，隱藏偏好照常使用 official:<頁>:<key>。
+  const MAGIC_ACTION_PAGES = Object.freeze({ action: "action", magic: "action", attack: "action", bonus: "bonus", reaction: "reaction" });
+  const MAGIC_ACTION_TYPE_LABELS = Object.freeze({ action: "動作", magic: "魔法動作", attack: "攻擊動作", bonus: "附贈動作", reaction: "反應" });
+
+  function getMagicItemActionOptions(mode) {
+    const effects = globalScope.TabletopMode?.getMagicEffects?.() || globalScope.getActiveMagicEffects?.();
+    return (effects?.actions || []).filter(item => MAGIC_ACTION_PAGES[item.action.type] === mode).map((item) => {
+      const key = `magic-item-${item.itemId}-${item.action.id}`;
+      return {
+        key,
+        label: item.action.name,
+        description: `${MAGIC_ACTION_TYPE_LABELS[item.action.type]}：${item.action.text}`,
+        source: "魔法物品",
+        buttonTag: globalScope.MagicItemCatalog?.get(item.itemId)?.name || item.label,
+        magicItemAction: item,
+        preferenceKey: getOfficialHiddenKey(mode, key),
+        customActionId: ""
+      };
+    });
+  }
+
+  // 花費：[最少, 最多]；沒寫是 1。
+  function getMagicActionCost(action) {
+    return Array.isArray(action.cost) ? action.cost : [action.cost || 1, action.cost || 1];
+  }
+
+  // 目前的剩餘次數（按鈕繪製後可能已在物品詳情或別處改過）。
+  function getMagicActionPool(item) {
+    const entry = globalScope.Inventory?.getEntry(item.uid);
+    return entry ? globalScope.Inventory.getCharges(entry).find(pool => pool.id === item.action.pool) || null : null;
+  }
+
+  // 使用魔法物品的能力：固定花費先確認，可變花費選這次花幾次；扣該物品的次數池。
+  async function useMagicItemAction(option, trigger) {
+    const item = option.magicItemAction;
+    const pool = getMagicActionPool(item);
+    const [minimum, maximum] = getMagicActionCost(item.action);
+    if (!pool || pool.left < minimum) return;
+    const itemName = option.buttonTag;
+    let cost = minimum;
+    if (maximum > minimum) {
+      let select = null;
+      const confirmed = await globalScope.AppDialog.showContent({
+        title: `${itemName}：${item.action.name}`,
+        message: `這次要消耗幾次${pool.label}？（剩餘 ${pool.left}/${pool.max}）`,
+        cancelLabel: "取消",
+        confirmLabel: "使用能力",
+        dismissOnBackdrop: false,
+        trigger,
+        renderContent(body) {
+          const label = createElement("label", "", `消耗${pool.label} `);
+          select = document.createElement("select");
+          select.dataset.stateTransient = "true";
+          for (let value = minimum; value <= Math.min(maximum, pool.left); value += 1) {
+            const choice = createElement("option", "", `${value} 次`);
+            choice.value = String(value);
+            select.appendChild(choice);
+          }
+          label.appendChild(select);
+          body.appendChild(label);
+        }
+      });
+      if (!confirmed || !select) return;
+      cost = Number(select.value);
+    } else {
+      const confirmed = await globalScope.AppDialog.requestDecision({
+        title: `使用${item.action.name}`,
+        message: `確認後會消耗 ${cost} 次${itemName}的${pool.label}（目前剩餘 ${pool.left}/${pool.max}）。`,
+        cancelLabel: "取消",
+        confirmLabel: "使用能力",
+        dismissOnBackdrop: false,
+        trigger
+      });
+      if (!confirmed) return;
+    }
+    const current = getMagicActionPool(item);
+    if (!current || current.left < cost) {
+      globalScope.AppDialog?.notify("次數已變更或不足，未消耗任何次數。", { tone: "error" });
+      renderActionPanel(currentMode);
+      return;
+    }
+    const left = globalScope.Inventory.setCharges(item.uid, pool.id, current.left - cost);
+    globalScope.AppDialog?.notify(`已使用${item.action.name}；${itemName}的${pool.label}剩餘 ${left}/${pool.max}。`, { tone: "success" });
+    renderActionPanel(currentMode);
+  }
+
+  function appendMagicItemActionControl(description, option) {
+    const item = option.magicItemAction;
+    if (!item.action.pool) return;
+    const pool = getMagicActionPool(item);
+    if (!pool) return;
+    const [minimum, maximum] = getMagicActionCost(item.action);
+    const control = createElement("div", "tabletop-action-resource-control");
+    const costText = maximum > minimum ? `${minimum}～${maximum}` : String(minimum);
+    control.appendChild(createElement("span", "tabletop-action-resource-status", `消耗 ${costText} 次${pool.label} · 剩餘 ${pool.left}/${pool.max}`));
+    const useButton = createElement("button", "tabletop-compact-button tabletop-action-resource-use", "使用能力");
+    useButton.type = "button";
+    useButton.disabled = pool.left < minimum;
+    useButton.setAttribute("aria-label", useButton.disabled
+      ? `${option.label}；${pool.label}不足`
+      : `使用${option.label}；消耗 ${costText} 次${pool.label}，剩餘 ${pool.left}/${pool.max}`);
+    useButton.addEventListener("click", () => useMagicItemAction(option, useButton));
+    control.appendChild(useButton);
+    description.appendChild(control);
   }
 
   function getHiddenCountForMode(mode, preferences = getActionPreferences()) {
@@ -454,6 +561,10 @@
     }
     if (option.druidOperation || option.beastActionId) {
       globalScope.TabletopDruid?.appendActionControl?.(description, option);
+      return description;
+    }
+    if (option.magicItemAction) {
+      appendMagicItemActionControl(description, option);
       return description;
     }
     const resource = getActionResourceState(option);
@@ -1061,7 +1172,14 @@
       button.appendChild(createElement("span", "", option.source === "職業"
         ? buttonLabel.replace(/（[^（）]+子職）$/u, "") : buttonLabel));
       const buttonTag = option.buttonTag || option.source;
-      if (buttonTag) button.appendChild(createElement("span", "tabletop-source-tag", buttonTag));
+      const tag = buttonTag ? createElement("span", "tabletop-source-tag", buttonTag) : null;
+      if (tag) button.appendChild(tag);
+      // 魔法物品的能力有次數池時，物品名稱後面接剩餘次數；不夠用時按鈕變灰（仍可點開看說明），不隱藏。
+      const pool = option.magicItemAction?.action.pool ? getMagicActionPool(option.magicItemAction) : null;
+      if (pool) {
+        (tag || button).appendChild(createElement("span", "tabletop-action-option__count", `${pool.left}/${pool.max}`));
+        if (pool.left < getMagicActionCost(option.magicItemAction.action)[0]) button.classList.add("is-depleted");
+      }
       button.addEventListener("click", () => {
         selectedOptionKeys.set(mode, option.key);
         renderActionPanel(mode);

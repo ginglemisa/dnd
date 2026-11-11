@@ -7,6 +7,9 @@ category: weapon
 rarity: rare
 attunement: true
 base: { fixed: 硬頭錘 }
-manualEffect: true
+pools:
+  - { id: charges, label: 充能, max: 3, recover: dawn, amount: 1d3 }
+actions:
+  - { id: terror, name: 釋放恐懼, type: magic, pool: charges, text: 你 30 呎內由你選擇的每個生物 DC 15 感知豁免，失敗則恐慌 1 分鐘（只能遠離你、疾走或脫離，不能藉機攻擊），每個回合結束時重複豁免。 }
 text: |-
   這件魔法武器有3次充能，並且每天黎明恢復1d3次已消耗的充能。手持武器時，你可以進行魔法動作並消耗1次充能，從中釋放一波恐懼。你30呎內由你選擇的每個生物必須成功通過DC 15的感知豁免，否則陷入恐慌狀態1分鐘。在以這種方式陷入恐慌狀態期間，生物必須把回合花在盡可能遠離你的移動上，且不能進行藉機攻擊。它的動作只能用來進行疾走動作，或嘗試脫離阻止它移動的效果。若它無處可移動，該生物可以進行閃避動作。在其每個回合結束時，生物重複進行該豁免，成功則結束其身上的此效果。

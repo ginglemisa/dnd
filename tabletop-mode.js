@@ -1404,8 +1404,11 @@
       else control.checked = checked;
     });
     optionUpdates.forEach(({ control }) => dispatchCanonicalCastUpdate(control));
-    markStateChanged(kind === "longRest" ? "長休完成。" : "短休完成。");
-    return { ok: true };
+    // 魔法物品寫明短休或長休恢復的次數池（速度之靴、透視戒指等）隨休息恢復；黎明、黃昏與冷卻由玩家在物品詳情按。
+    const itemCharges = globalScope.Inventory?.recoverRestCharges?.(kind) || [];
+    const itemNames = [...new Set(itemCharges.map(item => item.label))];
+    markStateChanged(`${kind === "longRest" ? "長休完成。" : "短休完成。"}${itemNames.length ? `${itemNames.join("、")}的次數已恢復。` : ""}`);
+    return { ok: true, itemCharges };
   }
 
   function addCustomResource(resource) {
@@ -5581,6 +5584,7 @@
     getCanonicalSpellSlotGroups,
     getDruidContext,
     getDruidForm,
+    getMagicEffects,
     getDruidEffectiveValue,
     getTabletopSaveValue,
     canApplyMageArmor,

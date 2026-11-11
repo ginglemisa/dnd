@@ -11,6 +11,16 @@ effects: { attack: 2, damage: 2 }
 hints:
   - panel: weapon
     text: 近戰命中時可用閃電（額外 2d6 閃電傷害）或雷鳴（DC 17 體質豁免，失敗則震懾），各每日一次。
+pools:
+  - { id: lightning, label: 閃電, max: 1, recover: dawn }
+  - { id: thunder, label: 雷鳴, max: 1, recover: dawn }
+  - { id: thunder-and-lightning, label: 雷鳴與閃電, max: 1, recover: dawn }
+  - { id: lightning-strike, label: 閃電打擊, max: 1, recover: dawn }
+  - { id: thunderclap, label: 雷鳴爆響, max: 1, recover: dawn }
+actions:
+  - { id: thunder-and-lightning, name: 雷鳴與閃電, type: bonus, pool: thunder-and-lightning, text: 用法杖近戰命中之後，同時使用閃電（額外 2d6 閃電傷害）與雷鳴（DC 17 體質豁免，失敗則震懾到你的下個回合結束），不消耗那兩項的次數。 }
+  - { id: lightning-strike, name: 閃電打擊, type: magic, pool: lightning-strike, text: 寬 5 呎、長 120 呎的直線，線上每個生物 DC 17 敏捷豁免，失敗受到 9d6 閃電傷害，成功減半。 }
+  - { id: thunderclap, name: 雷鳴爆響, type: magic, pool: thunderclap, text: 以你為起點的 60 呎發散區域內每個生物 DC 17 體質豁免，失敗受到 2d6 雷鳴傷害並耳聾 1 分鐘，成功減半。 }
 text: |-
   這根法杖可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+2加值。它還具有下列額外特性。這些特性中的任一項使用後，直到下次黎明前都無法再次使用。
 

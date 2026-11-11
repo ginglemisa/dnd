@@ -12,7 +12,12 @@ hints:
   - advantage: [ 體操 ]
   - panel: weapon
     text: 體操優勢限長棍與 10 呎長桿形態；攻擊偏轉與投擲限長棍形態；投擲後飛回手中。
-manualEffect: true
+pools:
+  - { id: deflect, label: 攻擊偏轉, max: 1, recover: shortRest }
+actions:
+  - { id: light, name: 發光／熄滅, type: bonus, text: 手持時讓長棍發出 10 呎綠色微光光照，或熄滅這道光（也可以在擲先攻之後發光）。 }
+  - { id: shape, name: 變形, type: bonus, text: 手持時變成 6 吋短桿、10 呎長桿，或變回長棍。體操優勢只限長棍與長桿；攻擊偏轉與投擲只限長棍。 }
+  - { id: deflect, name: 攻擊偏轉, type: reaction, pool: deflect, text: 手持長棍形態並被攻擊命中時，你對觸發的那次攻擊 AC +5，可能使它落空。短休或長休後恢復。 }
 text: |-
   使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+2加值。
 

@@ -631,6 +631,63 @@
     return row;
   }
 
+  /**
+   * 次數池（Inventory.getCharges）：每個池一列「充能：剩 5/7」、−／＋ 數字框（0 到最大值，改了就存），黎明、黃昏與冷卻的池另有恢復按鈕。
+   * 恢復量是骰式時用 DiceRoller 擲（進擲骰歷史；擲骰功能關閉時照樣擲，比照藥水），加上去不超過最大值；已滿時停用。
+   * 短休、長休的池只寫「長休時自動恢復」，由跑團的休息流程恢復。分享模式也能調整（只在頁面記憶體，和法術位、資源勾選框相同）。
+   */
+  function buildChargeRows(entry, label) {
+    const catalog = globalScope.MagicItemCatalog;
+    return api().getCharges(entry).map((pool) => {
+      const manual = ["dawn", "dusk", "cooldown"].includes(pool.recover);
+      const note = pool.recover ? (manual ? "" : `${catalog.getRecoverText(pool)}。`) : "用完不恢復。";
+      const text = el("span", "", "");
+      const describe = left => { text.textContent = `${pool.label}：剩 ${left}/${pool.max}。${note}`; };
+      let recover = null;
+      const sync = (left) => {
+        describe(left);
+        stepper.input.value = String(left);
+        if (recover) recover.disabled = left >= pool.max;
+      };
+      const write = (value) => {
+        const left = api().setCharges(entry.uid, pool.id, value);
+        if (left !== null) sync(left);
+        return left;
+      };
+      const stepper = buildStepper(pool.left, `${label}的${pool.label}剩餘次數`, { min: 0, max: pool.max, onChange: write });
+      stepper.wrap.dataset.magicPool = pool.id;
+      if (manual) {
+        recover = actionButton(catalog.getRecoverText(pool), () => {
+          const before = api().getCharges(api().getEntry(entry.uid) || entry).find(item => item.id === pool.id)?.left ?? pool.left;
+          if (before >= pool.max) return;
+          let amount = pool.max - before;
+          let roll = null;
+          if (typeof pool.amount === "string") {
+            roll = globalScope.DiceRoller?.rollExpression?.(pool.amount.replace(/\s+/gu, ""), { label: `${label}${pool.label}恢復`, force: true, notify: false });
+            if (!Number.isFinite(roll?.total)) {
+              globalScope.AppDialog.notify("無法擲恢復量，請直接修改剩餘次數。", { tone: "warning" });
+              return;
+            }
+            amount = Math.max(0, roll.total);
+          } else if (Number.isInteger(pool.amount)) amount = pool.amount;
+          const left = write(before + amount);
+          if (left === null) return;
+          globalScope.AppDialog.notify(`${label}：${roll ? `${roll.equation}，` : ""}${pool.label} ${before} → ${left}/${pool.max}。`, {
+            tone: "success", variant: roll ? "dice-roll" : "default", duration: roll ? 7000 : undefined
+          });
+        }, `${label}的${pool.label}：${catalog.getRecoverText(pool)}`);
+        recover.disabled = pool.left >= pool.max;
+      }
+      const row = actionRow(pool.label, stepper.wrap, recover);
+      row.classList.remove("inventory-action-row--stacked");
+      row.classList.add("inventory-charge-row");
+      row.dataset.magicPool = pool.id;
+      row.querySelector(".inventory-action-row__text").replaceChildren(text);
+      describe(pool.left);
+      return row;
+    });
+  }
+
   // 防禦者的加值分配（物品視窗與跑團武器卡）：0 到全部加值轉到 AC，攻擊與傷害減少、AC 增加相同數值；不能轉移時回傳 null。不存檔。
   function buildBonusTransferControl(entry) {
     const transfer = api().getBonusTransfer(entry.uid);
@@ -744,6 +801,7 @@
     }
     const wearRow = entry.magic && magicRule ? buildWearAttunementRow(entry, magicRule, label, ctx) : null;
     if (wearRow) rows.push(wearRow);
+    if (entry.magic && magicRule) rows.push(...buildChargeRows(entry, label));
     const transfer = entry.magic ? buildBonusTransferControl(entry) : null;
     if (entry.magic && magicRule?.forms) rows.push(buildFormRow(entry, magicRule));
     if (transfer) rows.push(actionRow("可把部分或全部加值轉到 AC，攻擊與傷害會減少相同數值；重新整理後回到 0。", transfer));

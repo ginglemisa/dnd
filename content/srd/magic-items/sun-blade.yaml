@@ -11,7 +11,9 @@ effects: { attack: 2, damage: 2, finesse: true, damageType: radiant, proficiency
 hints:
   - panel: weapon
     text: 命中不死生物時額外造成 1d8 光耀傷害。
-manualEffect: true
+actions:
+  - { id: blade, name: 劍刃出現／消失, type: bonus, text: 握住劍柄時讓光輝劍刃出現或消失。劍刃發出半徑 15 呎明亮光照、再向外 15 呎微光光照（陽光）。 }
+  - { id: sunlight, name: 調整光照, type: magic, text: 劍刃存在時，明亮光照與微光光照的半徑各增加或減少 5 呎（各 10～30 呎）。 }
 text: |-
   這件物品看起來像是一個劍柄。
 

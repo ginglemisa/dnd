@@ -314,6 +314,7 @@
     restDialogOpen = true;
     const isLong = kind === "longRest";
     const name = isLong ? "長休" : "短休";
+    let itemCharges = [];
     try {
       const content = createElement("div", "tabletop-rest-dialog");
       content.appendChild(createElement("p", "", isLong
@@ -333,6 +334,12 @@
         if (!recovered.length) summary.appendChild(createElement("li", "", "沒有自動恢復的短休資源。"));
       }
       if (isLong && grantsInspiration(context.race)) summary.appendChild(createElement("li", "", "獲得英雄激勵。"));
+      // 魔法物品寫明短休或長休恢復的次數池（Inventory.recoverRestCharges 在完成時恢復）。
+      const restPools = isLong ? ["shortRest", "longRest"] : ["shortRest"];
+      const inventory = globalScope.Inventory;
+      const itemLabels = [...new Set((inventory?.entries() || []).filter(entry => inventory.getCharges(entry)
+        .some(pool => restPools.includes(pool.recover) && pool.left < pool.max)).map(entry => inventory.getLabel(entry)))];
+      if (itemLabels.length) summary.appendChild(createElement("li", "", `魔法物品：${itemLabels.join("、")}的次數恢復。`));
       content.appendChild(summary);
       const optionFields = context.optionGroups.filter(group => [kind, "either"].includes(group.when)).map(group => {
         const section = createElement("fieldset", "tabletop-rest-choice");
@@ -439,13 +446,15 @@
             companion: companion?.use.checked ? { ability: companion.ability.value, amount: Number(companion.amount.value) } : null };
           const result = globalScope.TabletopMode.commitRest(kind, selection, context.token);
           if (!result.ok) { error.textContent = result.reason; return false; }
+          itemCharges = result.itemCharges || [];
           return true;
         }
       });
       if (!completed) return;
       globalScope.twAnalytics?.track?.(isLong ? "long_rest_used" : "short_rest_used");
       if (!isLong) await openRestHitDice(trigger);
-      globalScope.AppDialog.notify(`${name}完成。`, { tone: "success" });
+      const itemNames = [...new Set(itemCharges.map(item => item.label))];
+      globalScope.AppDialog.notify(`${name}完成。${itemNames.length ? `${itemNames.join("、")}的次數已恢復。` : ""}`, { tone: "success" });
     } finally {
       restDialogOpen = false;
       if (!document.querySelector(".app-dialog")) document.querySelector(`[data-rest="${kind}"]`)?.focus();

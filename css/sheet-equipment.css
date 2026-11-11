@@ -3162,6 +3162,23 @@ button.inventory-arrange-done {
   max-width: var(--inventory-holding-left);
 }
 
+/* 魔法物品的次數池：數字框在左欄、說明在右欄，恢復按鈕在說明下一行的右欄。 */
+.inventory-charge-row .inventory-stepper {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) 2.6rem;
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+}
+
+.inventory-charge-row .inventory-action-button {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: start;
+  width: auto;
+  max-width: 100%;
+}
+
 /* 兩顆按鈕（穿戴與同調）佔滿兩欄時，說明在按鈕下一行。 */
 .inventory-action-row--stacked .inventory-action-row__text {
   grid-column: 1 / -1;
@@ -3214,6 +3231,12 @@ button.inventory-arrange-done {
   .inventory-action-button + .inventory-action-button {
     grid-column: 1;
     max-width: none;
+  }
+
+  .inventory-charge-row .inventory-stepper,
+  .inventory-charge-row .inventory-action-button {
+    grid-column: 1;
+    grid-row: auto;
   }
 }
 

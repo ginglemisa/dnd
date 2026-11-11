@@ -8,7 +8,11 @@ rarity: very-rare
 attunement: true
 base: { fixed: 盾牌 }
 effects: { ac: 2 }
-manualEffect: true
+pools:
+  - { id: protective-field, label: 防護力場, max: 1, recover: dawn }
+actions:
+  - { id: bash, name: 強力盾擊, type: attack, text: 攻擊動作的其中一次攻擊改用盾牌，對 5 呎內一個目標（熟練加值＋力量調整值）：命中造成 2d6 + 2＋力量調整值力場傷害，可以把生物推開至多 10 呎，體型不大於你時可以擊倒。 }
+  - { id: protective-field, name: 防護力場, type: reaction, pool: protective-field, text: 你或 5 呎內盟友成為攻擊目標，或對效果區域豁免時，以你為起點創造 5 呎發散區域：觸發的攻擊或效果對區域內無效，區域內外互相無法傷害、無法進出。需要專注，最長 1 分鐘。 }
 text: |-
   手持這面盾牌時，你獲得+2的AC加值。此加值與盾牌本身的一般AC加值相加。
 

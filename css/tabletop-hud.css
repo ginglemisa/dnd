@@ -1292,6 +1292,18 @@ button.tabletop-custom-spell-gear[aria-expanded="true"] svg {
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
+/* 魔法物品能力的剩餘次數接在物品名稱後；次數不夠時按鈕變灰，仍可點開看說明。 */
+.tabletop-action-option__count {
+  margin-left: 0.35em;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabletop-action-option.is-depleted:not(.is-selected) {
+  border-color: var(--border);
+  background: var(--disabled-bg);
+  color: var(--disabled-text);
+}
+
 .tabletop-action-description {
   min-height: 0;
   padding: 0.55rem 0.65rem;

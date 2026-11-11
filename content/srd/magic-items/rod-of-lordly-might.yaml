@@ -18,6 +18,13 @@ forms:
 hints:
   - panel: weapon
     text: 近戰命中時可用汲取生命或麻痺（DC 17 體質豁免，各每日一次，見說明）。
+pools:
+  - { id: drain-life, label: 汲取生命, max: 1, recover: dawn }
+  - { id: paralyze, label: 麻痺, max: 1, recover: dawn }
+  - { id: terrify, label: 恐嚇, max: 1, recover: dawn }
+actions:
+  - { id: button, name: 按下按鈕, type: bonus, text: 按下六個按鈕之一改變權杖的形態（火焰之刃、戰斧、短矛、攀爬桿、攻城錘、原本形態）；再按同一個按鈕恢復原本形態。目前形態在物品詳情切換。 }
+  - { id: terrify, name: 恐嚇, type: magic, pool: terrify, text: 你 30 呎內你看得見的每個生物 DC 17 感知豁免，失敗則恐慌 1 分鐘，每個回合結束時重複豁免。 }
 text: |-
   這根權杖有凸緣狀的頂端，並且作為一把魔法硬頭錘，使用它進行的攻擊檢定與傷害擲骰獲得+3加值。權杖具有六個與按鈕相關的特性，這些按鈕沿著權杖的柄排成一列。它還有另外三項特性，詳述如下。
 

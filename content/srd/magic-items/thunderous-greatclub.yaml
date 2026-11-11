@@ -11,7 +11,11 @@ effects: { extraDamage: [ { dice: 1d8, type: thunder } ], abilities: { str: { se
 hints:
   - panel: weapon
     text: 對未被穿戴或攜帶的物體額外造成 3d8 雷鳴傷害。
-manualEffect: true
+pools:
+  - { id: earthquake, label: 地震, max: 1, recover: dawn }
+actions:
+  - { id: thunderclap, name: 雷鳴巨響, type: magic, text: 用武器敲擊堅硬表面：30 呎錐形區域內每個生物 DC 15 力量豁免，失敗則倒地；區域內未被穿戴或攜帶的非魔法物體受到 3d8 雷鳴傷害。巨響 300 呎外都聽得見。 }
+  - { id: earthquake, name: 地震, type: magic, pool: earthquake, text: 用武器敲擊地面：半徑 50 呎內地面上的生物 DC 20 敏捷豁免，失敗則倒地；專注中的生物另做 DC 20 體質豁免，失敗則專注中斷。結構受到 50 點鈍擊傷害，可以讓地面裂開裂隙（見說明）。 }
 text: |-
   當你與這件魔法武器同調時，你的力量為20，除非你的力量原本就等於或高於該數值。此武器對其擊中的任何生物造成額外1d8雷鳴傷害，並對其擊中、未被穿戴或攜帶的物體造成額外3d8雷鳴傷害。
 
