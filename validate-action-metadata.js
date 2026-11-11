@@ -1338,7 +1338,9 @@ async function verifyEquipmentLoadout(browser, url) {
       { uid: "bolts", itemId: "弩矢", quantity: 5 }) }]);
     const ammoLine = () => page.evaluate(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent ?? null);
     const fireBow = () => page.evaluate(() => document.querySelector('#tabletop-panel-actions [aria-label="擲主手 長弓命中"]').click());
-    const lastToast = () => page.locator("#app-toast > .app-toast:last-child .app-toast__message").textContent();
+    // AppDialog.notify() 在下一個 animation frame 才填入文字（和 validate-spell-search.js 的 lastToast 相同）：等最新那則有文字再讀，避免時序造成空字串。
+    const lastToast = () => page.waitForFunction(() => document.querySelector("#app-toast > .app-toast:last-child .app-toast__message")?.textContent, null, { timeout: 2000 })
+      .then(handle => handle.jsonValue());
     await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢+1 剩 2");
     assert.equal(await page.evaluate(() => document.querySelector('#tabletop-panel-actions [aria-label="擲主手 長弓命中"]').textContent), "+6", "the tabletop hit includes the arrow bonus");
     await fireBow();
