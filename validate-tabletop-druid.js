@@ -150,6 +150,62 @@ async function checkMagicItemsInWildShape(page) {
   }), ["16 (法護)", "17 (樹膚)"], "persistent spells still work with a magic ring");
 }
 
+// 荒野形態（第 12.6 節）：屬性、技能加值、檢定加值、熟練加值、豁免加值、提示與「優勢」標籤只算穿戴中的魔法護甲與盾牌；
+// 心智屬性用原值，力敏體用野獸數值；跑團速度格不加魔法物品的移動方式。角色卡的數字不變。
+async function checkMagicEffectsInWildShape(page) {
+  const read = () => page.evaluate(async () => {
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    const value = id => TabletopMode.getDruidEffectiveValue(id, id === "int-mod" ? document.querySelector("#int-mod .modifier-main").textContent : document.getElementById(id).value);
+    const tags = Array.from(document.querySelectorAll("#tabletop-skill-values .magic-advantage-tag"), tag => tag.title);
+    return {
+      checks: [value("int-mod"), value("skill-調查"), value("save-wis"), value("save-dex")],
+      sources: Array.from(document.querySelectorAll("#tabletop-ability-modifiers .tabletop-ability-modifier__source"), item => item.textContent),
+      tags, initiative: document.querySelector("#tabletop-initiative .magic-advantage-tag")?.title || "",
+      hints: Array.from(document.querySelectorAll("#tabletop-overview-rule-summary .tabletop-defense-summary__item"), item => item.textContent).filter(text => /精靈之靴|警戒之盾|幸運石|游泳戒指/.test(text)).map(text => text.split("：")[0]),
+      speed: document.getElementById("tabletop-speed").innerText
+    };
+  });
+  await page.evaluate(() => {
+    TabletopMode.setMode("sheet");
+    TabletopMode.applyState({});
+    applyStateObject({ __autoCalculatedChecks: true, class: "druid", level: "8", str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40", armor: "", mainHand: "", offHand: "警戒之盾", offHandAsMain: false, "prof-wis": true, "speed-input": "30",
+      __inventory: { version: 1, items: [
+        { uid: "headband", quantity: 1, attuned: true, worn: true, magic: { id: "headband-of-intellect" } },
+        { uid: "luck", quantity: 1, attuned: true, magic: { id: "stone-of-good-luck" } },
+        { uid: "mastery", quantity: 1, attuned: true, worn: true, magic: { id: "ioun-stone", kind: "mastery" } },
+        { uid: "boots", quantity: 1, worn: true, magic: { id: "boots-of-elvenkind" } },
+        { uid: "ring", quantity: 1, worn: true, magic: { id: "ring-of-swimming" } },
+        { uid: "sentinel", itemId: "盾牌", quantity: 1, magic: { id: "sentinel-shield" } }
+      ] } });
+    TabletopMode.setMode("tabletop");
+    TabletopMode.setPanel("overview");
+  });
+  const sheet = await page.evaluate(() => ["int-mod", "skill-調查", "save-wis", "save-dex"].map(id => id === "int-mod" ? document.querySelector("#int-mod .modifier-main").textContent : document.getElementById(id).value));
+  assert.deepEqual(sheet, ["+4", "+5", "+9", "+3"], "the sheet counts the headband, luckstone and Ioun Stone of Mastery");
+  const normal = await read();
+  assert.deepEqual([normal.checks, normal.sources.includes("(頭冠：智力頭帶)") || normal.sources.some(text => text.includes("智力頭帶")), normal.tags, normal.initiative, normal.hints, normal.speed],
+    [["+4", "+5", "+9", "+3"], true, ["優勢：精靈之靴", "優勢：警戒之盾"], "優勢：警戒之盾", ["精靈之靴", "警戒之盾"], "30 呎，游泳 40"], "outside wild shape every active item counts");
+  const shape = off => page.evaluate((off) => {
+    const c = () => TabletopMode.getDruidContext();
+    TabletopMode.commitDruidOperation("end", {}, c().token);
+    TabletopMode.setBuiltInResourceSpent("druid-wild-shape", 0, 3);
+    TabletopMode.commitDruidOperation("known", { keys: ["wolf"] }, c().token);
+    return TabletopMode.commitDruidOperation("shape", { key: "wolf", equipment: { armor: "merge", main: "merge", off, other: "merge" } }, c().token).ok;
+  }, off);
+  assert.equal(await shape("wear"), true);
+  const worn = await read();
+  // 狼：敏捷 15（+2）；智力、感知用角色原值（12、18），熟練加值 3；幸運石、艾恩石、頭帶不算。
+  assert.deepEqual(worn, {
+    checks: ["+1", "+1", "+7", "+2"], sources: [], tags: ["優勢：警戒之盾"], initiative: "優勢：警戒之盾", hints: ["警戒之盾"], speed: "步行 40 呎 (狼)"
+  }, "wild shape keeps only the worn shield's hints and advantage, mental scores use the raw values");
+  assert.equal(await shape("merge"), true);
+  const merged = await read();
+  assert.deepEqual([merged.tags, merged.initiative, merged.hints], [[], "", []], "a merged shield's hints and advantage are hidden too");
+  await page.evaluate(() => { TabletopMode.commitDruidOperation("end", {}, TabletopMode.getDruidContext().token); TabletopMode.setMode("sheet"); });
+  assert.deepEqual(await page.evaluate(() => document.getElementById("skill-調查").value), "+5", "the sheet numbers are unchanged after wild shape");
+}
+
 // 護甲的力量需求：力量低於需求時自動計算的速度 -10 呎；盾牌與無甲不扣，跑團與 PDF 用同一個速度，關閉自動計算時不動手填速度。
 async function checkArmorStrengthSpeed(page) {
   await page.evaluate(() => {
@@ -741,6 +797,7 @@ async function main() {
     await checkPersistentSpells(page);
     await checkArmorStrengthSpeed(page);
     await checkMagicItemsInWildShape(page);
+    await checkMagicEffectsInWildShape(page);
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Druid status card, strips, known forms, shape cards, attack cards, recharge, resources, cancellation, alternate payment, autosave and responsive layout passed.");
   } finally {
