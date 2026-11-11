@@ -2268,7 +2268,7 @@
     syncDevourTimers(reason);
   }
 
-  // 吞噬袋（container.devour）：使用者要求的隱藏彩蛋。裡面一有東西就以真實時間計時，到期才跳視窗。
+  // 吞噬袋（container.devour）：使用者要求的隱藏彩蛋。裡面一有東西就以真實時間計時，到期才跳視窗（流程見 runDevourEvent）。
   // 計時的骰子（例如 2d6 分鐘）刻意不經 DiceRoller、不進擲骰歷史、不顯示也不提示玩家——使用者明確要求這樣做，
   // 是 AGENTS.md「DiceRoller 是擲骰與歷史的唯一入口」的例外。到期時間只在記憶體：重新整理、關閉頁面、載入另一個角色或匯入都重新計時；分享模式不計時。
   // 背景分頁或手機鎖屏時計時器會被放慢，所以回到頁面（visibilitychange／focus／pageshow）時再比對時鐘。
@@ -2336,23 +2336,78 @@
     const label = api().getLabel(entry);
     const eaten = api().formatContents(uid);
     if (!eaten) return;
-    // 刪除玩家資料要先確認（主管決定）：主要按鈕「從物品欄移除」；「先保留」或關閉視窗時這次計時結束，袋子裡還有東西就重新計時。
     devourPending.add(uid);
-    globalScope.AppDialog.requestDecision({
-      title: label,
-      message: `${label}把裡面的東西吞掉了！`,
-      renderContent: (body) => {
-        body.append(el("p", "", eaten), el("p", "", "要從物品欄移除這些物品嗎？"));
-      },
-      actions: [
-        { label: "先保留", value: "keep" },
-        { label: "從物品欄移除", intent: "primary", value: "remove" }
-      ]
-    }).then((choice) => {
+    runDevourEvent(uid, label, eaten).catch(() => {}).then(() => {
       devourPending.delete(uid);
-      if (choice === "remove") api().emptyContainer(uid);
       syncDevourTimers("");
     });
+  }
+
+  // 吞噬袋到期的彩蛋流程（使用者設計）：
+  // 「伸手搶救」或「放棄」→ 放棄就移除被吃的物品；搶救時 50%（內部亂數，不提示）搶回、物品放回身上，
+  // 否則角色被吞進去，按「掙脫逃命」擲運動（力量）檢定 1d20＋運動技能欄（空白或不是數字當 0），擲骰功能關閉也播放骰子動畫。
+  // 15 以上爬出來；低於 15 時亮暗反轉（經網站既有的亮暗切換按鈕，和玩家手動切換一樣記住）並跳出對應的視窗。被吞時物品一律移除，角色資料其他部分不變。
+  const DEVOUR_ESCAPE_DC = 15;
+  const forcedChoice = { showCloseButton: false, onEscape: () => false, dismissOnBackdrop: false };
+
+  async function runDevourEvent(uid, label, eaten) {
+    const dialog = globalScope.AppDialog;
+    const choice = await dialog.requestDecision({
+      ...forcedChoice,
+      title: label,
+      message: `${label}吃掉了你的道具！`,
+      renderContent: body => body.appendChild(el("p", "", eaten)),
+      actions: [
+        { label: "放棄", value: "give-up" },
+        { label: "伸手搶救", intent: "primary", value: "rescue" }
+      ]
+    });
+    if (choice !== "rescue") {
+      api().emptyContainer(uid);
+      return;
+    }
+    if (Math.random() >= 0.5) {
+      api().childrenOf(uid).forEach(child => api().move(child.uid, { into: "" }));
+      await dialog.showMessage({ title: label, message: "你搶回了道具！", renderContent: body => body.appendChild(el("p", "", `放回身上：${eaten}`)) });
+      return;
+    }
+    await dialog.requestDecision({
+      ...forcedChoice,
+      title: label,
+      message: "袋口猛然張大，一股吸力把你整個人拖了進去！黑暗中，有什麼東西正在慢慢蠕動……",
+      actions: [{ label: "掙脫逃命", intent: "primary", value: "escape" }]
+    });
+    const total = await rollDevourEscape();
+    api().emptyContainer(uid);
+    if (total >= DEVOUR_ESCAPE_DC) {
+      await dialog.showMessage({ title: label, message: "你驚險地從袋口爬了出來，道具仍是被吃掉了。" });
+      return;
+    }
+    const wasDark = document.documentElement.dataset.theme === "dark";
+    document.getElementById("color-mode-toggle")?.click();
+    // 「你  掛  了」照使用者原文保留空格：訊息放在保留空白的段落。
+    const text = wasDark ? "你不知身處何處，四周都是亮光，啊，那是靈魂之河..." : "你  掛  了";
+    await dialog.showMessage({
+      title: label,
+      renderContent: (body) => {
+        const message = el("p", "", text);
+        message.style.whiteSpace = "pre-wrap";
+        body.appendChild(message);
+      }
+    });
+  }
+
+  // 運動（力量）檢定：1d20＋角色卡運動技能欄的值（空白或不是數字當 0）。擲骰與動畫經 DiceRoller（擲骰功能關閉也播放，照常進擲骰紀錄）。
+  async function rollDevourEscape() {
+    const raw = Number(String(document.getElementById("skill-運動")?.value ?? "").trim().replace(/^＋/u, "+"));
+    const bonus = Number.isFinite(raw) ? Math.trunc(raw) : 0;
+    const expression = bonus ? `1d20${bonus > 0 ? "+" : "-"}${Math.abs(bonus)}` : "1d20";
+    const result = await globalScope.DiceRoller?.rollAnimated?.(expression, { label: "運動（力量）檢定", title: "掙脫逃命", force: true });
+    if (result) return result.total;
+    // 擲骰器不存在時（理論上不會）仍要有結果。
+    const fallback = 1 + Math.floor(Math.random() * 20) + bonus;
+    globalScope.AppDialog?.notify(`運動（力量）檢定：${fallback}`, { tone: "info" });
+    return fallback;
   }
 
   globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog, openAttunementDialog, syncEquippedSlots, buildStepper, buildBonusTransferControl });
