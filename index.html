@@ -109,7 +109,7 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261110-safari">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261111-magic-abilities">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261111-magic-abilities">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261111-magic-toggle">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261111-magic-abilities">
   <link rel="stylesheet" href="css/utility.css?v=20261110-footer-one-line">
   <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
@@ -1220,8 +1220,10 @@
 
   <div class="section">
     <!-- 標題列「⋯ 更多」選單、物品欄、攜帶物品文字框與底部按鈕列跟著在角色卡與跑團模式之間搬移（tabletop-mode.js）；物品標籤由 inventory-ui.js 繪製。
-         錢財列只在角色卡；選單裡標 data-inventory-sheet-only 的錢財項目在跑團模式隱藏。 -->
-    <div class="inventory-heading"><h3>攜帶物品</h3><div id="inventory-heading-sheet-mount" class="inventory-heading-mount"><div id="inventory-heading-tools" class="inventory-heading-tools"><button type="button" id="inventory-more" class="inventory-more" aria-expanded="false" aria-controls="inventory-more-panel" aria-label="更多物品欄選項" title="更多"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg><span class="inventory-more__dot" hidden></span></button><div id="inventory-more-panel" class="inventory-more-panel" hidden><button type="button" id="inventory-tidy" class="inventory-more-item" aria-haspopup="dialog" data-more-close hidden>整理成標籤</button><button type="button" id="inventory-arrange" class="inventory-more-item" aria-pressed="false" data-more-close>整理排列</button><button type="button" id="money-adjust-toggle" class="inventory-more-item" aria-haspopup="dialog" data-more-close data-inventory-sheet-only>調整餘額</button><button type="button" id="inventory-coins-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="false" data-inventory-sheet-only><span>顯示各幣值</span><span class="inventory-switch" aria-hidden="true"></span></button><button type="button" id="inventory-weight-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="true"><span>顯示負重</span><span class="inventory-switch" aria-hidden="true"></span></button><div class="inventory-more-separator" role="separator"></div><button type="button" id="inventory-text-only" class="inventory-more-item inventory-more-switch" aria-pressed="false" data-more-close><span>純文字管理</span><span class="inventory-switch" aria-hidden="true"></span></button></div></div></div></div>
+         錢財列只在角色卡；選單裡標 data-inventory-sheet-only 的錢財項目在跑團模式隱藏。
+         選單的「魔法物品」代按下方隱藏的 #magic-item-acquire（角色欄位，預設關閉），只決定商店有沒有魔法物品按鈕（equipment-shop.js）。 -->
+    <div class="inventory-heading"><h3>攜帶物品</h3><div id="inventory-heading-sheet-mount" class="inventory-heading-mount"><div id="inventory-heading-tools" class="inventory-heading-tools"><button type="button" id="inventory-more" class="inventory-more" aria-expanded="false" aria-controls="inventory-more-panel" aria-label="更多物品欄選項" title="更多"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg><span class="inventory-more__dot" hidden></span></button><div id="inventory-more-panel" class="inventory-more-panel" hidden><button type="button" id="inventory-tidy" class="inventory-more-item" aria-haspopup="dialog" data-more-close hidden>整理成標籤</button><button type="button" id="inventory-arrange" class="inventory-more-item" aria-pressed="false" data-more-close>整理排列</button><button type="button" id="money-adjust-toggle" class="inventory-more-item" aria-haspopup="dialog" data-more-close data-inventory-sheet-only>調整餘額</button><button type="button" id="inventory-coins-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="false" data-inventory-sheet-only><span>顯示各幣值</span><span class="inventory-switch" aria-hidden="true"></span></button><button type="button" id="inventory-weight-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="true"><span>顯示負重</span><span class="inventory-switch" aria-hidden="true"></span></button><button type="button" id="inventory-magic-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="false" title="開啟後，商店會出現魔法物品按鈕"><span>魔法物品</span><span class="inventory-switch" aria-hidden="true"></span></button><div class="inventory-more-separator" role="separator"></div><button type="button" id="inventory-text-only" class="inventory-more-item inventory-more-switch" aria-pressed="false" data-more-close><span>純文字管理</span><span class="inventory-switch" aria-hidden="true"></span></button></div></div></div></div>
+    <label class="magic-item-acquire-field" hidden><span>魔法物品取得</span><input type="checkbox" id="magic-item-acquire" role="switch"></label>
     <div class="money-section" aria-label="錢財管理">
       <div class="money-overview">
         <h4 class="money-title sr-only">總財產</h4>
@@ -3153,10 +3155,10 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 </script>
 <script src="equipment-data.js?v=20261109-item-actions" defer></script>
 <script src="search.js?v=20261109-magic-version" defer></script>
-<script src="equipment-shop.js?v=20261109-merge-main2" defer></script>
+<script src="equipment-shop.js?v=20261111-magic-toggle" defer></script>
 <script src="inventory.js?v=20261111-magic-wear-held" defer></script>
-<script src="inventory-ui.js?v=20261111-magic-abilities" defer></script>
-<script src="magic-item-shop.js?v=20261111-magic-vocab" defer></script>
+<script src="inventory-ui.js?v=20261111-magic-toggle" defer></script>
+<script src="magic-item-shop.js?v=20261111-magic-toggle" defer></script>
 
 <script>
 // 屬性調整值用有效值（屬性欄的原值加上生效中的魔法物品，character-rules.js 的 getEffectiveAbilityValue）。
@@ -5275,6 +5277,7 @@ function validateCharacterState(data) {
         if (depth === 0 && key === "__tabletopActionPreferences"
             && (!child || typeof child !== "object" || Array.isArray(child) || child.version !== 1)) throw new TypeError("跑團按鈕設定格式不正確");
         if (depth === 0 && key === "__inventory" && !isValidInventoryState(child)) throw new TypeError("物品欄格式不正確或物品過多");
+        if (depth === 0 && key === "magic-item-acquire" && typeof child !== "boolean") throw new TypeError("魔法物品開關格式不正確");
         if (key === "sourceTag" && (typeof child !== "string" || child.length > 256)) throw new TypeError("法術來源標籤格式不正確");
         if (key === "entries" && Array.isArray(child)) {
           if (child.length > CHARACTER_DATA_LIMITS.entries) throw new RangeError("角色清單項目過多");
@@ -5350,6 +5353,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   "dnd.tabletopActionMode.v1",
   TABLETOP_AVATAR_STORAGE_KEY,
   "dnd.tabletopIntroSeen.v1",
+  "dnd.magicItemAcquireNoticeSeen.v1",
   FIELD_INFO_HINT_DISMISSED_KEY,
   "dnd.spellManagementBackup.v1",
   "dnd.spellManagementMemories.v1",

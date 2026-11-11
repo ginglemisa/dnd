@@ -643,6 +643,42 @@ async function validateMagicItemShop(page) {
     await grant.waitFor({ state: "detached" });
   };
 
+  // 取得開關：預設關閉，商店沒有魔法物品按鈕；這台裝置第一次打開先說明，取消就維持關閉，之後直接切換。
+  const more = page.locator("#inventory-more");
+  const magicSwitch = page.locator("#inventory-magic-toggle");
+  const acquireState = () => page.evaluate(() => [document.getElementById("magic-item-acquire").checked,
+    document.getElementById("inventory-magic-toggle").getAttribute("aria-pressed"), dndStorage.getItem("dnd.magicItemAcquireNoticeSeen.v1")]);
+  const shopHasMagicButton = async () => {
+    await page.evaluate(() => { EquipmentShop.open(); });
+    const count = await toggle.count();
+    await page.keyboard.press("Escape");
+    await shop.waitFor({ state: "detached" });
+    return count > 0;
+  };
+  assert.deepEqual(await acquireState(), [false, "false", null], "the magic item switch starts off");
+  assert.equal(await shopHasMagicButton(), false, "the shop has no magic button while the switch is off");
+  await more.click();
+  assert.deepEqual(await page.locator("#inventory-more-panel button:not([hidden])").evaluateAll(buttons => buttons.map(button => button.id)).then(ids => ids.slice(ids.indexOf("inventory-coins-toggle"))),
+    ["inventory-coins-toggle", "inventory-weight-toggle", "inventory-magic-toggle", "inventory-text-only"], "the switch sits with the coin and weight switches");
+  const notice = page.getByRole("alertdialog", { name: "開啟魔法物品？" });
+  await magicSwitch.click();
+  assert.equal(await notice.innerText().then(text => text.includes("魔法物品通常由 DM 在冒險中給予。開啟後，商店會出現魔法物品按鈕，取得不花錢。")), true, "the first switch-on explains where magic items come from");
+  assert.equal(await more.getAttribute("aria-expanded"), "false", "the menu closes behind the explanation");
+  await notice.getByRole("button", { name: "取消", exact: true }).click();
+  await notice.waitFor({ state: "detached" });
+  assert.deepEqual([...await acquireState(), await more.evaluate(button => button === document.activeElement)], [false, "false", null, true], "cancel keeps the switch off and returns focus to the menu button");
+  await more.click();
+  await magicSwitch.click();
+  await notice.getByRole("button", { name: "開啟", exact: true }).click();
+  await notice.waitFor({ state: "detached" });
+  assert.deepEqual(await acquireState(), [true, "true", "true"], "confirming turns the switch on and remembers the explanation");
+  await more.click();
+  await magicSwitch.click();
+  assert.deepEqual([...await acquireState(), await more.getAttribute("aria-expanded")], [false, "false", "true", "true"], "switching off asks nothing and keeps the menu open");
+  await magicSwitch.click();
+  assert.deepEqual([await notice.count(), ...await acquireState()], [0, true, "true", "true"], "after the first time the switch turns on directly");
+  await page.keyboard.press("Escape");
+
   // 從明確的品項開啟，上一段測試留下的分類與搜尋不影響這裡。
   await page.evaluate(() => { EquipmentShop.open({ focusName: "繩索" }); });
   assert.deepEqual(await shop.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.classList[button.classList.length - 1])),
@@ -936,11 +972,33 @@ async function validateMagicItemShop(page) {
   await page.keyboard.press("Escape");
   await shop.waitFor({ state: "detached" });
 
+  // 關掉開關只影響取得：已有的魔法物品照常顯示、同調與計算，同調按鈕不看開關；有魔法物品也不會自動打開。
+  await page.evaluate(() => {
+    document.getElementById("gear-notes").value = "";
+    Inventory.restore({ version: 1, items: [{ uid: "ring", quantity: 1, magic: { id: "ring-of-protection" }, attuned: true, worn: true }] });
+  });
+  const ownedMagic = () => page.evaluate(() => [Inventory.getLabel(Inventory.getEntry("ring")), document.getElementById("inventory-attunement").hidden,
+    document.getElementById("attunement-open").hidden, getActiveMagicEffects().ac]);
+  const withSwitchOn = await ownedMagic();
+  await more.click();
+  await magicSwitch.click();
+  await page.keyboard.press("Escape");
+  assert.deepEqual(await ownedMagic(), withSwitchOn, "turning the switch off leaves owned magic items alone");
+  assert.equal(withSwitchOn[1] || withSwitchOn[2], false, "attunement shows regardless of the switch");
+  await page.evaluate(() => Inventory.restore(Inventory.getState()));
+  assert.deepEqual(await acquireState(), [false, "false", "true"], "owning magic items does not turn the switch on");
+  assert.equal(await shopHasMagicButton(), false, "the magic button disappears again when the switch is off");
+  await more.click();
+  await magicSwitch.click();
+  await page.keyboard.press("Escape");
+
   // 只以文字管理物品：寫進攜帶物品文字，物品欄仍是空的；物品欄滿時提示且不寫入。
   await page.evaluate(() => {
     document.getElementById("gear-notes").value = "";
     Inventory.restore({ version: 1, textOnly: true, items: [] });
   });
+  assert.deepEqual(await page.evaluate(() => [document.getElementById("inventory-magic-toggle").hidden, document.getElementById("inventory-magic-toggle").getAttribute("aria-pressed")]),
+    [false, "true"], "text-only mode keeps the magic item switch");
   await page.locator("#equipment-shop-open").click();
   await toggle.click();
   await openGrant("bag-of-holding");
@@ -2474,7 +2532,7 @@ async function validateEquipmentShop(page) {
   assert.equal(await shop.locator(".equipment-shop__balance").textContent(), "目前財產：1 白金幣", "balance sits under the title");
   assert.equal(await shop.getByRole("button", { name: "關閉", exact: true }).count(), 0, "the corner close button replaces the footer close");
   assert.deepEqual(await shop.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.classList[button.classList.length - 1])),
-    ["equipment-shop__magic-toggle", "equipment-shop__cart-button", "app-dialog__close"], "cart button sits left of the close button");
+    ["equipment-shop__cart-button", "app-dialog__close"], "cart button sits left of the close button; no magic button while the magic item switch is off");
   assert.equal(await badge.isHidden(), true, "empty cart hides the badge");
 
   // The category button keeps the chosen filter after collapsing.

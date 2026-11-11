@@ -2530,6 +2530,15 @@ button.inventory-more-item:is(:hover, :focus-visible, :active) {
   transform: translateX(1.22rem);
 }
 
+/* 分享模式鎖住的開關（魔法物品）：只顯示狀態，外觀同鎖定的勾選框。 */
+button.inventory-more-item[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+button.inventory-more-item[aria-disabled="true"] .inventory-switch {
+  opacity: 0.55;
+}
+
 @media (prefers-reduced-motion: reduce) {
   button.inventory-more,
   .inventory-switch,

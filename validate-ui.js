@@ -4802,6 +4802,45 @@ async function verifyInventoryPersistence(browser, url) {
       assert.deepEqual(await magicSnapshot(magicShared), magicExpected, "share restores magic items");
       assert.equal(await magicShared.evaluate(() => { EquipmentShop.open(); return Boolean(document.querySelector(".equipment-shop__magic-toggle")); }), false, "share mode cannot switch to the magic shop");
     } finally { await magicShared.close(); }
+    // 魔法物品取得開關：角色欄位，跟著 autosave、JSON、分享走；舊資料沒有這個欄位就是關閉；匯入預檢只收布林值；分享模式只顯示狀態。
+    const acquireSnapshot = target => target.evaluate(() => [document.getElementById("magic-item-acquire").checked,
+      document.getElementById("inventory-magic-toggle").getAttribute("aria-pressed")]);
+    await page.evaluate(() => dndStorage.setItem("dndchar_autosave_v1", JSON.stringify({ class: "fighter", level: "1" })));
+    await page.goto(url);
+    assert.deepEqual(await acquireSnapshot(page), [false, "false"], "old saves without the field keep the magic item switch off");
+    await page.evaluate(() => { applyStateObject({ class: "fighter", level: "1", "magic-item-acquire": true }); saveAllFields(); });
+    await page.goto(url);
+    assert.deepEqual(await acquireSnapshot(page), [true, "true"], "autosave keeps the magic item switch");
+    assert.equal(await page.evaluate(() => collectStateObject()["magic-item-acquire"]), true, "JSON export carries the magic item switch");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", "magic-item-acquire": false }); applyStateObject(data); });
+    assert.deepEqual(await acquireSnapshot(page), [true, "true"], "JSON import restores the magic item switch");
+    assert.deepEqual(await page.evaluate(() => ["yes", 1, null, {}].map((value) => {
+      try { validateCharacterState({ class: "fighter", "magic-item-acquire": value }); return "accepted"; } catch (error) { return error.message; }
+    })), Array(4).fill("魔法物品開關格式不正確"), "the import precheck only accepts a boolean switch");
+    const acquireHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const offHash = await page.evaluate(async () => {
+      const data = collectShareState();
+      const off = { ...data };
+      delete off["magic-item-acquire"];
+      return [Object.hasOwn(data, "magic-item-acquire"), await encodeStateToHash(off)];
+    });
+    assert.equal(offHash[0], true, "share carries the switch when it is on");
+    const acquireShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = acquireHash;
+      await acquireShared.goto(sharedUrl.href);
+      await acquireShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await acquireSnapshot(acquireShared), [true, "true"], "share restores the magic item switch");
+      await acquireShared.evaluate(() => { showTab("equipment"); document.getElementById("inventory-more").click(); document.getElementById("inventory-magic-toggle").click(); });
+      assert.deepEqual([...await acquireSnapshot(acquireShared), await acquireShared.evaluate(() => [document.getElementById("inventory-magic-toggle").getAttribute("aria-disabled"),
+        document.getElementById("magic-item-acquire").dataset.shareLocked, Array.from(document.querySelectorAll('[role="alertdialog"]')).some(dialog => dialog.textContent.includes("開啟魔法物品"))])],
+      [true, "true", ["true", "true", false]], "share mode shows the switch read-only");
+      sharedUrl.hash = offHash[1];
+      await acquireShared.goto(sharedUrl.href);
+      await acquireShared.reload();
+      await acquireShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await acquireSnapshot(acquireShared), [false, "false"], "a share link with the switch off stays off");
+    } finally { await acquireShared.close(); }
     // 裝備欄位寫魔法款的名稱，經 autosave、JSON、分享都還原，普通與魔法同名時不互換；同調（attuned）與穿戴（worn）一起還原，普通物品的存檔不多欄位。
     // 手持的魔杖放在副手，同樣以名稱還原。
     const equippedState = { class: "fighter", level: "5", str: "16", dex: "14", mainHand: "長劍+2", offHand: "戰法魔杖+1", armor: "", __inventory: { version: 1, items: [

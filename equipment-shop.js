@@ -11,6 +11,8 @@
  * - 法術卷軸：環階與法術取自 SpellCatalog，名稱寫成「法術名稱法術卷軸」。
  * - 魔法物品模式：標題列的切換按鈕把清單換成 magic-item-shop.js 的內容（MagicItemShop.mode 提供分類、清單與每一列），購物車停用、結帳列隱藏，
  *   購物清單不動；一般商店的分類與搜尋在切回時還原。模式只留在記憶體，關閉商店後恢復一般模式；暫存錢包與分享模式沒有這個按鈕。
+ *   角色欄位 #magic-item-acquire（物品欄「⋯ 更多」的「魔法物品」開關，預設關閉）關著時也沒有這個按鈕；每次開商店時讀一次。
+ *   開關只管能不能取得，已有的魔法物品不受影響。
  * - 購物清單、分類、展開狀態與搜尋只留在記憶體，不進角色 JSON、分享或 autosave。
  * - 暫存錢包：open({ wallet }) 改用呼叫端的餘額與結帳（如快速創角），不讀寫角色卡的財產或攜帶物品；
  *   只提供付款結帳，合計超過餘額時停用，不能免費取得或賒帳。購物清單只保留最近一個 wallet.id 的內容。
@@ -703,7 +705,8 @@
   }
 
   function canUseMagicMode() {
-    return !wallet && !globalScope.SHARE_MODE && Boolean(globalScope.MagicItemShop);
+    return !wallet && !globalScope.SHARE_MODE && Boolean(globalScope.MagicItemShop)
+      && document.getElementById("magic-item-acquire")?.checked === true;
   }
 
   // 一般商店的分類與搜尋先記下，切回時還原；魔法物品模式從「全部」與空白搜尋開始。

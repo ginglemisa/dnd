@@ -23,6 +23,9 @@
  *   整理排列、調整餘額、顯示各幣值、顯示負重與純文字管理。會開視窗或改變模式的項目（data-more-close）按下時先收起選單、焦點回到 ⋯，
  *   開關類項目保留選單。錢財項目（data-inventory-sheet-only）在跑團模式隱藏（錢財列只在角色卡）。點外面、Esc 或 Tab 離開時收起。
  *   「顯示各幣值」代按錢財區隱藏的 #money-count-weight（角色欄位）；「顯示負重」是這台裝置的偏好（dndStorage `dnd.inventoryWeightHidden.v1`）。
+ *   「魔法物品」代按隱藏的 #magic-item-acquire（角色欄位，預設關閉），只決定商店有沒有魔法物品按鈕；已有的魔法物品照常顯示與計算，
+ *   也不因為有魔法物品就自動打開。這台裝置第一次打開時先收起選單、用視窗說明，確定後才打開（dndStorage `dnd.magicItemAcquireNoticeSeen.v1`）。
+ *   跑團模式與純文字管理都顯示（商店在兩處都能開）；分享模式只顯示狀態、按了不會改（aria-disabled）。
  * - 物品分組顯示（只影響畫面，不改資料順序）：依序是「裝備中」「身上」「容器」，有兩組以上才加分組標題。
  *   容器是標籤加「N ▸」展開鈕（空容器只寫「0」、不能展開）；最外層容器展開時變成滿版框，內容物排在框內，巢狀容器展開時換行縮排。
  * - 整理模式（選單「整理排列」）：標籤輕微抖動，點標籤不開視窗；拖曳（Pointer Events，滑鼠與觸控相同）調整順序，拖到容器標籤或容器框上放進去，
@@ -43,6 +46,7 @@
   const TEXT_PREFIX = "物品欄：";
   const LEGACY_PREFIXES = Object.freeze([[TEXT_PREFIX, ""], ["購買物品：", ""], ["初始裝備：", "initial"]]);
   const WEIGHT_HIDDEN_KEY = "dnd.inventoryWeightHidden.v1";
+  const MAGIC_NOTICE_KEY = "dnd.magicItemAcquireNoticeSeen.v1";
   const SLOT_ORDER = Object.freeze(["mainHand", "offHand", "armor", "shield"]);
   const expanded = new Set();
   let rendering = false;
@@ -104,7 +108,56 @@
     if (!more || !panel) return;
     more.setAttribute("aria-expanded", String(open));
     panel.hidden = !open;
+    if (open) renderMagicToggle();
     if (!open && focusButton) more.focus();
+  }
+
+  function magicAcquireField() {
+    return document.getElementById("magic-item-acquire");
+  }
+
+  function isMagicAcquireLocked() {
+    return globalScope.SHARE_MODE === true || magicAcquireField()?.dataset.shareLocked === "true";
+  }
+
+  function renderMagicToggle() {
+    const toggle = document.getElementById("inventory-magic-toggle");
+    if (!toggle) return;
+    toggle.setAttribute("aria-pressed", String(magicAcquireField()?.checked === true));
+    if (isMagicAcquireLocked()) toggle.setAttribute("aria-disabled", "true");
+    else toggle.removeAttribute("aria-disabled");
+  }
+
+  function setMagicAcquire(enabled) {
+    const field = magicAcquireField();
+    if (!field || field.checked === enabled) return;
+    field.checked = enabled;
+    field.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  // 關→開：這台裝置第一次先說明再打開，取消就維持關閉；之後直接切換。開→關不問。
+  async function toggleMagicAcquire() {
+    const field = magicAcquireField();
+    if (!field || isMagicAcquireLocked()) return;
+    if (field.checked) {
+      setMagicAcquire(false);
+      return;
+    }
+    let seen = false;
+    try { seen = globalScope.dndStorage?.getItem(MAGIC_NOTICE_KEY) === "true"; } catch { /* 讀不到就當沒看過。 */ }
+    if (!seen && globalScope.AppDialog) {
+      setMoreOpen(false, true);
+      const confirmed = await globalScope.AppDialog.requestDecision({
+        title: "開啟魔法物品？",
+        message: "魔法物品通常由 DM 在冒險中給予。開啟後，商店會出現魔法物品按鈕，取得不花錢。",
+        cancelLabel: "取消",
+        confirmLabel: "開啟",
+        trigger: moreButton()
+      });
+      if (!confirmed) return;
+      try { globalScope.dndStorage?.setItem(MAGIC_NOTICE_KEY, "true"); } catch { /* 存不了時下次再說明一次。 */ }
+    }
+    setMagicAcquire(true);
   }
 
   function fieldValue(id) {
@@ -1291,6 +1344,7 @@
     if (weightToggle) weightToggle.hidden = textOnly;
     const coinsToggle = document.getElementById("inventory-coins-toggle");
     coinsToggle?.setAttribute("aria-pressed", String(document.getElementById("money-count-weight")?.checked === true));
+    renderMagicToggle();
     const row = el("span", "inventory-weight__row");
     const totalText = el("span", "inventory-weight__total");
     const rules = button("weapon-rule-link", "負重");
@@ -1829,6 +1883,8 @@
       coins.dispatchEvent(new Event("change", { bubbles: true }));
     });
     coins?.addEventListener("change", renderWeight);
+    document.getElementById("inventory-magic-toggle")?.addEventListener("click", () => { void toggleMagicAcquire(); });
+    magicAcquireField()?.addEventListener("change", renderMagicToggle);
     document.getElementById("inventory-over-hide")?.addEventListener("click", () => {
       overDismissed = true;
       renderWeight();
