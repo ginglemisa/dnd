@@ -172,6 +172,25 @@
     ];
   }
 
+  // 次數池（YAML 的 pools）：[{ id, label, max, recover?, amount?, cooldown? }]，內容檔的原樣物件（呼叫端不要修改）。
+  function getPools(id) {
+    return rule(id)?.pools || [];
+  }
+
+  // 能力（YAML 的 actions）：[{ id, name, type, text, pool?, cost?, when? }]，內容檔的原樣物件。
+  function getActions(id) {
+    return rule(id)?.actions || [];
+  }
+
+  // 恢復按鈕與說明的文字：「黎明恢復 1d6 + 1」「冷卻結束（7 天）」「長休時自動恢復」；不恢復時為空字串。
+  const RECOVER_LABELS = Object.freeze({ dawn: "黎明", dusk: "黃昏", shortRest: "短休或長休", longRest: "長休" });
+  function getRecoverText(pool) {
+    if (!pool?.recover) return "";
+    if (pool.recover === "cooldown") return `冷卻結束（${pool.cooldown}）`;
+    if (pool.recover === "shortRest" || pool.recover === "longRest") return `${RECOVER_LABELS[pool.recover]}時自動恢復${pool.amount ? ` ${pool.amount}` : ""}`;
+    return `${RECOVER_LABELS[pool.recover]}恢復${pool.amount ? ` ${pool.amount}` : ""}`;
+  }
+
   // 稀有度 key；隨選項變動且還沒選時為 null。
   function getRarity(id, selection) {
     const item = rule(id);
@@ -252,6 +271,9 @@
     getRarityLabel,
     getSubtitle,
     getHeal,
+    getPools,
+    getActions,
+    getRecoverText,
     loadText,
     getText
   });

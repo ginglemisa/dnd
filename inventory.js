@@ -1,7 +1,7 @@
 /**
  * 物品欄資料（傳統 defer script，無額外 runtime dependency）。
  *
- * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses?, magic?, spellId? }] }。
+ * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses?, magic?, charges?, spellId? }] }。
  *   itemId 是裝備說明的品名（與 mainHand／商店相同的中文名稱）；name 是顯示名稱，自訂物品必填，目錄品項只在寫法不同時保留
  *   （例如「書籍（禱文）」）。weight（每件磅數）、container 與 desc（描述）只用於自訂物品；in 是所在容器的 uid；
  *   source "initial" 標記快速創角匯入的初始裝備，"equipped" 標記因主手／副手／護甲已裝備而補上的物品（整理成標籤時先抵掉，不重複）。
@@ -18,6 +18,9 @@
  * - worn 是可以穿戴的魔法物品（MagicItemCatalog.isWearable：戒指、斗篷等）正穿在身上（只有 magic 的筆、固定 1 件、在最外層才有），由玩家以 setWorn() 開關，件數不設上限；
  *   開始同調時自動穿上，卸下時保留同調。穿戴中的物品不能合併、拆分或放進容器，也不會被拿去放進主手或副手。普通物品的存檔格式不變。
  * - 手持類的非武器魔法物品（魔杖等，MagicItemCatalog.isHandHeld）沒有基本款，也可以放進主手或副手：裝備欄位存它的顯示名稱，同樣以 slot 標記。
+ * - charges 是魔法物品次數池（MagicItemCatalog.getPools：充能、每日一次、冷卻、珠子等）目前這件的剩餘次數 { 池 id: 0～99 }，只有 magic 的筆才有；
+ *   沒寫的池表示滿的（取得時都是滿的），滿了就拿掉。一筆多件時其餘件數都是滿的，拆分、穿上或裝備拆出的那件也是滿的。有次數池的物品不合併。
+ *   getCharges() 讀、setCharges() 寫，recoverRestCharges() 在跑團休息完成時恢復短休／長休的池。
  * - magic.form 是可切換形態的物品（王者權杖）目前的形態（MagicItemCatalog.getForm），原本形態不寫；裝備欄位的值不隨形態改變，傷害、屬性、精通看 getMagicFormBase()。
  *   同名物品可以有很多筆（拆分、商店購買、卸除都會新增一筆），各自獨立；只有玩家拖曳合併（merge()）才合成一筆，自訂物品不能合併。
  *   textOnly 為 true 時玩家選擇只以文字管理物品：物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
@@ -30,7 +33,7 @@
   "use strict";
 
   const VERSION = 1;
-  const LIMITS = Object.freeze({ items: 300, quantity: 9999, name: 40, desc: 200, weight: 9999, depth: 3, magicValue: 64, magicOptions: 12, attunement: 3 });
+  const LIMITS = Object.freeze({ items: 300, quantity: 9999, name: 40, desc: 200, weight: 9999, depth: 3, magicValue: 64, magicOptions: 12, attunement: 3, charges: 99 });
   const SOURCES = new Set(["initial", "equipped"]);
   const SLOTS = Object.freeze(["mainHand", "offHand", "armor", "shield"]);
   const UID_PATTERN = /^[A-Za-z0-9_-]{1,24}$/u;
@@ -52,6 +55,8 @@
   // 「多種」標題可當通稱品項（例如職業裝備只寫「聖徽」）；彈藥一律選具體品項。
   const GROUP_EXCLUDED = new Set(["彈藥"]);
   const MAGIC_OPTION_KEY = /^[a-z][a-zA-Z]*$/u;
+  // 次數池 id（YAML 的 pools[].id）：物品欄存檔 charges 的鍵。
+  const POOL_ID = /^[a-z][a-z0-9-]{0,31}$/u;
   const UNKNOWN_MAGIC_LABEL = "未知魔法物品";
 
   let entries = [];
@@ -216,7 +221,32 @@
     }
     const spellId = cleanSpellId(itemId, raw.spellId);
     if (spellId) entry.spellId = spellId;
+    // 次數池的剩餘次數只有魔法物品才有；池 id 與上限由 repairMagicState 依目錄再檢查。
+    const charges = magic ? cleanCharges(raw.charges) : null;
+    if (charges) entry.charges = charges;
     return entry;
+  }
+
+  // 剩餘次數：{ 池 id: 0～99 的整數 }；格式不對的鍵略過，空的回傳 null。
+  function cleanCharges(raw) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    const charges = {};
+    Object.keys(raw).filter(key => POOL_ID.test(key)).sort().slice(0, LIMITS.magicOptions).forEach((key) => {
+      const value = raw[key];
+      if (Number.isInteger(value) && value >= 0 && value <= LIMITS.charges) charges[key] = value;
+    });
+    return Object.keys(charges).length ? charges : null;
+  }
+
+  // 依目錄的池整理剩餘次數：不存在的池拿掉、超過上限的夾到上限、滿的不記（沒寫表示滿的）。目錄找不到物品時原樣保留。
+  function repairCharges(entry, rule) {
+    if (!entry.charges || !rule) return;
+    const pools = new Map(globalScope.MagicItemCatalog.getPools(rule.id).map(pool => [pool.id, pool]));
+    Object.keys(entry.charges).forEach((key) => {
+      const pool = pools.get(key);
+      if (!pool || entry.charges[key] >= pool.max) delete entry.charges[key];
+    });
+    if (!Object.keys(entry.charges).length) delete entry.charges;
   }
 
   // 同調要是需要同調的物品、同一種只算第一件、總數不超過上限；穿戴要是可以穿戴的物品（目錄找不到時保留）。
@@ -224,6 +254,7 @@
     const attuned = new Set();
     list.forEach((entry) => {
       const rule = magicRule(entry);
+      repairCharges(entry, rule);
       if (entry.worn && rule && !globalScope.MagicItemCatalog.isWearable(rule.id)) delete entry.worn;
       if (!entry.attuned) return;
       if ((rule && !rule.attunement) || attuned.has(entry.magic.id) || attuned.size >= LIMITS.attunement) delete entry.attuned;
@@ -276,7 +307,10 @@
   }
 
   function copyEntry(entry) {
-    return entry.magic ? { ...entry, magic: { ...entry.magic } } : { ...entry };
+    if (!entry.magic) return { ...entry };
+    const copy = { ...entry, magic: { ...entry.magic } };
+    if (entry.charges) copy.charges = { ...entry.charges };
+    return copy;
   }
 
   // 存檔的寫法：slot 只在執行時使用，載入後由裝備欄位的名稱重新對應。
@@ -403,7 +437,14 @@
       && !entry.slot && !other.slot
       && !entry.attuned && !other.attuned
       && !entry.worn && !other.worn
+      && !hasPools(entry) && !hasPools(other)
       && !isContainerEntry(entry) && !isContainerEntry(other);
+  }
+
+  // 有次數池的魔法物品（魔杖、每日一次的能力等）各自追蹤次數，不合併成一筆。
+  function hasPools(entry) {
+    const rule = magicRule(entry);
+    return Boolean(rule) && globalScope.MagicItemCatalog.getPools(rule.id).length > 0;
   }
 
   function sameStack(entry, request) {
@@ -683,6 +724,7 @@
     const entry = next[index];
     const part = { ...entry, quantity: entry.quantity - kept, uid: nextUid(new Set(next.map(item => item.uid))) };
     delete part.uses;
+    delete part.charges;
     entry.quantity = kept;
     next.splice(index + 1, 0, part);
     commit(next, "split");
@@ -959,6 +1001,7 @@
         const unit = { ...source, quantity: 1, slot, uid: nextUid(taken) };
         delete unit.in;
         delete unit.uses;
+        delete unit.charges;
         next.splice(next.indexOf(source) + 1, 0, unit);
       }
       changed = true;
@@ -1045,12 +1088,61 @@
       entry.quantity -= 1;
       target = { ...entry, quantity: 1, uid: nextUid(new Set(next.map(item => item.uid))) };
       delete target.uses;
+      delete target.charges;
       next.splice(next.indexOf(entry) + 1, 0, target);
     }
     target.worn = true;
     delete target.in;
     commit(next, "wear");
     return "ok";
+  }
+
+  /**
+   * 這筆魔法物品的次數池（MagicItemCatalog.getPools）：[{ id, label, max, recover?, amount?, cooldown?, left }]，left 是目前這件的剩餘次數
+   * （存檔 charges 沒寫表示滿的）。一筆多件時其餘件數都是滿的。不是魔法物品或沒有池時回傳空陣列。
+   */
+  function getCharges(entry) {
+    const rule = magicRule(entry);
+    if (!rule) return [];
+    return globalScope.MagicItemCatalog.getPools(rule.id).map(pool => ({ ...pool, left: Math.min(pool.max, entry.charges?.[pool.id] ?? pool.max) }));
+  }
+
+  /** 設定剩餘次數（夾在 0 到最大值之間），回傳設定後的值；找不到物品或池時回傳 null。 */
+  function setCharges(uid, poolId, left) {
+    const next = entries.map(copyEntry);
+    const entry = next.find(item => item.uid === uid);
+    const pool = entry ? getCharges(entry).find(item => item.id === poolId) : null;
+    const value = Math.floor(Number(left));
+    if (!pool || !Number.isFinite(value)) return null;
+    const clamped = Math.min(pool.max, Math.max(0, value));
+    if (clamped === pool.left) return clamped;
+    if (clamped >= pool.max) delete entry.charges[poolId];
+    else entry.charges = { ...(entry.charges || {}), [poolId]: clamped };
+    if (entry.charges && !Object.keys(entry.charges).length) delete entry.charges;
+    commit(next, "charges");
+    return clamped;
+  }
+
+  /**
+   * 跑團休息完成時恢復次數池：短休恢復 shortRest 的池，長休恢復 shortRest 與 longRest 的池；有整數 amount 的只恢復那麼多。
+   * 回傳恢復了的 [{ uid, label, pool, left }]（沒有變化時不 commit）。
+   */
+  function recoverRestCharges(kind) {
+    const kinds = kind === "longRest" ? ["shortRest", "longRest"] : kind === "shortRest" ? ["shortRest"] : [];
+    const next = entries.map(copyEntry);
+    const recovered = [];
+    next.forEach((entry) => {
+      getCharges(entry).forEach((pool) => {
+        if (!kinds.includes(pool.recover) || pool.left >= pool.max) return;
+        const left = Number.isInteger(pool.amount) ? Math.min(pool.max, pool.left + pool.amount) : pool.max;
+        if (left >= pool.max) delete entry.charges[pool.id];
+        else entry.charges[pool.id] = left;
+        if (!Object.keys(entry.charges).length) delete entry.charges;
+        recovered.push({ uid: entry.uid, label: getLabel(entry), pool: pool.id, left });
+      });
+    });
+    if (recovered.length) commit(next, "charges");
+    return recovered;
   }
 
   // 可以轉移加值的物品要裝備在手上且已同調。回傳 { value, max } 或 null。
@@ -1138,6 +1230,9 @@
     clear,
     getState,
     getUses,
+    getCharges,
+    setCharges,
+    recoverRestCharges,
     getScrollSpellId,
     getScrollSpellLevel,
     ensureEquipped,

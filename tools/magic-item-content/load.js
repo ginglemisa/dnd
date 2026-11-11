@@ -9,7 +9,8 @@ const DIR = path.join(CONTENT_DIR, "srd", "magic-items");
 const WHERE = path.relative(ROOT, DIR).replace(/\\/g, "/");
 // 彈藥在 equipment-data.js 只有名稱對照，沒有獨立清單；這裡列出物品欄使用的品名。
 const AMMUNITION = Object.freeze(["箭矢", "弩矢", "子彈，火器", "彈丸，投石索", "針"]);
-const RESERVED_OPTION_IDS = new Set(["id", "base"]);
+// id、base 是 magic 物件的欄位；form、pool、action 是基準檔「物品 id:form|pool|action:…」用的，不可當選項 id。
+const RESERVED_OPTION_IDS = new Set(["id", "base", "form", "pool", "action"]);
 // 只用於武器類（有基本款且不是護甲、盾牌）的 effects；finesse、thrown 另外要固定基本款。
 const WEAPON_EFFECT_KEYS = Object.freeze(["extraDamage", "damageType", "finesse", "thrown", "proficiencyAs"]);
 // 只用於護甲類（category: armor）的 effects：講的是這件護甲本身。
@@ -176,6 +177,35 @@ function checkItem(item, context, errors) {
   if ((item.siteText || item.sitePrice) && !item.equipmentName) errors.push(`${at}：siteText、sitePrice 只用於寫了 equipmentName 的物品`);
   if (Boolean(item.siteText) !== Boolean(item.sitePrice)) errors.push(`${at}：siteText 與 sitePrice 要一起寫`);
   if (/[A-Za-z]{4,}/.test(item.text)) errors.push(`${at}：text 只放中文，不放英文內文`);
+  checkPoolsAndActions(item, at, errors);
+}
+
+// 次數池與能力：id 不重複、能力扣的池存在、cost 要和 pool 一起寫、[最少, 最多] 不超過池的最大值；
+// 能力的生效條件和效果相同，所以沒有基本款的物品要寫 use（或能力寫 when: owned）。
+function checkPoolsAndActions(item, at, errors) {
+  const pools = item.pools || [];
+  const actions = item.actions || [];
+  const poolIds = pools.map(pool => pool.id);
+  if (new Set(poolIds).size !== poolIds.length) errors.push(`${at}：pools 的 id 重複`);
+  pools.forEach((pool) => {
+    const where = `${at} 池 ${pool.id}`;
+    if (pool.cooldown && pool.recover !== "cooldown") errors.push(`${where}：cooldown 只用於 recover: cooldown`);
+    if (pool.recover === "cooldown" && !pool.cooldown) errors.push(`${where}：recover: cooldown 要寫 cooldown（冷卻多久）`);
+    if (pool.amount !== undefined && !pool.recover) errors.push(`${where}：amount 要和 recover 一起寫`);
+    if (typeof pool.amount === "number" && pool.amount >= pool.max) errors.push(`${where}：amount 大於等於 max 時省略（全部恢復）`);
+  });
+  const actionIds = actions.map(action => action.id);
+  if (new Set(actionIds).size !== actionIds.length) errors.push(`${at}：actions 的 id 重複`);
+  actions.forEach((action) => {
+    const where = `${at} 能力 ${action.id}`;
+    const pool = pools.find(entry => entry.id === action.pool);
+    if (action.pool && !pool) errors.push(`${where}：pool「${action.pool}」不是這件物品的 pools`);
+    if (action.cost !== undefined && !action.pool) errors.push(`${where}：cost 要和 pool 一起寫`);
+    if (Array.isArray(action.cost) && (action.cost[0] >= action.cost[1] || (pool && action.cost[1] > pool.max))) errors.push(`${where}：cost 的 [最少, 最多] 要由小到大，且不超過池的 max`);
+    if (typeof action.cost === "number" && pool && action.cost > pool.max) errors.push(`${where}：cost 超過池的 max`);
+    if (!/[。！？）]$/.test(action.text)) errors.push(`${where}：text 以句號結尾`);
+    if (!item.use && !item.base && action.when !== "owned") errors.push(`${where}：沒有基本款的物品要寫 use（或能力寫 when: owned）`);
+  });
 }
 
 // effects.abilities 的 setBonus：from 列的物品要存在，且在物品本身或選項寫了同一個屬性的 set（雷神之錘加在巨人之力腰帶、食人魔力量護手上）。

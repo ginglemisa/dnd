@@ -7,6 +7,7 @@ category: weapon
 rarity: rare
 attunement: true
 base: { any: [ melee-weapon ], label: 任意近戰武器 }
-manualEffect: true
+actions:
+  - { id: ignite, name: 點燃／熄滅, type: bonus, text: 使用命令詞讓火焰包覆武器（或熄滅）。燃燒期間命中時額外造成 2d6 火焰傷害，並發出半徑 40 呎明亮光照、再向外 40 呎微光光照。 }
 text: |-
   手持這件魔法武器時，你可以進行附贈動作並使用命令詞，使烈焰包覆武器造成傷害的部分。這些火焰在半徑40呎內散發明亮光照，並再向外40呎散發微光光照。武器燃燒期間，命中時額外造成2d6火焰傷害。火焰持續到你進行附贈動作再次下達命令，或你丟下、收起或將武器入鞘為止。

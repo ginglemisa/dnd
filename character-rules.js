@@ -766,6 +766,8 @@
    * - weaponProficiencies：effects.proficiencies 的武器品名（射手護腕）。unarmoredAc：沒穿護甲時的基礎 AC（取最高，0 為沒有）。
    * - armor：穿著中的魔法護甲本身 { trained, noStrengthRequirement, noStealthDisadvantage }。
    * - movement：{ swim, climb, fly: [{ value, label }]（value 為呎數或 "speed"）, hover: [物品名稱], minimum: 0, ignoreArmorStrength: [物品名稱] }。
+   * - actions：能力（跑團按鈕）[{ uid, itemId, label, action, pool }]：action 是 YAML 的 actions 一筆，pool 是它扣的次數池（Inventory.getCharges() 的一筆，含 left）或 null；
+   *   條件同提示（action.when 為 owned 時持有就算），同一種物品的同一個能力只列第一件。
    * context 可傳 { wearingArmor, usingShield, handBases }，省略的欄位讀目前的裝備欄位。
    * context.wildShape 為 { armor, shield }（荒野形態的跑團畫面）：只算穿戴中的魔法護甲（armor 為 true 時）與盾牌（shield 為 true 時），
    * 其他物品（含 when: owned 的提示與屬性）都不算。
@@ -788,7 +790,8 @@
       weaponProficiencies: [],
       unarmoredAc: 0,
       armor: { trained: false, noStrengthRequirement: false, noStealthDisadvantage: false },
-      movement: { swim: [], climb: [], fly: [], hover: [], minimum: 0, ignoreArmorStrength: [] }
+      movement: { swim: [], climb: [], fly: [], hover: [], minimum: 0, ignoreArmorStrength: [] },
+      actions: []
     };
     const addHandBonus = (hand, label, attack, damage) => {
       if (!attack && !damage) return;
@@ -834,6 +837,13 @@
         } else {
           result.hints.push({ uid: entry.uid, label, panel, detail, advantage: [...(hint.advantage || [])] });
         }
+      });
+      // 能力（跑團按鈕）：生效條件同提示；同一種物品同一個能力只列第一件。
+      catalog.getActions(rule.id).forEach((action) => {
+        if (action.when !== "owned" && !equipped) return;
+        if (result.actions.some(item => item.itemId === rule.id && item.action.id === action.id)) return;
+        const pool = action.pool ? inventory.getCharges(entry).find(item => item.id === action.pool) || null : null;
+        result.actions.push({ uid: entry.uid, itemId: rule.id, label, action, pool });
       });
       const effects = catalog.getEffects(entry.magic.id, selection);
       // 屬性效果寫 when: owned 時持有（需同調的已同調）就算，不看穿戴或手持（雷鳴巨棒、雷神之錘）。

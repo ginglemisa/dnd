@@ -5263,13 +5263,19 @@ function assertCharacterDataCount(value, maximum) {
 
 // 物品欄（inventory.js）的匯入預檢：版本 1、至多 300 筆，每筆只有約定欄位且型別正確；細部清理由 Inventory.restore() 負責。
 const INVENTORY_KEYS = new Set(["version", "textOnly", "items"]);
-const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses", "magic", "attuned", "worn", "spellId"]);
+const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses", "magic", "attuned", "worn", "spellId", "charges"]);
 // 魔法物品：{ id, <選項 id>: 字串或數字 }。
 function isValidInventoryMagic(magic) {
   if (!magic || typeof magic !== "object" || Array.isArray(magic) || typeof magic.id !== "string" || !magic.id || magic.id.length > 64) return false;
   const fields = Object.entries(magic);
   return fields.length <= 16 && fields.every(([key, field]) => key.length <= 32
     && ((typeof field === "string" && field.length <= 64) || (typeof field === "number" && Number.isFinite(field))));
+}
+// 魔法物品的剩餘次數：{ 池 id: 0～99 的整數 }，最多 16 個池。
+function isValidInventoryCharges(charges) {
+  if (!charges || typeof charges !== "object" || Array.isArray(charges)) return false;
+  const fields = Object.entries(charges);
+  return fields.length <= 16 && fields.every(([key, left]) => key.length <= 32 && Number.isInteger(left) && left >= 0 && left <= 99);
 }
 function isValidInventoryState(value) {
   if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1 || !Array.isArray(value.items)) return false;
@@ -5286,6 +5292,7 @@ function isValidInventoryState(value) {
     && (entry.magic === undefined || isValidInventoryMagic(entry.magic))
     && (entry.attuned === undefined || typeof entry.attuned === "boolean")
     && (entry.worn === undefined || typeof entry.worn === "boolean")
+    && (entry.charges === undefined || (entry.magic !== undefined && isValidInventoryCharges(entry.charges)))
     && (typeof entry.itemId === "string" || typeof entry.name === "string" || entry.magic !== undefined));
 }
 
