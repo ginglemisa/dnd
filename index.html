@@ -116,7 +116,7 @@
   <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/tabletop.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261111-magic-advantage">
+  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261111-magic-abilities">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
   <link rel="stylesheet" href="css/quick-build.css?v=20261110-safari">
@@ -866,38 +866,32 @@
       <div class="ability">
         <div class="ability-title">STR</div>
         <div class="modifier" id="str-mod"></div>
-        <input type="number" id="str" class="ability-score" min="1" max="20" placeholder="力量">
-        <p class="ability-effective" id="str-effective" hidden></p>
+        <input type="number" id="str" class="ability-score" min="1" max="30" placeholder="力量">
       </div>
       <div class="ability">
         <div class="ability-title">DEX</div>
         <div class="modifier" id="dex-mod"></div>
-        <input type="number" id="dex" class="ability-score" min="1" max="20" placeholder="敏捷">
-        <p class="ability-effective" id="dex-effective" hidden></p>
+        <input type="number" id="dex" class="ability-score" min="1" max="30" placeholder="敏捷">
       </div>
       <div class="ability">
         <div class="ability-title">CON</div>
         <div class="modifier" id="con-mod"></div>
-        <input type="number" id="con" class="ability-score" min="1" max="20" placeholder="體質">
-        <p class="ability-effective" id="con-effective" hidden></p>
+        <input type="number" id="con" class="ability-score" min="1" max="30" placeholder="體質">
       </div>
       <div class="ability">
         <div class="ability-title">INT</div>
         <div class="modifier" id="int-mod"></div>
-	<input type="number" id="int" class="ability-score" min="1" max="20" placeholder="智力">
-        <p class="ability-effective" id="int-effective" hidden></p>
+	<input type="number" id="int" class="ability-score" min="1" max="30" placeholder="智力">
       </div>
       <div class="ability">
         <div class="ability-title">WIS</div>
         <div class="modifier" id="wis-mod"></div>
-        <input type="number" id="wis" class="ability-score" min="1" max="20" placeholder="感知">
-        <p class="ability-effective" id="wis-effective" hidden></p>
+        <input type="number" id="wis" class="ability-score" min="1" max="30" placeholder="感知">
       </div>
       <div class="ability">
         <div class="ability-title">CHA</div>
         <div class="modifier" id="cha-mod"></div>
-        <input type="number" id="cha" class="ability-score" min="1" max="20" placeholder="魅力">
-        <p class="ability-effective" id="cha-effective" hidden></p>
+        <input type="number" id="cha" class="ability-score" min="1" max="30" placeholder="魅力">
       </div>
     </div>
   </div>
@@ -3100,28 +3094,30 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
         }
       }
 
-      // 調整值用有效值；魔法物品改變屬性時，原值下方寫出有效值與來源（例如「→ 21 巨人之力腰帶（山丘）」）。
+      // 調整值用有效值；魔法物品改變屬性時，調整值旁加 ✦ 標記，點了（觸控也可）在規則說明浮層顯示「有效 21・巨人之力腰帶（山丘）」。
       const effective = getEffectiveAbilityScore(input.id);
-      renderAbilityEffect(input.id, effective);
       const mod = calculateModifier(effective.score ?? input.valueAsNumber);
       if (!mod) {
         modDisplay.textContent = "";
         return;
       }
       modDisplay.innerHTML = `<span class="modifier-main">${mod}</span>`;
+      if (effective.changed) modDisplay.appendChild(createAbilityEffectTip(input.id, effective));
     }
 
-    function renderAbilityEffect(ability, effective) {
-      const line = document.getElementById(`${ability}-effective`);
-      if (!line) return;
-      line.hidden = !effective.changed;
-      if (!effective.changed) {
-        line.replaceChildren();
-        return;
-      }
-      const value = document.createElement("strong");
-      value.textContent = `→ ${effective.score}`;
-      line.replaceChildren(value, document.createTextNode(` ${effective.sources.join("、")}`));
+    const ABILITY_EFFECT_LABELS = { str: "力量", dex: "敏捷", con: "體質", int: "智力", wis: "感知", cha: "魅力" };
+    function createAbilityEffectTip(ability, effective) {
+      const label = ABILITY_EFFECT_LABELS[ability];
+      const text = `有效 ${effective.score}・${effective.sources.join("、")}`;
+      const tip = document.createElement("button");
+      tip.type = "button";
+      tip.className = "skill-tip ability-effect-tip";
+      tip.dataset.skill = label;
+      tip.dataset.tipText = text;
+      tip.textContent = "✦";
+      tip.setAttribute("aria-controls", "skillPopup");
+      tip.setAttribute("aria-label", `${label}${text}`);
+      return tip;
     }
 
     const abilities = ["str", "dex", "con", "int", "wis", "cha"];
@@ -4992,7 +4988,7 @@ function updateArmorInfo() {
 }
 </script>
 <script src="sheet-spells.js?v=20261108-monster-srd"></script>
-<script src="rule-tips.js?v=20261108-monster-srd"></script>
+<script src="rule-tips.js?v=20261111-magic-abilities"></script>
 <script>
 const SPELL_QR_IMAGE_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwAQMAAAAEm3vRAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABD0lEQVRYhe2YMQ6DMAxFXTFk5EgcjR6NIzEyINLYDk6ahpSiiun/BeHH9GXHPxBB96v3UXN4GZayAlzHq7o3zp2nIRSfqQLcwKG26Qu5ragAf8FdeC4PMRX4X5j2+QY+g9N8k2uOP7Bh2xx8Kkor1lcN8Hmcy0/UErBJLQzTzI/JbXFTs7vAh1gVVwibOu6dmLUicIHlDGQv/UriJUuPRwK+iEUcEVmCg9XSuwR8iHsZa3bSTOVYs2QLGvgDJ3GEtixtNxXgCziPNXovoS4ff+AqzvJ0bNBOvwduYutA2yXyHQGfwjEMcpZ2FVOBr2GyWLMvaOADLEqd+h5rgKs4DrTXVvTy56C87AH/hqG79QLS1jgHWvai8gAAAABJRU5ErkJggg==";
 

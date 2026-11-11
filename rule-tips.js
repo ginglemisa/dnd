@@ -1,6 +1,6 @@
 // rule-tips.js
 // 規則說明提示框：技能／規則說明詞表（skills_example_uses）、提示標記（skillTip、createFeatureRuleTip、highlightFeatureRuleTerms），
-// 以及技能／狀態說明浮層（#skillPopup）與野獸資料卡浮層（#beastPopup，內容由 monster.js 的 createBeastCard 產生，含網站版／SRD 版切換）。
+// 以及技能／狀態說明浮層（#skillPopup；標記帶 data-tip-text 時顯示這段即時文字）與野獸資料卡浮層（#beastPopup，內容由 monster.js 的 createBeastCard 產生，含網站版／SRD 版切換）。
 // 同步載入，位置緊接 sheet-spells.js（原本 index.html 行內浮層程式所在處）：浮層在解析到這裡時建立，事件監聽的註冊順序與原本相同。
 // 浮層與事件只在有 document 時建立；建置工具（tools/content/site-sources.js）在沒有 document 的 vm 沙箱讀取詞表時略過。
 
@@ -232,9 +232,16 @@ function renderSkillPopupHtml(skillLabel, conditionKey) {
   `;
 }
 
+// 依畫面當下數值產生的說明（例如魔法物品給的屬性有效值）：標記帶 data-tip-text，標題是 data-skill。
+function renderDynamicTipHtml(title, text) {
+  return `<div class="title">${escapeHtml(title)}</div><div class="monster-detail-line monster-detail-line--first">${escapeHtml(text)}</div>`;
+}
+
 function showSkillPopup(skillLabel, anchorEl) {
   const conditionKey = anchorEl.dataset.condition;
-  const html = renderSkillPopupHtml(skillLabel, conditionKey);
+  const html = anchorEl.dataset.tipText !== undefined
+    ? renderDynamicTipHtml(skillLabel, anchorEl.dataset.tipText)
+    : renderSkillPopupHtml(skillLabel, conditionKey);
   if (!html) return;
 
   const popup = document.getElementById("skillPopup");

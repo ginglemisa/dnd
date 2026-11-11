@@ -2635,7 +2635,8 @@
     const formMarks = getDruidFormMarks();
     const values = ABILITY_KEYS.map(ability => {
       const label = getAbilityLabel(ability);
-      const value = getDruidEffectiveValue(`${ability}-mod`, getReadOnlySourceValue(document.getElementById(`${ability}-mod`)));
+      // 只讀調整值本身（.modifier-main），不含角色卡的 ✦ 標記。
+      const value = getDruidEffectiveValue(`${ability}-mod`, getReadOnlySourceValue(document.querySelector(`#${ability}-mod .modifier-main`) || document.getElementById(`${ability}-mod`)));
       const item = createReadOnlyValue(
         label,
         value,
@@ -2644,13 +2645,19 @@
         `${label}檢定`
       );
       // 荒野形態只換力量、敏捷、體質；心智屬性保留角色原值，不加形態標記。
-      // 魔法物品改變的屬性標「(物品)」（窄螢幕放不下物品全名），滑鼠提示寫出有效值與物品。
+      // 魔法物品改變的屬性比照形態標記寫出物品「+5 (巨人之力腰帶（山丘）)」，名稱長時在格內換行。
+      // 物品名稱放在擲骰按鈕外，窄螢幕時換到數值下方整行。
       const magic = getAbilityEffect(ability);
-      const marks = formMarks.length && ["str", "dex", "con"].includes(ability) ? formMarks : (magic ? ["(物品)"] : []);
-      if (marks.length) {
-        renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, marks);
+      if (formMarks.length && ["str", "dex", "con"].includes(ability)) {
+        renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, formMarks);
+      } else if (magic) {
+        renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, []);
+        const source = document.createElement("span");
+        source.className = "tabletop-ac-effect-label tabletop-ability-modifier__source";
+        source.textContent = `(${magic.sources.join("、")})`;
+        item.classList.add("tabletop-ability-modifier--magic");
+        item.append(source);
       }
-      if (magic) item.title = `${label} ${magic.score}（${magic.sources.join("、")}）`;
       return item;
     });
 

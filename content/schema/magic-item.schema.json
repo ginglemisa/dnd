@@ -21,13 +21,13 @@
       "oneOf": [
         {
           "type": "object", "additionalProperties": false, "required": ["set"],
-          "properties": { "set": { "type": "integer", "minimum": 1, "maximum": 30, "description": "屬性設定為這個值；原本較高時用原本的值。" } }
+          "properties": { "set": { "type": "integer", "minimum": 1, "maximum": 30, "description": "屬性設定為這個值；原本較高時用原本的值。" }, "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就算，不看穿戴或手持。省略時和其他效果相同。" } }
         },
         {
           "type": "object", "additionalProperties": false, "required": ["bonus", "max"],
           "properties": {
             "bonus": { "type": "integer", "minimum": 1, "description": "屬性增加的點數（不會降低）。" },
-            "max": { "type": "integer", "minimum": 1, "maximum": 30, "description": "加值後的上限。" }
+            "max": { "type": "integer", "minimum": 1, "maximum": 30, "description": "加值後的上限。" }, "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就算，不看穿戴或手持。省略時和其他效果相同。" }
           }
         },
         {
@@ -35,7 +35,7 @@
           "properties": {
             "setBonus": { "type": "integer", "minimum": 1, "description": "from 物品給的設定值再增加的點數。" },
             "max": { "type": "integer", "minimum": 1, "maximum": 30, "description": "增加後的上限。" },
-            "from": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }, "description": "物品 id：這些物品同時生效時，它們的 set 才增加。" }
+            "from": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }, "description": "物品 id：這些物品同時生效時，它們的 set 才增加。" }, "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就算，不看穿戴或手持。省略時和其他效果相同。" }
           }
         }
       ],

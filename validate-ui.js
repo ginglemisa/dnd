@@ -4840,7 +4840,7 @@ async function verifyInventoryPersistence(browser, url) {
       assert.equal(await sharedRing.getByRole("button", { name: /穿上|卸下/u }).count(), 0, "share mode cannot wear or take off rings");
       assert.match(await sharedRing.locator(".inventory-item-actions").innerText(), /穿戴中、同調中/u, "share mode shows the worn state");
     } finally { await equippedShared.close(); }
-    // 屬性有效值不存檔：屬性欄存原值，autosave、JSON、分享還原後由物品重新算出（手持的雷神之錘在載入最後才對應到主手，也要算進去）。
+    // 屬性有效值不存檔：屬性欄存原值，autosave、JSON、分享還原後由物品重新算出。
     const abilityState = { class: "fighter", level: "5", str: "16", dex: "14", con: "12", mainHand: "雷神之錘（戰錘）", offHand: "", armor: "", __inventory: { version: 1, items: [
       { uid: "hammer", itemId: "戰錘", quantity: 1, attuned: true, magic: { id: "hammer-of-thunderbolts" } },
       { uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-giant-strength", giant: "hill" } },
@@ -4848,12 +4848,12 @@ async function verifyInventoryPersistence(browser, url) {
     ] } };
     const abilitySnapshot = target => target.evaluate(() => ({
       raw: [document.getElementById("str").value, document.getElementById("con").value, collectStateObject().str, collectStateObject().con],
-      shown: [document.getElementById("str-mod").textContent, document.getElementById("str-effective").textContent, document.getElementById("con-mod").textContent],
+      shown: [document.querySelector("#str-mod .modifier-main").textContent, document.querySelector("#str-mod .ability-effect-tip").getAttribute("aria-label"), document.querySelector("#con-mod .modifier-main").textContent],
       numbers: [document.getElementById("atk-main-hit").value, getCarryCapacityPounds()]
     }));
     const abilityExpected = {
       raw: ["16", "12", "16", "12"],
-      shown: ["+7", "→ 25 巨人之力腰帶（山丘）、雷神之錘（戰錘）", "+4"],
+      shown: ["+7", "力量有效 25・巨人之力腰帶（山丘）、雷神之錘（戰錘）", "+4"],
       numbers: ["+11", 375]
     };
     await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, abilityState);

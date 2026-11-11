@@ -7,7 +7,7 @@ category: weapon
 rarity: legendary
 attunement: true
 base: { from: [ 巨錘, 戰錘 ] }
-effects: { attack: 1, damage: 1, abilities: { str: { setBonus: 4, max: 30, from: [ belt-of-giant-strength, gauntlets-of-ogre-power ] } } }
+effects: { attack: 1, damage: 1, abilities: { str: { setBonus: 4, max: 30, from: [ belt-of-giant-strength, gauntlets-of-ogre-power ], when: owned } } }
 hints:
   - panel: weapon
     text: 可花 1 次充能投擲（射程 20/60），命中時目標與其 30 呎內其他生物須通過 DC 17 體質豁免，否則震懾；攻擊後飛回手中。巨人之禍見說明。

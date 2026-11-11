@@ -754,7 +754,7 @@
    *   unarmed { dice, type, label }（這一手是武藝時的 unarmedStrike）、notes（武器說明的提示文字）。
    *   weapons（射手護腕等）與 unarmedStrike 來自裝備著的物品，依那一手的基本款（context.handBases）套用。
    * - abilities：屬性效果 { str: [{ label, itemId, set }｜{ label, itemId, bonus, max }｜{ label, itemId, setBonus, max, from }], … }，
-   *   物品生效（已同調；有基本款的要裝備著，沒有基本款的依使用方式）才列；有效值由 getEffectiveAbilityScore() 計算。
+   *   物品生效（已同調；有基本款的要裝備著，沒有基本款的依使用方式；效果寫 when: owned 時持有就算）才列；有效值由 getEffectiveAbilityScore() 計算。
    * - hints：提示 [{ uid, label, panel, detail, advantage }]，同一件物品在同一處合成一筆；panel 為 overview 或 skills。
    *   有基本款的物品要裝備著（拿在手上或穿著），沒有基本款的依使用方式；hint.when 為 owned 時持有就算。
    * context 可傳 { wearingArmor, usingShield, handBases }，省略時讀目前的裝備欄位。
@@ -808,13 +808,12 @@
           result.hints.push({ uid: entry.uid, label, panel, detail, advantage: [...(hint.advantage || [])] });
         }
       });
-      if (!usable) return;
       const effects = catalog.getEffects(entry.magic.id, selection);
-      if (equipped) {
-        Object.entries(effects.abilities || {}).forEach(([ability, effect]) => {
-          (result.abilities[ability] ||= []).push({ ...effect, label, itemId: rule.id });
-        });
-      }
+      // 屬性效果寫 when: owned 時持有（需同調的已同調）就算，不看穿戴或手持（雷鳴巨棒、雷神之錘）。
+      Object.entries(effects.abilities || {}).forEach(([ability, { when, ...effect }]) => {
+        if (when === "owned" || equipped) (result.abilities[ability] ||= []).push({ ...effect, label, itemId: rule.id });
+      });
+      if (!usable) return;
       // 防禦者：玩家把部分加值轉到 AC 時，攻擊與傷害減少、AC 增加相同數值（裝備在手上且已同調才有 getBonusTransfer）。
       const transferred = hand ? inventory.getBonusTransfer?.(entry.uid)?.value || 0 : 0;
       if (transferred) {
