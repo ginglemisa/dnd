@@ -4851,6 +4851,33 @@ async function verifyInventoryPersistence(browser, url) {
       await acquireShared.waitForFunction(() => window.SHARE_MODE === true);
       assert.deepEqual(await acquireSnapshot(acquireShared), [false, "false"], "a share link with the switch off stays off");
     } finally { await acquireShared.close(); }
+    // 昏迷掉落紀錄（跑團狀態 droppedHands）：autosave、JSON、分享都帶；舊資料沒有就是空的；匯入預檢只收四個欄位的物件。
+    const dropped = { mainHand: "長劍", offHand: "盾牌", main2Shield: false, main2ShieldItem: "" };
+    const droppedState = { class: "fighter", level: "1", hp: "10", mainHand: "", offHand: "", droppedHands: dropped,
+      __inventory: { version: 1, items: [{ uid: "sword", itemId: "長劍", quantity: 1 }, { uid: "shield", itemId: "盾牌", quantity: 1 }] } };
+    const droppedSnapshot = target => target.evaluate(() => [TabletopMode.collectState().droppedHands || null,
+      document.getElementById("tabletop-dropped-hands").hidden, document.getElementById("tabletop-dropped-hands").textContent]);
+    const droppedExpected = [dropped, false, "昏迷時掉落：長劍、盾牌撿回不用了"];
+    await page.evaluate(() => dndStorage.setItem("dndchar_autosave_v1", JSON.stringify({ class: "fighter", level: "1" })));
+    await page.goto(url);
+    assert.equal(await page.evaluate(() => Object.hasOwn(TabletopMode.collectState(), "droppedHands")), false, "old saves have no drop record");
+    await page.evaluate((state) => { applyStateObject(state); saveAllFields(); }, droppedState);
+    await page.goto(url);
+    assert.deepEqual(await droppedSnapshot(page), droppedExpected, "autosave keeps the drop record");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", droppedHands: null }); applyStateObject(data); });
+    assert.deepEqual(await droppedSnapshot(page), droppedExpected, "JSON import restores the drop record");
+    assert.deepEqual(await page.evaluate(() => ["x", [], { mainHand: 1 }, { mainHand: "長".repeat(101) }, { main2Shield: "yes" }, { extra: "" }].map((value) => {
+      try { validateCharacterState({ class: "fighter", droppedHands: value }); return "accepted"; } catch (error) { return error.message; }
+    })), Array(6).fill("昏迷掉落紀錄格式不正確"), "the import precheck rejects malformed drop records");
+    assert.equal(await page.evaluate(() => { validateCharacterState({ class: "fighter", droppedHands: null }); return true; }), true);
+    const droppedHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const droppedShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = droppedHash;
+      await droppedShared.goto(sharedUrl.href);
+      await droppedShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await droppedSnapshot(droppedShared), droppedExpected, "share restores the drop record");
+    } finally { await droppedShared.close(); }
     // 裝備欄位寫魔法款的名稱，經 autosave、JSON、分享都還原，普通與魔法同名時不互換；同調（attuned）與穿戴（worn）一起還原，普通物品的存檔不多欄位。
     // 手持的魔杖放在副手，同樣以名稱還原。
     const equippedState = { class: "fighter", level: "5", str: "16", dex: "14", mainHand: "長劍+2", offHand: "戰法魔杖+1", armor: "", __inventory: { version: 1, items: [

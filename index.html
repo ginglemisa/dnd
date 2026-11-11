@@ -5363,6 +5363,16 @@ function isValidInventoryState(value) {
     && (typeof entry.itemId === "string" || typeof entry.name === "string" || entry.magic !== undefined));
 }
 
+// 跑團狀態的昏迷掉落紀錄（tabletop-mode.js 的 droppedHands）：null，或只有這四個欄位的物件。
+function isValidDroppedHands(value) {
+  if (value === null) return true;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const text = key => value[key] === undefined || (typeof value[key] === "string" && value[key].length <= 100);
+  return Object.keys(value).every(key => ["mainHand", "offHand", "main2Shield", "main2ShieldItem"].includes(key))
+    && text("mainHand") && text("offHand") && text("main2ShieldItem")
+    && (value.main2Shield === undefined || typeof value.main2Shield === "boolean");
+}
+
 function validateCharacterState(data) {
   if (!data || typeof data !== "object" || Array.isArray(data) || data.kind === "twd20-adventure-journal") {
     throw new TypeError("角色資料格式不正確");
@@ -5393,6 +5403,7 @@ function validateCharacterState(data) {
             && (!child || typeof child !== "object" || Array.isArray(child) || child.version !== 1)) throw new TypeError("跑團按鈕設定格式不正確");
         if (depth === 0 && key === "__inventory" && !isValidInventoryState(child)) throw new TypeError("物品欄格式不正確或物品過多");
         if (depth === 0 && key === "magic-item-acquire" && typeof child !== "boolean") throw new TypeError("魔法物品開關格式不正確");
+        if (depth === 0 && key === "droppedHands" && !isValidDroppedHands(child)) throw new TypeError("昏迷掉落紀錄格式不正確");
         if (key === "sourceTag" && (typeof child !== "string" || child.length > 256)) throw new TypeError("法術來源標籤格式不正確");
         if (key === "entries" && Array.isArray(child)) {
           if (child.length > CHARACTER_DATA_LIMITS.entries) throw new RangeError("角色清單項目過多");
@@ -5706,7 +5717,6 @@ const SHARE_TABLETOP_STATE_KEYS = new Set([
   "barkskinActive",
   "longstriderActive",
   "shillelaghActive",
-  "droppedHands",
   "temporaryHp",
   "deathSaveSuccesses",
   "deathSaveFailures",

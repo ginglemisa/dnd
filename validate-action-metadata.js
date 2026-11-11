@@ -3410,11 +3410,11 @@ async function verifyUnconsciousDropsHands(browser, url) {
     assert.equal(await row.innerText(), "昏迷時掉落：威力法杖、盾牌（醒來後可撿回）");
     assert.equal(await row.locator("button").count(), 0, "no pick-up while unconscious");
 
-    // JSON 與 autosave 帶著掉落紀錄，載入時不再卸下、不改裝備欄；分享和其他即時戰鬥狀態一樣不帶。
+    // JSON、autosave 與分享帶著掉落紀錄（分享另在 validate-ui.js --data-only），載入時不再卸下、不改裝備欄。
     // 自動計算開關不帶：applyStateObject 會派送 change，跳出「開啟自動計算」確認（與本測試無關）。
     const saved = await page.evaluate(() => { const { "auto-calculate-key-stats-toggle": toggle, ...data } = collectStateObject(); return data; });
     assert.deepEqual(saved.droppedHands, { mainHand: "威力法杖", offHand: "盾牌", main2Shield: false, main2ShieldItem: "" });
-    assert.equal(Object.hasOwn(await page.evaluate(() => collectShareState()), "droppedHands"), false, "share links leave out the live drop record");
+    assert.deepEqual((await page.evaluate(() => collectShareState())).droppedHands, saved.droppedHands, "share links carry the drop record");
     await page.evaluate(state => applyStateObject(state), { ...saved, mainHand: "威力法杖", offHand: "" });
     assert.equal((await hands()).mainHand, "威力法杖", "loading an unconscious character keeps its saved equipment");
     assert.deepEqual((await state()).droppedHands, saved.droppedHands, "loading keeps the drop record");

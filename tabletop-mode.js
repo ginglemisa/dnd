@@ -898,7 +898,7 @@
     return [...active];
   }
 
-  // 昏迷時掉落的手持物（index.html 的 dropHeldEquipment 回傳的 saved）：撿回前保留，存檔與 JSON 帶，分享不帶（即時戰鬥狀態）。
+  // 昏迷時掉落的手持物（index.html 的 dropHeldEquipment 回傳的 saved）：撿回前保留，autosave、JSON、分享都帶（index.html 的 isValidDroppedHands 是匯入預檢）。
   function normalizeDroppedHands(value) {
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
     const text = item => (typeof item === "string" && item.length <= 100 ? item : "");
