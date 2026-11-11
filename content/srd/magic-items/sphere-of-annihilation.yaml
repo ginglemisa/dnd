@@ -7,6 +7,8 @@ category: wondrous
 group: curio
 rarity: legendary
 attunement: false
+actions:
+  - { id: control, name: 控制法球, type: magic, when: owned, text: 在法球 60 呎內進行 DC 25 智力（奧秘）檢定，成功則控制到你下個回合開始，可以移動它（見說明）；接觸法球但未被抹除的東西受到 8d10 力場傷害。 }
 text: |-
   這顆直徑2呎的黑色球體是多元宇宙中的一個洞，懸停在空間中，並由環繞它的魔法力場穩定住。
 

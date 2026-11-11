@@ -8,6 +8,7 @@ rarity: very-rare
 attunement: false
 base: { from: [ 半身板甲, 全身板甲 ] }
 effects: { ac: 2 }
-manualEffect: true
+actions:
+  - { id: stand-firm, name: 站穩腳步, type: reaction, text: 有效果違背你的意願使你沿著地面移動時，把移動距離減少最多 10 呎。 }
 text: |-
   穿戴這件護甲時，你獲得+2護甲等級加值。此外，若有效果違背你的意願使你沿著地面移動，你可以進行反應動作，將你被移動的距離減少最多10呎。

@@ -8,5 +8,7 @@ group: wearable
 rarity: uncommon
 attunement: true
 use: worn
+actions:
+  - { id: snare, name: 接住飛彈, type: reaction, text: 被遠程武器或投擲武器的攻擊命中且有一隻空手時，傷害減少 1d10＋敏捷調整值；減到 0 且東西小到能握住時，你接住它。 }
 text: |-
   如果你穿戴這雙手套時被使用遠程武器或投擲武器進行的攻擊檢定命中，且你有一隻空手，你可以進行反應動作，將傷害減少1d10加上你的敏捷調整值。若你將傷害減為0，且彈藥或武器小到你能用那隻手握住，你就能接住它。

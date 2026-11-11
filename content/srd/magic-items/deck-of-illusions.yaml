@@ -7,6 +7,9 @@ category: wondrous
 group: curio
 rarity: uncommon
 attunement: false
+actions:
+  - { id: draw, name: 抽牌, type: magic, when: owned, text: 隨機抽一張牌扔到 30 呎內的一點，牌上出現幻象生物（依說明的表擲骰），持續到被解除；幻象無法造成傷害，DC 15 智力（調查）檢定可以識破。 }
+  - { id: move, name: 移動幻象, type: magic, when: owned, text: 你在幻象 120 呎內且看得見它時，把它移動到它的牌 30 呎內的任何位置。 }
 text: |-
   這個盒子裡裝著一組牌。完整的牌組有34張牌：32張繪有特定生物，2張為鏡面。作為寶藏被發現的牌組通常缺少1d20 − 1張牌。
 

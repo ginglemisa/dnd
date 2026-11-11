@@ -8,6 +8,8 @@ group: tool
 rarity: very-rare
 attunement: false
 weight: 50
+actions:
+  - { id: activate, name: 啟動／關閉魔鏡, type: magic, when: owned, text: 鏡子掛在垂直表面且你在 5 呎內時使用命令詞。啟動中，30 呎內看見自己倒影的其他生物 DC 15 魅力豁免，失敗則被困進鏡中（見說明）。 }
 text: |-
   當從側面觀看這面高4呎、寬2呎的鏡子時，鏡面會顯現出隱約的生物影像。這面鏡子重50磅，AC 11、HP 10，對毒素與心靈傷害免疫，並對鈍擊傷害易傷。它被降到0生命值時會碎裂並被摧毀。
 

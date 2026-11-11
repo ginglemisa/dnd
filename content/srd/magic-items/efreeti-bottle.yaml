@@ -7,6 +7,8 @@ category: wondrous
 group: container
 rarity: very-rare
 attunement: false
+actions:
+  - { id: open, name: 拔開瓶塞, type: magic, when: owned, text: 濃煙湧出，在你的回合結束時一個火巨靈出現在 30 呎內；第一次打開時由 DM 擲表決定它的反應（見說明）。 }
 text: |-
   當你進行魔法動作拔開這個彩繪黃銅瓶的瓶塞時，一團濃煙會從中湧出。在你的回合結束時，煙霧伴隨一道無害的火焰閃光消失，一個**火巨靈**出現在距離你30呎內一個未被佔據的空間。
 

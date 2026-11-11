@@ -7,5 +7,8 @@ category: ring
 rarity: legendary
 attunement: true
 use: worn
+actions:
+  - { id: vanish, name: 隱形, type: magic, text: 你陷入隱形狀態，直到取下戒指或你以附贈動作重新現身。 }
+  - { id: appear, name: 重新現身, type: bonus, text: 結束戒指的隱形。 }
 text: |-
   穿戴這枚戒指時，你可以進行魔法動作使自己陷入隱形狀態。你會保持隱形，直到戒指被取下，或直到你進行附贈動作使自己重新可見。
