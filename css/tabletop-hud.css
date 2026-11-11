@@ -374,27 +374,20 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
   color: var(--accent);
 }
 
-/* 有魔法物品優勢的技能：「優勢」標籤在技能名稱下方，等級記號與數值跨兩行置中。 */
-.tabletop-skill-value--advantage > .tabletop-inline-roll {
-  row-gap: 0;
+/* 有魔法物品優勢的技能：技能名稱與「優勢」標籤同一格，放得下時標籤接在名稱右邊，放不下時換到名稱下方
+   （flex-wrap 依名稱完整寬度決定換行，名稱自己也放不下時才拆字）；等級記號與數值的位置不變。 */
+.tabletop-skill-value__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.1rem 0.3rem;
+  min-width: 0;
 }
 
-.tabletop-skill-value--advantage .tabletop-skill-value__rank {
-  grid-area: 1 / 1 / 3 / 2;
-}
+>>>>
 
-.tabletop-skill-value--advantage .tabletop-skill-value__label {
-  grid-area: 1 / 2 / 2 / 3;
-  align-self: end;
-}
-
-.tabletop-skill-value--advantage .magic-advantage-tag {
-  grid-area: 2 / 2 / 3 / 3;
-  align-self: start;
-}
-
-.tabletop-skill-value--advantage .tabletop-skill-value__value {
-  grid-area: 1 / 3 / 3 / 4;
+.tabletop-skill-value__name .magic-advantage-tag {
+  margin-top: 0;
 }
 
 /* 先攻格放在數值右邊：上下排會讓整排關鍵數值卡片長高。 */

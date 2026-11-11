@@ -2703,10 +2703,15 @@
       const button = item.querySelector(".tabletop-inline-roll");
       button.insertBefore(marker, item.querySelector(".tabletop-skill-value__label"));
       button.setAttribute("aria-label", `${button.getAttribute("aria-label")}；${rankLabel}`);
+      // 「優勢」標籤和技能名稱包在同一格：放得下時接在名稱右邊，放不下時由 CSS 換到名稱下方。
       const advantageSources = advantages[skillKey] || [];
       if (advantageSources.length && globalScope.createMagicAdvantageTag) {
         item.classList.add("tabletop-skill-value--advantage");
-        button.insertBefore(globalScope.createMagicAdvantageTag(advantageSources), item.querySelector(".tabletop-skill-value__value"));
+        const label = item.querySelector(".tabletop-skill-value__label");
+        const nameGroup = document.createElement("span");
+        nameGroup.className = "tabletop-skill-value__name";
+        button.insertBefore(nameGroup, label);
+        nameGroup.append(label, globalScope.createMagicAdvantageTag(advantageSources));
         button.setAttribute("aria-label", `${button.getAttribute("aria-label")}；優勢（${advantageSources.join("、")}）`);
       }
       return [item];
