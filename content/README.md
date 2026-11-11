@@ -741,7 +741,7 @@ text: |-
 | `resistances`、`immunities` | 傷害類型 ID 的清單，顯示為「火焰傷害抗性」「免疫毒素傷害」。 |
 | `darkvision` | 呎數，顯示為「黑暗視覺 60 呎」。 |
 | `languages` | 語言名稱的清單，顯示為「懂矮人語」；不改角色卡的語言欄。 |
-| `advantage` | 無條件有優勢的檢定：技能 ID 或「先攻」，顯示為「隱匿檢定有優勢」「先攻擲骰有優勢」。有條件的優勢寫 `text`。 |
+| `advantage` | 無條件有優勢的檢定：技能 ID 或「先攻」，顯示為「隱匿檢定有優勢」「先攻擲骰有優勢」，角色卡技能格、跑團技能按鈕與先攻格另加「優勢」標籤（`getMagicItemAdvantages()`）。有條件的優勢寫 `text`。 |
 | `text` | 自由文字，以句號結尾，接在上面幾個詞產生的句子後面。 |
 
 `resistances`、`immunities`、`darkvision`、`languages`、`advantage` 只放在跑團總覽。提示的標題是物品名稱，同一件物品在同一處的提示接成一段。每筆至少要有 `text` 或其中一個詞。

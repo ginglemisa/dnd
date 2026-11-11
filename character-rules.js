@@ -851,6 +851,19 @@
     return result;
   }
 
+  /**
+   * 魔法物品給的無條件優勢（hints 的 advantage）：{ 技能 ID 或「先攻」: [來源物品名稱…] }，只列目前生效的。
+   * 角色卡技能格、跑團技能按鈕與先攻格的「優勢」標籤都讀這裡；effects 可傳已算好的 getActiveMagicEffects()。
+   */
+  function getMagicItemAdvantages(effects = getActiveMagicEffects()) {
+    const result = {};
+    (effects.hints || []).forEach(hint => hint.advantage.forEach((target) => {
+      result[target] ||= [];
+      if (!result[target].includes(hint.label)) result[target].push(hint.label);
+    }));
+    return result;
+  }
+
   /** 計算 AC，包含無甲防禦、護甲、盾牌、防禦戰鬥風格與魔法物品加值（magicBonus，由 getActiveMagicEffects() 算出、呼叫端決定哪些部分生效）。 */
   function calculateArmorClass(options = {}) {
     const className = String(options.className || "").trim();
@@ -1009,6 +1022,7 @@
     calculateWildShapeCheck,
     calculateArmorClass,
     getActiveMagicEffects,
+    getMagicItemAdvantages,
     calculateCharacterMaxHp,
     calculateCharacterSpeed,
     calculateProficiencyBonus,

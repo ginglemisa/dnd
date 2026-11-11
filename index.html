@@ -108,7 +108,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261111-magic-advantage">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261111-magic-wear-held">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261110-safari">
   <link rel="stylesheet" href="css/utility.css?v=20261110-footer-one-line">
@@ -116,7 +116,7 @@
   <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/tabletop.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261111-magic-advantage">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
   <link rel="stylesheet" href="css/quick-build.css?v=20261110-safari">
@@ -138,11 +138,11 @@
   <script src="spell-list.js?v=20261107-companion-variant" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
-  <script src="character-rules.js?v=20261111-magic-vocab" defer></script>
+  <script src="character-rules.js?v=20261111-magic-advantage" defer></script>
   <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261111-magic-vocab" defer></script>
+  <script src="tabletop-mode.js?v=20261111-magic-advantage" defer></script>
   <script src="tabletop-druid.js?v=20261111-merge-main" defer></script>
   <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
   <script src="tabletop-actions.js?v=20261111-magic-vocab" defer></script>
@@ -4497,6 +4497,33 @@ function buildStealthPenaltyDetail(penalty) {
   return fragment;
 }
 
+// 魔法物品給的無條件優勢（getMagicItemAdvantages()）：放在技能名稱下方的「優勢」小標籤，滑鼠提示與報讀寫出來源物品。
+// 角色卡技能格與跑團的技能按鈕、先攻格共用；只是顯示，擲骰不會自動擲兩次。
+function createMagicAdvantageTag(sources) {
+  const tag = document.createElement("span");
+  tag.className = "magic-advantage-tag";
+  tag.textContent = "優勢";
+  tag.title = `優勢：${sources.join("、")}`;
+  const hidden = document.createElement("span");
+  hidden.className = "sr-only";
+  hidden.textContent = `（${sources.join("、")}）`;
+  tag.appendChild(hidden);
+  return tag;
+}
+
+// 角色卡技能格：有優勢的技能在名稱下方加標籤，沒有的格子不動。
+function updateSkillAdvantageTags(advantages = getMagicItemAdvantages()) {
+  document.querySelectorAll("#tab-skills .skill-cell").forEach((cell) => {
+    const skill = cell.querySelector(".skill-tip")?.dataset.skill || "";
+    const name = cell.querySelector(".skill-name");
+    const sources = advantages[skill] || [];
+    const current = name?.querySelector(".magic-advantage-tag");
+    if (current?.title === `優勢：${sources.join("、")}`) return;
+    current?.remove();
+    if (name && sources.length) name.appendChild(createMagicAdvantageTag(sources));
+  });
+}
+
 function updateEquipmentLoadoutSummary() {
   const content = document.getElementById("equipment-loadout-summary-content");
   if (!content) return;
@@ -4598,6 +4625,7 @@ function updateEquipmentLoadoutSummary() {
   if (focusedHand) content.querySelector(`[data-weapon-damage-type-hand="${focusedHand}"]`)?.focus();
   const acValue = document.getElementById("equipment-current-ac-value");
   if (acValue) acValue.textContent = document.getElementById("ac-display")?.value?.trim() || "—";
+  updateSkillAdvantageTags(getMagicItemAdvantages(magic));
   updateWeaponMasteryBadges();
   window.ShareReadonly?.onEquipmentChanged();
 }
@@ -6928,6 +6956,8 @@ window.addEventListener("DOMContentLoaded", async function() {
     scheduleSaveAllFields();
     // 物品欄變動、同調切換、裝備變更只要改到魔法加值就重算；加值沒變時不動既有流程。切換形態時武器資料也會變。
     const magicKey = JSON.stringify(getActiveMagicEffects());
+    // 穿上或脫下精靈之靴等不影響數字的物品也要更新技能格的「優勢」標籤。
+    updateSkillAdvantageTags();
     if (magicKey === activeMagicEffectsKey && event.detail?.reason !== "form") return;
     activeMagicEffectsKey = magicKey;
     updateACDisplay();

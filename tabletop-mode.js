@@ -2658,6 +2658,8 @@
 
     if (!elements.skillValues) return;
 
+    // 魔法物品的無條件優勢：技能名稱下方的「優勢」標籤（index.html 的 createMagicAdvantageTag，角色卡技能格共用）。
+    const advantages = onboardingSkillPreview ? {} : globalScope.getMagicItemAdvantages?.() || {};
     const skills = Array.from(
       document.querySelectorAll("#tab-skills .skill-grid .skill-cell")
     ).flatMap(cell => {
@@ -2701,6 +2703,12 @@
       const button = item.querySelector(".tabletop-inline-roll");
       button.insertBefore(marker, item.querySelector(".tabletop-skill-value__label"));
       button.setAttribute("aria-label", `${button.getAttribute("aria-label")}；${rankLabel}`);
+      const advantageSources = advantages[skillKey] || [];
+      if (advantageSources.length && globalScope.createMagicAdvantageTag) {
+        item.classList.add("tabletop-skill-value--advantage");
+        button.insertBefore(globalScope.createMagicAdvantageTag(advantageSources), item.querySelector(".tabletop-skill-value__value"));
+        button.setAttribute("aria-label", `${button.getAttribute("aria-label")}；優勢（${advantageSources.join("、")}）`);
+      }
       return [item];
     });
 
@@ -2785,7 +2793,7 @@
       initiative = "+2";
       initiativeModifier = 2;
     }
-    elements.initiative.replaceChildren(createQuickRollButton(
+    const initiativeButton = createQuickRollButton(
       initiative,
       "先攻",
       initiativeModifier === null ? null : {
@@ -2794,7 +2802,14 @@
         modifier: initiativeModifier,
         includeModifier: true
       }
-    ));
+    );
+    elements.initiative.replaceChildren(initiativeButton);
+    // 魔法物品給的先攻優勢：「優勢」標籤放在數值右邊（上下排會讓整排關鍵數值卡片長高）。
+    const initiativeAdvantage = onboardingKeyStatPreview ? [] : globalScope.getMagicItemAdvantages?.()["先攻"] || [];
+    if (initiativeAdvantage.length && globalScope.createMagicAdvantageTag) {
+      elements.initiative.appendChild(globalScope.createMagicAdvantageTag(initiativeAdvantage));
+      initiativeButton.setAttribute("aria-label", `${initiativeButton.getAttribute("aria-label")}；優勢（${initiativeAdvantage.join("、")}）`);
+    }
 
     elements.speed.textContent = getDruidEffectiveValue("speed-display",
       getDisplayValue(

@@ -1332,6 +1332,26 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.deepEqual(await hints(inventoryOf({ uid: "boots", quantity: 1, worn: true, magic: { id: "boots-of-elvenkind" } })), ["overview|精靈之靴|隱匿檢定有優勢。腳步不會發出聲音。"], "worn boots give stealth advantage");
     await page.evaluate(() => TabletopMode.setPanel("overview"));
     await page.waitForFunction(() => document.getElementById("tabletop-overview-rule-summary").textContent.includes("精靈之靴：隱匿檢定有優勢"));
+    // 無條件優勢：角色卡技能格與跑團技能按鈕在技能名稱下方加「優勢」標籤，報讀與滑鼠提示寫出來源；先攻格放在數值旁。
+    await page.evaluate(() => TabletopMode.setPanel("skills"));
+    await page.waitForFunction(() => document.querySelector("#tabletop-skill-values .magic-advantage-tag"));
+    assert.deepEqual(await page.evaluate(() => {
+      const tagged = selector => [...document.querySelectorAll(selector)].filter(item => item.querySelector(".magic-advantage-tag"));
+      const tabletop = tagged("#tabletop-skill-values .tabletop-skill-value");
+      const sheet = tagged("#tab-skills .skill-cell");
+      return {
+        tabletop: tabletop.map(item => [item.querySelector(".tabletop-skill-value__label").textContent, item.querySelector("button").getAttribute("aria-label").endsWith("；優勢（精靈之靴）")]),
+        sheet: sheet.map(cell => [cell.querySelector(".skill-tip").textContent, cell.querySelector(".magic-advantage-tag").title, cell.querySelector(".skill-name").lastElementChild.className])
+      };
+    }), { tabletop: [["隱匿", true]], sheet: [["隱匿", "優勢：精靈之靴", "magic-advantage-tag"]] }, "worn boots tag stealth under its name on the sheet and in tabletop mode");
+    await hints(inventoryOf({ uid: "boots", quantity: 1, magic: { id: "boots-of-elvenkind" } }));
+    await page.waitForFunction(() => document.querySelectorAll("#tab-skills .magic-advantage-tag, #tabletop-skill-values .magic-advantage-tag").length === 0);
+    await hints({ offHand: "警戒之盾", ...inventoryOf({ uid: "sentinel", itemId: "盾牌", quantity: 1, magic: { id: "sentinel-shield" } }) });
+    await page.evaluate(() => TabletopMode.setPanel("overview"));
+    await page.waitForFunction(() => document.querySelector("#tabletop-initiative .magic-advantage-tag"));
+    assert.deepEqual(await page.evaluate(() => [document.querySelector("#tabletop-initiative .magic-advantage-tag").title, document.querySelector("#tabletop-initiative button").getAttribute("aria-label").endsWith("；優勢（警戒之盾）"), document.querySelector('#tab-skills .skill-cell:has(#prof-察覺) .magic-advantage-tag')?.title]),
+      ["優勢：警戒之盾", true, "優勢：警戒之盾"], "the Sentinel Shield tags initiative and perception");
+    await hints(inventoryOf({ uid: "boots", quantity: 1, worn: true, magic: { id: "boots-of-elvenkind" } }));
     await hints(inventoryOf({ uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-dwarvenkind" } }));
     await page.evaluate(() => TabletopMode.setPanel("skills"));
     await page.waitForFunction(() => document.querySelector("#tabletop-panel-skills .tabletop-defense-summary__list")?.textContent.includes("矮人腰帶：與矮人、灰矮人互動"));
