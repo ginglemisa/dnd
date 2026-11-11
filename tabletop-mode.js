@@ -1155,7 +1155,7 @@
   }
 
   function getMageArmorEffect() {
-    const dexterity = getDruidForm()?.abilities.dex ?? document.getElementById("dex")?.value ?? 10;
+    const dexterity = getDruidForm()?.abilities.dex ?? readAbilityScore("dex") ?? 10;
     const modifier = globalScope.calculateAbilityModifier(dexterity);
     // 法師護甲取代護甲的計算，戒指、斗篷等魔法物品的加值仍要算（荒野形態不算）。
     const magicBonus = getDruidForm() ? 0 : globalScope.getActiveMagicEffects?.().ac.other || 0;
@@ -1258,7 +1258,7 @@
     });
     const options = {
       className: value("class"), race: value("race"), level: value("level"),
-      wisdomScore: value("wis"), charismaScore: value("cha"),
+      wisdomScore: readAbilityScore("wis") || "", charismaScore: readAbilityScore("cha") || "",
       raceChoice: getSelectedRaceChoice(), druidLand: value("druid-land"),
       hasTravelCompanion: Boolean(globalScope.hasSelectedFeat?.("最佳旅伴")),
       spellSlotGroups: slots.map(group => ({ level: group.level, ids: group.controls.map(control => control.id) })),
@@ -1278,7 +1278,7 @@
 
   function getHitDiceContext() {
     const die = globalScope.getHitDiceValues(document.getElementById("class")?.value)?.Y || 0;
-    const constitution = getDruidForm()?.abilities.con ?? document.getElementById("con")?.value ?? 10;
+    const constitution = getDruidForm()?.abilities.con ?? readAbilityScore("con") ?? 10;
     const modifier = globalScope.calculateAbilityModifier(constitution);
     return { hp: readCurrentHp(), maximumHp: readMaximumHp(),
       remaining: Number(document.getElementById("lifedicen")?.value || 0), die,
@@ -1572,6 +1572,18 @@
         incapacitated, field("subclass"), field("druid-land"), ["str", "dex", "con", "wis", "armor", "mainHand", "offHand"].map(field)]) };
   }
 
+  // 角色自己的屬性值：有效值（屬性欄原值加上生效中的魔法物品，character-rules.js 的 getEffectiveAbilityValue）。
+  function readAbilityScore(ability) {
+    return globalScope.getEffectiveAbilityValue?.(ability) ?? document.getElementById(ability)?.value ?? "";
+  }
+
+  // 魔法物品改變屬性時的有效值與來源；荒野形態的力敏體換成野獸數值，不算。
+  function getAbilityEffect(ability) {
+    if (getDruidForm() && ["str", "dex", "con"].includes(ability)) return null;
+    const effective = globalScope.getEffectiveAbilityScore?.(ability);
+    return effective?.changed ? effective : null;
+  }
+
   function getDruidForm() {
     if (!combatState.druid?.formKey) return null;
     const context = getDruidContext();
@@ -1592,15 +1604,17 @@
     const original = fallback ?? read(id);
     const beast = getDruidForm();
     if (!beast) return original;
-    const score = key => ["str", "dex", "con"].includes(key) ? beast.abilities[key] : Number(read(key));
+    // 角色自己的屬性用有效值（含魔法物品）：技能、豁免欄已含有效值的調整值，換算時先扣掉這個。
+    const own = key => Number(readAbilityScore(key) || "0");
+    const score = key => ["str", "dex", "con"].includes(key) ? beast.abilities[key] : own(key);
     const mod = key => globalScope.calculateAbilityModifier(score(key));
     const signed = value => globalScope.formatSignedValue(value);
-    const check = (ability, beastTotal) => signed(globalScope.calculateWildShapeCheck(Number(original), Number(read(ability)), score(ability), beastTotal));
+    const check = (ability, beastTotal) => signed(globalScope.calculateWildShapeCheck(Number(original), own(ability), score(ability), beastTotal));
     if (/^(str|dex|con|int|wis|cha)-mod$/.test(id)) return signed(mod(id.slice(0, 3)));
     if (/^save-(str|dex|con|int|wis|cha)$/.test(id)) {
       // 豁免欄含魔法物品的加值；荒野形態只有穿戴中的護甲與盾牌保留，先扣掉（手動填的數字不動）。
       const magicSaves = globalScope.isAutomaticKeyStatsEnabled?.() ? globalScope.getActiveMagicEffects?.().saves || 0 : 0;
-      return signed(globalScope.calculateWildShapeCheck(Number(original) - magicSaves, Number(read(id.slice(5))), score(id.slice(5)), beast.saves?.[id.slice(5)]));
+      return signed(globalScope.calculateWildShapeCheck(Number(original) - magicSaves, own(id.slice(5)), score(id.slice(5)), beast.saves?.[id.slice(5)]));
     }
     if (id.startsWith("skill-")) {
       const key = id.slice(6);
@@ -2374,7 +2388,7 @@
   function getPaladinAuraOverviewEntry() {
     const selectedClass = document.getElementById("class")?.value || "";
     if (selectedClass !== "paladin" || !hasCurrentClassFeature("paladin-aura-of-protection")) return null;
-    const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+    const rawCharisma = String(readAbilityScore("cha") || "").trim();
     const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
     const bonus = Math.max(1, Number.isFinite(charismaModifier) ? charismaModifier : 0);
     return {
@@ -2390,7 +2404,7 @@
     const selectedClass = document.getElementById("class")?.value || "";
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
     if (selectedClass !== "warlock" || !hasCurrentClassFeature("warlock-dark-ones-blessing")) return null;
-    const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+    const rawCharisma = String(readAbilityScore("cha") || "").trim();
     const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
     const temporaryHp = Math.max(1, characterLevel + (Number.isFinite(charismaModifier) ? charismaModifier : 0));
     return {
@@ -2407,7 +2421,7 @@
     if (!damageTypeSelect?.value) return null;
     const damageType = String(damageTypeSelect.selectedOptions?.[0]?.textContent || "").trim();
     if (!damageType) return null;
-    const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+    const rawCharisma = String(readAbilityScore("cha") || "").trim();
     const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
     const bonus = Number.isFinite(charismaModifier) ? charismaModifier : 0;
     const signedBonus = bonus >= 0 ? `+${bonus}` : String(bonus);
@@ -2452,7 +2466,7 @@
     const auraBonus = Number(globalScope.getPaladinAuraSavingThrowBonus?.(
       document.getElementById("class")?.value || "",
       document.getElementById("level")?.value || "0",
-      document.getElementById("cha")?.value || "10"
+      readAbilityScore("cha") || "10"
     )) || 0;
     const modifier = parseRollModifier(value);
     if (!auraBonus || modifier === null) return value;
@@ -2629,10 +2643,14 @@
         "",
         `${label}檢定`
       );
-      // 荒野形態只換力量、敏捷、體質；心智屬性保留角色原值，不加標記。
-      if (formMarks.length && ["str", "dex", "con"].includes(ability)) {
-        renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, formMarks);
+      // 荒野形態只換力量、敏捷、體質；心智屬性保留角色原值，不加形態標記。
+      // 魔法物品改變的屬性標「(物品)」（窄螢幕放不下物品全名），滑鼠提示寫出有效值與物品。
+      const magic = getAbilityEffect(ability);
+      const marks = formMarks.length && ["str", "dex", "con"].includes(ability) ? formMarks : (magic ? ["(物品)"] : []);
+      if (marks.length) {
+        renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, marks);
       }
+      if (magic) item.title = `${label} ${magic.score}（${magic.sources.join("、")}）`;
       return item;
     });
 

@@ -10,6 +10,7 @@
  *   目錄找不到的魔法物品保留這一筆，顯示「未知魔法物品」。
  *   需要同調的魔法物品在互動列有同調開關（Inventory.setAttuned()，分享模式只顯示狀態）：由玩家自己開，超過上限或同調同一種物品時提示原因、不改狀態；
  *   限定條件（例如「由法師」）只顯示不阻擋。同調中的標籤與視窗標示「同調」，物品欄有需同調物品時標題下方顯示「同調 N/3」。
+ *   裝備頁標題列另有「同調 N/3」按鈕（#attunement-open，條件相同），開 `attunement` 視窗：三格下拉選要同調的物品，選了立刻生效並列出數字變化（openAttunementDialog()）。
  *   可以穿戴的魔法物品（戒指、斗篷等，MagicItemCatalog.isWearable）在同一列有「裝備／卸下」（Inventory.setWorn()）：穿上後標籤在「裝備中」、固定 ×1，
  *   一筆多件時拆出一件穿上並關閉視窗；開始同調時自動穿上，卸下保留同調。手持類的魔杖等照武器的選手視窗放進主手或副手；
  *   可以穿戴也可以手持的護符分成「手持」「穿戴」兩顆按鈕。分享模式只顯示穿戴與同調狀態。
@@ -1313,11 +1314,148 @@
   }
 
   function renderAttunement() {
-    const summary = document.getElementById("inventory-attunement");
-    if (!summary) return;
     const { count, max, needed } = api().getAttunement();
-    summary.hidden = !needed || api().isTextOnly();
-    summary.textContent = `同調 ${count}/${max}`;
+    const hidden = !needed || api().isTextOnly();
+    const summary = document.getElementById("inventory-attunement");
+    if (summary) {
+      summary.hidden = hidden;
+      summary.textContent = `同調 ${count}/${max}`;
+    }
+    // 裝備頁標題列的「同調 N/3」按鈕（開同調視窗），出現條件與物品欄的同調數相同。
+    const button = document.getElementById("attunement-open");
+    if (button) {
+      button.hidden = hidden;
+      button.textContent = `同調 ${count}/${max}`;
+    }
+  }
+
+  // 同調視窗比較的數字：屬性有效值與角色卡的幾個關鍵數值（讀畫面上已算好的值）。
+  const ATTUNEMENT_ABILITY_LABELS = Object.freeze({ str: "力量", dex: "敏捷", con: "體質", int: "智力", wis: "感知", cha: "魅力" });
+  const ATTUNEMENT_FIELDS = Object.freeze([
+    ["ac-display", "AC"], ["hp-display", "最大生命"], ["speed-display", "速度"],
+    ["spell-save-dc", "法術豁免 DC"], ["spell-attack-bonus", "法術攻擊"]
+  ]);
+
+  function readAttunementNumbers() {
+    const abilities = Object.entries(ATTUNEMENT_ABILITY_LABELS).map(([id, label]) => [label, globalScope.getEffectiveAbilityValue?.(id) ?? ""]);
+    const fields = ATTUNEMENT_FIELDS.map(([id, label]) => [label, String(document.getElementById(id)?.value ?? "").trim()]);
+    return [...abilities, ...fields];
+  }
+
+  function describeAttunementChanges(before) {
+    const after = new Map(readAttunementNumbers());
+    const changes = before.filter(([label, value]) => after.get(label) !== value).map(([label, value]) => `${label} ${value || "—"} → ${after.get(label) || "—"}`);
+    return changes.length ? `這次的變化：${changes.join("、")}` : "目前沒有數字變化。";
+  }
+
+  // 已同調的物品還需要什麼才會生效（穿戴、手持）；限定條件（例如「由法師」）只提示。
+  function describeAttunementNeeds(entry) {
+    const rule = globalScope.MagicItemCatalog.get(entry.magic.id);
+    const use = globalScope.MagicItemCatalog.getUse(rule.id);
+    const inHand = entry.slot === "mainHand" || entry.slot === "offHand";
+    const needs = [];
+    if (rule.base && !entry.slot) needs.push(rule.category === "armor" ? "要穿上才會生效。" : "要裝備在主手或副手才會生效。");
+    else if (use === "held" && !inHand) needs.push("要拿在主手或副手才會生效。");
+    else if (use === "worn" && !entry.worn) needs.push("要穿上才會生效。");
+    else if (use === "wornOrHeld" && !entry.worn && !inHand) needs.push("要穿上或拿在手上才會生效。");
+    if (typeof rule.attunement === "string") needs.push(`需${rule.attunement}同調，請自行確認。`);
+    return needs.join("");
+  }
+
+  /**
+   * 同調視窗（裝備頁的「同調 N/3」）：三格下拉只列物品欄裡需要同調的魔法物品，選了立刻生效（Inventory.setAttuned()），下方寫出數字變化
+   * （和打開視窗時比）。同一種已在別格的物品不能選；一筆多件時選了先拆出一件再同調；開始同調時可以穿戴的物品照樣自動穿上。
+   * 分享模式只列出目前同調的物品。格子的位置只在視窗內，不存檔。
+   */
+  function openAttunementDialog(trigger) {
+    const max = api().LIMITS.attunement;
+    const catalog = globalScope.MagicItemCatalog;
+    const candidates = () => api().entries().filter(entry => entry.magic && catalog.get(entry.magic.id)?.attunement);
+    const slots = candidates().filter(entry => entry.attuned).map(entry => entry.uid).slice(0, max);
+    while (slots.length < max) slots.push("");
+    const before = readAttunementNumbers();
+    let body = null;
+    let changeLine = null;
+    const refreshChanges = () => {
+      if (!changeLine) return;
+      changeLine.textContent = describeAttunementChanges(before);
+    };
+    const choose = (index, uid) => {
+      const previous = slots[index];
+      if (previous === uid) return;
+      if (previous) api().setAttuned(previous, false);
+      let target = uid;
+      const entry = uid ? api().getEntry(uid) : null;
+      if (entry && entry.quantity > 1) {
+        target = api().split(uid, entry.quantity - 1);
+        if (!target) globalScope.AppDialog.notify(`物品欄最多 ${api().LIMITS.items} 筆，無法拆出一件同調，請先整理物品欄。`, { tone: "warning" });
+      }
+      const result = target ? api().setAttuned(target, true) : (uid ? "split" : "ok");
+      if (result === "ok") slots[index] = target || "";
+      else {
+        if (ATTUNEMENT_REFUSALS[result]) globalScope.AppDialog.notify(ATTUNEMENT_REFUSALS[result], { tone: "warning" });
+        if (previous && api().setAttuned(previous, true) !== "ok") slots[index] = "";
+      }
+      renderSlots();
+    };
+    const renderSlots = () => {
+      if (!body) return;
+      const list = candidates();
+      const byUid = new Map(list.map(entry => [entry.uid, entry]));
+      // 物品被移除或在別處結束同調時，那一格變回空的。
+      slots.forEach((uid, index) => { if (uid && !byUid.get(uid)?.attuned) slots[index] = ""; });
+      const rows = slots.map((uid, index) => {
+        const row = el("div", "attunement-slot");
+        const name = `第 ${index + 1} 格`;
+        if (globalScope.SHARE_MODE) {
+          row.classList.add("attunement-slot--readonly");
+          row.append(el("span", "attunement-slot__label", name), el("span", "attunement-slot__value", uid ? api().getLabel(byUid.get(uid)) : "未同調"));
+          return row;
+        }
+        const select = el("select", "attunement-slot__select");
+        select.dataset.stateTransient = "true";
+        select.setAttribute("aria-label", `同調${name}`);
+        select.appendChild(new Option("— 不同調 —", ""));
+        list.forEach((entry) => {
+          const owner = slots.findIndex((other, otherIndex) => otherIndex !== index && other && byUid.get(other)?.magic.id === entry.magic.id);
+          const stack = entry.quantity > 1 ? ` ×${entry.quantity}（選了拆一件）` : "";
+          const option = new Option(`${api().getLabel(entry)}${stack}${owner >= 0 ? `（已在第 ${owner + 1} 格）` : ""}`, entry.uid);
+          option.disabled = owner >= 0;
+          select.appendChild(option);
+        });
+        select.value = uid;
+        select.addEventListener("change", () => choose(index, select.value));
+        row.append(labelled(name, select));
+        const needs = uid ? describeAttunementNeeds(byUid.get(uid)) : "";
+        if (needs) row.appendChild(el("p", "attunement-slot__note", needs));
+        return row;
+      });
+      body.querySelector(".attunement-slots").replaceChildren(...rows);
+      refreshChanges();
+      // 角色卡的部分數字在事件之後才重算完，下一輪再比一次。
+      setTimeout(refreshChanges, 0);
+    };
+    globalScope.AppDialog.showContent({
+      title: "同調物品",
+      variant: "attunement",
+      trigger,
+      initialFocus: "content",
+      confirmLabel: "完成",
+      renderContent(container) {
+        body = container;
+        body.appendChild(el("p", "inventory-item-note", globalScope.SHARE_MODE
+          ? `最多同調 ${max} 件。分享模式只能查看同調狀態。`
+          : `最多同調 ${max} 件，選了立刻生效。`));
+        body.appendChild(el("div", "attunement-slots"));
+        if (!globalScope.SHARE_MODE) {
+          changeLine = el("p", "attunement-changes");
+          changeLine.setAttribute("role", "status");
+          changeLine.setAttribute("aria-live", "polite");
+          body.appendChild(changeLine);
+        }
+        renderSlots();
+      }
+    });
   }
 
   // 「整理成標籤」只在選單裡（⋯ 上亮小點）；這時不顯示「物品欄還是空的」，避免跟下方文字矛盾。
@@ -1717,6 +1855,7 @@
       if (more?.getAttribute("aria-expanded") === "true" && !tools?.contains(event.target)) setMoreOpen(false);
     });
     document.addEventListener("inventory:change", render);
+    document.getElementById("attunement-open")?.addEventListener("click", event => openAttunementDialog(event.currentTarget));
     document.addEventListener("click", (event) => {
       const trigger = event.target.closest?.("[data-starting-equipment]");
       if (trigger) openStartingEquipmentDialog(trigger);
@@ -1918,7 +2057,7 @@
     });
   }
 
-  globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog, syncEquippedSlots, buildStepper, buildBonusTransferControl });
+  globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog, openAttunementDialog, syncEquippedSlots, buildStepper, buildBonusTransferControl });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);

@@ -730,8 +730,13 @@ async function validateMagicItemShop(page) {
   await openGrant("bag-of-holding");
   assert.equal(await grant.locator("select, .magic-item-segmented, .inventory-stepper").count(), 0, "no options means no controls");
   await finishGrant();
-  await openGrant("amulet-of-health");
+  await openGrant("boots-of-speed");
   assert.equal(await grant.locator(".magic-item-detail__manual").textContent(), "角色卡不會自動套用這項效果，請依說明處理");
+  await grant.getByRole("button", { name: "取消", exact: true }).click();
+  await grant.waitFor({ state: "detached" });
+  // 健康護符的體質已自動計算（effects.abilities），不再有手動處理的提示。
+  await openGrant("amulet-of-health");
+  assert.equal(await grant.locator(".magic-item-detail__manual").count(), 0, "items whose ability score the sheet applies have no manual note");
   await finishGrant();
 
   // 治療藥水一般款與法術卷軸沿用既有寫法；高等是魔法物品。
@@ -875,7 +880,8 @@ async function validateMagicItemShop(page) {
   };
   await openItem("amulet");
   assert.equal(await item.locator(".magic-item-detail__subtitle").textContent(), "奇物，稀有（需同調）");
-  assert.equal(await item.locator(".magic-item-detail__manual").textContent(), "角色卡不會自動套用這項效果，請依說明處理");
+  // 健康護符的體質已自動計算，物品視窗不再提示手動處理（提示本身由商店視窗的速度之靴檢查）。
+  assert.equal(await item.locator(".magic-item-detail__manual").count(), 0, "the inventory dialog has no manual note for an item the sheet applies");
   assert.deepEqual(await item.locator(".inventory-item-actions .inventory-action-button").allTextContents(), ["裝備", "開始同調"], "non-consumable items have no use button; wearable items that need attunement have the wear and attunement switches");
   assert.equal(await item.locator(".inventory-item-actions .inventory-action-row__text").textContent(), "需要穿戴並同調才會生效。");
   await closeItem();
@@ -1041,7 +1047,7 @@ async function validateMagicItemCatalog(page) {
   assert.deepEqual(result.names, ["長劍+1", "全身板甲+3", "盾牌+2", "戰法魔杖+2", "治療藥水", "治療藥水（高等）", "焰舌（長劍）", "陽炎劍", "抗性戒指（火焰）", "武器+1／+2／+3", ""], "magic item display names");
   assert.deepEqual(result.effects, [
     { attack: 2, damage: 2 }, {}, { ac: 1 }, { attack: 1, damage: 1 }, { attack: 1, damage: 1, saves: 1 }, { ac: 2, condition: "unarmored" },
-    { attack: 2, damage: 2, ac: 2, saves: 2, spellAttack: 2, condition: "held" }, { ac: 1 }, {}, {}
+    { attack: 2, damage: 2, ac: 2, saves: 2, spellAttack: 2, condition: "held" }, { ac: 1 }, { abilities: { dex: { bonus: 2, max: 20 } } }, {}
   ], "magic item fixed effects; conditional bonuses stay in the text");
   assert.deepEqual(result.bases, [["長劍"], ["長棍"], ["硬頭錘"], [], false, false], "magic item base choices");
   assert.deepEqual(result.rarity, ["legendary", null, "rare", "極稀有"]);
@@ -2316,6 +2322,50 @@ async function validateInventoryItemActions(page) {
   assert.equal(await item.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, "the wear row fits at 375px");
   await closeItem();
   await page.setViewportSize({ width: 1100, height: 850 });
+
+  // 同調視窗（裝備頁的「同調 N/3」）：三格下拉只列需同調的物品，選了立刻生效並列出數字變化；同一種已在別格不能選，
+  // 一筆多件選了拆一件，限定條件只提示。物品欄沒有需同調物品或純文字管理時按鈕隱藏。
+  await page.evaluate(() => applyStateObject({ class: "wizard", level: "5", str: "10", int: "16", dex: "14", con: "12", mainHand: "", offHand: "", armor: "", "spellcasting-ability": "int", __inventory: { version: 1, items: [
+    { uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-giant-strength", giant: "hill" } },
+    { uid: "headband", quantity: 1, magic: { id: "headband-of-intellect" } },
+    { uid: "stones", quantity: 2, magic: { id: "ioun-stone", kind: "intellect" } },
+    { uid: "robe", quantity: 1, magic: { id: "robe-of-the-archmagi" } },
+    { uid: "rope", name: "繩子", quantity: 1 }
+  ] } }));
+  await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; showTab("equipment"); });
+  const attuneButton = page.locator("#attunement-open");
+  const attuneDialog = page.locator('.app-dialog[data-variant="attunement"]');
+  const attuneSelects = attuneDialog.locator(".attunement-slot__select");
+  assert.deepEqual([await attuneButton.isVisible(), await attuneButton.textContent(), await page.evaluate(() => [...document.querySelector(".equipment-loadout-heading").children].map(child => child.id || child.tagName))],
+    [true, "同調 1/3", ["H3", "P", "attunement-open"]], "the attunement button sits at the end of the equipment heading");
+  await attuneButton.click();
+  await attuneDialog.waitFor();
+  const optionTexts = index => attuneSelects.nth(index).evaluate(select => [...select.options].map(option => `${option.textContent}${option.disabled ? "×" : ""}`));
+  assert.deepEqual([await attuneSelects.count(), await attuneSelects.evaluateAll(selects => selects.map(select => select.value)), await optionTexts(1)],
+    [3, ["belt", "", ""], ["— 不同調 —", "巨人之力腰帶（山丘）（已在第 1 格）×", "智力頭帶", "艾恩石（智識） ×2（選了拆一件）", "大法師法袍"]], "only items that need attunement are listed; one already in another slot is disabled");
+  await attuneSelects.nth(1).selectOption("headband");
+  assert.deepEqual([await attuneButton.textContent(), await page.evaluate(() => [Inventory.getEntry("headband").attuned, Inventory.getEntry("headband").worn]), await attuneDialog.locator(".attunement-changes").textContent()],
+    ["同調 2/3", [true, true], "這次的變化：智力 16 → 19、法術豁免 DC 14 → 15、法術攻擊 +6 → +7"], "choosing an item attunes and wears it at once and lists what changed");
+  await attuneSelects.nth(2).selectOption("stones");
+  const stoneUid = await page.evaluate(() => Inventory.entries().find(entry => entry.magic?.id === "ioun-stone" && entry.attuned)?.uid);
+  assert.deepEqual([await page.evaluate(() => Inventory.getEntry("stones").quantity), Boolean(stoneUid) && stoneUid !== "stones", await attuneSelects.nth(2).inputValue() === stoneUid, await optionTexts(1).then(list => list.includes("艾恩石（智識）（已在第 3 格）×"))],
+    [1, true, true, true], "choosing one of a stack splits off one to attune");
+  assert.equal(await attuneDialog.locator(".attunement-changes").textContent(), "這次的變化：智力 16 → 19、法術豁免 DC 14 → 15、法術攻擊 +6 → +7", "a capped +2 stone (18) does not beat the headband (19)");
+  await attuneSelects.nth(2).selectOption("robe");
+  assert.deepEqual([await page.evaluate(uid => Boolean(Inventory.getEntry(uid).attuned), stoneUid), await attuneDialog.locator(".attunement-slot__note").allTextContents()],
+    [false, ["需由術士、契術師或法師同調，請自行確認。"]], "switching a slot ends the old attunement; restrictions are only hints");
+  await attuneSelects.nth(0).selectOption("");
+  assert.deepEqual([await attuneButton.textContent(), await page.evaluate(() => [Boolean(Inventory.getEntry("belt").attuned), Inventory.getEntry("belt").worn]), (await attuneDialog.locator(".attunement-changes").textContent()).startsWith("這次的變化：力量 21 → 10")],
+    ["同調 2/3", [false, true], true], "clearing a slot ends attunement and keeps the item worn");
+  await page.setViewportSize({ width: 375, height: 800 });
+  assert.equal(await attuneDialog.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, "the attunement dialog fits at 375px");
+  await attuneDialog.getByRole("button", { name: "完成" }).click();
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [{ uid: "rope", name: "繩子", quantity: 1 }] }));
+  assert.equal(await attuneButton.isVisible(), false, "no item needing attunement hides the button");
+  await page.evaluate(() => Inventory.restore({ version: 1, textOnly: true, items: [] }));
+  assert.equal(await attuneButton.isVisible(), false, "text-only inventory hides the button");
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
   await page.evaluate(on => { document.getElementById("auto-calculate-key-stats-toggle").checked = on; }, keyStatsWasOn);
 }
 

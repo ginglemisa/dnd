@@ -1441,6 +1441,67 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-mastery-badg
   line-height: 1.55;
 }
 
+/* 「同調 N/3」靠標題列最右（外型與「準備法術」同一組規則，在 sheet-spells.css）；物品欄沒有需同調物品時 hidden。 */
+#attunement-open {
+  align-self: center;
+}
+
+#attunement-open[hidden] {
+  display: none;
+}
+
+/* 同調視窗：三格下拉、限定條件與生效條件的提示、數字變化。 */
+.attunement-slots {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.attunement-slot .inventory-field {
+  margin-bottom: 0;
+}
+
+.attunement-slot__select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.attunement-slot__note {
+  margin: 0.3rem 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+
+.attunement-slot {
+  padding-bottom: 0.5rem;
+}
+
+/* 分享模式只列出名稱。 */
+.attunement-slot--readonly {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  font-size: var(--fs-sm);
+}
+
+.attunement-slot__label {
+  color: var(--text-muted);
+}
+
+.attunement-slot__value {
+  font-weight: 750;
+}
+
+.attunement-changes {
+  margin: 0.5rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  color: var(--accent-strong);
+  font-size: var(--fs-sm);
+  font-weight: 750;
+  line-height: 1.5;
+}
+
 /* 選單對齊底部：標題列多出契約、橡棍術勾選框或換列時，三個選單仍在同一高度。 */
 #tab-equipment .equipment-loadout-field {
   display: grid;

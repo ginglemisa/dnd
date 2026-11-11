@@ -475,6 +475,12 @@ async function verifyAboutRoutes(browser, url) {
 
 async function verifyPdf(page, fieldsOnly) {
   await page.addScriptTag({ url: "/pdf-field-map.js" });
+  // 屬性格寫匯出選項帶來的有效值（魔法物品），力量需求降速也用它；沒有帶時寫存檔的原值。
+  assert.deepEqual(await page.evaluate(() => {
+    const state = { class: "fighter", level: "1", str: "10", con: "12", armor: "鎖子甲", "speed-input": "30" };
+    const pick = payload => [payload.strMod1, payload.str1, payload.conMod1, payload.con1, payload.speed1];
+    return [pick(buildPdfFieldPayload(state)), pick(buildPdfFieldPayload(state, { abilityScores: { str: "19", con: "19" } }))];
+  }), [["10", "0", "12", "+1", "20"], ["19", "+4", "19", "+4", "30"]], "PDF ability boxes use the effective scores passed by the page");
   await page.evaluate(() => {
     for (const key of ["derived-feat-human-origin", "derived-feat-lessons-1", "derived-feat-lessons-2", "derived-feat-fighter-level-4", "derived-feat-warlock-level-8", "feat-0"]) {
       if (!buildPdfFieldPayload({ [key]: "強韌體魄" }).feats1.includes("HP上限+等級×2")) throw new Error(`PDF feat source: ${key}`);
@@ -4834,6 +4840,42 @@ async function verifyInventoryPersistence(browser, url) {
       assert.equal(await sharedRing.getByRole("button", { name: /穿上|卸下/u }).count(), 0, "share mode cannot wear or take off rings");
       assert.match(await sharedRing.locator(".inventory-item-actions").innerText(), /穿戴中、同調中/u, "share mode shows the worn state");
     } finally { await equippedShared.close(); }
+    // 屬性有效值不存檔：屬性欄存原值，autosave、JSON、分享還原後由物品重新算出（手持的雷神之錘在載入最後才對應到主手，也要算進去）。
+    const abilityState = { class: "fighter", level: "5", str: "16", dex: "14", con: "12", mainHand: "雷神之錘（戰錘）", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "hammer", itemId: "戰錘", quantity: 1, attuned: true, magic: { id: "hammer-of-thunderbolts" } },
+      { uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-giant-strength", giant: "hill" } },
+      { uid: "amulet", quantity: 1, attuned: true, worn: true, magic: { id: "amulet-of-health" } }
+    ] } };
+    const abilitySnapshot = target => target.evaluate(() => ({
+      raw: [document.getElementById("str").value, document.getElementById("con").value, collectStateObject().str, collectStateObject().con],
+      shown: [document.getElementById("str-mod").textContent, document.getElementById("str-effective").textContent, document.getElementById("con-mod").textContent],
+      numbers: [document.getElementById("atk-main-hit").value, getCarryCapacityPounds()]
+    }));
+    const abilityExpected = {
+      raw: ["16", "12", "16", "12"],
+      shown: ["+7", "→ 25 巨人之力腰帶（山丘）、雷神之錘（戰錘）", "+4"],
+      numbers: ["+11", 375]
+    };
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, abilityState);
+    assert.deepEqual(await abilitySnapshot(page), abilityExpected, "magic items raise the effective scores while the fields keep the raw values");
+    await page.goto(url);
+    assert.deepEqual(await abilitySnapshot(page), abilityExpected, "autosave keeps raw scores and recomputes the effective ones");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await abilitySnapshot(page), abilityExpected, "JSON keeps raw scores and recomputes the effective ones");
+    const abilityHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const abilityShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = abilityHash;
+      await abilityShared.goto(sharedUrl.href);
+      await abilityShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await abilitySnapshot(abilityShared), abilityExpected, "share keeps raw scores and recomputes the effective ones");
+      // 分享模式的同調視窗只列出目前同調的物品，不能更改。
+      await abilityShared.evaluate(() => { showTab("equipment"); document.getElementById("attunement-open").click(); });
+      const sharedAttune = abilityShared.locator('.app-dialog[data-variant="attunement"]');
+      await sharedAttune.waitFor();
+      assert.deepEqual([await sharedAttune.locator("select").count(), await sharedAttune.locator(".attunement-slot").allInnerTexts().then(rows => rows.map(row => row.replace(/\s+/gu, " ")))],
+        [0, ["第 1 格 雷神之錘（戰錘）", "第 2 格 巨人之力腰帶（山丘）", "第 3 格 健康護符"]], "share mode lists attuned items read-only");
+    } finally { await abilityShared.close(); }
     // 舊資料的裝備欄位是普通品名：普通物品照舊，魔法款不被當成已裝備。
     assert.deepEqual(await page.evaluate(() => {
       applyStateObject({ class: "fighter", level: "1", mainHand: "長劍", __inventory: { version: 1, items: [{ uid: "own", itemId: "長劍", quantity: 1 }, { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } }] } });

@@ -672,6 +672,24 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   }
 }
 
+/* 魔法物品改變屬性時，原值下方的有效值與來源（「→ 21 巨人之力腰帶（山丘）」）；沒有時 hidden。 */
+.ability-effective {
+  margin: -0.4rem 0 0;
+  color: var(--accent-strong);
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.ability-effective strong {
+  font-weight: 900;
+}
+
+.ability-effective[hidden] {
+  display: none;
+}
+
 /* ===== Skills ===== */
 #tab-skills {
   container: skill-tab / inline-size;

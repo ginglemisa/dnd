@@ -49,7 +49,7 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261111-merge-armor-speed");
+      await loadScriptOnce("pdf-field-map.js?v=20261111-magic-abilities");
       await loadScriptOnce("pdf-export.js?v=20261111-armor-str-speed");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
@@ -64,6 +64,11 @@ function getPdfRaceChoiceOptions(state) {
   return Object.fromEntries(Object.values(window.getAllRaceRules?.() || {}).flatMap(rules => rules.choice
     ? [[window.getRaceChoiceOptionKey(rules.choice.id), (state?.[rules.choice.id] || "").trim()]]
     : []));
+}
+
+// PDF 的屬性格寫有效值（屬性欄原值加上生效中的魔法物品）；存檔與 state 仍是原值，由匯出選項帶給 buildPdfFieldPayload。
+function getPdfAbilityScores() {
+  return Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].flatMap(id => typeof window.getEffectiveAbilityValue === "function" ? [[id, window.getEffectiveAbilityValue(id)]] : []));
 }
 
 function buildPdfPrecheckMessages() {
@@ -283,7 +288,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       try {
         await ensurePdfExportReady();
         const {includeAvatar,...chosen}=result;
-        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:'',customSpells:window.TabletopCustomSpells?.getPdfSpells() || [],weaponDamageTypeNotes:window.getWeaponDamageTypePdfNotes?.() || {},hasSpeedyFeat:window.hasSelectedFeat?.("迅捷步法") === true};
+        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:'',customSpells:window.TabletopCustomSpells?.getPdfSpells() || [],weaponDamageTypeNotes:window.getWeaponDamageTypePdfNotes?.() || {},hasSpeedyFeat:window.hasSelectedFeat?.("迅捷步法") === true,abilityScores:getPdfAbilityScores()};
         await window.preloadPdfExportAssets?.(exportOptions);
         render('progress',nameMeasurement?.shrinks
           ? `角色名稱將以 ${nameMeasurement.fontSize.toFixed(1)} pt 輸出，製作中…`
@@ -628,6 +633,7 @@ async function downloadQuickBuildCompactPdf() {
       customSpells: window.TabletopCustomSpells?.getPdfSpells() || [],
       weaponDamageTypeNotes: window.getWeaponDamageTypePdfNotes?.() || {},
       hasSpeedyFeat: window.hasSelectedFeat?.("迅捷步法") === true,
+      abilityScores: getPdfAbilityScores(),
       ...getPdfRaceChoiceOptions(state),
       outputMode: "compact",
       sheetTemplate: "official"

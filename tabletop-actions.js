@@ -498,8 +498,8 @@
       className: document.getElementById("class")?.value || "",
       race: document.getElementById("race")?.value || "",
       level: document.getElementById("level")?.value || "",
-      wisdomScore: document.getElementById("wis")?.value || "10",
-      charismaScore: document.getElementById("cha")?.value || "10"
+      wisdomScore: (globalScope.getEffectiveAbilityValue?.("wis") ?? document.getElementById("wis")?.value) || "10",
+      charismaScore: (globalScope.getEffectiveAbilityValue?.("cha") ?? document.getElementById("cha")?.value) || "10"
     });
   }
 
@@ -634,7 +634,7 @@
     if (option.resourceKey === "monk-wholeness") {
       const level = Number(document.getElementById("level")?.value);
       const die = globalScope.getMonkMartialArtsDieByLevel(level);
-      const wisdom = globalScope.calculateAbilityModifier(document.getElementById("wis")?.value || "10");
+      const wisdom = globalScope.calculateAbilityModifier((globalScope.getEffectiveAbilityValue?.("wis") ?? document.getElementById("wis")?.value) || "10");
       const expression = `${die}${wisdom >= 0 ? "+" : ""}${wisdom}`;
       if (globalScope.DiceRoller?.isEnabled?.()) {
         globalScope.DiceRoller.rollExpressionsInModal([
