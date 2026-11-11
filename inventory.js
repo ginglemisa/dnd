@@ -473,7 +473,15 @@
       name = bundle[1].trim();
       quantity *= Number(bundle[2]);
     }
-    return { ...resolveName(name), quantity: clampQuantity(quantity) };
+    const resolved = resolveName(name);
+    // 魔法彈藥（例如「箭矢+1 ×0」）轉回魔法物品；其他魔法物品的文字照舊是自訂物品。
+    const ammunition = !resolved.itemId ? globalScope.MagicItemCatalog?.resolveAmmunitionName?.(resolved.name) : null;
+    if (ammunition) {
+      const { base, ...options } = ammunition.selection;
+      return { itemId: base, magic: { id: ammunition.id, ...options }, quantity: clampQuantity(quantity, 0) };
+    }
+    // 只有彈藥可以 ×0（用完後保留），其他物品的 ×0 照舊當 1。
+    return { ...resolved, quantity: clampQuantity(quantity, minQuantity(resolved.itemId)) };
   }
 
   function resolveName(rawName) {
@@ -561,6 +569,11 @@
         return;
       }
       const resolved = request.text ? parseItemText(request.text) : { itemId: cleanText(request.itemId), name: cleanText(request.name) };
+      // 文字裡的魔法彈藥（parseItemText 查回的 magic）：照魔法物品加入，×0 也保留。
+      if (resolved.magic) {
+        expanded.push({ itemId: resolved.itemId, magic: cleanMagic(resolved.magic), quantity: resolved.quantity, into, source, ...(resolved.quantity === 0 ? { keepEmpty: true } : {}) });
+        return;
+      }
       // 文字清單的容器（parseListText 的 children）：目錄容器或標成容器的自訂物品，內容物放進去。
       if (request.text && Array.isArray(request.children) && request.children.length) {
         const base = { itemId: resolved.itemId || "", name: resolved.name && resolved.name !== resolved.itemId ? resolved.name : "" };
@@ -571,9 +584,14 @@
           return;
         }
       }
-      const quantity = clampQuantity(request.quantity ?? resolved.quantity ?? 1) * (request.text && request.quantity ? resolved.quantity : 1);
+      const quantity = clampQuantity(request.quantity ?? resolved.quantity ?? 1, minQuantity(resolved.itemId)) * (request.text && request.quantity ? resolved.quantity : 1);
       const base = { itemId: resolved.itemId || "", name: resolved.name && resolved.name !== resolved.itemId ? resolved.name : "" };
       if (!base.itemId && !base.name) return;
+      // 文字裡「箭矢 ×0」：用完的彈藥照樣加入一筆 ×0（keepEmpty），不會變成 1 枚。
+      if (quantity === 0) {
+        expanded.push({ ...base, quantity: 0, into, source, keepEmpty: true });
+        return;
+      }
       const spellId = cleanSpellId(base.itemId, request.spellId);
       if (spellId) base.spellId = spellId;
       const pack = getCatalogItem(base.itemId)?.pack || staticKinds().packs[base.itemId];
@@ -596,8 +614,9 @@
   }
 
   function placeRequest(next, request, taken, newStack = false) {
-    if (!(request.quantity > 0)) return [];
-    const entry = { uid: "", quantity: clampQuantity(request.quantity) };
+    const empty = request.keepEmpty === true && request.quantity === 0 && minQuantity(request.itemId) === 0;
+    if (!(request.quantity > 0) && !empty) return [];
+    const entry = { uid: "", quantity: clampQuantity(request.quantity, empty ? 0 : 1) };
     if (request.itemId) entry.itemId = request.itemId;
     if (request.name) entry.name = request.name;
     if (request.magic) entry.magic = request.magic;
@@ -645,7 +664,7 @@
     const taken = new Set(next.map(entry => entry.uid));
     const expanded = expandRequests(list, into, source);
     if (options.absorbEquipped) absorbEquipped(next, expanded);
-    expanded.filter(request => request.quantity > 0).forEach(request => placeRequest(next, request, taken, options.newStack === true));
+    expanded.filter(request => request.quantity > 0 || request.keepEmpty).forEach(request => placeRequest(next, request, taken, options.newStack === true));
     if (next.length > LIMITS.items) return false;
     if (options.dryRun) return true;
     if (next.length === entries.length && next.every((entry, index) => entry.quantity === entries[index].quantity)) return true;

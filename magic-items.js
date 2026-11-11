@@ -122,6 +122,27 @@
     return equipmentIndex.get(name) || null;
   }
 
+  let ammunitionIndex = null;
+  // 由顯示名稱查回魔法彈藥 { name, id, selection, base }（例如「箭矢+1」「屠殺彈藥（箭矢、龍類）」）；物品欄文字轉回標籤用。
+  // 和 resolveEquipmentName 一樣由目錄枚舉（基本款只取彈藥），不解析字串；對不上或名稱重複時為 null。
+  function resolveAmmunitionName(name) {
+    if (!ammunitionIndex) {
+      const counts = new Map();
+      const variants = getAll().flatMap((item) => {
+        const bases = item.base ? getBaseChoices(item.id).filter(base => magicItemBaseLists.ammunition.includes(base)) : [];
+        const choices = item.options.reduce((selections, option) => selections.flatMap(selection => option.choices.map(choice => ({ ...selection, [option.id]: choice.value }))), [{}]);
+        return bases.flatMap(base => choices.map((choice) => {
+          const selection = { ...choice, base };
+          const variant = Object.freeze({ name: getDisplayName(item.id, selection), id: item.id, selection, base });
+          counts.set(variant.name, (counts.get(variant.name) || 0) + 1);
+          return variant;
+        }));
+      });
+      ammunitionIndex = new Map(variants.filter(variant => counts.get(variant.name) === 1).map(variant => [variant.name, variant]));
+    }
+    return ammunitionIndex.get(name) || null;
+  }
+
   // 目前的形態：selection.form 對得上就是那個形態，否則是原本形態（第一個）；沒有形態的物品為 null。
   function getForm(id, selection) {
     const forms = rule(id)?.forms;
@@ -264,6 +285,7 @@
     isWearable,
     getEquipmentVariants,
     resolveEquipmentName,
+    resolveAmmunitionName,
     getEffects,
     getHints,
     getForm,

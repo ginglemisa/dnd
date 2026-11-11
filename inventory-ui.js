@@ -1341,10 +1341,10 @@
           const tags = el("ul", "inventory-tags inventory-tags--preview");
           line.items.forEach((node) => {
             const parsed = api().parseItemText(node.text);
-            const label = parsed.name || api().getLabel({ itemId: parsed.itemId });
+            const label = parsed.name || api().getLabel({ itemId: parsed.itemId, ...(parsed.magic ? { magic: parsed.magic } : {}) });
             const pack = api().getCatalogItem(parsed.itemId)?.pack;
             const note = node.children ? `（內含 ${node.children.length} 項）` : pack ? "（拆成容器與內容物）" : "";
-            const tag = el("li", "inventory-tag inventory-tag--static", `${label}${parsed.quantity > 1 ? ` ×${parsed.quantity}` : ""}${note}`);
+            const tag = el("li", "inventory-tag inventory-tag--static", `${label}${parsed.quantity !== 1 ? ` ×${parsed.quantity}` : ""}${note}`);
             if (!parsed.itemId) tag.classList.add("is-custom");
             tags.appendChild(tag);
           });
