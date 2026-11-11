@@ -252,6 +252,7 @@
     return {
       hand,
       held,
+      ammo: beast ? null : getHandAmmo(hand),
       label: hand === "main" ? "主手" : (isAlternateMain ? "主手2" : "副手"),
       name: readField(`${prefix}-name`),
       hit: projected?.hit ?? (beast ? "" : readField(`${prefix}-hit`)),
@@ -262,6 +263,30 @@
       mastery: mastery && !mastery.hidden ? String(mastery.textContent || "").trim() : "",
       masteryRule: mastery && !mastery.hidden ? String(mastery.dataset.weaponRule || "").trim() : ""
     };
+  }
+
+  /**
+   * 這一手的武器用的彈藥正是裝備中的那種時，回傳 { uid, label, quantity }；否則 null（沒裝備彈藥、種類不同、不用彈藥）。
+   * 依裝備頁主手／副手下拉的武器基本款判斷，手填模式也一樣。荒野形態由呼叫端排除（彈藥和其他物品一樣融入形態）。
+   */
+  function getHandAmmo(hand) {
+    const inventory = globalScope.Inventory;
+    const ammo = inventory?.getEquippedAmmo?.();
+    if (!ammo) return null;
+    const name = document.getElementById(hand === "main" ? "mainHand" : "offHand")?.value || "";
+    const base = (name && globalScope.getEquipmentBaseName?.(name)) || name;
+    const type = inventory.getAmmunitionType(ammo.itemId);
+    if (!type || inventory.getWeaponAmmunition(base) !== type) return null;
+    return { uid: ammo.uid, label: inventory.getLabel(ammo), quantity: ammo.quantity };
+  }
+
+  // 擲了用裝備中彈藥的武器的命中：扣 1 枚；最後 1 枚用掉時這一筆從物品欄移除，之後就是沒有裝備彈藥、不再扣。
+  function useHandAmmo(hand) {
+    if (globalScope.TabletopMode?.getDruidForm?.()) return;
+    const ammo = getHandAmmo(hand);
+    if (!ammo) return;
+    const used = globalScope.Inventory.consume(ammo.uid);
+    if (used?.removed) globalScope.AppDialog?.notify?.(`${ammo.label}用完了，已從物品欄移除；之後擲命中不再扣彈藥。`, { tone: "info" });
   }
 
   function hasWeaponData(weapon) {
@@ -296,7 +321,8 @@
     return normalized.match(/^\d+\s*d\s*\d+(?:\s*[+-]\s*(?:\d+\s*d\s*\d+|\d+))*/iu)?.[0] || "";
   }
 
-  function appendDefinition(list, term, value, rollType = "", label = "") {
+  // onRoll：擲骰之後呼叫（武器命中扣彈藥）。
+  function appendDefinition(list, term, value, rollType = "", label = "", onRoll = null) {
     const item = createElement("div", "tabletop-weapon-field");
     const description = createElement("dd");
     const displayValue = value || "—";
@@ -322,6 +348,7 @@
             includeModifier: true,
             label: `${label}${term}`
           });
+          onRoll?.();
           return;
         }
         globalScope.DiceRoller?.rollExpression?.(damageExpression, { label: `${label}${term}` });
@@ -423,7 +450,7 @@
 
     const list = createElement("dl", "weapon-attack-fields tabletop-weapon-fields");
     appendWeaponNameField(list, weapon);
-    appendDefinition(list, "命中", weapon.hit, "hit", `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}`);
+    appendDefinition(list, "命中", weapon.hit, "hit", `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}`, weapon.ammo ? () => useHandAmmo(weapon.hand) : null);
     appendDefinition(list, "傷害", weapon.damage, "damage", `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}`);
     const noteField = appendDefinition(list, "備註", weapon.note);
     if (weapon.mastery && weapon.masteryRule) {
@@ -438,13 +465,16 @@
       noteField.classList.add("tabletop-weapon-field--note-with-mastery");
       note?.replaceChildren(noteText, masteryButton);
     }
-    // 魔法武器的武器說明接在備註框裡的下一行；沒有備註也沒有精通時取代「—」。
-    if (weapon.magicNotes.length) {
+    // 魔法武器的武器說明與裝備中的彈藥接在備註框裡的下一行；沒有備註也沒有精通時取代「—」。
+    const extraNotes = [
+      weapon.magicNotes.length ? createElement("span", "tabletop-weapon-magic-note", weapon.magicNotes.join("")) : null,
+      weapon.ammo ? createElement("span", "tabletop-weapon-magic-note tabletop-weapon-ammo", `彈藥：${weapon.ammo.label} 剩 ${weapon.ammo.quantity}`) : null
+    ].filter(Boolean);
+    if (extraNotes.length) {
       const note = noteField.querySelector("dd");
-      const magicNote = createElement("span", "tabletop-weapon-magic-note", weapon.magicNotes.join(""));
       noteField.classList.add("tabletop-weapon-field--magic-note");
-      if (!weapon.note && !(weapon.mastery && weapon.masteryRule)) note?.replaceChildren(magicNote);
-      else note?.appendChild(magicNote);
+      if (!weapon.note && !(weapon.mastery && weapon.masteryRule)) note?.replaceChildren(...extraNotes);
+      else note?.append(...extraNotes);
     }
     list.querySelectorAll("dt").forEach(term => term.classList.add("sr-only"));
     section.appendChild(list);

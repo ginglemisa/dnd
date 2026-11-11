@@ -14,6 +14,7 @@
  *   可以穿戴的魔法物品（戒指、斗篷等，MagicItemCatalog.isWearable）在同一列有「裝備／卸下」（Inventory.setWorn()）：穿上後標籤在「裝備中」、固定 ×1，
  *   一筆多件時拆出一件穿上並關閉視窗；開始同調時自動穿上，卸下保留同調。手持類的魔杖等照武器的選手視窗放進主手或副手；
  *   可以穿戴也可以手持的護符分成「手持」「穿戴」兩顆按鈕。分享模式只顯示穿戴與同調狀態。
+ *   彈藥（普通或魔法彈藥）有「裝備／卸下」（Inventory.setAmmo()，同時只能一種）：標籤與視窗標示裝備中，但留在原處（可以在箭袋裡）、數量照常可改。
  *   互動列的按鈕在左欄、與下方數量框同寬，說明在右欄。至少 2 件的物品在數量框與位置選單之間有「拆分」，開 `inventory-split` 視窗輸入兩堆的數量；拆開後是兩個獨立標籤。
  * - 裝備：物品經 Inventory.syncEquipped() 從物品欄拿 1 件出來，成為固定 ×1、排在「裝備中」的標籤（entry.slot）；角色卡的裝備選擇是唯一依據，
  *   index.html 在選擇改變與還原存檔後呼叫 syncEquippedSlots()。從標籤的「裝備」按鈕拿那個標籤，從下拉則由 Inventory 依規則找。卸除後在身上成為獨立的 ×1 標籤。
@@ -665,6 +666,22 @@
     return wear || attune ? actionRow(text, wear, attune) : null;
   }
 
+  /**
+   * 彈藥（普通或魔法彈藥，Inventory.isAmmunition）：「裝備／卸下」。同時只能裝備一種，裝備另一種時原本的自動卸下並提示。
+   * 裝備中的彈藥可以留在箭袋裡、改數量；跑團模式擲用這種彈藥的武器的命中時扣 1 枚。分享模式只顯示狀態。
+   */
+  function buildAmmoRow(entry, label) {
+    const weapons = api().getAmmunitionWeapons(entry.itemId);
+    const text = `跑團模式擲${weapons.length ? weapons.join("、") : "用這種彈藥的武器"}的命中時扣 1 枚。`;
+    if (globalScope.SHARE_MODE) return entry.ammo ? actionRow(`裝備中。${text}`) : null;
+    const toggle = actionButton(entry.ammo ? "卸下" : "裝備", () => {
+      const result = api().setAmmo(entry.uid, !entry.ammo);
+      if (result.ok && result.previous) globalScope.AppDialog.notify(`改為裝備${label}（原本是${result.previous}）。`, { tone: "info" });
+    }, `${entry.ammo ? "卸下" : "裝備"}${label}`);
+    toggle.setAttribute("aria-pressed", String(Boolean(entry.ammo)));
+    return actionRow(text, toggle);
+  }
+
   // 可變形的物品（王者權杖）：目前形態下拉，裝備中切換時主手的傷害、屬性與精通跟著改。分享模式只顯示目前形態。
   function buildFormRow(entry, rule) {
     const current = globalScope.MagicItemCatalog.getForm(entry.magic.id, api().getMagicSelection(entry));
@@ -849,6 +866,8 @@
     }
     const wearRow = entry.magic && magicRule ? buildWearAttunementRow(entry, magicRule, label, ctx) : null;
     if (wearRow) rows.push(wearRow);
+    const ammoRow = api().isAmmunition(entry) ? buildAmmoRow(entry, label) : null;
+    if (ammoRow) rows.push(ammoRow);
     if (entry.magic && magicRule) rows.push(...buildChargeRows(entry, label), ...buildItemSpellRows(entry, label, ctx));
     const spellLinkRow = magicRule ? buildSpellLinkRow(magicRule) : null;
     if (spellLinkRow) rows.unshift(spellLinkRow);
@@ -1105,7 +1124,7 @@
         // 說明已列單件重量，只有一件時不重複。
         const weight = el("span", "inventory-holding__weight");
         const badge = el("span", "inventory-tag__badge", "裝備中");
-        badge.hidden = !entry.slot && !entry.worn;
+        badge.hidden = !entry.slot && !entry.worn && !entry.ammo;
         const attunedBadge = el("span", "inventory-attuned-badge", "同調中");
         attunedBadge.hidden = !entry.attuned;
         meta.append(badge, attunedBadge);
@@ -1122,7 +1141,7 @@
         const refreshActions = () => {
           const current = api().getEntry(uid);
           if (!current) return;
-          badge.hidden = !current.slot && !current.worn;
+          badge.hidden = !current.slot && !current.worn && !current.ammo;
           attunedBadge.hidden = !current.attuned;
           syncWeight(current);
           // 裝備中與穿戴中的物品固定 1 件，沒有數量與位置；其他時候數量真的變了才改輸入框，保留玩家還沒按「完成」的輸入。
@@ -1367,6 +1386,8 @@
       tag.classList.add("is-equipped");
       item.classList.add("is-fixed");
     }
+    // 裝備中的彈藥：外觀和裝備中的物品一樣，但留在原處（可以在箭袋裡）、可以移動。
+    if (entry.ammo) tag.classList.add("is-equipped");
     if (api().isCustom(entry)) tag.classList.add("is-custom");
     if (entry.attuned) {
       tag.classList.add("is-attuned");
