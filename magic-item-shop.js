@@ -12,7 +12,7 @@
   "use strict";
 
   const MANUAL_NOTE = "角色卡不會自動套用這項效果，請依說明處理";
-  const PARTIAL_MANUAL_NOTE = "固定加值會自動計算，其餘效果請依說明處理";
+  const PARTIAL_MANUAL_NOTE = "部分效果會自動計算，其餘請依說明處理";
   const SHOP_NOTE = "點物品查看效果後獲得，不花費金幣";
   // 魔法模式的法術卷軸開放到 5 環；5 環法術只有 SRD 版，角色不能施放，但卷軸仍可取得。
   const MAX_SCROLL_LEVEL = 5;
@@ -104,7 +104,7 @@
     return row;
   }
 
-  // 有固定加值會自動計算的物品；魔法彈藥網站不追蹤，不算。
+  // 有會自動計算的 effects（固定加值、額外傷害骰、武器屬性等）的物品；魔法彈藥網站不追蹤，不算。
   function hasAutomaticBonus(item) {
     return !isAmmunition(item) && Object.keys(item.effects || {}).some(key => key !== "condition");
   }

@@ -2459,9 +2459,17 @@
     return globalScope.formatSignedValue(modifier + auraBonus);
   }
 
+  // 魔法物品的提示（內容檔 hints；getActiveMagicEffects() 只列目前生效的）：標題是物品名稱，panel 為 overview 或 skills。
+  function getMagicItemHintEntries(panel) {
+    return (globalScope.getActiveMagicEffects?.().hints || [])
+      .filter(hint => hint.panel === panel)
+      .map(hint => ({ label: hint.label, detail: hint.detail }));
+  }
+
   function getDefenseEntries() {
     const entries = getCharacterDefenseEntries().filter(entry => entry.summaryPanel === "skills");
     entries.push(...getClassHintEntries("skills"));
+    entries.push(...getMagicItemHintEntries("skills"));
     if (hasCurrentClassFeature("paladin-aura-of-protection")) {
       entries.push({ label: "守護靈氣", detail: "額外豁免加值已自動計算。", hiddenWhenIncapacitated: true });
     }
@@ -2489,6 +2497,7 @@
     const entries = getCharacterDefenseEntries().filter(entry => entry.summaryPanel === "overview");
     entries.push(...getClassChoiceAlerts());
     entries.push(...getClassHintEntries("overview"));
+    entries.push(...getMagicItemHintEntries("overview"));
     if (hasSelectedFeat("警覺")) {
       entries.push({ label: "警覺", detail: "擲先攻後，可與指定隊友互換順序。", hiddenWhenIncapacitated: true });
     }

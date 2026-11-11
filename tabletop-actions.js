@@ -149,6 +149,8 @@
       name: readField(`${prefix}-name`),
       hit: projected?.hit ?? (beast ? "" : readField(`${prefix}-hit`)),
       damage: projected?.damage ?? (beast ? "" : readField(`${prefix}-dmg`)),
+      // 魔法武器的武器說明（內容檔 hints 的 panel: weapon），只在自動計算時有。
+      magicNotes: projected?.details?.magicNotes || [],
       note: readField(`${prefix}-note`),
       mastery: mastery && !mastery.hidden ? String(mastery.textContent || "").trim() : "",
       masteryRule: mastery && !mastery.hidden ? String(mastery.dataset.weaponRule || "").trim() : ""
@@ -181,8 +183,9 @@
     return Number.isSafeInteger(modifier) ? modifier : null;
   }
 
+  // 魔法武器的額外傷害接在類型後面（1d8+3揮砍+1d6冷凍）：先拿掉兩段之間的類型文字再取骰式。
   function getDamageRollExpression(value) {
-    const normalized = String(value || "").trim().replace(/−/g, "-");
+    const normalized = String(value || "").trim().replace(/−/g, "-").replace(/(\d)\s*[^\d\s+-]+(?=\s*[+-]\s*\d)/gu, "$1");
     return normalized.match(/^\d+\s*d\s*\d+(?:\s*[+-]\s*(?:\d+\s*d\s*\d+|\d+))*/iu)?.[0] || "";
   }
 
@@ -327,6 +330,14 @@
       masteryButton.setAttribute("aria-label", `精通：${weapon.mastery}，點擊查看說明`);
       noteField.classList.add("tabletop-weapon-field--note-with-mastery");
       note?.replaceChildren(noteText, masteryButton);
+    }
+    // 魔法武器的武器說明接在備註框裡的下一行；沒有備註也沒有精通時取代「—」。
+    if (weapon.magicNotes.length) {
+      const note = noteField.querySelector("dd");
+      const magicNote = createElement("span", "tabletop-weapon-magic-note", weapon.magicNotes.join(""));
+      noteField.classList.add("tabletop-weapon-field--magic-note");
+      if (!weapon.note && !(weapon.mastery && weapon.masteryRule)) note?.replaceChildren(magicNote);
+      else note?.appendChild(magicNote);
     }
     list.querySelectorAll("dt").forEach(term => term.classList.add("sr-only"));
     section.appendChild(list);

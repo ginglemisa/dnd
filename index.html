@@ -117,13 +117,13 @@
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/tabletop.css?v=20261110-safari">
   <link rel="stylesheet" href="css/tabletop-hud.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/tabletop-resources.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
   <link rel="stylesheet" href="css/quick-build.css?v=20261110-safari">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261110-safari" defer></script>
   <script src="magic-item-content.generated.js?v=0" defer></script>
-  <script src="magic-items.js?v=20261111-magic-wear-held" defer></script>
+  <script src="magic-items.js?v=20261111-magic-vocab" defer></script>
   <script src="monster-content.generated.js?v=0" defer></script>
   <script src="monster.js?v=20261108-wild-shape-ux" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261108-new-forms" defer></script>
@@ -138,14 +138,14 @@
   <script src="spell-list.js?v=20261107-companion-variant" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
-  <script src="character-rules.js?v=20261111-merge-armor-speed" defer></script>
+  <script src="character-rules.js?v=20261111-magic-vocab" defer></script>
   <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261111-merge-main" defer></script>
+  <script src="tabletop-mode.js?v=20261111-magic-vocab" defer></script>
   <script src="tabletop-druid.js?v=20261111-merge-main" defer></script>
   <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
-  <script src="tabletop-actions.js?v=20261111-magic-wear-held" defer></script>
+  <script src="tabletop-actions.js?v=20261111-magic-vocab" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261109-item-actions" defer></script>
   <script src="legal-modal.js?v=20261110-safari" defer></script>
@@ -3133,7 +3133,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="equipment-shop.js?v=20261109-merge-main2" defer></script>
 <script src="inventory.js?v=20261111-magic-wear-held" defer></script>
 <script src="inventory-ui.js?v=20261111-magic-wear-held" defer></script>
-<script src="magic-item-shop.js?v=20261109-scroll-srd-only" defer></script>
+<script src="magic-item-shop.js?v=20261111-magic-vocab" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -3922,14 +3922,54 @@ function formatSigned(value) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
 
-function formatWeaponDamage(baseDamage, modifier) {
+// extraDamage：魔法武器的額外傷害骰 [{ dice, typeLabel }]。同類型的骰子併在武器骰後面（1d8+2d6+3揮砍），
+// 其他類型接在最後（1d8+3揮砍+1d6冷凍）；跑團擲骰時略過類型文字（tabletop-actions.js 的 getDamageRollExpression）。
+function formatWeaponDamage(baseDamage, modifier, extraDamage = []) {
   const normalizedDamage = String(baseDamage || "").trim();
   if (!normalizedDamage) return "";
 
   const [damageRoll, ...damageTypeParts] = normalizedDamage.split(/\s+/);
   const damageType = damageTypeParts.join("");
   const modifierText = Number.isFinite(modifier) && modifier !== 0 ? formatSigned(modifier) : "";
-  return `${damageRoll}${modifierText}${damageType}`;
+  const sameType = extraDamage.filter(extra => extra.typeLabel === damageType).map(extra => `+${extra.dice}`).join("");
+  const otherTypes = extraDamage.filter(extra => extra.typeLabel !== damageType).map(extra => `+${extra.dice}${extra.typeLabel}`).join("");
+  return `${damageRoll}${sameType}${modifierText}${damageType}${otherTypes}`;
+}
+
+// 魔法物品改變的武器資料（getActiveMagicEffects() 的 hands 其中一手）：傷害類型、靈巧、投擲射程，以及武藝的徒手打擊（惡魔護甲）。
+// 回傳換過的定義副本，傷害類型、屬性判斷與屬性列表都讀它；沒有要改的時回傳原物件。
+function withMagicWeaponEffects(weapon, magicHand) {
+  if (!weapon || !magicHand || getEquipmentRuleName(weapon) === "盾牌") return weapon;
+  const changes = {};
+  const [die, ...typeParts] = String(weapon.傷害 || "").split(/\s+/u);
+  if (magicHand.unarmed && getEquipmentRuleName(weapon) === "武藝") {
+    // 徒手打擊的傷害骰；武僧的武藝骰較大時用武藝骰。
+    changes.傷害 = `${getHighestDiceExpression([magicHand.unarmed.dice, die]) || die} ${getDamageTypeLabel(magicHand.unarmed.type)}`;
+  } else if (magicHand.damageType && typeParts.length) {
+    changes.傷害 = `${die} ${getDamageTypeLabel(magicHand.damageType)}`;
+  }
+  const properties = [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].filter(hasMeaningfulEquipmentValue).map(String);
+  const added = [
+    magicHand.finesse && !weaponHasProp(weapon, "靈巧") ? "靈巧" : "",
+    magicHand.thrown && !weaponHasProp(weapon, "投擲") ? `投擲 (射程 ${magicHand.thrown[0]}/${magicHand.thrown[1]})` : ""
+  ].filter(Boolean);
+  if (added.length) [...properties, ...added].slice(0, 4).forEach((property, index) => { changes[`屬性${index + 1}`] = property; });
+  return Object.keys(changes).length ? { ...weapon, ...changes } : weapon;
+}
+
+// 這一手的武器是否熟練：原本的武器熟練，或魔法武器的 proficiencyAs（熟練其中任一件武器就算，陽炎劍）。
+function isHandWeaponProficient(weapon, magicHand) {
+  if (isWeaponProficient(weapon)) return true;
+  return (magicHand?.proficiencyAs || []).some(name => isWeaponProficient(getWeaponByName(name)));
+}
+
+// 這一手的額外傷害骰，類型換成顯示文字；weapon 為武器目前的傷害類型（damageTypeLabel）。
+function getMagicExtraDamage(magicHand, damageTypeLabel) {
+  return (magicHand?.extraDamage || []).map(extra => ({
+    label: extra.label,
+    dice: extra.dice,
+    typeLabel: extra.type === "weapon" ? damageTypeLabel : getDamageTypeLabel(extra.type)
+  }));
 }
 
 function parseDiceExpression(raw) {
@@ -4468,22 +4508,26 @@ function updateEquipmentLoadoutSummary() {
   const armor = getArmorByName(armorName);
   const canUseMastery = hasWeaponMasteryFeature();
   const magic = getActiveMagicEffects();
+  const magicHandOf = hand => magic.hands[hand === "main" ? "mainHand" : "offHand"];
   const handMagicDetail = (hand) => {
-    const { attack, damage } = magic.hands[hand === "main" ? "mainHand" : "offHand"];
+    const { attack, damage } = magicHandOf(hand);
     if (!attack && !damage) return "";
     return attack === damage ? `魔法 ${formatSigned(attack)}` : `魔法 命中${formatSigned(attack)}、傷害${formatSigned(damage)}`;
   };
   const shieldDetails = () => ["AC+2 (裝備/卸除需 1 個動作)", ...(magic.ac.shield && isShieldProficient() ? [`魔法 AC${formatSigned(magic.ac.shield)}`] : [])];
 
   // 可改傷害類型時（契約武器、真力駐拳、角色卡勾選的橡棍術）傷害是按鈕，點了開啟選擇視窗。
+  // 魔法武器的額外傷害骰接在後面，例如「1d8 揮砍＋1d6 冷凍」。
+  const extraDamageText = (hand, typeLabel) => getMagicExtraDamage(magicHandOf(hand), typeLabel).map(extra => `＋${extra.dice} ${extra.typeLabel}`).join("");
   const weaponDamageDetail = (weapon, hand) => {
     const kind = getHandDamageTypeChoiceKind(hand);
     const handDie = getHandVersatileDie(weapon, hand) || weapon.傷害.split(/\s+/u)[0];
-    if (!kind) return `${handDie} ${getWeaponOwnDamageType(weapon)}`;
+    if (!kind) return `${handDie} ${getWeaponOwnDamageType(weapon)}${extraDamageText(hand, getWeaponOwnDamageType(weapon))}`;
     const die = kind === "shillelagh"
       ? getPreparedShillelaghEffect(weapon.名稱, 0)?.damageDie
       : handDie;
-    const text = `${die} ${getWeaponDamageTypeLabel(kind, getWeaponOwnDamageType(weapon))}`;
+    const typeLabel = getWeaponDamageTypeLabel(kind, getWeaponOwnDamageType(weapon));
+    const text = `${die} ${typeLabel}${extraDamageText(hand, typeLabel)}`;
     const button = document.createElement("button");
     button.type = "button";
     button.className = "weapon-damage-type-link";
@@ -4500,6 +4544,7 @@ function updateEquipmentLoadoutSummary() {
     if (held) return [window.MagicItemCatalog.getCategories().find(category => category.id === window.MagicItemCatalog.get(held.id)?.category)?.label || "魔法物品"];
     if (!weapon) return [];
     if (getEquipmentRuleName(weapon) === "盾牌") return shieldDetails();
+    weapon = withMagicWeaponEffects(weapon, magicHandOf(hand));
     const details = [
       getSummaryWeaponType(weapon),
       weaponDamageDetail(weapon, hand),
@@ -4518,6 +4563,8 @@ function updateEquipmentLoadoutSummary() {
         ruleName: String(weapon.精通).trim()
       });
     }
+    // 魔法武器的武器說明（hints 的 panel: weapon）。
+    details.push(...magicHandOf(hand).notes);
     return details;
   };
   const armorDetails = armor ? [
@@ -4529,7 +4576,7 @@ function updateEquipmentLoadoutSummary() {
   const weaponWarning = (weapon, hand) => {
     if (!weapon) return "";
     if (getEquipmentRuleName(weapon) === "盾牌") return isShieldProficient() ? "" : "盾牌未熟練";
-    return isWeaponProficient(weapon) || isPactWeaponHand(hand) ? "" : "武器未熟練";
+    return isHandWeaponProficient(weapon, magicHandOf(hand)) || isPactWeaponHand(hand) ? "" : "武器未熟練";
   };
   const mainWeaponWarning = weaponWarning(mainWeapon, "main");
   const offWeaponWarning = weaponWarning(offWeapon, "off");
@@ -4570,7 +4617,10 @@ function calculateHandAttacks(options = {}) {
   ];
   return hands.map(hand => {
     const weaponName = document.getElementById(hand.selectId).value;
-    const weapon = getWeaponOrShieldByName(weaponName);
+    // 魔法加值跟著那一手的武器；options.ignoreMagicEffects 是荒野形態（只有穿戴中的護甲與盾牌加值保留）。
+    const magicHand = options.ignoreMagicEffects ? null : magicHands[hand.selectId];
+    // 魔法武器改變的傷害類型、靈巧、投擲與徒手打擊直接換進武器資料，下面的判斷都讀換過的資料。
+    const weapon = withMagicWeaponEffects(getWeaponOrShieldByName(weaponName), magicHand);
     // 手持的非武器魔法物品（魔杖等）沒有攻擊列。
     if (getHeldMagicItem(weaponName)) return { ...hand, name: "", hit: "", damage: "", details: null };
     if (!weapon || getEquipmentRuleName(weapon) === "盾牌") {
@@ -4590,7 +4640,7 @@ function calculateHandAttacks(options = {}) {
     const oneHandedDie = weapon.傷害.split(/\s+/u)[0];
     const versatileDie = getHandVersatileDie(weapon, hand.key);
     const weaponDamage = `${versatileDie || oneHandedDie} ${damageType}`;
-    const proficient = isMonkMartialArts || pactWeapon ? true : isWeaponProficient(weapon);
+    const proficient = isMonkMartialArts || pactWeapon ? true : isHandWeaponProficient(weapon, magicHand);
     const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive(weaponName) && isMonkWeapon(weapon);
     const shillelaghEffect = hand.key === shillelaghTargetHand
       ? getPreparedShillelaghEffect(weaponName, strMod, damageType)
@@ -4612,9 +4662,9 @@ function calculateHandAttacks(options = {}) {
     const usePactCharisma = pactWeapon && !shillelaghEffect && !useMonkProficientFormula && charismaMod > attackAbilityMod;
     if (usePactCharisma) attackAbilityMod = charismaMod;
 
-    // 魔法加值跟著那一手的武器；options.ignoreMagicEffects 是荒野形態（只有穿戴中的護甲與盾牌加值保留）。
-    const magicHand = options.ignoreMagicEffects ? { attack: 0, damage: 0, label: "" } : magicHands[hand.selectId];
-    let hitBonus = attackAbilityMod + (proficient ? pb : 0) + magicHand.attack;
+    const magicAttack = magicHand?.attack || 0;
+    const magicDamage = magicHand?.damage || 0;
+    let hitBonus = attackAbilityMod + (proficient ? pb : 0) + magicAttack;
     // 箭術判斷放在命中計算最後：主手/副手只要是遠程武器都 +2
     if (hasArcheryFightingStyle && isRanged) {
       hitBonus += 2;
@@ -4626,10 +4676,13 @@ function calculateHandAttacks(options = {}) {
     // 投擲不是雙手近戰，傷害骰不採兩用；武僧仍比較武藝骰。
     let thrownDie = oneHandedDie;
     let usesVersatileDie = Boolean(versatileDie) && !shillelaghEffect;
+    // 額外傷害骰的「同武器類型」跟著這一手最後的傷害類型（橡棍術、契約武器等改過的類型）。
+    const extraDamage = getMagicExtraDamage(magicHand, shillelaghEffect?.damageType || damageType);
     if (shillelaghEffect) {
       damage = formatWeaponDamage(
         `${shillelaghEffect.damageDie} ${shillelaghEffect.damageType}`,
-        (shouldApplyDamageMod ? attackAbilityMod : 0) + magicHand.damage
+        (shouldApplyDamageMod ? attackAbilityMod : 0) + magicDamage,
+        extraDamage
       );
     } else if (useMonkProficientFormula) {
       const martialArtsDie = getMonkMartialArtsDie();
@@ -4640,10 +4693,10 @@ function calculateHandAttacks(options = {}) {
       ]) || martialArtsDie;
       thrownDie = getHighestDiceExpression([martialArtsDie, getWeaponBaseDamageDie(weapon)]) || martialArtsDie;
       usesVersatileDie &&= selectedDie !== thrownDie;
-      damage = formatWeaponDamage(`${selectedDie} ${damageType}`, attackAbilityMod + magicHand.damage);
+      damage = formatWeaponDamage(`${selectedDie} ${damageType}`, attackAbilityMod + magicDamage, extraDamage);
     } else {
       // 副手不加屬性調整值時，魔法傷害加值仍要加，所以不併進 attackAbilityMod。
-      damage = formatWeaponDamage(weaponDamage, (shouldApplyDamageMod ? attackAbilityMod : 0) + magicHand.damage);
+      damage = formatWeaponDamage(weaponDamage, (shouldApplyDamageMod ? attackAbilityMod : 0) + magicDamage, extraDamage);
     }
     const abilityLabel = shillelaghEffect
       ? shillelaghEffect.abilityLabel
@@ -4664,9 +4717,13 @@ function calculateHandAttacks(options = {}) {
         proficient,
         proficiencyBonus: proficient ? pb : 0,
         archeryBonus: hasArcheryFightingStyle && isRanged ? 2 : 0,
-        magicLabel: magicHand.label,
-        magicAttackBonus: magicHand.attack,
-        magicDamageBonus: magicHand.damage,
+        magicLabel: magicHand?.label || "",
+        magicAttackBonus: magicAttack,
+        magicDamageBonus: magicDamage,
+        // 各魔法來源的命中、傷害加值 [{ label, attack, damage }]、額外傷害骰 [{ label, dice, typeLabel }]、武器說明。
+        magicSources: magicHand?.sources || [],
+        extraDamage,
+        magicNotes: magicHand?.notes || [],
         baseDamage: shillelaghEffect
           ? shillelaghEffect.damageDie
           : (useMonkProficientFormula ? damage.match(/^\d+d\d+/u)?.[0] || oneHandedDie : versatileDie || oneHandedDie),
@@ -4754,7 +4811,7 @@ function renderAttackCalculationPopup(details, calculationType) {
     if (details.proficient) rows.push(["熟練加值", formatSigned(details.proficiencyBonus)]);
     else rows.push(["武器熟練", "未熟練"]);
     if (details.archeryBonus) rows.push(["箭術戰鬥風格", "+2"]);
-    if (details.magicAttackBonus) rows.push([details.magicLabel, formatSigned(details.magicAttackBonus)]);
+    (details.magicSources || []).filter(source => source.attack).forEach(source => rows.push([source.label, formatSigned(source.attack)]));
   } else {
     rows.push([details.usesVersatileDie ? "武器傷害（兩用，雙手）" : "武器傷害", details.baseDamage]);
     if (details.thrownDie) rows.push(["投擲時武器傷害", details.thrownDie]);
@@ -4763,8 +4820,9 @@ function renderAttackCalculationPopup(details, calculationType) {
     } else if (details.omittedOffHandModifier) {
       rows.push([`${details.abilityLabel}調整值`, "副手傷害不加入"]);
     }
-    if (details.magicDamageBonus) rows.push([details.magicLabel, formatSigned(details.magicDamageBonus)]);
+    (details.magicSources || []).filter(source => source.damage).forEach(source => rows.push([source.label, formatSigned(source.damage)]));
     rows.push(["傷害類型", details.damageType]);
+    (details.extraDamage || []).forEach(extra => rows.push([`${extra.label}額外傷害`, `${extra.dice} ${extra.typeLabel}`]));
   }
   const result = calculationType === "hit" ? details.hit : details.damage;
   return `<div class="attack-calculation-title">${calculationType === "hit" ? "命中" : "傷害"}計算</div>
