@@ -118,12 +118,18 @@ async function newUiPage(browser, options = {}) {
 
 async function verifyUtilityMenuLayout(page) {
   await page.locator("#utility-menu-toggle").click();
-  for (const [width, height] of [[390, 844], [320, 568], [1280, 800]]) {
+  for (const [width, height] of [[390, 844], [360, 740], [320, 568], [1280, 800]]) {
     await page.setViewportSize({ width, height });
     const layout = await page.evaluate(() => {
       const rect = selector => document.querySelector(selector).getBoundingClientRect().toJSON();
+      const row = document.querySelector(".utility-menu__settings-row");
+      const line = getComputedStyle(row, "::before");
       return {
         row: rect(".utility-menu__settings-row"),
+        dividers: [...document.querySelectorAll("#utility-menu > .utility-menu__divider")].slice(0, 2).map(el => el.getBoundingClientRect().toJSON()),
+        line: { top: parseFloat(line.top), bottom: parseFloat(line.bottom), width: line.width, content: line.content },
+        menuOverflow: document.getElementById("utility-menu").scrollWidth - document.getElementById("utility-menu").clientWidth,
+        settingOverflow: [...document.querySelectorAll(".utility-menu__setting")].map(el => el.scrollWidth - el.clientWidth),
         settings: [...document.querySelectorAll(".utility-menu__setting")].map(el => el.getBoundingClientRect().toJSON()),
         switches: [...document.querySelectorAll(".utility-menu__switch")].map(el => el.getBoundingClientRect().toJSON()),
         help: [...document.querySelectorAll(".utility-menu__help button")].map(el => el.getBoundingClientRect().toJSON())
@@ -131,17 +137,38 @@ async function verifyUtilityMenuLayout(page) {
     });
     assert.equal(layout.settings.length, 4);
     assert.equal(layout.switches.length, 4);
-    for (let index = 1; index < layout.settings.length; index++) {
-      assert(layout.settings[index - 1].top < layout.settings[index].top);
+    assert.deepEqual(layout.settingOverflow, [0, 0, 0, 0], `settings fit their column at ${width}`);
+    assert(layout.menuOverflow <= 0, `menu has no horizontal scroll at ${width}`);
+    layout.settings.forEach((setting, index) => assert.equal(layout.switches[index].right, setting.right));
+    if (width < 360) {
+      // 太窄放不下兩欄：照原本順序單欄排列，沒有直線。
+      for (let index = 1; index < layout.settings.length; index++) assert(layout.settings[index - 1].bottom <= layout.settings[index].top);
+      layout.settings.forEach(setting => { assert.equal(setting.left, layout.row.left); assert.equal(setting.right, layout.row.right); });
+      assert.equal(layout.line.content, "none");
+    } else {
+      // 開關分左右兩欄：自動計算｜顯示▲▼、擲骰功能｜主題；直線上下接到兩條分隔線。
+      const [auto, scroll, dice, theme] = layout.settings;
+      assert.equal(auto.top, scroll.top, `first settings row at ${width}`);
+      assert.equal(dice.top, theme.top, `second settings row at ${width}`);
+      assert(auto.bottom <= dice.top, `settings rows stack at ${width}`);
+      assert.equal(auto.left, layout.row.left);
+      assert.equal(dice.left, layout.row.left);
+      assert.equal(scroll.left, theme.left);
+      assert(auto.right < scroll.left, `settings columns do not overlap at ${width}`);
+      assert.equal(theme.right, layout.row.right);
+      assert.equal(layout.line.content, '""');
+      assert.equal(layout.line.width, "1px");
+      assert(Math.abs((layout.row.top + layout.line.top) - layout.dividers[0].bottom) < 1, `divider line reaches the upper rule at ${width}`);
+      assert(Math.abs((layout.row.bottom - layout.line.bottom) - layout.dividers[1].top) < 1, `divider line reaches the lower rule at ${width}`);
     }
-    layout.settings.forEach((setting, index) => {
-      assert.equal(setting.left, layout.settings[0].left);
-      assert.equal(layout.switches[index].right, setting.right);
-    });
-    assert.equal(layout.row.right, layout.settings.at(-1).right);
-    assert.equal(layout.help[0].top, layout.help[1].top);
-    assert.equal(layout.help[2].top, layout.help[3].top);
-    assert.equal(layout.help[0].left, layout.help[2].left);
+    // 參考區：冒險者聯盟規則佔滿第一列，其餘兩兩一列。
+    const [alRules, ...helpButtons] = layout.help;
+    assert.equal(alRules.left, helpButtons[0].left);
+    assert.equal(alRules.right, helpButtons[1].right);
+    assert(alRules.bottom <= helpButtons[0].top);
+    assert.equal(helpButtons[0].top, helpButtons[1].top);
+    assert.equal(helpButtons[2].top, helpButtons[3].top);
+    assert.equal(helpButtons[0].left, helpButtons[2].left);
   }
   await page.setViewportSize({ width: 390, height: 844 });
   if (process.env.DND_UI_SCREENSHOT_DIR) {
@@ -471,6 +498,38 @@ async function verifyAboutRoutes(browser, url) {
   await aboutPage.locator("#legal-about-modal").waitFor({ state: "detached" });
   await aboutPage.close();
   console.log("About: lazy loading retry, routes, close and hash lifecycle passed.");
+}
+
+// 工具選單「冒險者聯盟規則」：連到正式站的兩份文件、版權聲明、窄螢幕不橫向捲動、關閉後焦點回到選單開關。
+async function verifyAdventurersLeagueRules(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 320, height: 640 } });
+  try {
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await page.evaluate(() => window.onboardingTour?.finish?.());
+    await page.locator("#utility-menu-toggle").click();
+    await page.locator("#al-rules-btn").click();
+    const dialog = page.locator('.app-dialog[data-variant="al-rules"]');
+    await dialog.waitFor();
+    assert.equal(await page.locator("#utility-menu").getAttribute("aria-hidden"), "true", "the menu closes behind the dialog");
+    assert.equal(await dialog.locator(".app-dialog__header h2").innerText(), "冒險者聯盟規則");
+    assert.equal(await page.evaluate(() => document.activeElement?.classList.contains("app-dialog__close")), true, "focus starts on the close button");
+    assert.equal(await dialog.locator(".app-dialog__actions").count(), 0);
+    assert.deepEqual(await dialog.locator(".al-rules-link").evaluateAll(links => links.map(link => [link.textContent, link.href, link.target, link.rel])), [
+      ["玩家手冊", "https://twd20.com/al/DnDALPG.html", "_blank", "noopener noreferrer"],
+      ["城主指南", "https://twd20.com/al/DnDALDMG.html", "_blank", "noopener noreferrer"]
+    ]);
+    const notice = await dialog.locator(".al-rules-notice").innerText();
+    assert(notice.startsWith("本站是玩家製作的非官方網站") && notice.includes("著作權屬於 Wizards of the Coast LLC"), notice);
+    assert.equal(await dialog.locator(".app-dialog__surface").evaluate(surface => {
+      const body = surface.querySelector(".app-dialog__body");
+      return surface.getBoundingClientRect().right <= window.innerWidth && body.scrollWidth <= body.clientWidth;
+    }), true, "the dialog fits a 320px screen");
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    assert.equal(await page.evaluate(() => document.activeElement?.id), "utility-menu-toggle", "focus returns to the menu toggle");
+    console.log("Adventurers League rules: menu button, production links, notice, narrow fit and focus return passed.");
+  } finally { await page.close(); }
 }
 
 async function verifyPdf(page, fieldsOnly) {
@@ -3530,7 +3589,7 @@ async function verifyAutoCalculatedChecks(browser, url) {
       buttons: Array.from(document.querySelectorAll("#tab-skills .skill-calc-button"), button => button.hidden),
       hints: document.querySelectorAll("#tab-skills .skill-action-hint").length,
       label: document.getElementById(toggle).closest("label").textContent.trim()
-    }), TOGGLE), { auto: true, readOnly: [true, true], aria: "true", tabIndex: -1, buttons: [true, true], hints: 0, label: "自動計算數值" });
+    }), TOGGLE), { auto: true, readOnly: [true, true], aria: "true", tabIndex: -1, buttons: [true, true], hints: 0, label: "自動計算" });
 
     // Blank abilities stay blank instead of showing +0.
     assert.deepEqual(await values(["skill-運動", "save-str", "passive-perception"]), ["", "", ""], "blank abilities leave blank values");
@@ -5193,9 +5252,15 @@ async function verifyShareReadonlyMode(browser, url) {
       for (const selector of ["#help-quick-build-btn", "#set-default-abilities", "#restart-onboarding-btn", "#clear-storage-btn", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn", "#open-qr-btn", ".utility-menu__row--icon"]) {
         assert.equal(await page.locator(selector).isVisible(), false, `${selector} is hidden at ${width}`);
       }
-      for (const selector of ["#tabletop-mode-toggle", "#adventure-journal-btn", "#export-json-btn", "#export-pdf-btn", "#open-sheet-download-btn", "#first-table-tour-btn"]) {
+      for (const selector of ["#tabletop-mode-toggle", "#adventure-journal-btn", "#export-json-btn", "#export-pdf-btn", "#open-sheet-download-btn", "#first-table-tour-btn", "#al-rules-btn"]) {
         assert.equal(await page.locator(selector).isVisible(), true, `${selector} stays at ${width}`);
       }
+      // 沒有自動計算時，擲骰功能補到左欄第一列，右欄不動。
+      assert.equal(await page.evaluate(() => {
+        const [scroll, dice, theme] = [".utility-menu__setting--scroll", ".utility-menu__setting--dice", ".utility-menu__theme-setting"].map(selector => document.querySelector(selector).getBoundingClientRect());
+        const row = document.querySelector(".utility-menu__settings-row").getBoundingClientRect();
+        return Math.abs(dice.top - scroll.top) < 1 && Math.abs(dice.left - row.left) < 1 && Math.abs(scroll.left - theme.left) < 1 && theme.top > scroll.top;
+      }), true, `share-mode settings keep two columns at ${width}`);
       assert.equal(await page.locator("#first-table-tour-btn").isDisabled(), false, "the tabletop tour stays available");
       assert.equal(await page.evaluate(() => {
         const help = document.querySelector(".utility-menu__help").getBoundingClientRect();
@@ -5690,6 +5755,7 @@ async function main() {
       await verifyToasts(browser);
       await verifyShareDialog(browser, url);
       await verifyAboutRoutes(browser, url);
+      await verifyAdventurersLeagueRules(browser, url);
       await verifyFeatureChoiceDisclosures(browser, url);
       await verifyCustomBackground(browser, url);
       await verifyCharacterFeatures(browser, url);
