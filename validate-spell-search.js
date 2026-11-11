@@ -766,7 +766,8 @@ async function validateMagicItemShop(page) {
   await openGrant("bag-of-holding");
   assert.equal(await grant.locator("select, .magic-item-segmented, .inventory-stepper").count(), 0, "no options means no controls");
   await finishGrant();
-  await openGrant("boots-of-speed");
+  // 速度之靴在第 5 步做成跑團按鈕，不再提示；警示權杖的法術還沒有接（從物品施法），仍提示。
+  await openGrant("rod-of-alertness");
   assert.equal(await grant.locator(".magic-item-detail__manual").textContent(), "角色卡不會自動套用這項效果，請依說明處理");
   await grant.getByRole("button", { name: "取消", exact: true }).click();
   await grant.waitFor({ state: "detached" });
@@ -916,7 +917,7 @@ async function validateMagicItemShop(page) {
   };
   await openItem("amulet");
   assert.equal(await item.locator(".magic-item-detail__subtitle").textContent(), "奇物，稀有（需同調）");
-  // 健康護符的體質已自動計算，物品視窗不再提示手動處理（提示本身由商店視窗的速度之靴檢查）。
+  // 健康護符的體質已自動計算，物品視窗不再提示手動處理（提示本身由商店視窗的警示權杖檢查）。
   assert.equal(await item.locator(".magic-item-detail__manual").count(), 0, "the inventory dialog has no manual note for an item the sheet applies");
   assert.deepEqual(await item.locator(".inventory-item-actions .inventory-action-button").allTextContents(), ["裝備", "開始同調"], "non-consumable items have no use button; wearable items that need attunement have the wear and attunement switches");
   assert.equal(await item.locator(".inventory-item-actions .inventory-action-row__text").textContent(), "需要穿戴並同調才會生效。");
@@ -1530,6 +1531,98 @@ async function validateInventory(page) {
   }
   await validateInventoryItemActions(page);
   await validateInventoryStacks(page);
+  await validateMagicItemCharges(page);
+}
+
+// 魔法物品的次數池：存檔整理（滿的不記、不存在的池拿掉）、不合併、拆出的那件是滿的、匯入預檢，以及物品詳情的 −／＋ 與恢復按鈕。
+async function validateMagicItemCharges(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  const data = await page.evaluate(() => {
+    applyStateObject({ class: "fighter", level: "5", mainHand: "", offHand: "", armor: "", __inventory: { version: 1, items: [] } });
+    DiceRoller.setEnabled(false);
+    Inventory.restore({ version: 1, items: [
+      { uid: "wand", quantity: 1, magic: { id: "wand-of-fireballs" }, charges: { charges: 3, bogus: 1 } },
+      { uid: "full", quantity: 1, magic: { id: "wand-of-fireballs" }, charges: { charges: 99 } },
+      { uid: "pair", quantity: 2, magic: { id: "wand-of-fireballs" }, charges: { charges: 0 } },
+      { uid: "plain", quantity: 1, itemId: "長劍", charges: { charges: 1 } },
+      { uid: "lost", quantity: 1, magic: { id: "no-such-item" }, charges: { charges: 4 } }
+    ] });
+    const charges = uid => Inventory.getEntry(uid).charges;
+    const result = {
+      cleaned: [charges("wand"), charges("full"), charges("plain"), charges("lost")],
+      pools: Inventory.getCharges(Inventory.getEntry("wand")).map(pool => [pool.id, pool.label, pool.left, pool.max, pool.recover, pool.amount]),
+      mergeTargets: Inventory.getMergeTargets("wand").length,
+      merge: Inventory.merge("full", "wand")
+    };
+    const part = Inventory.split("pair", 1);
+    result.split = [charges("pair"), charges(part)];
+    result.set = [Inventory.setCharges("wand", "charges", -4), charges("wand"), Inventory.setCharges("wand", "charges", 70), charges("wand"), Inventory.setCharges("wand", "nope", 1)];
+    result.saved = Inventory.getState().items.find(item => item.uid === "pair").charges;
+    result.preflight = [{ charges: { charges: 3 } }, { charges: { charges: 100 } }, { charges: { charges: 1.5 } }, { charges: [] }, { charges: "3" }]
+      .map(extra => isValidInventoryState({ version: 1, items: [{ quantity: 1, magic: { id: "wand-of-fireballs" }, ...extra }] }))
+      .concat(isValidInventoryState({ version: 1, items: [{ quantity: 1, itemId: "長劍", charges: { charges: 1 } }] }));
+    const before = Inventory.entries().length;
+    Inventory.add([{ magic: { id: "wand-of-fireballs" } }, { magic: { id: "wand-of-fireballs" } }]);
+    result.added = Inventory.entries().length - before;
+    const d3 = Array.from({ length: 30 }, () => DiceRoller.rollExpression("1d3", { label: "d3", force: true, notify: false })?.total);
+    result.d3 = [Math.min(...d3), Math.max(...d3), DiceRoller.canRollExpression("1d30"), DiceRoller.canRollExpression("1d3 + 1")];
+    return result;
+  });
+  assert.deepEqual(data.cleaned, [{ charges: 3 }, undefined, undefined, { charges: 4 }], "charges keep known pools below max; full pools, plain items and unknown pools are dropped; unknown items keep theirs");
+  assert.deepEqual(data.pools, [["charges", "充能", 3, 7, "dawn", "1d6 + 1"]], "getCharges reads the content pools with the remaining count");
+  assert.equal(data.mergeTargets, 0, "items with pools have no merge targets");
+  assert.equal(data.merge, false, "items with pools never merge");
+  assert.deepEqual(data.split, [{ charges: 0 }, undefined], "the split-off unit is full; the current one keeps its charges");
+  assert.deepEqual(data.set, [0, { charges: 0 }, 7, undefined, null], "setCharges clamps to 0..max, drops full pools and rejects unknown pools");
+  assert.deepEqual(data.saved, { charges: 0 }, "remaining charges are saved on the entry");
+  assert.deepEqual(data.preflight, [true, false, false, false, false, false], "the import preflight checks charges (integers 0..99, only on magic items)");
+  assert.equal(data.added, 2, "two wands from the shop become two separate tags");
+  assert.deepEqual(data.d3, [1, 3, false, true], "DiceRoller expressions accept d3 without matching d30");
+
+  // 物品詳情：剩餘次數、−／＋、黎明恢復（擲骰進歷史，不超過最大值）。
+  const item = page.locator('.app-dialog[data-variant="inventory-item"]');
+  await page.locator('[aria-controls="tab-equipment"]').click();
+  await page.locator('[data-inventory-uid="pair"]').click();
+  await item.waitFor();
+  const row = item.locator('.inventory-charge-row[data-magic-pool="charges"]');
+  assert.equal(await row.locator(".inventory-action-row__text").textContent(), "充能：剩 0/7。", "the pool row shows the remaining charges");
+  const recover = row.getByRole("button", { name: "火球魔杖的充能：黎明恢復 1d6 + 1" });
+  assert.equal(await recover.textContent(), "黎明恢復 1d6 + 1", "the recover button names the timing and amount");
+  await row.getByRole("button", { name: "增加火球魔杖的充能剩餘次數" }).click();
+  assert.deepEqual(await page.evaluate(() => Inventory.getEntry("pair").charges), { charges: 1 }, "+ saves immediately");
+  const historyBefore = await page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1") || "[]").length);
+  await recover.click();
+  const recovered = await page.evaluate(() => Inventory.getCharges(Inventory.getEntry("pair"))[0].left);
+  assert.ok(recovered >= 3 && recovered <= 7, `dawn recovery adds 1d6 + 1 up to the maximum (got ${recovered})`);
+  assert.equal(await row.locator("input").inputValue(), String(recovered), "the stepper follows the recovered value");
+  assert.equal(await page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1") || "[]").length), historyBefore + 1, "the recovery roll enters the dice history even with dice off");
+  await page.evaluate(() => Inventory.setCharges("pair", "charges", 7));
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+  await page.locator('[data-inventory-uid="pair"]').click();
+  await item.waitFor();
+  assert.equal(await item.locator('.inventory-charge-row[data-magic-pool="charges"]').getByRole("button", { name: /黎明恢復/ }).isDisabled(), true, "recover is disabled when full");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+
+  // 短休、長休的池沒有恢復按鈕，只寫說明；不恢復的池寫「用完不恢復」。
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [
+    { uid: "boots", quantity: 1, magic: { id: "boots-of-speed" } },
+    { uid: "glue", quantity: 1, magic: { id: "sovereign-glue" }, charges: { ounces: 2 } }
+  ] }));
+  await page.locator('[data-inventory-uid="boots"]').click();
+  await item.waitFor();
+  assert.equal(await item.locator(".inventory-charge-row .inventory-action-row__text").textContent(), "使用時間（分鐘）：剩 10/10。長休時自動恢復。", "rest pools explain the automatic recovery");
+  assert.equal(await item.locator(".inventory-charge-row button.inventory-action-button").count(), 0, "rest pools have no recover button");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+  await page.locator('[data-inventory-uid="glue"]').click();
+  await item.waitFor();
+  assert.equal(await item.locator(".inventory-charge-row .inventory-action-row__text").textContent(), "膠水（盎司）：剩 2/7。用完不恢復。", "pools without recovery say so");
+  assert.equal(await item.locator(".inventory-item-actions .inventory-action-button", { hasText: "使用" }).count(), 0, "containers of ounces are pools, not consumables");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
 }
 
 // 同名物品分堆：拆分、拖曳合併（醫療包總次數不變）、商店新標籤、裝備從物品欄拿 1 件、卸除成為獨立標籤與舊資料轉換。
@@ -1928,7 +2021,8 @@ async function validateInventoryStacks(page) {
       MagicItemShop.renderDetail(box, id);
       return box.querySelector(".magic-item-detail__manual")?.textContent || "";
     };
-    result.notes = ["thunderous-greatclub", "ammunition-plus", "flame-tongue", "defender"].map(note);
+    // 部分自動計算（吉兆之刃：祈願留到從物品施法）、沒有自動計算（彈藥、巨人之力藥水）、全部完成（防禦者、雷鳴巨棒與焰舌在第 5 步做成跑團按鈕後也不再提示）。
+    result.notes = ["luck-blade", "ammunition-plus", "potion-of-giant-strength", "defender", "thunderous-greatclub", "flame-tongue"].map(note);
     return result;
   }, [blank]);
   assert.deepEqual(magicEquip, {
@@ -1974,7 +2068,7 @@ async function validateInventoryStacks(page) {
     afterRemove: 2,
     fixedQuantity: 1,
     // 防禦者的加值轉移已做完，不再提示；雷鳴巨棒的額外傷害會算，力量 20 還沒有。
-    notes: ["部分效果會自動計算，其餘請依說明處理", "角色卡不會自動套用這項效果，請依說明處理", "角色卡不會自動套用這項效果，請依說明處理", ""]
+    notes: ["部分效果會自動計算，其餘請依說明處理", "角色卡不會自動套用這項效果，請依說明處理", "角色卡不會自動套用這項效果，請依說明處理", "", "", ""]
   }, "magic and plain items with the same base stay apart in every equipment path, and attunement follows its limits");
 
   // 物品欄滿 300 筆又要多開一筆時裝備失敗：下拉改回原本的選擇並提示；×1 的標籤不用多開一筆，照常裝備。
@@ -2024,7 +2118,8 @@ async function validateInventoryItemActions(page) {
     await page.keyboard.press("Escape");
     await item.waitFor({ state: "detached" });
   };
-  const actionButtons = () => item.locator(".inventory-item-actions button").allTextContents();
+  // 次數池的 −／＋ 不算互動按鈕（另由 validateMagicItemCharges 檢查）。
+  const actionButtons = () => item.locator(".inventory-item-actions button:not(.inventory-stepper__button)").allTextContents();
   const itemClosed = () => item.waitFor({ state: "detached" });
   const lastToast = () => page.waitForFunction(() => document.querySelector("#app-toast > .app-toast:last-child .app-toast__message")?.textContent, null, { timeout: 2000 })
     .then(handle => handle.jsonValue());

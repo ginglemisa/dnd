@@ -1498,6 +1498,56 @@ async function verifyEquipmentLoadout(browser, url) {
       return [strength.querySelector(".tabletop-ability-modifier__value").textContent, document.querySelector("#str-mod .modifier-main").textContent];
     }), ["+4", "+3"], "the tabletop ability check adds the Stone of Good Luck while the sheet modifier stays");
     await page.evaluate(() => TabletopMode.setMode("sheet"));
+    // 第 5 步：魔法物品的能力依動作類型放在跑團的動作、附贈、反應頁；扣次數的按鈕在物品名稱後寫剩餘次數，不夠時變灰；
+    // 使用時扣那件物品的池（固定花費先確認，可變花費選次數）；沒拿在手上的魔杖沒有按鈕；可以在「管理」隱藏。
+    await page.evaluate(([base]) => {
+      // 同調最多 3 件（盾牌、靴子、排笛）；魔術袋不用同調，能力寫 when: owned，帶著就能用。
+      applyStateObject({ ...base, mainHand: "", offHand: "騎士之盾", __inventory: { version: 1, items: [
+        { uid: "bag", quantity: 1, magic: { id: "bag-of-tricks" }, charges: { tricks: 1 } },
+        { uid: "shield", itemId: "盾牌", quantity: 1, attuned: true, magic: { id: "shield-of-the-cavalier" }, charges: { "protective-field": 0 } },
+        { uid: "boots", quantity: 1, attuned: true, worn: true, magic: { id: "boots-of-speed" } },
+        { uid: "pipes", quantity: 1, attuned: true, magic: { id: "pipes-of-the-sewers" } },
+        { uid: "wand", quantity: 1, magic: { id: "wand-of-paralysis" } }
+      ] } });
+      TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions");
+    }, [magicBase]);
+    const itemButtons = mode => page.evaluate(async (mode) => {
+      document.getElementById(`tabletop-action-tab-${mode}`).click();
+      await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 30)));
+      return [...document.querySelectorAll(`#tabletop-action-panel-${mode} [data-action-option-key^="magic-item-"]`)]
+        .map(button => [button.dataset.actionOptionKey, button.textContent, button.classList.contains("is-depleted")]);
+    }, mode);
+    assert.deepEqual(await itemButtons("action"), [
+      ["magic-item-bag-of-tricks-pull", "拉出生物魔術袋1/3", false],
+      ["magic-item-shield-of-the-cavalier-bash", "強力盾擊騎士之盾", false]
+    ], "action page lists magic and attack actions of active items; the wand not in hand has no button");
+    assert.deepEqual(await itemButtons("bonus"), [
+      ["magic-item-boots-of-speed-click-heels", "敲擊靴跟速度之靴10/10", false],
+      ["magic-item-pipes-of-the-sewers-call-rats", "召來鼠群喚鼠排笛3/3", false]
+    ], "bonus page lists bonus actions with their remaining uses");
+    assert.deepEqual(await itemButtons("reaction"), [["magic-item-shield-of-the-cavalier-protective-field", "防護力場騎士之盾0/1", true]],
+      "a pool at 0 greys the button but keeps it");
+    await page.locator('[data-action-option-key="magic-item-shield-of-the-cavalier-protective-field"]').click();
+    assert.equal(await page.locator("#tabletop-action-panel-reaction .tabletop-action-resource-use").isDisabled(), true, "an empty pool cannot be used");
+    await page.locator("#tabletop-action-tab-action").click();
+    await page.locator('[data-action-option-key="magic-item-bag-of-tricks-pull"]').click();
+    assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /魔法動作：從袋中拉出[\s\S]*消耗 1 次毛茸茸的東西 · 剩餘 1\/3/u);
+    await page.locator("#tabletop-action-panel-action .tabletop-action-resource-use").click();
+    await page.getByRole("button", { name: "使用能力", exact: true }).last().click();
+    await page.waitForFunction(() => Inventory.getEntry("bag").charges?.tricks === 0);
+    await page.waitForFunction(() => document.querySelector('[data-action-option-key="magic-item-bag-of-tricks-pull"]')?.classList.contains("is-depleted"));
+    await page.locator("#tabletop-action-tab-bonus").click();
+    await page.locator('[data-action-option-key="magic-item-pipes-of-the-sewers-call-rats"]').click();
+    await page.locator("#tabletop-action-panel-bonus .tabletop-action-resource-use").click();
+    const costSelect = page.locator(".app-dialog select");
+    assert.deepEqual(await costSelect.locator("option").allTextContents(), ["1 次", "2 次", "3 次"], "variable costs offer every amount the pool can pay");
+    await costSelect.selectOption("2");
+    await page.getByRole("button", { name: "使用能力", exact: true }).last().click();
+    await page.waitForFunction(() => Inventory.getEntry("pipes").charges?.charges === 1);
+    await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:bonus:magic-item-boots-of-speed-click-heels", true));
+    assert.deepEqual((await itemButtons("bonus")).map(([key]) => key), ["magic-item-pipes-of-the-sewers-call-rats"], "item buttons can be hidden with the usual preference key");
+    await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:bonus:magic-item-boots-of-speed-click-heels", false));
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
     // 點 ✦ 在規則說明浮層顯示有效值與物品。
     await abilityNumbers(inventoryOf(giantBelt));
     const previousTab = await page.evaluate(() => document.querySelector(".tab-content:not([hidden])")?.id.replace(/^tab-/u, "") || "");

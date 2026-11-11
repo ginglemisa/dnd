@@ -4889,6 +4889,39 @@ async function verifyInventoryPersistence(browser, url) {
       assert.equal(await sharedRing.getByRole("button", { name: /穿上|卸下/u }).count(), 0, "share mode cannot wear or take off rings");
       assert.match(await sharedRing.locator(".inventory-item-actions").innerText(), /穿戴中、同調中/u, "share mode shows the worn state");
     } finally { await equippedShared.close(); }
+    // 次數池的剩餘次數（charges）存在那一筆物品上，autosave、JSON、分享都還原；舊資料沒有這個欄位就是滿的。
+    // 分享模式可以調整次數（和法術位一樣只在頁面記憶體），看的人的本機存檔不變。
+    const chargesState = { class: "fighter", level: "5", mainHand: "", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "wand", quantity: 1, magic: { id: "wand-of-fireballs" }, charges: { charges: 2 } },
+      { uid: "rod", itemId: "硬頭錘", quantity: 1, attuned: true, magic: { id: "rod-of-lordly-might" }, charges: { "drain-life": 0, terrify: 0 } },
+      { uid: "old", quantity: 1, magic: { id: "wand-of-web" } }
+    ] } };
+    const chargesSnapshot = target => target.evaluate(() => ["wand", "rod", "old"].map(uid => Inventory.getCharges(Inventory.getEntry(uid)).map(pool => `${pool.id}:${pool.left}/${pool.max}`).join()));
+    const chargesExpected = ["charges:2/7", "drain-life:0/1,paralyze:1/1,terrify:0/1", "charges:7/7"];
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, chargesState);
+    assert.deepEqual(await chargesSnapshot(page), chargesExpected, "charges load on their entries; an entry without charges is full");
+    await page.goto(url);
+    assert.deepEqual(await chargesSnapshot(page), chargesExpected, "autosave restores remaining charges");
+    assert.deepEqual(await page.evaluate(() => collectStateObject().__inventory.items.map(item => item.charges)), chargesState.__inventory.items.map(item => item.charges), "JSON export carries remaining charges");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await chargesSnapshot(page), chargesExpected, "JSON import restores remaining charges");
+    await page.evaluate(() => saveAllFields());
+    assert.equal(await page.evaluate(() => { try { validateCharacterState({ class: "fighter", __inventory: { version: 1, items: [{ quantity: 1, magic: { id: "wand-of-web" }, charges: { charges: -1 } }] } }); return "accepted"; } catch (error) { return "rejected"; } }), "rejected", "the import precheck rejects invalid charges");
+    const chargesHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const chargesShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = chargesHash;
+      await chargesShared.goto(sharedUrl.href);
+      await chargesShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await chargesSnapshot(chargesShared), chargesExpected, "share restores remaining charges");
+      await chargesShared.evaluate(() => InventoryUI.openItemDialog("wand"));
+      const sharedWand = chargesShared.locator('.app-dialog[data-variant="inventory-item"]');
+      await sharedWand.waitFor();
+      await sharedWand.getByRole("button", { name: "減少火球魔杖的充能剩餘次數" }).click();
+      assert.equal(await chargesShared.evaluate(() => Inventory.getEntry("wand").charges.charges), 1, "share mode can spend charges in page memory");
+    } finally { await chargesShared.close(); }
+    await page.goto(url);
+    assert.deepEqual(await chargesSnapshot(page), chargesExpected, "spending charges on a shared page does not touch the viewer's save");
     // 屬性有效值不存檔：屬性欄存原值，autosave、JSON、分享還原後由物品重新算出。
     const abilityState = { class: "fighter", level: "5", str: "16", dex: "14", con: "12", mainHand: "雷神之錘（戰錘）", offHand: "", armor: "", __inventory: { version: 1, items: [
       { uid: "hammer", itemId: "戰錘", quantity: 1, attuned: true, magic: { id: "hammer-of-thunderbolts" } },

@@ -206,6 +206,43 @@ async function checkMagicEffectsInWildShape(page) {
   assert.deepEqual(await page.evaluate(() => document.getElementById("skill-調查").value), "+5", "the sheet numbers are unchanged after wild shape");
 }
 
+// 魔法物品的跑團按鈕（第 5 步）也遵守荒野形態只保留穿戴中魔法護甲與盾牌的規則：穿著盾牌時只剩騎士之盾的按鈕，併入時都沒有。
+async function checkMagicItemButtonsInWildShape(page) {
+  await page.evaluate(() => {
+    TabletopMode.setMode("sheet");
+    TabletopMode.applyState({});
+    applyStateObject({ class: "druid", level: "8", str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40", armor: "", mainHand: "", offHand: "騎士之盾", offHandAsMain: false,
+      __inventory: { version: 1, items: [
+        { uid: "cloak", quantity: 1, attuned: true, worn: true, magic: { id: "cloak-of-invisibility" } },
+        { uid: "shield", itemId: "盾牌", quantity: 1, attuned: true, magic: { id: "shield-of-the-cavalier" } }
+      ] } });
+    TabletopMode.setMode("tabletop");
+    TabletopMode.setPanel("actions");
+  });
+  const keys = () => page.evaluate(async () => {
+    const result = [];
+    for (const mode of ["action", "reaction"]) {
+      document.getElementById(`tabletop-action-tab-${mode}`).click();
+      await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 30)));
+      result.push(...[...document.querySelectorAll(`#tabletop-action-panel-${mode} [data-action-option-key^="magic-item-"]`)].map(button => button.dataset.actionOptionKey));
+    }
+    return result;
+  });
+  assert.deepEqual(await keys(), ["magic-item-cloak-of-invisibility-hood", "magic-item-shield-of-the-cavalier-bash", "magic-item-shield-of-the-cavalier-protective-field"], "outside wild shape every active item has its buttons");
+  const shape = off => page.evaluate((off) => {
+    const c = () => TabletopMode.getDruidContext();
+    TabletopMode.commitDruidOperation("end", {}, c().token);
+    TabletopMode.setBuiltInResourceSpent("druid-wild-shape", 0, 3);
+    TabletopMode.commitDruidOperation("known", { keys: ["wolf"] }, c().token);
+    return TabletopMode.commitDruidOperation("shape", { key: "wolf", equipment: { armor: "merge", main: "merge", off, other: "merge" } }, c().token).ok;
+  }, off);
+  assert.equal(await shape("wear"), true);
+  assert.deepEqual(await keys(), ["magic-item-shield-of-the-cavalier-bash", "magic-item-shield-of-the-cavalier-protective-field"], "wild shape keeps only the worn shield's buttons");
+  assert.equal(await shape("merge"), true);
+  assert.deepEqual(await keys(), [], "a merged shield's buttons are hidden too");
+  await page.evaluate(() => { TabletopMode.commitDruidOperation("end", {}, TabletopMode.getDruidContext().token); TabletopMode.setMode("sheet"); });
+}
+
 // 護甲的力量需求：力量低於需求時自動計算的速度 -10 呎；盾牌與無甲不扣，跑團與 PDF 用同一個速度，關閉自動計算時不動手填速度。
 async function checkArmorStrengthSpeed(page) {
   await page.evaluate(() => {
@@ -798,6 +835,7 @@ async function main() {
     await checkArmorStrengthSpeed(page);
     await checkMagicItemsInWildShape(page);
     await checkMagicEffectsInWildShape(page);
+    await checkMagicItemButtonsInWildShape(page);
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Druid status card, strips, known forms, shape cards, attack cards, recharge, resources, cancellation, alternate payment, autosave and responsive layout passed.");
   } finally {

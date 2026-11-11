@@ -263,6 +263,23 @@ async function main() {
       field("hp", 1); field("lifedicen", 2);
       check(TabletopMode.spendHitDice({ count: 8, forceRoll: true }).spent === 2
         && context().hitDice === 0, "forced batch stops at remaining dice");
+      // 魔法物品的次數池：短休恢復 shortRest 的池，長休也恢復 longRest 的池；黎明與不恢復的池不動，滿的池不記進存檔。
+      prepare("fighter");
+      Inventory.restore({ version: 1, items: [
+        { uid: "staff", itemId: "長棍", quantity: 1, magic: { id: "quarterstaff-of-the-acrobat" }, attuned: true, charges: { deflect: 0 } },
+        { uid: "boots", quantity: 1, magic: { id: "boots-of-speed" }, attuned: true, worn: true, charges: { minutes: 3 } },
+        { uid: "wand", quantity: 1, magic: { id: "wand-of-fireballs" }, charges: { charges: 2 } },
+        { uid: "glue", quantity: 1, magic: { id: "sovereign-glue" }, charges: { ounces: 1 } }
+      ] });
+      const left = (uid, pool) => Inventory.getCharges(Inventory.getEntry(uid)).find(item => item.id === pool).left;
+      const shortItems = rest("shortRest");
+      check(shortItems.ok && left("staff", "deflect") === 1 && left("boots", "minutes") === 3 && left("wand", "charges") === 2, "short rest recovers only short-rest item pools");
+      check(shortItems.itemCharges.map(item => item.label).join() === "特技師長棍", "short rest reports the recovered item");
+      check(!Inventory.getEntry("staff").charges && Inventory.getEntry("boots").charges.minutes === 3, "full pools are not saved");
+      const longItems = rest("longRest");
+      check(longItems.ok && left("boots", "minutes") === 10 && left("wand", "charges") === 2 && left("glue", "ounces") === 1, "long rest recovers long-rest pools; dawn and no-recovery pools unchanged");
+      check(longItems.itemCharges.map(item => item.label).join() === "速度之靴" && rest("longRest").itemCharges.length === 0, "rests report only pools that changed");
+      Inventory.restore({ version: 1, items: [] });
       window.restTestField = field;
       window.restTestManualFeat = manualFeat;
       return checks;
@@ -302,10 +319,17 @@ async function main() {
     await mirror.setChecked(!wasChecked);
     assert.equal(await page.locator("#heroic-inspiration").isChecked(), !wasChecked, "inspiration checkbox remains synced");
     await mirror.setChecked(wasChecked);
+    await page.evaluate(() => Inventory.restore({ version: 1, items: [
+      { uid: "staff", itemId: "長棍", quantity: 1, magic: { id: "quarterstaff-of-the-acrobat" }, attuned: true, charges: { deflect: 0 } },
+      { uid: "boots", quantity: 1, magic: { id: "boots-of-speed" }, attuned: true, worn: true, charges: { minutes: 3 } }
+    ] }));
     await page.locator('[data-rest="shortRest"]').click();
+    assert.equal(await dialog.locator(".tabletop-rest-summary li", { hasText: "魔法物品" }).textContent(), "魔法物品：特技師長棍的次數恢復。", "short rest lists only items with short-rest pools that are not full");
     await dialog.getByLabel("衝出重圍", { exact: true }).check();
     assert.equal(await dialog.getByLabel("多重防禦", { exact: true }).isChecked(), false, "modal choices stay exclusive");
     await page.keyboard.press("Escape");
+    assert.equal(await page.evaluate(() => Inventory.getEntry("staff").charges.deflect), 0, "cancelled rest keeps item charges");
+    await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
     assert.equal(await page.locator("#ranger-defensive-tactics-multiattack-defense").isChecked(), true, "cancel keeps canonical hunter selection");
     assert.equal(await page.evaluate(() => restCompletionNotices.length), 0, "cancel does not report short-rest completion");
     await page.locator('[data-rest="shortRest"]').click();
