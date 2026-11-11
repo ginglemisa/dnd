@@ -1740,8 +1740,11 @@ async function validateMagicContainers(page) {
     const after = await history();
     assert.deepEqual(after.slice(0, 3), ["運動（力量）檢定", "運動（力量）檢定", "運動（力量）檢定"], "each escape roll is in the dice history");
     assert.equal(after.length, Math.min(historyBefore.length + 3, 66), "the hidden timer adds nothing to the dice history");
-    // 自訂物品不吃（使用者決定）：袋子裡只有自訂物品時不計時；混合時到期就把最上層的自訂物品連同裡面的東西吐到身上（描述保留），
-    // 明細只列被吃的目錄物品，另加「吞噬袋似乎不喜歡這個味道，把…吐了出來。」；放棄只移除被吃的那些。
+    // 自訂物品不吃（使用者決定）：袋子裡只有自訂物品時不計時。到期明細照樣列出全部（自訂物品也列）；玩家選擇時才改物品欄——
+    // 自訂物品連同裡面的東西回到身上（描述保留）、其餘移除；放棄與被吞的結局視窗之後才跳「……吞噬袋似乎不喜歡這個味道，把…吐了出來。」，搶回不跳。
+    const spatText = "……吞噬袋似乎不喜歡這個味道，把日記吐了出來。";
+    const topCustom = () => page.evaluate(() => Inventory.entries().filter(entry => !entry.in && Inventory.isCustom(entry)).map(entry => [entry.name, entry.desc || ""]));
+    const clearCustom = () => page.evaluate(() => Inventory.entries().filter(entry => !entry.in && Inventory.isCustom(entry)).forEach(entry => Inventory.remove(entry.uid, { keepContents: false })));
     await page.evaluate(() => {
       window.__devourRandom = 0;
       Inventory.add([{ name: "日記", desc: "給妹妹的信" }], { into: "bd" });
@@ -1757,12 +1760,14 @@ async function validateMagicContainers(page) {
       Inventory.add([{ name: "筆記" }], { into: bag });
     });
     assert.deepEqual(await advance(119), [7, false], "adding catalog items starts the hidden timer");
-    assert.deepEqual(await advance(2), [2, true], "at expiry the custom items are spat out before the dialog shows; only the catalog items stay in the bag");
+    assert.deepEqual(await advance(2), [7, true], "at expiry nothing is moved yet");
     const mixed = devourDialog.filter({ hasText: "吞噬袋吃掉了你的道具！" });
     await mixed.waitFor();
-    assert.deepEqual(await mixed.locator(".app-dialog__body p").allTextContents(), ["吞噬袋吃掉了你的道具！", "繩索、背包", "吞噬袋似乎不喜歡這個味道，把日記、自訂背包（火把、地圖）、筆記吐了出來。"],
-      "the dialog lists only the eaten catalog items and names what was spat out");
+    assert.deepEqual(await mixed.locator(".app-dialog__body p").allTextContents(), ["吞噬袋吃掉了你的道具！", "日記、自訂背包（火把、地圖）、繩索、背包（筆記）"],
+      "the expiry dialog lists everything, custom items too, and says nothing about spitting");
     await mixed.getByRole("button", { name: "放棄" }).click();
+    const spatAll = devourDialog.filter({ hasText: "……吞噬袋似乎不喜歡這個味道，把日記、自訂背包（火把、地圖）、筆記吐了出來。" });
+    await spatAll.waitFor();
     assert.deepEqual(await page.evaluate(() => {
       const top = Inventory.entries().filter(entry => !entry.in && Inventory.isCustom(entry));
       const pack = top.find(entry => entry.name === "自訂背包");
@@ -1773,9 +1778,57 @@ async function validateMagicContainers(page) {
         eaten: Inventory.entries().filter(entry => ["繩索", "背包"].includes(entry.itemId)).length
       };
     }), { bag: 0, top: [["日記", "給妹妹的信"], ["自訂背包", ""], ["筆記", ""]], pack: ["火把", "地圖"], eaten: 0 },
-    "giving up removes only the eaten catalog items; custom items stay on the character with their notes, a custom container keeps everything inside it");
+    "giving up removes only the catalog items; custom items are back on the character with their notes, a custom container keeps everything inside it");
+    await spatAll.getByRole("button").last().click();
     assert.deepEqual(await advance(3600), [0, false], "the emptied bag does not time");
-    await page.evaluate(() => Inventory.entries().filter(entry => !entry.in && Inventory.isCustom(entry)).forEach(entry => Inventory.remove(entry.uid, { keepContents: false })));
+    await clearCustom();
+
+    // 被吞的兩種結局：結局視窗先出現（自訂物品此時已回到身上），關掉後才跳吐出來。
+    const mixedSwallow = async (d20) => {
+      await page.evaluate(() => { window.__devourRandom = 0; Inventory.add([{ name: "日記", desc: "給妹妹的信" }, { itemId: "繩索" }], { into: "bd" }); });
+      await advance(121);
+      await devourDialog.filter({ hasText: "日記、繩索" }).waitFor();
+      await page.evaluate((roll) => { document.getElementById("skill-運動").value = ""; window.__devourD20 = roll; window.__devourRandom = 0.2; }, d20);
+      await devourDialog.getByRole("button", { name: "伸手搶救" }).click();
+      await devourDialog.getByRole("button", { name: "掙脫逃命" }).click();
+    };
+    await mixedSwallow(18);
+    const crawled = devourDialog.filter({ hasText: "你驚險地從袋口爬了出來" });
+    await crawled.waitFor({ timeout: 8000 });
+    assert.equal(await page.locator(".app-dialog", { hasText: "吐了出來" }).count(), 0, "the spit dialog waits until the escape ending is closed");
+    assert.deepEqual(await topCustom(), [["日記", "給妹妹的信"]], "the custom item is already back on the character while the ending shows");
+    await crawled.getByRole("button").last().click();
+    const spatEscape = devourDialog.filter({ hasText: spatText });
+    await spatEscape.waitFor();
+    await spatEscape.getByRole("button").last().click();
+    await clearCustom();
+
+    const themeBefore = await page.evaluate(() => document.documentElement.dataset.theme);
+    await mixedSwallow(2);
+    const ending = devourDialog.filter({ hasText: themeBefore === "dark" ? "靈魂之河" : "掛" });
+    await ending.waitFor({ timeout: 8000 });
+    assert.equal(await page.locator(".app-dialog", { hasText: "吐了出來" }).count(), 0, "the spit dialog waits until 你  掛  了 / the soul river is closed");
+    await ending.getByRole("button").last().click();
+    const spatDead = devourDialog.filter({ hasText: spatText });
+    await spatDead.waitFor();
+    await spatDead.getByRole("button").last().click();
+    assert.deepEqual([await topCustom(), await page.evaluate(() => Inventory.descendantsOf("bd").length)], [[["日記", "給妹妹的信"]], 0], "after a failed escape the custom item is back and the rest is gone");
+    await clearCustom();
+    // 亮暗翻回原本的樣子，後面的檢查不受影響。
+    if (await page.evaluate(() => document.documentElement.dataset.theme) !== themeBefore) await page.evaluate(() => document.getElementById("color-mode-toggle").click());
+
+    // 搶回：全部拿回來（自訂物品也是），不跳吐出來。
+    await page.evaluate(() => { window.__devourRandom = 0; Inventory.add([{ name: "日記", desc: "給妹妹的信" }, { itemId: "繩索" }], { into: "bd" }); });
+    await advance(121);
+    await page.evaluate(() => { window.__devourRandom = 0.9; });
+    await devourDialog.getByRole("button", { name: "伸手搶救" }).click();
+    const rescuedMixed = devourDialog.filter({ hasText: "你搶回了道具！" });
+    await rescuedMixed.waitFor();
+    await rescuedMixed.getByRole("button").last().click();
+    assert.equal(await page.locator(".app-dialog", { hasText: "吐了出來" }).count(), 0, "a rescue never shows the spit dialog");
+    assert.deepEqual([await topCustom(), await page.evaluate(() => Inventory.entries().filter(entry => !entry.in && entry.itemId === "繩索").length)], [[["日記", "給妹妹的信"]], 1], "a rescue brings back everything");
+    await clearCustom();
+    await page.evaluate(() => Inventory.entries().filter(entry => !entry.in && entry.itemId === "繩索").forEach(entry => Inventory.remove(entry.uid)));
   } finally {
     await page.evaluate(() => {
       Date.now = window.__devourReal.now;
