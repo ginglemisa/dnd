@@ -8,6 +8,6 @@ group: wearable
 rarity: rare
 attunement: true
 use: worn
-manualEffect: true
+effects: { abilities: { con: { set: 19 } } }
 text: |-
   你穿戴這個護符時，你的體質為19。若你不穿戴它時體質已有19或更高，它對你沒有效果。

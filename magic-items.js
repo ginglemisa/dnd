@@ -128,11 +128,12 @@
     return forms ? forms.find(form => form.id === selection?.form) || forms[0] : null;
   }
 
-  // 合併多個來源的 effects：數字相加，清單（extraDamage、proficiencyAs）接在後面，其餘以後面的為準。
+  // 合併多個來源的 effects：數字相加，清單（extraDamage、proficiencyAs）接在後面，abilities 依屬性合併，其餘以後面的為準。
   const LIST_EFFECT_KEYS = new Set(["extraDamage", "proficiencyAs"]);
   function mergeEffect(result, key, value) {
     if (typeof value === "number") result[key] = (Number(result[key]) || 0) + value;
     else if (LIST_EFFECT_KEYS.has(key)) result[key] = [...(result[key] || []), ...value];
+    else if (key === "abilities") result[key] = { ...result[key], ...value };
     else result[key] = value;
   }
 
@@ -147,7 +148,7 @@
     const form = getForm(id, selection);
     const itemEffects = form?.noEffects ? {} : item.effects || {};
     for (const [key, value] of Object.entries(itemEffects)) {
-      if (value !== "bonus") result[key] = Array.isArray(value) ? [...value] : value;
+      if (value !== "bonus") result[key] = Array.isArray(value) ? [...value] : key === "abilities" ? { ...value } : value;
       else if (bonus !== undefined) result[key] = bonus;
     }
     const extra = [form?.effects, ...options.map(option => selectedChoice(option, selection)?.effects)].filter(Boolean);

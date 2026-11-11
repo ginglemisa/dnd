@@ -7,7 +7,7 @@ category: weapon
 rarity: very-rare
 attunement: true
 base: { fixed: 巨棒 }
-effects: { extraDamage: [ { dice: 1d8, type: thunder } ] }
+effects: { extraDamage: [ { dice: 1d8, type: thunder } ], abilities: { str: { set: 20 } } }
 hints:
   - panel: weapon
     text: 對未被穿戴或攜帶的物體額外造成 3d8 雷鳴傷害。

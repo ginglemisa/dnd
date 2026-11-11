@@ -13,18 +13,18 @@ options:
     label: 種類
     choices:
       - { value: absorption, label: 吸收, rarity: very-rare }
-      - { value: agility, label: 靈活, rarity: very-rare }
+      - { value: agility, label: 靈活, rarity: very-rare, effects: { abilities: { dex: { bonus: 2, max: 20 } } } }
       - { value: awareness, label: 警覺, rarity: rare, hints: [ { advantage: [ 先攻, 察覺 ] } ] }
-      - { value: fortitude, label: 堅忍, rarity: very-rare }
+      - { value: fortitude, label: 堅忍, rarity: very-rare, effects: { abilities: { con: { bonus: 2, max: 20 } } } }
       - { value: greater-absorption, label: 高等吸收, rarity: legendary }
-      - { value: insight, label: 洞悉, rarity: very-rare }
-      - { value: intellect, label: 智識, rarity: very-rare }
-      - { value: leadership, label: 領導, rarity: very-rare }
+      - { value: insight, label: 洞悉, rarity: very-rare, effects: { abilities: { wis: { bonus: 2, max: 20 } } } }
+      - { value: intellect, label: 智識, rarity: very-rare, effects: { abilities: { int: { bonus: 2, max: 20 } } } }
+      - { value: leadership, label: 領導, rarity: very-rare, effects: { abilities: { cha: { bonus: 2, max: 20 } } } }
       - { value: mastery, label: 精進, rarity: legendary }
       - { value: protection, label: 防護, rarity: rare, effects: { ac: 1 } }
       - { value: regeneration, label: 再生, rarity: legendary }
       - { value: reserve, label: 儲存, rarity: rare }
-      - { value: strength, label: 力量, rarity: very-rare }
+      - { value: strength, label: 力量, rarity: very-rare, effects: { abilities: { str: { bonus: 2, max: 20 } } } }
       - { value: sustenance, label: 維生, rarity: rare }
 text: |-
   大小約如彈珠的_艾恩石_，得名自艾恩，一位在某些世界受到崇敬的知識與預言之神。_艾恩石_有許多種類，每種都是形狀與顏色的獨特組合。

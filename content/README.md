@@ -698,7 +698,7 @@ text: |-
 | `attunement` | `false`、`true`，或限定條件文字（以「由」開頭，例如「由法師」，顯示為「需由法師同調」）。 |
 | `use` | 使用方式，沒有 `base` 的物品才寫，依說明文字判斷：`worn`（寫「穿戴…時」，艾恩石的「視為你所穿戴」也算）、`held`（寫「手持…時」）、`wornOrHeld`（寫「穿戴或手持」）、`carried`（寫「帶在身上」「在你身上」）。效果只在符合時生效：穿戴要在物品詳情按「裝備」、手持要放在主手或副手、帶在身上持有就算，需要同調的仍要同調。有 `effects`（含選項的 `effects`）或 `hints`（`when: owned` 的除外）的物品必寫；說明只講啟動方式、看不出有沒有持續效果的物品（例如火球項鍊、支配權杖）可以不寫。有 `base` 的武器、護甲、盾牌、法杖用裝備欄位，不寫這欄。 |
 | `base` | 基本款，擇一：`{ fixed: 長劍 }`（固定一種）、`{ from: [長弓, 短弓] }`（列出品名）、`{ any: [melee-weapon], label: 任意近戰武器 }`（裝備分類：`simple-weapon`、`martial-weapon`、`melee-weapon`、`light-armor`、`medium-armor`、`heavy-armor`、`ammunition`；可加 `except` 排除品名）。品名須對得上 `equipment-data.js`。武器與護甲必寫，法杖、權杖可寫（可當作長棍或硬頭錘揮舞時），其他類別不寫。 |
-| `options` | 取得時要選的項目：`[{ id, label, choices: [{ value, label, ... }] }]`。`id` 與 `value` 會寫進物品欄存檔的 `magic` 物件，不可改名（列在基準檔），`id` 不可用 `id`、`base`。`id: bonus` 是 +N 加值，`id: damageType` 的值須是法術的傷害類型 ID。`choices` 可寫 `rarity`、`effects`（選了才有的自動計算，不可寫 `condition`）、`hints`（選了才有的提示，例如抗性戒指每種傷害類型的抗性）、`heal`（治療藥水骰式，例如 `4d4 + 4`）、`score`（巨人之力的力量值）、`saveDc`／`attackBonus`（法術卷軸）、`omitInName: true`（顯示名稱不加這個選項）。 |
+| `options` | 取得時要選的項目：`[{ id, label, choices: [{ value, label, ... }] }]`。`id` 與 `value` 會寫進物品欄存檔的 `magic` 物件，不可改名（列在基準檔），`id` 不可用 `id`、`base`。`id: bonus` 是 +N 加值，`id: damageType` 的值須是法術的傷害類型 ID。`choices` 可寫 `rarity`、`effects`（選了才有的自動計算，不可寫 `condition`）、`hints`（選了才有的提示，例如抗性戒指每種傷害類型的抗性）、`heal`（治療藥水骰式，例如 `4d4 + 4`）、`score`（巨人之力藥水的力量值，只是資料、不計算；穿戴類物品寫 `effects.abilities`）、`saveDc`／`attackBonus`（法術卷軸）、`omitInName: true`（顯示名稱不加這個選項）。 |
 | `effects` | 只放角色卡會自動計算的恆定效果，用下方「效果與提示的詞」描述。對特定目標才有的加值、擲 20 才有的效果、命中後選用或要豁免的效果、只對遠程的 AC 等條件式效果不寫，改寫 `hints`（武器說明）或留在說明文字。 |
 | `hints` | 提示：只顯示、不計算的效果，例如常駐抗性、優勢、詛咒、看目標的額外傷害。見下方「效果與提示的詞」。 |
 | `displayName` | 選定後的顯示名稱樣板，`{base}` 為基本款、`{選項 id}` 為該選項的 `label`，例如 `"{base}{bonus}"`。省略時為「名稱（可選的基本款、選項）」，例如「治療藥水（高等）」「焰舌（長劍）」；固定基本款不列入。 |
@@ -731,6 +731,7 @@ text: |-
 | `proficiencyAs` | `[長劍, 短劍]`：熟練其中任一件武器時也熟練這件（陽炎劍）。只用於武器類。 |
 | `weapons` | `{ names: [長弓, 短弓], attack?, damage? }`：拿這些武器（依基本款）攻擊時的命中、傷害加值，例如射手護腕。 |
 | `unarmedStrike` | `{ dice: 1d8, type: slashing, attack?, damage? }`：徒手打擊的傷害骰與類型，以及命中、傷害加值（惡魔護甲）。武僧的武藝骰較大時用武藝骰。角色卡只有武僧的「武藝」有攻擊列，其他職業的徒手打擊請另寫 `hints`。 |
+| `abilities` | 屬性的有效值，鍵是 `str`、`dex`、`con`、`int`、`wis`、`cha`，每個屬性擇一寫法：`{ set: 19 }`（屬性變成這個值，原本較高時用原本的）、`{ bonus: 2, max: 20 }`（增加，最高到上限，不會降低）、`{ setBonus: 4, max: 30, from: [物品 id…] }`（`from` 物品同時生效時，它們的 `set` 再增加，例如雷神之錘加在巨人之力腰帶上；建置檢查 `from` 的物品要有同一個屬性的 `set`）。算法：原值 → 加值依序加上（各自夾上限）→ 與設定值比 → 取最高。屬性欄只存原值，有效值不存檔（`character-rules.js` 的 `getEffectiveAbilityScore()` 回傳數值與決定它的物品名稱）。可用於任何類別；有基本款的武器要拿在手上才算。手冊、藥水這類永久或暫時改屬性的物品不寫，只留說明。 |
 
 **`hints`（提示）**，可寫在物品、選項的 `choices` 與 `forms`，是清單，每筆：
 
@@ -754,7 +755,7 @@ hints:
     text: 冰點以下的溫度中發光；拔出時可熄滅周圍 30 呎內非魔法的火焰（1 小時一次）。
 ```
 
-- 建置檢查：格式、`id` 與 `nameEn` 對應、中英文名不重複、奇物的 `group`、`base` 的品名與分類、選項與稀有度的對應、`bonus` 與傷害類型、`effects`（武器類專用的詞、武器品名、屬性欄位）、`hints`（位置、技能 ID、句號）、`use`（有 `base` 不寫、有 `effects` 或 `hints` 必寫）、`displayName` 的代入標記、魔法武器、護甲與手持物品的可能名稱彼此唯一且不與普通品名相撞、說明沒有英文內文，以及 `magic-item-id-baseline.json`（`items` 為物品 id，`options` 為「物品 id:選項 id:選項值」）。
+- 建置檢查：格式、`id` 與 `nameEn` 對應、中英文名不重複、奇物的 `group`、`base` 的品名與分類、選項與稀有度的對應、`bonus` 與傷害類型、`effects`（武器類專用的詞、武器品名、屬性欄位、`abilities.*.from` 的物品）、`hints`（位置、技能 ID、句號）、`use`（有 `base` 不寫、有 `effects` 或 `hints` 必寫）、`displayName` 的代入標記、魔法武器、護甲與手持物品的可能名稱彼此唯一且不與普通品名相撞、說明沒有英文內文，以及 `magic-item-id-baseline.json`（`items` 為物品 id，`options` 為「物品 id:選項 id:選項值」）。
 - `npm run build` 產生根目錄的 `magic-item-content.generated.js`（規則與名稱，網頁一開始就載入）與 `magic-item-text.generated.js`（說明本文的 HTML，第一次需要時才載入，離線版內嵌）。Markdown 在建置時轉成 HTML，執行時不解析。
 - 網站經 `magic-items.js` 的 `MagicItemCatalog` 讀取，不從顯示文字反推規則：`getAll()`、`get(id)`、`getByEquipmentName(name)`、`getCategories()`、`getBaseChoices(id)`、`getDisplayName(id, selection)`、`getEquipmentVariants()`、`resolveEquipmentName(name)`（裝備欄位的魔法款名稱查回 `{ name, id, selection, base }`；手持類物品的 `base` 是空字串）、`getEffects(id, selection)`（物品、形態、選項的 `effects` 合併）、`getHints(id, selection)`（物品、形態、選項的 `hints`）、`getForm(id, selection)`、`getRarity(id, selection)`、`getRarityLabel(rarity)`、`getSubtitle(id)`、`getHeal(id, selection)`、`loadText()`、`getText(id)`（回傳 `{ html }` 的 Promise）。`selection` 是 `{ base: 基本款品名, <選項 id>: 選項值 }`。
 

@@ -172,6 +172,20 @@ function checkItem(item, context, errors) {
   if (/[A-Za-z]{4,}/.test(item.text)) errors.push(`${at}：text 只放中文，不放英文內文`);
 }
 
+// effects.abilities 的 setBonus：from 列的物品要存在，且在物品本身或選項寫了同一個屬性的 set（雷神之錘加在巨人之力腰帶、食人魔力量護手上）。
+function checkAbilityReferences(items, errors) {
+  const byId = new Map(items.map(item => [item.id, item]));
+  const effectsOf = item => [item.effects, ...(item.forms || []).map(form => form.effects), ...(item.options || []).flatMap(option => option.choices.map(choice => choice.effects))].filter(Boolean);
+  items.forEach(item => effectsOf(item).forEach(effects => Object.entries(effects.abilities || {}).forEach(([ability, effect]) => {
+    (effect.from || []).forEach((id) => {
+      const target = byId.get(id);
+      if (!target) errors.push(`${item.file}：abilities.${ability}.from 的「${id}」不是魔法物品 id`);
+      else if (id === item.id) errors.push(`${item.file}：abilities.${ability}.from 不可寫自己`);
+      else if (!effectsOf(target).some(other => other.abilities?.[ability]?.set)) errors.push(`${item.file}：abilities.${ability}.from 的「${id}」沒有 ${ability} 的 set`);
+    });
+  })));
+}
+
 function checkUnique(items, field, errors) {
   const seen = new Set();
   items.forEach(item => {
@@ -223,6 +237,7 @@ function loadMagicItems() {
     skills: loadSkillAbilities()
   };
   items.forEach(item => checkItem(item, context, errors));
+  checkAbilityReferences(items, errors);
   ["id", "name", "nameEn"].forEach(field => checkUnique(items, field, errors));
   if (errors.length) throw new ContentError(`魔法物品內容檢查失敗（${errors.length} 項）：\n- ${errors.join("\n- ")}`);
   items.sort((a, b) => { const [x, y] = [orderKey(a.nameEn), orderKey(b.nameEn)]; return x < y ? -1 : x > y ? 1 : 0; });
