@@ -2305,7 +2305,8 @@
     const filled = new Set();
     all.forEach((entry) => {
       const dice = api().getMagicContainer(entry)?.devour;
-      if (!dice || !all.some(item => item.in === entry.uid)) return;
+      // 只有自訂物品時沒有東西可吃，不計時（自訂物品會被吐出來）。
+      if (!dice || !api().splitCustomContents(entry.uid).other.length) return;
       filled.add(entry.uid);
       if (devourTimers.has(entry.uid) || devourPending.has(entry.uid)) return;
       const minutes = rollHiddenMinutes(dice);
@@ -2334,10 +2335,14 @@
     clearDevourTimer(uid);
     if (!entry) return;
     const label = api().getLabel(entry);
-    const eaten = api().formatContents(uid);
-    if (!eaten) return;
+    const { custom, other } = api().splitCustomContents(uid);
+    if (!other.length) return;
     devourPending.add(uid);
-    runDevourEvent(uid, label, eaten).catch(() => {}).then(() => {
+    // 自訂物品（玩家的名稱、描述）不吃：到期時一律連同裡面的東西吐到身上，不論之後選什麼（使用者決定，備註才不會消失）。
+    const spat = custom.map(item => api().formatItem(item)).join("、");
+    custom.forEach(item => api().move(item, { into: "" }));
+    const eaten = api().formatContents(uid);
+    runDevourEvent(uid, label, eaten, spat).catch(() => {}).then(() => {
       devourPending.delete(uid);
       syncDevourTimers("");
     });
@@ -2347,16 +2352,20 @@
   // 「伸手搶救」或「放棄」→ 放棄就移除被吃的物品；搶救時 50%（內部亂數，不提示）搶回、物品放回身上，
   // 否則角色被吞進去，按「掙脫逃命」擲運動（力量）檢定 1d20＋運動技能欄（空白或不是數字當 0），擲骰功能關閉也播放骰子動畫。
   // 15 以上爬出來；低於 15 時亮暗反轉（經網站既有的亮暗切換按鈕，和玩家手動切換一樣記住）並跳出對應的視窗。被吞時物品一律移除，角色資料其他部分不變。
+  // 只吃目錄物品與魔法物品；自訂物品在到期時就連同裡面的東西吐到身上（devour()），明細只列被吃的東西。
   const DEVOUR_ESCAPE_DC = 15;
   const forcedChoice = { showCloseButton: false, onEscape: () => false, dismissOnBackdrop: false };
 
-  async function runDevourEvent(uid, label, eaten) {
+  async function runDevourEvent(uid, label, eaten, spat = "") {
     const dialog = globalScope.AppDialog;
     const choice = await dialog.requestDecision({
       ...forcedChoice,
       title: label,
       message: `${label}吃掉了你的道具！`,
-      renderContent: body => body.appendChild(el("p", "", eaten)),
+      renderContent: (body) => {
+        body.appendChild(el("p", "", eaten));
+        if (spat) body.appendChild(el("p", "", `${label}似乎不喜歡這個味道，把${spat}吐了出來。`));
+      },
       actions: [
         { label: "放棄", value: "give-up" },
         { label: "伸手搶救", intent: "primary", value: "rescue" }

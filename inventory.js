@@ -22,7 +22,7 @@
  *   （箭矢、弩矢、子彈、彈丸、針），對到武器屬性「彈藥 (射程…；箭矢)」的最後一詞（getWeaponAmmunition()）。
  * - 沒有基本款、內容檔寫了 container 的魔法物品（次元袋、吞噬袋等）是容器，存檔格式不變（舊存檔的這些袋子以前不是容器，一筆多件時載入拆成一件一筆）。
  *   container.extradimensional 的容器裡（含更深層）的物品不算重量，容器本身照算；兩個異次元容器互放只由 getExtradimensionalNesting() 回報給介面提示，不刪除。
- *   container.devour 的計時與吞噬在 inventory-ui.js，這裡只提供 formatContents() 與 emptyContainer()。
+ *   container.devour 的計時與吞噬在 inventory-ui.js，這裡只提供 splitCustomContents()、formatItem()、formatContents() 與 emptyContainer()。
  * - 手持類的非武器魔法物品（魔杖等，MagicItemCatalog.isHandHeld）沒有基本款，也可以放進主手或副手：裝備欄位存它的顯示名稱，同樣以 slot 標記。
  * - charges 是魔法物品次數池（MagicItemCatalog.getPools：充能、每日一次、冷卻、珠子等）目前這件的剩餘次數 { 池 id: 0～99 }，只有 magic 的筆才有；
  *   沒寫的池表示滿的（取得時都是滿的），滿了就拿掉。一筆多件時其餘件數都是滿的，拆分、穿上或裝備拆出的那件也是滿的。有次數池的物品不合併。
@@ -1350,6 +1350,33 @@
     return result;
   }
 
+  /**
+   * 容器裡（含更深層）的物品分成兩組 uid：custom 是最上層的自訂物品（自訂物品裡面的東西跟著它，不另列），
+   * other 是其餘不在自訂物品裡的物品（目錄物品、魔法物品）。吞噬袋只吃 other，custom 整包吐出來。
+   */
+  function splitCustomContents(uid) {
+    const custom = [];
+    const other = [];
+    const walk = (parent, depth) => {
+      if (depth > LIMITS.depth) return;
+      entries.filter(entry => entry.in === parent).forEach((entry) => {
+        if (isCustomEntry(entry)) custom.push(entry.uid);
+        else {
+          other.push(entry.uid);
+          walk(entry.uid, depth + 1);
+        }
+      });
+    };
+    if (entries.some(entry => entry.uid === uid)) walk(uid, 1);
+    return { custom, other };
+  }
+
+  /** 一筆物品連同裡面的東西的文字寫法（formatText 的寫法，例如「自訂背包（日記）」）；找不到時回傳空字串。 */
+  function formatItem(uid) {
+    const entry = entries.find(item => item.uid === uid);
+    return entry ? formatEntry(entry, entries) : "";
+  }
+
   /** 容器裡的物品（含更深層）的文字寫法（formatText 的寫法，例如「背包（繩索）、口糧 ×3」）；空的回傳空字串。 */
   function formatContents(uid) {
     return entries.filter(entry => entry.in === uid).map(entry => formatEntry(entry, entries)).join("、");
@@ -1443,6 +1470,8 @@
     },
     getExtradimensionalNesting,
     formatContents,
+    formatItem,
+    splitCustomContents,
     emptyContainer,
     entries: () => entries.map(copyEntry),
     getEntry: uid => {
