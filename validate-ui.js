@@ -597,7 +597,31 @@ async function verifyAdventurersLeagueRules(browser, url) {
   } finally { await page.close(); }
 }
 
+// The readable-sheet serif font is a Big5 subset (tools/pdf-font). Text the site itself
+// supplies must stay inside it; emoji, variation selectors and UI-only symbols are exempt.
+function verifyPdfSerifFontCoverage() {
+  const fontkit = require("./fontkit.custom.min.js");
+  const font = fontkit.create(fs.readFileSync(path.join(__dirname, "fonts", "twD20SerifTC-Bold.otf")));
+  const listYaml = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => (
+    entry.isDirectory() ? listYaml(path.join(dir, entry.name)) : entry.name.endsWith(".yaml") ? [path.join(dir, entry.name)] : []
+  ));
+  const scripts = fs.readdirSync(__dirname).filter(name => name.endsWith(".js") && !/^validate-|\.min\.js$|\.generated\.js$/.test(name));
+  const exempt = (codePoint, fromScript) => codePoint >= 0x1F000 || (codePoint >= 0xFE00 && codePoint <= 0xFE0F) || (codePoint >= 0x20D0 && codePoint <= 0x20FF)
+    || (fromScript && codePoint >= 0x2100 && codePoint <= 0x2BFF);
+  const missing = new Map();
+  for (const [file, fromScript] of [...listYaml(path.join(__dirname, "content", "srd")).map(file => [file, false]), ...scripts.map(name => [path.join(__dirname, name), true])]) {
+    for (const char of fs.readFileSync(file, "utf8")) {
+      const codePoint = char.codePointAt(0);
+      if (codePoint < 0x20 || exempt(codePoint, fromScript) || font.hasGlyphForCodePoint(codePoint)) continue;
+      if (!missing.has(char)) missing.set(char, path.relative(__dirname, file));
+    }
+  }
+  assert.deepEqual([...missing].map(([char, file]) => `${char} (U+${char.codePointAt(0).toString(16).toUpperCase()}) ${file}`), [],
+    "fonts/twD20SerifTC-Bold.otf lacks characters the site uses; regenerate it (tools/pdf-font/README.md)");
+}
+
 async function verifyPdf(page, fieldsOnly) {
+  verifyPdfSerifFontCoverage();
   await page.addScriptTag({ url: "/pdf-field-map.js" });
   await page.evaluate(() => {
     for (const key of ["derived-feat-human-origin", "derived-feat-lessons-1", "derived-feat-lessons-2", "derived-feat-fighter-level-4", "derived-feat-warlock-level-8", "feat-0"]) {

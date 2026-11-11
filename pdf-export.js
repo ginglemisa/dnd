@@ -404,7 +404,7 @@
       }),
       compact: Object.freeze({
         sourcePdfPath: SHARED_PDF_SOURCE_PATH,
-        fontPath: 'fonts/SourceHanSerifTC-Bold.otf',
+        fontPath: 'fonts/twD20SerifTC-Bold.otf',
         subsetFont: true,
         flattenForm: true,
         layoutId: 'compact'
