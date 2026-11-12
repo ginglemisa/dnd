@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: sword-of-wounding
+name: 重創之劍
+nameEn: "Sword of Wounding"
+source: srd
+category: weapon
+rarity: rare
+attunement: true
+base: { from: [ 長柄刀, 巨劍, 長劍, 刺劍, 彎刀, 短劍 ] }
+effects: { extraDamage: [ { dice: 2d6, type: necrotic } ] }
+hints:
+  - panel: weapon
+    text: 命中時目標須通過 DC 15 體質豁免，否則 1 小時內無法恢復生命值（每回合結束時重新豁免）。
+text: |-
+  當你以這件魔法武器的攻擊命中一個生物時，目標額外受到2d6黯蝕傷害，並且必須成功通過DC 15的體質豁免，否則在1小時內無法恢復生命值。目標在其每個回合結束時重複進行該豁免，成功則結束其身上的此效果。

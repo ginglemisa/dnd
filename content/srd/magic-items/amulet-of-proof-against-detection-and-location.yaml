@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: amulet-of-proof-against-detection-and-location
+name: 反偵測定位護符
+nameEn: "Amulet of Proof against Detection and Location"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+use: worn
+text: |-
+  穿戴這個護符時，除非你允許，否則你無法成為預言法術的目標，也無法被魔法探知感應器感知。

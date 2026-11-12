@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: oil-of-sharpness
+name: 銳鋒之油
+nameEn: "Oil of Sharpness"
+source: srd
+category: potion
+rarity: very-rare
+attunement: false
+consumable: true
+text: |-
+  一瓶這種油可以塗覆一件近戰武器或20件彈藥，但只有非魔法且造成揮砍或穿刺傷害的彈藥與近戰武器會受到影響。塗抹這種油需時1分鐘，之後油會神奇地滲入所塗覆之物，使被塗覆的武器變成_武器+3_，或使被塗覆的彈藥變成_彈藥+3_。
+
+  這種清澈的膠狀油閃爍著細小而極薄的銀色碎片。

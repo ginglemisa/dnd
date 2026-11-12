@@ -704,7 +704,8 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .equipment-search-highligh
 #spellbook-card > summary { display: flex; align-items: center; gap: 10px; }
 #spellbook-card > summary::before { flex-shrink: 0; }
 
-:is(#spellbook-manage, #spell-prepare) {
+/* 裝備頁的「同調 N/3」（#attunement-open）外型比照「準備法術」。 */
+:is(#spellbook-manage, #spell-prepare, #attunement-open) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -723,12 +724,12 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .equipment-search-highligh
   transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-:where(html:not([data-ui-theme="warm"])) :is(#spellbook-manage, #spell-prepare) {
+:where(html:not([data-ui-theme="warm"])) :is(#spellbook-manage, #spell-prepare, #attunement-open) {
   border-radius: 999px;
   box-shadow: 0 5px 14px rgba(17, 31, 63, 0.08);
 }
 
-:where(html[data-ui-theme="warm"]) :is(#spellbook-manage, #spell-prepare) {
+:where(html[data-ui-theme="warm"]) :is(#spellbook-manage, #spell-prepare, #attunement-open) {
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-soft);
 }
@@ -761,14 +762,14 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .equipment-search-highligh
   box-shadow: var(--shadow-soft);
 }
 
-:is(#spellbook-manage, #spell-prepare, #spellbook-clear-prepared):hover:not(:disabled) {
+:is(#spellbook-manage, #spell-prepare, #spellbook-clear-prepared, #attunement-open):hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--control-hover-bg);
   color: var(--accent);
   transform: translateY(-1px);
 }
 
-:is(#spellbook-manage, #spell-prepare, #spellbook-clear-prepared):focus-visible {
+:is(#spellbook-manage, #spell-prepare, #spellbook-clear-prepared, #attunement-open):focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }

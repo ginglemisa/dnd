@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: manual-of-gainful-exercise
+name: 健體手冊
+nameEn: "Manual of Gainful Exercise"
+source: srd
+category: wondrous
+group: book
+rarity: very-rare
+attunement: false
+text: |-
+  這本書描述健身運動，其文字充滿魔力。若你在6天或更短的期間內花48小時研讀書中內容並實踐其指引，你的力量增加2，最高為30。這本書隨後失去魔力，但在一個世紀後恢復。

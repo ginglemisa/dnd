@@ -13,7 +13,7 @@
 
 * 原生 HTML／CSS／JavaScript 靜態網站，`index.html` 以傳統 `<script>` 依序載入全域模組。未經使用者同意，不新增前端框架、runtime dependency 或測試框架；開發依賴僅 `yaml`、`ajv`、Playwright。
 * 載入順序與每個標籤是否 `defer` 屬於契約：部分自 `index.html` 搬出的模組（如 `sheet-spells.js`、`rule-tips.js`）為同步載入，留在原本行內程式的位置：頂層可綁定在它之前已解析的 DOM、建立浮層並註冊事件，時機與順序和原本相同；`defer` 模組的 API 只在事件或呼叫時使用。驗證腳本與離線建置都依賴這個配置。變更全域 API、DOM ID、data attribute、檔名或載入順序時，搜尋並同步所有 JS、CSS、驗證腳本與 `build-offline-nopdf.ps1`。
-* 唯一的建置是內容檔：職業、子職、專長、背景、種族、法術與怪物都寫在 `content/` 的 YAML，`npm run build` 驗證後產生下列檔案。寫法見 [content/README.md](content/README.md)。產物不提交、不手改；網站只經讀取 API 使用，不從顯示文字反推規則。
+* 唯一的建置是內容檔：職業、子職、專長、背景、種族、法術、怪物與魔法物品都寫在 `content/` 的 YAML，`npm run build` 驗證後產生下列檔案。寫法見 [content/README.md](content/README.md)。產物不提交、不手改；網站只經讀取 API 使用，不從顯示文字反推規則。
   * `class-content.generated.js`：`classFeatures`（職業頁 HTML）、`classTabletopText`、`classRules`，經 `character-rules.js` 的 `getClassRules()` 等讀取。
   * `feat-content.generated.js`：`featRules`、`featText`，經 `getFeatRules()`、`getFeatText()`、`getAllFeatRules()` 讀取。
   * `background-content.generated.js`：`backgroundRules`、`backgroundText`，經 `getBackgroundRules()`、`getBackgroundText()`、`getBackgroundSource()` 讀取。
@@ -22,8 +22,10 @@
   * `spell-srd.generated.js`：法術詳情「SRD 版」的譯文，網頁版延遲載入、離線版內嵌。法術 YAML 的英文原文不進任何產物。
   * `monster-content.generated.js`：`monsterRules`、`monsterText`、`monsterLabels`，經 `monster.js` 的 `BeastCatalog`（`get()`、`getStatBlock()`、`getRules()`）與 `createBeastCard()`／`renderBeastPopupHtml()` 讀取；野獸資料卡文字與跑團數值都由結構化數值產生。
   * `monster-srd.generated.js`：野獸資料卡「SRD 版」的 HTML，網頁版延遲載入、離線版內嵌。怪物 YAML 的英文原文不進任何產物。
+  * `magic-item-content.generated.js`：`magicItemRules`、`magicItemLabels`、`magicItemBaseLists`，經 `magic-items.js` 的 `MagicItemCatalog` 讀取；魔法物品一件一檔，放在 `content/srd/magic-items/`，獨立於裝備資料。
+  * `magic-item-text.generated.js`：魔法物品說明的 HTML，網頁版延遲載入（`MagicItemCatalog.loadText()`／`getText()`）、離線版內嵌。內容檔只放中文和 `nameEn`。
 * `content/private/` 是私人內容包（gitignore），目前只有職業類會被建置讀取（私人職業、子職、`class-extensions/`、`rules/multiclass.yaml`），寫進只在本機使用的 `class-content.private.generated.js`。私人法術只訂了格式、建置不讀；私人專長、背景、種族不支援（資料夾存在時建置失敗）。私人內容不得提交或複製到公開檔案，公開建置不得依賴它。
-* 持久化 ID 以基準檔把關：職業／子職／選項／動作 key／資源 key 用 `class-id-baseline.json`，專長（含專長選擇欄位、快速創角草稿的專長名稱、跑團動作 key）用 `feat-id-baseline.json`，背景用 `background-id-baseline.json`，種族（含血統選單值、快速創角草稿值、跑團動作與資源 key）用 `race-id-baseline.json`，法術用 `spell-id-baseline.json`（只列有網站版、角色可用的法術），怪物（野獸 key 與「key:動作 id」，寫進德魯伊已知形態、`beastUsed` 與跑團動作 key）用 `monster-id-baseline.json`，物品欄品項（裝備說明的中文品名）用 `equipment-id-baseline.json`（不在建置內，由 `validate-spell-search.js --equipment-only` 比對，需手動更新）。只在確認刻意新增，或已處理舊資料相容的移除／改名後，才更新基準檔（`npm run build -- --update-id-baseline`）；不得用基準檔掩蓋意外遺失。`spellId` 不隨顯示名稱改動。
+* 持久化 ID 以基準檔把關：職業／子職／選項／動作 key／資源 key 用 `class-id-baseline.json`，專長（含專長選擇欄位、快速創角草稿的專長名稱、跑團動作 key）用 `feat-id-baseline.json`，背景用 `background-id-baseline.json`，種族（含血統選單值、快速創角草稿值、跑團動作與資源 key）用 `race-id-baseline.json`，法術用 `spell-id-baseline.json`（只列有網站版、角色可用的法術），怪物（野獸 key 與「key:動作 id」，寫進德魯伊已知形態、`beastUsed` 與跑團動作 key）用 `monster-id-baseline.json`，魔法物品（物品 id 與「物品 id:選項 id:選項值」，寫進物品欄存檔）用 `magic-item-id-baseline.json`，物品欄品項（裝備說明的中文品名）用 `equipment-id-baseline.json`（不在建置內，由 `validate-spell-search.js --equipment-only` 比對，需手動更新）。只在確認刻意新增，或已處理舊資料相容的移除／改名後，才更新基準檔（`npm run build -- --update-id-baseline`）；不得用基準檔掩蓋意外遺失。`spellId` 不隨顯示名稱改動。
 * UI 模組讀取主要資料與公開 API，不複製平行規則、狀態、亂數或擲骰歷史。表單控制項可作為角色目前選擇的 canonical state；純顯示文字不作為規則資料來源。既有錯誤行為不是規格。
 * 「規則以內容檔為準」的唯一例外是分享模式換法術的職業表：只有分享模式用得到，寫在 `share-readonly.js` 的 `SPELL_CHANGE`，不進內容檔；只有分享模式的法術頁、準備視窗與寫入防護讀這張表，一般角色卡的規則不得引用它。
 * 職業機制以 `classRules` 為準，`classFeatures` HTML 與能力名稱、標題只供顯示：程式不得從中反推規則，判斷特定能力時用能力 id。職業頁上找能力的位置用 `data-feature-id`；建置工具不以正則解析產生後的 HTML 或網站原始碼。
@@ -36,7 +38,7 @@
 * **儲存**：LocalStorage 一律經 `window.dndStorage`。變更持久化欄位或意義時，須確認 LocalStorage／autosave、JSON 匯入匯出與分享網址都能還原舊資料。
 * **匯入**：安全預檢與上限集中在 `index.html`，須完整驗證後才套用；拒絕或損壞的資料不得覆寫原存檔。清理範圍以 `APP_STORAGE_KEYS` 為準，不得清掉日誌、主題與擲骰歷史。匯入的暫存、套用與失敗復原流程照現有實作，修改時一併核對。
 * **匯出**：內容為目前角色（含物品欄 `__inventory`）、兩份法術書、跑團動作偏好與頭像，不是完整備份。動作偏好與頭像不進 autosave；動作偏好隨分享連結帶（全空時省略），頭像不分享，分享模式匯出也不帶頭像。
-* **物品欄**：`__inventory` 經 `window.Inventory` 讀寫，autosave、JSON 與分享都帶（空物品欄也帶）。載入存檔或匯入時，已裝備但不在物品欄的武器、護甲、盾牌只補上缺的數量（標記 `source: "equipped"`，沒有這個欄位的舊資料從空的開始補）；舊的攜帶物品文字只在玩家按「整理成標籤」後才轉換，轉換時先抵掉這些補上的物品。裝備下拉只列物品欄有的物品，仍對不上的選擇保留並標示，不自動清掉。已裝備的物品是獨立一筆（固定 1 件、在最外層），執行時以 `slot` 標記，由 `Inventory.syncEquipped()` 依裝備欄位維護；`slot` 不進存檔，載入後依下拉規則重新對應，舊資料也是這樣拿出已裝備的物品，總數不變。同名物品可以有多筆，只有拖曳合併（`Inventory.merge()`）才合成一筆，有使用次數的物品合併時總次數不變，自訂物品不合併。`textOnly: true`（「只以文字管理物品」）時物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
+* **物品欄**：`__inventory` 經 `window.Inventory` 讀寫，autosave、JSON 與分享都帶（空物品欄也帶）。載入存檔或匯入時，已裝備但不在物品欄的武器、護甲、盾牌只補上缺的數量（標記 `source: "equipped"`，沒有這個欄位的舊資料從空的開始補）；舊的攜帶物品文字只在玩家按「整理成標籤」後才轉換，轉換時先抵掉這些補上的物品。裝備下拉只列物品欄有的物品，仍對不上的選擇保留並標示，不自動清掉。已裝備的物品是獨立一筆（固定 1 件、在最外層），執行時以 `slot` 標記，由 `Inventory.syncEquipped()` 依裝備欄位維護；`slot` 不進存檔，載入後依下拉規則重新對應，舊資料也是這樣拿出已裝備的物品，總數不變。同名物品可以有多筆，只有拖曳合併（`Inventory.merge()`）才合成一筆，有使用次數的物品合併時總次數不變，自訂物品不合併。`textOnly: true`（「只以文字管理物品」）時物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。魔法物品在物品欄項目多一個 `magic`（`{ id, <選項 id>: 值 }`，基本款就是 `itemId`），顯示名稱由 `MagicItemCatalog` 算，不存名稱與說明；目錄找不到 id 時保留這一筆。`slot` 不進存檔的規定仍成立；只有帶 `magic` 的筆另存 `attuned`（同調）、`worn`（穿戴中，只有可以穿戴的物品、固定 1 件、在最外層）、可變形物品的 `magic.form` 與次數池的剩餘次數 `charges`（沒寫表示滿的；有次數池的物品不合併），普通物品的存檔格式不變；唯一例外是裝備中的彈藥 `ammo: true`（普通或魔法彈藥都可以，整個物品欄最多一筆，可以在容器裡、數量不限）；彈藥也是唯一可以 `quantity: 0` 的物品（用完後保留，由玩家刪除），其他物品至少 1；防禦者轉到 AC 的加值只在記憶體，不存檔。主手 2 的盾牌選擇存在角色欄位 `main2ShieldItem`（只有兩種以上盾牌時才顯示，舊資料沒有這個欄位時行為不變）。主手／副手／護甲欄位的值，魔法款就是自己的顯示名稱（`MagicItemCatalog.getDisplayName()`，例如「長劍+2」「焰舌（長劍）」），載入時依名稱到物品欄拿同名那一件，沒有就比照普通裝備補上；手持類的非武器魔法物品（內容檔 `use: held`／`wornOrHeld`，例如魔杖）也放進主手／副手，值同樣是顯示名稱，`resolveEquipmentName()` 回傳的 `base` 是空字串，不是武器（`getHeldMagicItem()`）；所有魔法武器、護甲、盾牌與手持物品的可能名稱彼此唯一、也不與普通品名相撞，由建置檢查。由名稱查回魔法款用 `MagicItemCatalog.resolveEquipmentName()`（由目錄枚舉，不解析字串、不依賴物品欄）；查定義用 `getWeaponByName()`、`getWeaponOrShieldByName()`、`getArmorByName()`，回傳帶「基本款」的合成定義；判斷熟練、精通、武僧武器、橡棍術、盾牌等規則時用基本款（`getEquipmentRuleName()`、`getEquipmentBaseName()`、`isShieldItem()`），不要直接比 `名稱`。固定加值的唯一入口是 `getActiveMagicEffects()`（`character-rules.js`）。
 * **分享**：入口為 `copyShareUrl()`，保留 `#s=`／`#s2=` 格式與永久網址的複製 fallback。分享模式不 autosave、不可再分享或匯入；它是唯讀角色卡，鎖定規則在 `share-readonly.js`（預設全鎖加白名單，新增角色欄位預設就會被鎖，要開放才加進白名單）。身分下拉維持 `disabled`，其他項目用 `readOnly`／`inert`，不用 `disabled`。分享頁的 `dndStorage` 依網址只讀寫頁面記憶體，看的人的本機資料不讀不寫，只有主題、亮暗、GA 角色與日誌舊資料例外。分享資料不得被本機記憶覆蓋。
 * **短網址**：只在使用者明確選擇後建立，送出當次編碼的區域變數 `hash`。僅限 `https://twd20.com`、`#s2=` 且長度 ≤10000；離線頁不呼叫。建立失敗時明確提示，不自動重試，也不悄悄改成複製長網址。Worker 程式在 `cloudflare/twd20-url/`（見其 [README](cloudflare/twd20-url/README.md)），與網站分開部署，不自行部署；不寫入 secret 值、不猜測資源 ID、不更換 `HMAC_SECRET`。
 * **日誌**：`adventure-journal.js` 獨立使用 IndexedDB `twd20-adventure-journal`，對外 JSON 維持版本 1。寫入時核對 revision，失敗保留原資料。日誌不進角色 JSON、分享或 autosave。
@@ -56,6 +58,7 @@
 | 法術 | `content/srd/spells/`（建置產物見上），`spell-list.js`（`SpellCatalog`）建立索引與 API；SRD 譯文檢查 `tools/spell-reference/` |
 | 狀態、神祇 | `condition.js`、`deity-info.js` |
 | 規則說明提示框（技能／規則詞表、技能／狀態／野獸浮層） | `rule-tips.js`；野獸資料卡 `monster.js` 的 `createBeastCard`（網站版／SRD 版切換共用 `sheet-spells.js` 的 `createContentVersionView`） |
+| 魔法物品 | `content/srd/magic-items/`（建置產物見上），`magic-items.js`（`MagicItemCatalog`）；魔法商店模式與取得視窗 `magic-item-shop.js`（`MagicItemShop`） |
 | 裝備與商店 | `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；物品欄資料 `inventory.js`（`Inventory`）、標籤介面 `inventory-ui.js` |
 | 角色卡 DOM、初始化、持久化、分享 | `index.html` |
 | 分享模式的鎖定、換法術職業表、AC 提示 | `share-readonly.js` |
@@ -66,7 +69,7 @@
 | 搜尋 | `search.js` |
 | 動作 | `action-panel.js` |
 | 跑團模式 | `tabletop-mode.js`（`TabletopMode` 共用狀態與公開 API），子模組 `tabletop-*.js` 經 `TabletopMode`、`SpellCatalog`、`character-rules.js`、`DiceRoller` 協作 |
-| 擲骰 | `dice-roller.js`（`DiceRoller` 是擲骰與歷史的唯一入口） |
+| 擲骰 | `dice-roller.js`（`DiceRoller` 是擲骰與歷史的唯一入口；唯一例外是吞噬袋刻意隱藏的計時骰，在 `inventory-ui.js`，見 BEHAVIOR.md） |
 | 導覽 | `onboarding-tour.js` |
 | 分頁滑動換頁、觸控點分頁的轉場 | `page-swipe.js`（只管畫面，切換仍走 `showTab()`／`TabletopMode.setPanel()`） |
 | PDF | `pdf-launcher.js`、`pdf-export.js`、`pdf-field-map.js` |
@@ -104,7 +107,7 @@
 | `validate-action-metadata.js` | 動作定義與摘要、跑團操作與偏好、專長來源與資格、武器／AC、自創法術與自訂骰式 |
 | `validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源；持續法術對 AC／速度的影響 |
 | `validate-spellbook.js` | 法術書、準備與來源、職業／手動記憶、舊資料遷移、法術頁版面 |
-| `validate-spell-search.js` | 法術／裝備搜尋、商店、工具、物品欄與裝備下拉（`--equipment-only`） |
+| `validate-spell-search.js` | 法術／裝備搜尋、商店、工具、物品欄與裝備下拉（`--equipment-only`）、魔法物品目錄與 `MagicItemCatalog`、魔法商店與魔法物品的物品欄行為 |
 | `validate-ability-roll.js` | 屬性產生、購點、擲骰（`--point-buy-only`／`--dice-only`） |
 | `validate-onboarding.js` | 導覽、創角匯入、PDF 載入取消（`--touch-only`／`--imports-only`） |
 | `validate-tabletop-rest.js` | 短休／長休、資源恢復、休息後選項 |

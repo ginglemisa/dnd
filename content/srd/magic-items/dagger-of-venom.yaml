@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: dagger-of-venom
+name: 淬毒匕首
+nameEn: "Dagger of Venom"
+source: srd
+category: weapon
+rarity: rare
+attunement: false
+base: { fixed: 匕首 }
+effects: { attack: 1, damage: 1 }
+pools:
+  - { id: venom, label: 上毒, max: 1, recover: dawn }
+actions:
+  - { id: venom, name: 上毒, type: bonus, pool: venom, text: 刃上的毒藥持續 1 分鐘，或直到這把武器命中一個生物：目標 DC 15 體質豁免，失敗受到 2d10 毒素傷害並中毒 1 分鐘。 }
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
+
+  你可以進行附贈動作，以魔法在刃上塗上毒藥。毒藥會持續1分鐘，或直到使用這件武器的攻擊命中某個生物為止。該生物必須成功通過DC 15的體質豁免，否則受到2d10毒素傷害並陷入中毒狀態1分鐘。直到下次黎明前，這件武器都無法再次這樣使用。

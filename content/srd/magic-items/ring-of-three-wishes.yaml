@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-three-wishes
+name: 三願戒指
+nameEn: "Ring of Three Wishes"
+source: srd
+category: ring
+rarity: legendary
+attunement: false
+use: worn
+pools:
+  - { id: charges, label: 充能, max: 3 }
+actions:
+  - { id: wish, spell: wish, pool: charges, note: 用掉最後一次充能時，戒指變成非魔法物品。 }
+text: |-
+  穿戴這枚戒指時，你可以消耗它3次充能中的1次，從中施放_祈願術_。當你使用最後一次充能時，戒指會變成非魔法物品。

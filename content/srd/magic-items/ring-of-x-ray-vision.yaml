@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-x-ray-vision
+name: 透視戒指
+nameEn: "Ring of X-ray Vision"
+source: srd
+category: ring
+rarity: rare
+attunement: true
+use: worn
+pools:
+  - { id: uses, label: 免豁免次數, max: 1, recover: longRest }
+actions:
+  - { id: x-ray, name: 透視視覺, type: magic, text: 獲得 30 呎透視視覺 1 分鐘（穿透 1 呎石頭、1 吋金屬或 3 呎木頭泥土，鉛板會阻擋）。長休前再次使用時要 DC 15 體質豁免，失敗獲得 1 級力竭；第一次使用後請在物品詳情把「免豁免次數」減 1。 }
+text: |-
+  穿戴這枚戒指時，你可以進行魔法動作，獲得範圍30呎的透視視覺，持續1分鐘。對你而言，該半徑內的堅實物體看起來是透明的，也不會阻擋光線穿過。這種視覺可以穿透1呎的石頭、1吋的普通金屬，或最多3呎的木頭或泥土。更厚的物質或一片薄鉛板會阻擋這種視覺。
+
+  每當你在進行長休之前再次使用這枚戒指，你必須成功通過DC 15的體質豁免，否則獲得1級力竭。

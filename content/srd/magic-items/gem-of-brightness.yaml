@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: gem-of-brightness
+name: 光彩奪目寶石
+nameEn: "Gem of Brightness"
+source: srd
+category: wondrous
+group: curio
+rarity: uncommon
+attunement: false
+use: held
+pools:
+  - { id: charges, label: 充能, max: 50 }
+actions:
+  - { id: light, name: 第一命令詞：發光, type: magic, text: 寶石散發半徑 30 呎明亮光照、再向外 30 呎微光光照，不消耗充能；附贈動作重複命令詞或使用其他功能時結束。 }
+  - { id: beam, name: 第二命令詞：光束, type: magic, pool: charges, text: 60 呎內你看得見的一個生物 DC 15 體質豁免，失敗則失明 1 分鐘，每個回合結束時重複豁免。 }
+  - { id: flare, name: 第三命令詞：閃光, type: magic, pool: charges, cost: 5, text: 30 呎錐形區域內每個生物如同被光束擊中一般豁免。 }
+text: |-
+  這顆稜柱寶石有50次充能。手持它時，你可以進行魔法動作並使用三個命令詞之一，造成下列效果之一：
+
+  **第一命令詞。** 寶石在半徑30呎內散發明亮光照，並再向外30呎散發微光光照。此效果不消耗充能。它持續到你進行附贈動作重複說出該命令詞，或你使用寶石的另一項功能為止。
+
+  **第二命令詞。** 你消耗1次充能，使寶石朝你周圍60呎內你能看見的一個生物射出一道耀眼的光束。該生物必須成功通過DC 15的體質豁免，否則陷入失明狀態1分鐘。該生物在其每個回合結束時重複進行該豁免，成功則結束其身上的此效果。
+
+  **第三命令詞。** 你消耗5次充能，使寶石在30呎錐形區域內迸發強烈的閃光。錐形區域內的每個生物，都如同被第二命令詞產生的光束擊中一般進行豁免。
+
+  當寶石的所有充能都耗盡時，它會變成一顆價值50 GP的非魔法珠寶。

@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: rod-of-resurrection
+name: 復活權杖
+nameEn: "Rod of Resurrection"
+source: srd
+category: rod
+rarity: legendary
+attunement: true
+use: held
+pools:
+  - { id: charges, label: 充能, max: 5, recover: dawn, amount: 1 }
+actions:
+  - { id: heal, spell: heal, pool: charges }
+  - { id: resurrection, spell: resurrection, pool: charges, cost: 5 }
+text: |-
+  這根權杖有5次充能。你手持它時，可以從中施放下列法術之一：_醫療術_（消耗1次充能）或_復生術_（消耗5次充能）。
+
+  權杖每天黎明恢復1次已消耗的充能。若你消耗最後一次充能，擲1d20。擲出1時，權杖會在一陣無害的光輝爆發中消失。

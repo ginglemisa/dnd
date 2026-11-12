@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-elemental-command
+name: 命令元素戒指
+nameEn: "Ring of Elemental Command"
+source: srd
+category: ring
+rarity: legendary
+attunement: true
+use: worn
+options:
+  - id: element
+    label: 元素位面
+    choices:
+      - { value: air, label: 風, effects: { movement: { fly: speed, hover: true } }, hints: [ { languages: [ 風族語 ], resistances: [ lightning ] } ] }
+      - { value: earth, label: 土, hints: [ { languages: [ 土族語 ], resistances: [ acid ] } ] }
+      - { value: fire, label: 火, hints: [ { languages: [ 火族語 ], immunities: [ fire ] } ] }
+      - { value: water, label: 水, effects: { movement: { swim: 60 } }, hints: [ { languages: [ 水族語 ], text: 可在水下呼吸。 } ] }
+hints:
+  - text: 對元素生物的攻擊檢定有優勢，元素生物對你的攻擊檢定有劣勢。
+pools:
+  - { id: charges, label: 充能, max: 5, recover: dawn, amount: 1d4 + 1 }
+actions:
+  - { id: compel, name: 元素驅使, type: magic, text: 60 呎內你看得見的一隻元素生物 DC 18 感知豁免，失敗則被魅惑到你的下個回合開始，由你決定它下個回合的移動與動作。 }
+  - { id: chain-lightning, spell: chain-lightning, saveDc: 18, option: { element: air }, pool: charges, cost: 3 }
+  - { id: feather-fall, spell: feather-fall, saveDc: 18, option: { element: air } }
+  - { id: gust-of-wind, spell: gust-of-wind, saveDc: 18, option: { element: air }, pool: charges, cost: 2 }
+  - { id: wind-wall, spell: wind-wall, saveDc: 18, option: { element: air }, pool: charges }
+  - { id: earthquake, spell: earthquake, saveDc: 18, option: { element: earth }, pool: charges, cost: 5 }
+  - { id: stone-shape, spell: stone-shape, saveDc: 18, option: { element: earth }, pool: charges, cost: 2 }
+  - { id: stoneskin, spell: stoneskin, saveDc: 18, option: { element: earth }, pool: charges, cost: 3 }
+  - { id: wall-of-stone, spell: wall-of-stone, saveDc: 18, option: { element: earth }, pool: charges, cost: 3 }
+  - { id: burning-hands, spell: burning-hands, saveDc: 18, option: { element: fire }, pool: charges }
+  - { id: fireball, spell: fireball, saveDc: 18, option: { element: fire }, pool: charges, cost: 2 }
+  - { id: fire-storm, spell: fire-storm, saveDc: 18, option: { element: fire }, pool: charges, cost: 4 }
+  - { id: wall-of-fire, spell: wall-of-fire, saveDc: 18, option: { element: fire }, pool: charges, cost: 3 }
+  - { id: create-or-destroy-water, spell: create-or-destroy-water, saveDc: 18, option: { element: water }, pool: charges }
+  - { id: ice-storm, spell: ice-storm, saveDc: 18, option: { element: water }, pool: charges, cost: 2 }
+  - { id: tsunami, spell: tsunami, saveDc: 18, option: { element: water }, pool: charges, cost: 5 }
+  - { id: wall-of-ice, spell: wall-of-ice, saveDc: 18, option: { element: water }, pool: charges, cost: 3 }
+  - { id: water-walk, spell: water-walk, saveDc: 18, option: { element: water }, pool: charges, cost: 2 }
+text: |-
+  每枚_命令元素戒指_都連結到四個元素位面之一。連結的位面由DM選擇或隨機決定。例如，_命令元素戒指_（風）連結到風元素位面。
+
+  每枚_命令元素戒指_都具有下列兩項特性：
+
+  **元素剋星。** 穿戴這枚戒指時，你對元素生物的攻擊檢定具有優勢，而元素生物對你的攻擊檢定具有劣勢。
+
+  **元素驅使。** 穿戴這枚戒指時，你可以進行魔法動作，嘗試驅使你自身60呎內你看得見的一隻元素生物。該元素生物進行一次DC 18的感知豁免。豁免失敗時，該元素生物陷入魅惑狀態，直到你的下個回合開始，且你決定它在下個回合如何運用其移動與動作。
+
+  _元素專精。_ 穿戴這枚戒指時，你還能獲得與戒指所連結的元素位面相對應的額外特性：
+
+  **風。** 你懂風族語，你對閃電傷害具有抗性，並且你擁有等同於你速度的飛行速度，且可以懸停。
+
+  **土。** 你懂土族語，並且你對強酸傷害具有抗性。由碎石、岩石或泥土構成的地形對你而言不是困難地形。此外，你可以穿越堅實的土壤或岩石，如同這些區域是困難地形，且不會擾動你所經過的物質。如果你在堅實的土壤或岩石中結束回合，你會被推出至你最後佔據過的、最近的未被佔據空間。
+
+  **火。** 你懂火族語，並且你對火焰傷害免疫。
+
+  **水。** 你懂水族語，你獲得60呎的游泳速度，並且你可以在水下呼吸。
+
+  _施法。_ 這枚戒指有5次充能，每天黎明恢復1d4 + 1次已消耗的充能。穿戴這枚戒指時，你可以從中施放法術。依戒指所連結的元素位面，從可用的法術清單中選擇法術，如下表所示。表格列出施放各法術需要消耗的充能次數，該法術的豁免DC為18。
+
+  | 位面 | 法術（充能） |
+  | --- | --- |
+  | 風 | *連鎖閃電*（3次充能）、*羽落術*（0次充能）、*造風術*（2次充能）、*風牆術*（1次充能） |
+  | 土 | *地震術*（5次充能）、*塑石術*（2次充能）、*石膚術*（3次充能）、*石牆術*（3次充能） |
+  | 火 | *燃燒之手*（1次充能）、*火球術*（2次充能）、*火焰風暴*（4次充能）、*火牆術*（3次充能） |
+  | 水 | *造水術/枯水術*（1次充能）、*冰風暴*（2次充能）、*海嘯術*（5次充能）、*冰牆術*（3次充能）、*水上行走*（2次充能） |

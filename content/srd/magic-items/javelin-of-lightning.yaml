@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: javelin-of-lightning
+name: 閃電標槍
+nameEn: "Javelin of Lightning"
+source: srd
+category: weapon
+rarity: uncommon
+attunement: false
+base: { fixed: 標槍 }
+hints:
+  - panel: weapon
+    text: 命中時可改為閃電傷害；閃電束（每日一次，見說明）。
+pools:
+  - { id: lightning-bolt, label: 閃電束, max: 1, recover: dawn }
+text: |-
+  每次你以這件魔法武器進行攻擊檢定並命中時，你可以讓它造成閃電傷害而非穿刺傷害。
+
+  _閃電束。_ 當你把這件武器擲向距離你不超過120呎的目標時，你可以放棄進行遠程攻擊檢定，改為將武器變成一道閃電。這道閃電在你與目標之間形成一條寬5呎的直線區域。目標與直線區域內的每個其他生物（不含你）進行一次DC 13的敏捷豁免，失敗者受到4d6閃電傷害，成功者受到一半傷害。造成此傷害後，武器立刻重新出現在你的手中。此特性使用後，直到下次黎明前，都無法再次使用。

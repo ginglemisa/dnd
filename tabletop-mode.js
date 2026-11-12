@@ -35,6 +35,7 @@
     barkskinActive: false,
     longstriderActive: false,
     shillelaghActive: false,
+    droppedHands: null,
     endedConcentrations: Object.freeze([]),
     builtInResourceUsage: Object.freeze({}),
     customResources: Object.freeze([])
@@ -547,8 +548,14 @@
     });
   }
 
-  function evaluateDeathSaveRoll(roll) {
+  // 死亡豁免判定：roll 是 d20 原骰。options.bonus 是豁免加值（目前生效的魔法物品 saves），
+  // options.minimum 是原骰下限（癒合護符：原骰低於它時改成它）。原骰 20 恢復 1 HP；
+  // 套用下限後原骰仍是 1 時計 2 次失敗；其餘總值（原骰或改後的值＋加值）10 以上成功。
+  // 不傳 options 時與只看原骰的舊算法相同。
+  function evaluateDeathSaveRoll(roll, options = {}) {
     const numeric = Number(roll);
+    const bonus = Number.isSafeInteger(options?.bonus) ? options.bonus : 0;
+    const minimum = Number.isSafeInteger(options?.minimum) ? Math.max(1, Math.min(20, options.minimum)) : 1;
 
     if (
       !Number.isSafeInteger(numeric)
@@ -569,6 +576,9 @@
       return Object.freeze({
         valid: true,
         roll: numeric,
+        die: numeric,
+        bonus,
+        total: numeric + bonus,
         outcome: "revive",
         successes: 0,
         failures: 0,
@@ -576,10 +586,13 @@
       });
     }
 
-    if (numeric === 1) {
+    const die = Math.max(numeric, minimum);
+    const total = die + bonus;
+    const base = { valid: true, roll: numeric, die, bonus, total };
+
+    if (die === 1) {
       return Object.freeze({
-        valid: true,
-        roll: numeric,
+        ...base,
         outcome: "failure",
         successes: 0,
         failures: 2,
@@ -587,10 +600,9 @@
       });
     }
 
-    if (numeric >= 10) {
+    if (total >= 10) {
       return Object.freeze({
-        valid: true,
-        roll: numeric,
+        ...base,
         outcome: "success",
         successes: 1,
         failures: 0,
@@ -599,8 +611,7 @@
     }
 
     return Object.freeze({
-      valid: true,
-      roll: numeric,
+      ...base,
       outcome: "failure",
       successes: 0,
       failures: 1,
@@ -622,6 +633,7 @@
     barkskinActive: DEFAULT_COMBAT_STATE.barkskinActive,
     longstriderActive: DEFAULT_COMBAT_STATE.longstriderActive,
     shillelaghActive: DEFAULT_COMBAT_STATE.shillelaghActive,
+    droppedHands: DEFAULT_COMBAT_STATE.droppedHands,
     endedConcentrations: [],
     builtInResourceUsage: {},
     customResources: [],
@@ -630,6 +642,8 @@
   let tabletopActionPreferences = null;
 
   let undoSnapshot = null;
+  // 還原存檔（applyState）時不卸下手持物：角色卡欄位由存檔決定。
+  let restoringState = false;
   let initialized = false;
   let scheduledRender = 0;
   // Onboarding-only example values; never written to character data or storage.
@@ -884,6 +898,24 @@
     return [...active];
   }
 
+  // 昏迷時掉落的手持物（index.html 的 dropHeldEquipment 回傳的 saved）：撿回前保留，autosave、JSON、分享都帶（index.html 的 isValidDroppedHands 是匯入預檢）。
+  function normalizeDroppedHands(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    const text = item => (typeof item === "string" && item.length <= 100 ? item : "");
+    const dropped = {
+      mainHand: text(value.mainHand),
+      offHand: text(value.offHand),
+      main2Shield: value.main2Shield === true,
+      main2ShieldItem: text(value.main2ShieldItem)
+    };
+    return dropped.mainHand || dropped.offHand || dropped.main2Shield ? dropped : null;
+  }
+
+  function getDroppedHandLabels(dropped = combatState.droppedHands) {
+    if (!dropped) return [];
+    return [dropped.mainHand, dropped.offHand, dropped.main2Shield ? dropped.main2ShieldItem || "盾牌" : ""].filter(Boolean);
+  }
+
   function normalizeCombatState(data = {}) {
     const rawConditions = Array.isArray(data.activeConditions)
       ? data.activeConditions
@@ -974,6 +1006,7 @@
       barkskinActive: data.barkskinActive === true,
       longstriderActive: data.longstriderActive === true,
       shillelaghActive: data.shillelaghActive === true,
+      droppedHands: normalizeDroppedHands(data.droppedHands),
       endedConcentrations: normalizeEndedConcentrations(data.endedConcentrations),
       builtInResourceUsage: normalizeBuiltInResourceUsage(data.builtInResourceUsage),
       customResources: normalizeCustomResources(data.customResources),
@@ -1011,7 +1044,9 @@
         ...combatState.builtInResourceUsage
       },
       customResources:
-        combatState.customResources.map(resource => ({ ...resource }))
+        combatState.customResources.map(resource => ({ ...resource })),
+      // 沒有掉落的東西時省略，舊資料與一般存檔的格式不變。
+      ...(combatState.droppedHands ? { droppedHands: { ...combatState.droppedHands } } : {})
     };
   }
 
@@ -1155,9 +1190,11 @@
   }
 
   function getMageArmorEffect() {
-    const dexterity = getDruidForm()?.abilities.dex ?? document.getElementById("dex")?.value ?? 10;
+    const dexterity = getDruidForm()?.abilities.dex ?? readAbilityScore("dex") ?? 10;
     const modifier = globalScope.calculateAbilityModifier(dexterity);
-    return { active: combatState.mageArmorActive, ac: 13 + modifier, dexterityModifier: modifier };
+    // 法師護甲取代護甲的計算，戒指、斗篷等魔法物品的加值仍要算（荒野形態依變身時「其他」格的選擇）。
+    const magicBonus = getMagicEffects()?.ac.other || 0;
+    return { active: combatState.mageArmorActive, ac: 13 + modifier + magicBonus, dexterityModifier: modifier };
   }
 
   const PERSISTENT_SPELL_EFFECTS = Object.freeze([
@@ -1256,7 +1293,8 @@
     });
     const options = {
       className: value("class"), race: value("race"), level: value("level"),
-      wisdomScore: value("wis"), charismaScore: value("cha"),
+      wisdomScore: readAbilityScore("wis") || "", charismaScore: readAbilityScore("cha") || "",
+      proficiencyBonus: globalScope.getProficiencyBonus?.(getMagicEffects() || undefined),
       raceChoice: getSelectedRaceChoice(), druidLand: value("druid-land"),
       hasTravelCompanion: Boolean(globalScope.hasSelectedFeat?.("最佳旅伴")),
       spellSlotGroups: slots.map(group => ({ level: group.level, ids: group.controls.map(control => control.id) })),
@@ -1276,7 +1314,7 @@
 
   function getHitDiceContext() {
     const die = globalScope.getHitDiceValues(document.getElementById("class")?.value)?.Y || 0;
-    const constitution = getDruidForm()?.abilities.con ?? document.getElementById("con")?.value ?? 10;
+    const constitution = getDruidForm()?.abilities.con ?? readAbilityScore("con") ?? 10;
     const modifier = globalScope.calculateAbilityModifier(constitution);
     return { hp: readCurrentHp(), maximumHp: readMaximumHp(),
       remaining: Number(document.getElementById("lifedicen")?.value || 0), die,
@@ -1401,8 +1439,11 @@
       else control.checked = checked;
     });
     optionUpdates.forEach(({ control }) => dispatchCanonicalCastUpdate(control));
-    markStateChanged(kind === "longRest" ? "長休完成。" : "短休完成。");
-    return { ok: true };
+    // 魔法物品寫明短休或長休恢復的次數池（速度之靴、透視戒指等）隨休息恢復；黎明、黃昏與冷卻由玩家在物品詳情按。
+    const itemCharges = globalScope.Inventory?.recoverRestCharges?.(kind) || [];
+    const itemNames = [...new Set(itemCharges.map(item => item.label))];
+    markStateChanged(`${kind === "longRest" ? "長休完成。" : "短休完成。"}${itemNames.length ? `${itemNames.join("、")}的次數已恢復。` : ""}`);
+    return { ok: true, itemCharges };
   }
 
   function addCustomResource(resource) {
@@ -1503,7 +1544,11 @@
     const droppedShillelagh = next.includes("unconscious") && combatState.shillelaghActive;
     if (droppedShillelagh) combatState.shillelaghActive = false;
     if (next.includes("unconscious") && !previous.includes("unconscious")) {
-      globalScope.AppDialog?.notify(droppedShillelagh ? "你手上的東西因昏迷掉落，橡棍術結束。" : "你手上的東西因昏迷掉落。", { tone: "warning" });
+      // 主手、副手（主手 2）與主手 2 的盾牌清空、回到物品欄，記下原本的選擇讓醒來後撿回；還原存檔時不動角色卡。
+      const dropped = restoringState ? null : globalScope.dropHeldEquipment?.() || null;
+      if (dropped) combatState.droppedHands = normalizeDroppedHands(dropped.saved);
+      const items = dropped?.labels?.length ? `：${dropped.labels.join("、")}` : "";
+      globalScope.AppDialog?.notify(`你手上的東西因昏迷掉落${items}${droppedShillelagh ? "，橡棍術結束" : ""}。`, { tone: "warning" });
     }
     return changed || droppedShillelagh;
   }
@@ -1570,12 +1615,73 @@
         incapacitated, field("subclass"), field("druid-land"), ["str", "dex", "con", "wis", "armor", "mainHand", "offHand"].map(field)]) };
   }
 
+  // 角色自己的屬性值：有效值（屬性欄原值加上生效中的魔法物品，character-rules.js 的 getEffectiveAbilityValue）。
+  function readAbilityScore(ability) {
+    return globalScope.getEffectiveAbilityValue?.(ability) ?? document.getElementById(ability)?.value ?? "";
+  }
+
+  // 魔法物品改變屬性時的有效值與來源（跑團畫面，getMagicEffects）。荒野形態的力敏體以野獸數值為原值：
+  // 設定值類物品和野獸數值取較高，加值類加在野獸數值上並照上限；智力、感知、魅力照角色本身的有效值。
+  function getAbilityEffect(ability) {
+    const beast = getDruidForm();
+    const effects = getMagicEffects();
+    const effective = beast && PHYSICAL_ABILITIES.includes(ability)
+      ? globalScope.calculateEffectiveAbilityScore?.(String(beast.abilities[ability]), effects?.abilities?.[ability] || [])
+      : globalScope.getEffectiveAbilityScore?.(ability, effects);
+    return effective?.changed ? effective : null;
+  }
+
+  const PHYSICAL_ABILITIES = Object.freeze(["str", "dex", "con"]);
+
+  // 跑團畫面用的魔法物品效果（character-rules.js 的 getActiveMagicEffects）：荒野形態時物品跟著變身時每一格的選擇
+  // （combatState.druid.equipment 的 armor／main／off／other），選「穿戴」的那一格照平常規則生效，融入、掉落的不算。
+  // 加值、AC、豁免、技能、熟練加值、資源次數、優勢、提示、物品按鈕與物品法術都讀這裡。預設各格都是融入。
+  function getMagicEffects() {
+    if (!globalScope.getActiveMagicEffects) return null;
+    if (!getDruidForm()) return globalScope.getActiveMagicEffects();
+    const equipment = combatState.druid.equipment;
+    return globalScope.getActiveMagicEffects({ wildShape: Object.fromEntries(["armor", "main", "off", "other"].map(key => [key, equipment[key] === "wear"])) });
+  }
+
   function getDruidForm() {
     if (!combatState.druid?.formKey) return null;
     const context = getDruidContext();
     const form = globalScope.DruidBeastForms?.find(item => item.key === context.druid.formKey);
     if (context.incapacitated || !globalScope.isDruidBeastAllowed?.(form, context.level)) return null;
     return globalScope.BeastCatalog?.get(form.key) || null;
+  }
+
+  // 魔法物品給的其他移動方式（getActiveMagicEffects().movement），例如「，游泳 60、攀爬 30」：多個來源取最大，
+  // 「等於速度」（speed）跟著 walk（目前的步行速度，含大步奔行）；walk 不是數字時略過等於速度的來源。沒有時為空字串。
+  function getMagicMovementText(walk) {
+    const movement = getMagicEffects()?.movement;
+    if (!movement) return "";
+    const parts = [["swim", "游泳"], ["climb", "攀爬"], ["fly", "飛行"]].flatMap(([mode, label]) => {
+      const values = movement[mode].map(source => source.value === "speed" ? walk : source.value).filter(Number.isFinite);
+      if (!values.length) return [];
+      return [`${label} ${Math.max(...values)}${mode === "fly" && movement.hover.length ? "（懸停）" : ""}`];
+    });
+    return parts.length ? `，${parts.join("、")}` : "";
+  }
+
+  // 荒野形態的速度：野獸的速度（迅捷步法 +10、extra 是大步奔行的 +10），加上生效中魔法物品的移動方式（同一種取最大，
+  // 等於速度的跟著步行速度，速度至少的只看步行）。例如「步行 40 呎、游泳 40 呎」。
+  function getDruidSpeedText(beast, extra = 0) {
+    const bonus = (hasSelectedFeat("迅捷步法") ? 10 : 0) + extra;
+    const speeds = new Map(Object.entries(beast.speeds).map(([label, feet]) => [label, feet + bonus]));
+    const labels = (typeof monsterLabels !== "undefined" && monsterLabels.speed) || {};
+    const label = mode => labels[mode] || { walk: "步行", swim: "游泳", climb: "攀爬", fly: "飛行" }[mode];
+    const movement = getMagicEffects()?.movement;
+    if (movement) {
+      if (movement.minimum && speeds.has(label("walk"))) speeds.set(label("walk"), Math.max(speeds.get(label("walk")), movement.minimum));
+      const walk = speeds.get(label("walk"));
+      ["swim", "climb", "fly"].forEach((mode) => {
+        const values = movement[mode].map(source => source.value === "speed" ? walk : source.value).filter(Number.isFinite);
+        if (values.length) speeds.set(label(mode), Math.max(speeds.get(label(mode)) ?? 0, ...values));
+      });
+    }
+    const hover = movement?.hover.length ? label("fly") : "";
+    return [...speeds].map(([name, feet]) => `${name} ${feet} 呎${name === hover ? "（懸停）" : ""}`).join("、");
   }
 
   // 變形中數值旁的標記「(狼)」：比照樹膚術的「(樹膚)」，只標屬性（力敏體）、AC 與速度。
@@ -1590,10 +1696,21 @@
     const original = fallback ?? read(id);
     const beast = getDruidForm();
     if (!beast) return original;
-    const score = key => ["str", "dex", "con"].includes(key) ? beast.abilities[key] : Number(read(key));
+    // 荒野形態的魔法物品跟著變身時每一格的選擇（getMagicEffects）：角色自己的屬性是這時的有效值，
+    // 技能、豁免、先攻欄裡不生效的魔法物品加上的部分（屬性、技能加值、檢定加值、熟練加值、豁免加值）先扣掉，再換成野獸的屬性。
+    // 力敏體以野獸數值為原值套用生效中的屬性物品（getAbilityEffect）。自動計算關閉時欄位是玩家手填的數字，當作沒有物品加值，只換算屬性。
+    const formEffects = getMagicEffects();
+    const own = key => Number(globalScope.getEffectiveAbilityValue?.(key, formEffects) ?? read(key)) || 0;
+    const score = key => PHYSICAL_ABILITIES.includes(key) ? getAbilityEffect(key)?.score ?? beast.abilities[key] : own(key);
     const mod = key => globalScope.calculateAbilityModifier(score(key));
     const signed = value => globalScope.formatSignedValue(value);
-    const check = (ability, beastTotal) => signed(globalScope.calculateWildShapeCheck(Number(original), Number(read(ability)), score(ability), beastTotal));
+    const magicPart = () => {
+      if (!globalScope.isAutomaticKeyStatsEnabled?.() || typeof globalScope.getDerivedCheckTotal !== "function") return 0;
+      const withItems = globalScope.getDerivedCheckTotal(id);
+      const inForm = globalScope.getDerivedCheckTotal(id, formEffects);
+      return Number.isFinite(withItems) && Number.isFinite(inForm) ? withItems - inForm : 0;
+    };
+    const check = (ability, beastTotal) => signed(globalScope.calculateWildShapeCheck(Number(original) - magicPart(), own(ability), score(ability), beastTotal));
     if (/^(str|dex|con|int|wis|cha)-mod$/.test(id)) return signed(mod(id.slice(0, 3)));
     if (/^save-(str|dex|con|int|wis|cha)$/.test(id)) return check(id.slice(5), beast.saves?.[id.slice(5)]);
     if (id.startsWith("skill-")) {
@@ -1606,22 +1723,25 @@
       const perception = Number(getDruidEffectiveValue("skill-察覺", read("skill-察覺")));
       return String(Number(original) - Number(read("skill-察覺")) + perception);
     }
-    if (id === "speed-display") {
-      const bonus = hasSelectedFeat("迅捷步法") ? 10 : 0;
-      return Object.entries(beast.speeds).map(([label, feet]) => `${label} ${feet + bonus} 呎`).join("、");
-    }
+    if (id === "speed-display") return getDruidSpeedText(beast);
     if (id === "ac-display") {
       const state = combatState.druid;
       if (state.acOverride !== null) return String(state.acOverride);
       const armorName = read("armor");
-      const armor = state.equipment.armor === "wear" ? globalScope.armors?.find(item => item.名稱 === armorName) : null;
+      const armor = state.equipment.armor === "wear" ? globalScope.getArmorByName?.(armorName) || null : null;
       const shield = ((state.equipment.off === "wear" && globalScope.isEffectiveEquippedShield?.())
-        || (state.equipment.armor === "wear" && armorName === "盾牌"))
+        || (state.equipment.armor === "wear" && globalScope.isShieldItem?.(armorName)))
         && globalScope.isShieldProficient?.() !== false;
+      // 魔法物品依變身時的選擇：穿著的護甲、盾牌照算，其他格選穿戴時戒指、斗篷等的 AC 加值也算（formEffects.ac.other）。
+      const magicAc = formEffects?.ac;
+      const shieldMagic = shield ? magicAc?.shield || 0 : 0;
+      const otherMagic = magicAc?.other || 0;
       if (armor) return String(globalScope.calculateArmorClass({ armor, hasArmor: true, className: "druid",
         dexterityScore: score("dex"), constitutionScore: score("con"), wisdomScore: score("wis"), charismaScore: score("cha"),
-        hasShield: shield, hasDefenseFightingStyle: globalScope.hasDefenseFightingStyleFeat?.() }));
-      return String(Number(beast.ac) + (shield ? 2 : 0));
+        hasShield: shield, hasDefenseFightingStyle: globalScope.hasDefenseFightingStyleFeat?.(), magicBonus: (magicAc?.armor || 0) + shieldMagic + otherMagic }));
+      // 沒穿護甲時，大法師法袍等的基礎 AC（unarmoredAc＋敏捷）和野獸的 AC 取較高。
+      const unarmored = formEffects?.unarmoredAc ? formEffects.unarmoredAc + mod("dex") : 0;
+      return String(Math.max(Number(beast.ac), unarmored) + (shield ? 2 + shieldMagic : 0) + otherMagic);
     }
     return original;
   }
@@ -2322,14 +2442,14 @@
   function isWearingHeavyArmor() {
     if (getDruidForm() && combatState.druid.equipment.armor !== "wear") return false;
     const armorName = document.getElementById("armor")?.value || "";
-    return Array.from(globalScope.armors || [])
-      .some(armor => armor?.名稱 === armorName && armor?.分類 === "重甲");
+    return globalScope.getArmorByName?.(armorName)?.分類 === "重甲";
   }
 
+  // 熟練加值含魔法物品（index.html 的 getProficiencyBonus）；荒野形態只算穿戴中的護甲與盾牌。
   function getCharacterProficiencyBonus() {
     const level = Number.parseInt(document.getElementById("level")?.value || "", 10);
     if (!Number.isInteger(level) || level < 1) return null;
-    const proficiencyBonus = Number(globalScope.calculateProficiencyBonus?.(level));
+    const proficiencyBonus = Number(globalScope.getProficiencyBonus?.(getMagicEffects()) ?? globalScope.calculateProficiencyBonus?.(level));
     return Number.isFinite(proficiencyBonus) ? proficiencyBonus : null;
   }
 
@@ -2366,7 +2486,7 @@
   function getPaladinAuraOverviewEntry() {
     const selectedClass = document.getElementById("class")?.value || "";
     if (selectedClass !== "paladin" || !hasCurrentClassFeature("paladin-aura-of-protection")) return null;
-    const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+    const rawCharisma = String(readAbilityScore("cha") || "").trim();
     const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
     const bonus = Math.max(1, Number.isFinite(charismaModifier) ? charismaModifier : 0);
     return {
@@ -2382,7 +2502,7 @@
     const selectedClass = document.getElementById("class")?.value || "";
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
     if (selectedClass !== "warlock" || !hasCurrentClassFeature("warlock-dark-ones-blessing")) return null;
-    const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+    const rawCharisma = String(readAbilityScore("cha") || "").trim();
     const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
     const temporaryHp = Math.max(1, characterLevel + (Number.isFinite(charismaModifier) ? charismaModifier : 0));
     return {
@@ -2399,7 +2519,7 @@
     if (!damageTypeSelect?.value) return null;
     const damageType = String(damageTypeSelect.selectedOptions?.[0]?.textContent || "").trim();
     if (!damageType) return null;
-    const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+    const rawCharisma = String(readAbilityScore("cha") || "").trim();
     const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
     const bonus = Number.isFinite(charismaModifier) ? charismaModifier : 0;
     const signedBonus = bonus >= 0 ? `+${bonus}` : String(bonus);
@@ -2444,16 +2564,25 @@
     const auraBonus = Number(globalScope.getPaladinAuraSavingThrowBonus?.(
       document.getElementById("class")?.value || "",
       document.getElementById("level")?.value || "0",
-      document.getElementById("cha")?.value || "10"
+      readAbilityScore("cha") || "10"
     )) || 0;
     const modifier = parseRollModifier(value);
     if (!auraBonus || modifier === null) return value;
     return globalScope.formatSignedValue(modifier + auraBonus);
   }
 
+  // 魔法物品的提示（內容檔 hints；getActiveMagicEffects() 只列目前生效的）：標題是物品名稱，panel 為 overview 或 skills。
+  // 荒野形態只列穿戴中的魔法護甲與盾牌的提示（getMagicEffects）。
+  function getMagicItemHintEntries(panel) {
+    return (getMagicEffects()?.hints || [])
+      .filter(hint => hint.panel === panel)
+      .map(hint => ({ label: hint.label, detail: hint.detail }));
+  }
+
   function getDefenseEntries() {
     const entries = getCharacterDefenseEntries().filter(entry => entry.summaryPanel === "skills");
     entries.push(...getClassHintEntries("skills"));
+    entries.push(...getMagicItemHintEntries("skills"));
     if (hasCurrentClassFeature("paladin-aura-of-protection")) {
       entries.push({ label: "守護靈氣", detail: "額外豁免加值已自動計算。", hiddenWhenIncapacitated: true });
     }
@@ -2481,6 +2610,7 @@
     const entries = getCharacterDefenseEntries().filter(entry => entry.summaryPanel === "overview");
     entries.push(...getClassChoiceAlerts());
     entries.push(...getClassHintEntries("overview"));
+    entries.push(...getMagicItemHintEntries("overview"));
     if (hasSelectedFeat("警覺")) {
       entries.push({ label: "警覺", detail: "擲先攻後，可與指定隊友互換順序。", hiddenWhenIncapacitated: true });
     }
@@ -2602,9 +2732,15 @@
     if (!elements.abilityModifiers) return;
 
     const formMarks = getDruidFormMarks();
+    const checkEffects = getMagicEffects();
+    const checkSources = (checkEffects?.sources || []).filter(source => source.checks).map(source => source.label);
     const values = ABILITY_KEYS.map(ability => {
       const label = getAbilityLabel(ability);
-      const value = getDruidEffectiveValue(`${ability}-mod`, getReadOnlySourceValue(document.getElementById(`${ability}-mod`)));
+      // 只讀調整值本身（.modifier-main），不含角色卡的 ✦ 標記。
+      const modifier = getDruidEffectiveValue(`${ability}-mod`, getReadOnlySourceValue(document.querySelector(`#${ability}-mod .modifier-main`) || document.getElementById(`${ability}-mod`)));
+      // 屬性檢定的魔法物品加值（幸運石，effects.checks）加在擲骰的數字上，來源寫在數值旁。
+      const checkBonus = parseRollModifier(modifier) === null ? 0 : checkEffects?.checks || 0;
+      const value = checkBonus ? globalScope.formatSignedValue(parseRollModifier(modifier) + checkBonus) : modifier;
       const item = createReadOnlyValue(
         label,
         value,
@@ -2612,9 +2748,21 @@
         "",
         `${label}檢定`
       );
-      // 荒野形態只換力量、敏捷、體質；心智屬性保留角色原值，不加標記。
-      if (formMarks.length && ["str", "dex", "con"].includes(ability)) {
-        renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, formMarks);
+      // 荒野形態只換力量、敏捷、體質；心智屬性保留角色原值，不加形態標記。
+      // 魔法物品改變的屬性比照形態標記寫出物品「+5 (巨人之力腰帶（山丘）)」，名稱長時在格內換行。
+      // 物品名稱放在擲骰按鈕外，窄螢幕時換到數值下方整行。
+      const magic = getAbilityEffect(ability);
+      const magicSources = [...new Set([...(magic?.sources || []), ...(checkBonus ? checkSources : [])])];
+      // 荒野形態的力敏體：形態標記之外，生效中的屬性物品（腰帶等）讓數值高過野獸時也寫出物品名稱。
+      const formAbility = formMarks.length && PHYSICAL_ABILITIES.includes(ability);
+      if (formAbility) renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, formMarks);
+      if (magicSources.length) {
+        if (!formAbility) renderEffectStat(item.querySelector(".tabletop-ability-modifier__value"), value, []);
+        const source = document.createElement("span");
+        source.className = "tabletop-ac-effect-label tabletop-ability-modifier__source";
+        source.textContent = `(${magicSources.join("、")})`;
+        item.classList.add("tabletop-ability-modifier--magic");
+        item.append(source);
       }
       return item;
     });
@@ -2641,6 +2789,9 @@
 
     if (!elements.skillValues) return;
 
+    // 魔法物品的無條件優勢：技能名稱下方的「優勢」標籤（index.html 的 createMagicAdvantageTag，角色卡技能格共用）。
+    const magicEffects = getMagicEffects();
+    const advantages = onboardingSkillPreview || !magicEffects ? {} : globalScope.getMagicItemAdvantages?.(magicEffects) || {};
     const skills = Array.from(
       document.querySelectorAll("#tab-skills .skill-grid .skill-cell")
     ).flatMap(cell => {
@@ -2684,6 +2835,17 @@
       const button = item.querySelector(".tabletop-inline-roll");
       button.insertBefore(marker, item.querySelector(".tabletop-skill-value__label"));
       button.setAttribute("aria-label", `${button.getAttribute("aria-label")}；${rankLabel}`);
+      // 「優勢」標籤和技能名稱包在同一格：放得下時接在名稱右邊，放不下時由 CSS 換到名稱下方。
+      const advantageSources = advantages[skillKey] || [];
+      if (advantageSources.length && globalScope.createMagicAdvantageTag) {
+        item.classList.add("tabletop-skill-value--advantage");
+        const label = item.querySelector(".tabletop-skill-value__label");
+        const nameGroup = document.createElement("span");
+        nameGroup.className = "tabletop-skill-value__name";
+        button.insertBefore(nameGroup, label);
+        nameGroup.append(label, globalScope.createMagicAdvantageTag(advantageSources));
+        button.setAttribute("aria-label", `${button.getAttribute("aria-label")}；優勢（${advantageSources.join("、")}）`);
+      }
       return [item];
     });
 
@@ -2768,7 +2930,7 @@
       initiative = "+2";
       initiativeModifier = 2;
     }
-    elements.initiative.replaceChildren(createQuickRollButton(
+    const initiativeButton = createQuickRollButton(
       initiative,
       "先攻",
       initiativeModifier === null ? null : {
@@ -2777,20 +2939,31 @@
         modifier: initiativeModifier,
         includeModifier: true
       }
-    ));
+    );
+    elements.initiative.replaceChildren(initiativeButton);
+    // 魔法物品給的先攻優勢：「優勢」標籤放在數值右邊（上下排會讓整排關鍵數值卡片長高）。
+    const magicEffects = getMagicEffects();
+    const initiativeAdvantage = onboardingKeyStatPreview || !magicEffects ? [] : globalScope.getMagicItemAdvantages?.(magicEffects)["先攻"] || [];
+    if (initiativeAdvantage.length && globalScope.createMagicAdvantageTag) {
+      elements.initiative.appendChild(globalScope.createMagicAdvantageTag(initiativeAdvantage));
+      initiativeButton.setAttribute("aria-label", `${initiativeButton.getAttribute("aria-label")}；優勢（${initiativeAdvantage.join("、")}）`);
+    }
 
     elements.speed.textContent = getDruidEffectiveValue("speed-display",
       getDisplayValue(
         "speed-display",
         " 呎"
       ));
+    // 魔法物品的游泳、攀爬、飛行接在步行速度後面（荒野形態用野獸的速度，不算）。
+    const baseSpeedText = document.getElementById("speed-display")?.value.trim() || "";
+    const walkSpeed = baseSpeedText && Number.isFinite(Number(baseSpeedText)) ? Number(baseSpeedText) : null;
+    if (!getDruidForm() && !combatState.longstriderActive) elements.speed.textContent += getMagicMovementText(walkSpeed);
 
     if (combatState.longstriderActive) {
       const beast = getDruidForm();
-      const baseSpeed = document.getElementById("speed-display")?.value.trim() || "";
       const speed = beast
-        ? Object.entries(beast.speeds).map(([label, feet]) => `${label} ${feet + (hasSelectedFeat("迅捷步法") ? 10 : 0) + 10} 呎`).join("、")
-        : baseSpeed && Number.isFinite(Number(baseSpeed)) ? `${Number(baseSpeed) + 10} 呎` : "—";
+        ? getDruidSpeedText(beast, 10)
+        : walkSpeed !== null ? `${walkSpeed + 10} 呎${getMagicMovementText(walkSpeed + 10)}` : "—";
       renderEffectStat(elements.speed, speed, [...formMarks, "(大步)"]);
     } else if (formMarks.length) {
       renderEffectStat(elements.speed, elements.speed.textContent, formMarks);
@@ -2940,6 +3113,65 @@
       .replaceChildren(...buttons);
   }
 
+  // 昏迷時掉落的手持物（combatState.droppedHands）：昏迷中只顯示，醒來後可「撿回」或「不用了」。
+  function renderDroppedHands() {
+    const container = document.getElementById("tabletop-dropped-hands");
+    if (!container) return;
+    const labels = getDroppedHandLabels();
+    container.hidden = !labels.length;
+    if (!labels.length) {
+      container.replaceChildren();
+      return;
+    }
+    const unconscious = combatState.activeConditions.includes("unconscious");
+    const text = document.createElement("p");
+    text.className = "tabletop-dropped-hands__text";
+    text.textContent = `昏迷時掉落：${labels.join("、")}${unconscious ? "（醒來後可撿回）" : ""}`;
+    if (unconscious) {
+      container.replaceChildren(text);
+      return;
+    }
+    const actions = document.createElement("div");
+    actions.className = "tabletop-dropped-hands__actions";
+    const pickUp = document.createElement("button");
+    pickUp.type = "button";
+    pickUp.dataset.droppedHands = "pick-up";
+    pickUp.textContent = "撿回";
+    pickUp.setAttribute("aria-label", `撿回${labels.join("、")}`);
+    pickUp.addEventListener("click", () => pickUpDroppedHands());
+    const dismiss = document.createElement("button");
+    dismiss.type = "button";
+    dismiss.dataset.droppedHands = "dismiss";
+    dismiss.textContent = "不用了";
+    dismiss.setAttribute("aria-label", "不撿回昏迷時掉落的物品");
+    dismiss.addEventListener("click", () => dismissDroppedHands());
+    actions.append(pickUp, dismiss);
+    container.replaceChildren(text, actions);
+  }
+
+  // 撿回昏迷時掉落的東西（index.html 的 restoreHeldEquipment）：只填空著的欄位，物品欄沒有的跳過。昏迷中不能撿。
+  function pickUpDroppedHands() {
+    const dropped = combatState.droppedHands;
+    if (!dropped || combatState.activeConditions.includes("unconscious")) return null;
+    const result = globalScope.restoreHeldEquipment?.(dropped) || { restored: [], missing: getDroppedHandLabels(dropped) };
+    combatState.droppedHands = null;
+    const parts = [
+      result.restored.length ? `已撿回${result.restored.join("、")}` : "",
+      result.missing.length ? `${result.missing.join("、")}不在物品欄或那隻手已有東西，未裝備` : ""
+    ].filter(Boolean);
+    const message = `${parts.join("；")}。`;
+    if (result.missing.length) globalScope.AppDialog?.notify(message, { tone: "warning" });
+    markStateChanged(message);
+    return result;
+  }
+
+  function dismissDroppedHands() {
+    if (!combatState.droppedHands) return false;
+    combatState.droppedHands = null;
+    markStateChanged("已清除昏迷時掉落的物品紀錄。");
+    return true;
+  }
+
   function renderDeathSaves() {
     if (!elements.deathSaves) {
       return;
@@ -2978,12 +3210,15 @@
               : "死亡豁免"
           );
       const canRoll = !sacrificed && !combatState.deathSaveStable;
+      // 擲骰帶上魔法物品的豁免加值；判定用按下當時的加值與癒合護符下限（evaluateDeathSaveRoll）。
+      const modifiers = getDeathSaveModifiers();
+      const withBonus = canRoll && modifiers.bonus !== 0;
       const button = createQuickRollButton(
-        title,
+        withBonus ? `${title} ${globalScope.formatSignedValue(modifiers.bonus)}` : title,
         "死亡豁免",
-        canRoll ? { count: 1, sides: 20 } : null,
+        canRoll ? { count: 1, sides: 20, ...(modifiers.bonus ? { modifier: modifiers.bonus, includeModifier: true } : {}) } : null,
         "tabletop-inline-roll tabletop-death-roll",
-        result => recordDeathSaveRoll(result.values[0])
+        result => recordDeathSaveRoll(result.values[0], modifiers)
       );
       elements.deathTitle.replaceChildren(button);
     }
@@ -2998,8 +3233,13 @@
     elements.deathHelp.textContent =
       "目前為穩定且昏迷；受到傷害會解除穩定並增加 1 次死亡豁免失敗。";
      } else {
+    const modifiers = getDeathSaveModifiers();
+    const notes = [
+      modifiers.bonus ? `豁免加值 ${globalScope.formatSignedValue(modifiers.bonus)}（${modifiers.bonusSources.join("、")}）` : "",
+      modifiers.minimum ? `${modifiers.minimumSources.join("、")}：原骰 ${modifiers.minimum - 1} 以下改為 ${modifiers.minimum}` : ""
+    ].filter(Boolean);
     elements.deathHelp.textContent =
-      "目前為昏迷；死亡豁免 10+ 成功，1＝2 次失敗，20＝恢復 1 HP。";
+      `目前為昏迷；死亡豁免 10+ 成功，1＝2 次失敗，20＝恢復 1 HP。${notes.length ? `${notes.join("；")}。` : ""}`;
      }
     }
 
@@ -3123,6 +3363,7 @@
     renderHealth();
     renderConditions();
     renderDeathSaves();
+    renderDroppedHands();
   }
 
   function render() {
@@ -3154,6 +3395,20 @@
     const previousConditions = combatState.activeConditions;
     combatState =
       normalizeCombatState(data);
+    restoringState = true;
+    try {
+      applyRestoredState(previousConditions);
+    } finally {
+      restoringState = false;
+    }
+
+    undoSnapshot = null;
+
+    render();
+    emitStateChange();
+  }
+
+  function applyRestoredState(previousConditions) {
     updateActiveConditions(combatState.activeConditions, previousConditions);
 
     if (
@@ -3167,11 +3422,6 @@
     } else if (readCurrentHp() === 0) {
       enterDeathSaveCondition();
     }
-
-    undoSnapshot = null;
-
-    render();
-    emitStateChange();
   }
 
   function handleLifeOperation(
@@ -3728,9 +3978,34 @@
     );
   }
 
-  function recordDeathSaveRoll(roll) {
+  // 死亡豁免目前的豁免加值與原骰下限（跑團用的魔法物品效果，荒野形態沿用 getMagicEffects 的過濾）。
+  function getDeathSaveModifiers() {
+    const effects = getMagicEffects();
+    const bonus = Number.isSafeInteger(effects?.saves) ? effects.saves : 0;
+    const minimum = effects?.deathSave?.minimum || 0;
+    return {
+      bonus,
+      bonusSources: (effects?.sources || []).filter(source => source.saves).map(source => source.label),
+      minimum,
+      minimumSources: minimum ? [...effects.deathSave.sources] : []
+    };
+  }
+
+  // 結果訊息裡的擲骰部分，例如「7」「7 +2 = 9」「7（癒合護符改為 10）+2 = 12」。
+  function formatDeathSaveRoll(evaluation, modifiers) {
+    const changed = evaluation.die !== undefined && evaluation.die !== evaluation.roll;
+    const dieText = changed
+      ? `${evaluation.roll}（${modifiers.minimumSources.join("、")}改為 ${evaluation.die}）`
+      : String(evaluation.roll);
+    if (!evaluation.bonus) return dieText;
+    const sign = evaluation.bonus < 0 ? "-" : "+";
+    return `${dieText}${changed ? "" : " "}${sign}${Math.abs(evaluation.bonus)} = ${evaluation.total}`;
+  }
+
+  function recordDeathSaveRoll(roll, modifiers = getDeathSaveModifiers()) {
     const evaluation =
-      evaluateDeathSaveRoll(roll);
+      evaluateDeathSaveRoll(roll, modifiers);
+    const rollText = evaluation.valid ? formatDeathSaveRoll(evaluation, modifiers) : "";
 
     if (!evaluation.valid) {
       return Object.freeze({
@@ -3831,7 +4106,7 @@
         );
       } else {
         markStateChanged(
-          `死亡豁免擲出 ${evaluation.roll}：成功，目前成功 ${combatState.deathSaveSuccesses}/3。`
+          `死亡豁免擲出 ${rollText}：成功，目前成功 ${combatState.deathSaveSuccesses}/3。`
         );
       }
 
@@ -3851,18 +4126,18 @@
       result.heroicSacrifice
     ) {
       const failureLabel =
-        evaluation.roll === 1
+        evaluation.die === 1
           ? "擲出 1，計 2 次失敗"
-          : `擲出 ${evaluation.roll}，失敗`;
+          : `擲出 ${rollText}，失敗`;
 
       markStateChanged(
         `死亡豁免${failureLabel}；累積 3 次失敗，${HEROIC_SACRIFICE_LABEL}。`
       );
     } else {
       const failureLabel =
-        evaluation.roll === 1
+        evaluation.die === 1
           ? "擲出 1：失敗 +2"
-          : `擲出 ${evaluation.roll}：失敗 +1`;
+          : `擲出 ${rollText}：失敗 +1`;
 
       markStateChanged(
         `死亡豁免${failureLabel}，目前失敗 ${combatState.deathSaveFailures}/3。`
@@ -4631,9 +4906,11 @@
     const canCast = typeof globalScope.hasSpellcastingCapability === "function"
       ? globalScope.hasSpellcastingCapability()
       : true;
+    // 身上有生效中的物品法術（魔杖、法杖等）時，沒有施法能力也顯示法術頁的「物品」分組。
     return canCast
       || Boolean(getConcentrationSpellId())
-      || combatState.endedConcentrations.length > 0;
+      || combatState.endedConcentrations.length > 0
+      || Boolean(getMagicEffects()?.actions.some(item => item.action.spell));
   }
 
   function syncSpellPanelAvailability() {
@@ -5392,6 +5669,8 @@
       scheduleRender
     );
     globalScope.addEventListener("spellmanagementchange", scheduleRender);
+    // 同調切換與物品變動會改 AC、豁免（魔法物品加值）。
+    document.addEventListener("inventory:change", scheduleRender);
   }
 
   function init() {
@@ -5434,6 +5713,8 @@
     applyState,
 
     recordDeathSaveRoll,
+    pickUpDroppedHands,
+    dismissDroppedHands,
 
     refresh: render,
     setOnboardingKeyStatPreview(active) {
@@ -5476,6 +5757,7 @@
     getCanonicalSpellSlotGroups,
     getDruidContext,
     getDruidForm,
+    getMagicEffects,
     getDruidEffectiveValue,
     getTabletopSaveValue,
     canApplyMageArmor,

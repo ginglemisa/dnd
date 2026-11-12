@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: eyes-of-the-eagle
+name: 鷹眼鏡片
+nameEn: "Eyes of the Eagle"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: false
+use: worn
+hints:
+  - panel: skills
+    text: 依賴視覺的感知（察覺）檢定有優勢。
+text: |-
+  這些水晶鏡片可戴在眼睛上。穿戴它們時，你依賴視覺的感知（察覺）檢定具有優勢。在視野清晰的條件下，你甚至能辨識極遠處的生物與物體，其寬度小至2呎也能看清細節。

@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: necklace-of-fireballs
+name: 火球項鍊
+nameEn: "Necklace of Fireballs"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: false
+pools:
+  - { id: beads, label: 珠子, max: 9 }
+actions:
+  - { id: fireball, spell: fireball, pool: beads, cost: [ 1, 9 ], level: 3, maxLevel: 7, saveDc: 15, when: owned, note: 把珠子擲向最遠 60 呎外；第一顆之後每多一顆珠子傷害 +1d6，最多 12d6。 }
+text: |-
+  這條項鍊上掛有1d6 + 3顆珠子。你可以進行魔法動作，取下一顆珠子並將它擲向最遠60呎外。當珠子抵達其軌跡終點時，會以3環_火球術_（豁免DC 15）引爆。
+
+  你可以一次投擲多顆珠子，甚至整條項鍊。這麼做時，第一顆之後每多一顆珠子，_火球術_的傷害就增加1d6（最多12d6）。

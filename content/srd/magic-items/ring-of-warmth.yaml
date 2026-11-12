@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-warmth
+name: 溫暖戒指
+nameEn: "Ring of Warmth"
+source: srd
+category: ring
+rarity: uncommon
+attunement: true
+use: worn
+text: |-
+  如果你在穿戴這枚戒指時受到冷凍傷害，戒指會使你受到的傷害減少2d8。
+
+  此外，穿戴這枚戒指時，你以及你穿戴和攜帶的一切物品，不會受到華氏0度或更低溫度的傷害。

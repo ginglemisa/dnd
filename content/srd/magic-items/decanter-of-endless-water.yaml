@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: decanter-of-endless-water
+name: 無盡水瓶
+nameEn: "Decanter of Endless Water"
+source: srd
+category: wondrous
+group: container
+rarity: uncommon
+attunement: false
+weight: 2
+actions:
+  - { id: water, name: 倒水, type: magic, when: owned, text: 拔掉瓶塞說出命令詞，流出淡水或鹹水到你的下個回合開始：濺水 1 加侖、噴泉 5 加侖、間歇泉 30 加侖（30 呎長、1 呎寬的直線，線上你選擇的一個生物 DC 13 力量豁免，失敗受到 1d4 鈍擊傷害並倒地）。 }
+text: |-
+  這個塞著瓶塞的瓶子，搖晃時會發出水聲，彷彿裡面裝著水。水瓶重2磅。
+
+  你可以進行魔法動作拔掉瓶塞並說出三個命令詞之一，隨後瓶中會流出一定量的淡水或鹹水（由你選擇）。水會在你的下個回合開始時停止流出。從下列命令詞中選擇：
+
+  **濺水。** 水瓶產生1加侖的水。
+  **噴泉。** 水瓶產生5加侖的水。
+  **間歇泉。** 水瓶產生30加侖的水，噴湧成一道長30呎、寬1呎的直線。如果你正手持水瓶，可以將間歇泉瞄準某個方向（不需動作）。直線內你選擇的一個生物必須成功通過DC 13的力量豁免，否則受到1d4鈍擊傷害並陷入倒地狀態。你也可以不以生物為目標，而以直線內一個未被穿戴或攜帶、重量不超過200磅的物體為目標。該物體會被間歇泉衝倒。

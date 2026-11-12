@@ -1,0 +1,346 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "magic-item.schema.json",
+  "title": "twD20 魔法物品內容檔",
+  "description": "content/srd/magic-items/<id>.yaml：一件 SRD 魔法物品一個檔案。寫法見 content/README.md 的「魔法物品」。",
+  "$ref": "#/definitions/item",
+  "definitions": {
+    "rarity": { "enum": ["common", "uncommon", "rare", "very-rare", "legendary", "artifact"], "description": "稀有度：常見、非常見、稀有、極稀有、傳說、神器。" },
+    "effectValue": {
+      "oneOf": [
+        { "type": "integer", "minimum": 1 },
+        { "const": "bonus" }
+      ],
+      "description": "固定加值，或 bonus（取自 bonus 選項的值）。"
+    },
+    "damageType": {
+      "enum": ["acid", "bludgeoning", "cold", "fire", "force", "lightning", "necrotic", "piercing", "poison", "psychic", "radiant", "slashing", "thunder"],
+      "description": "傷害類型 ID（character-rules.js 的 getDamageTypeLabel，例如 cold →「冷凍」）。"
+    },
+    "abilityEffect": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false, "required": ["set"],
+          "properties": { "set": { "type": "integer", "minimum": 1, "maximum": 30, "description": "屬性設定為這個值；原本較高時用原本的值。" }, "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就算，不看穿戴或手持。省略時和其他效果相同。" } }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["bonus", "max"],
+          "properties": {
+            "bonus": { "type": "integer", "minimum": 1, "description": "屬性增加的點數（不會降低）。" },
+            "max": { "type": "integer", "minimum": 1, "maximum": 30, "description": "加值後的上限。" }, "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就算，不看穿戴或手持。省略時和其他效果相同。" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["setBonus", "max", "from"],
+          "properties": {
+            "setBonus": { "type": "integer", "minimum": 1, "description": "from 物品給的設定值再增加的點數。" },
+            "max": { "type": "integer", "minimum": 1, "maximum": 30, "description": "增加後的上限。" },
+            "from": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }, "description": "物品 id：這些物品同時生效時，它們的 set 才增加。" }, "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就算，不看穿戴或手持。省略時和其他效果相同。" }
+          }
+        }
+      ],
+      "description": "屬性的三種寫法：{ set }、{ bonus, max }、{ setBonus, max, from }。"
+    },
+    "movementSpeed": {
+      "oneOf": [
+        { "type": "integer", "minimum": 5, "multipleOf": 5 },
+        { "const": "speed", "description": "等於目前的步行速度。" }
+      ],
+      "description": "呎數，或 speed（等於目前的步行速度）。"
+    },
+    "dice": { "type": "string", "pattern": "^[1-9]\\d*d(4|6|8|10|12|20)$", "description": "骰式，例如 1d6、2d6。" },
+    "effects": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "只放角色卡會自動計算的恆定數值與武器資料。條件式效果寫在 hints 或只留在說明文字。",
+      "properties": {
+        "attack": { "$ref": "#/definitions/effectValue", "description": "武器攻擊檢定加值。" },
+        "damage": { "$ref": "#/definitions/effectValue", "description": "武器傷害擲骰加值。" },
+        "ac": { "$ref": "#/definitions/effectValue", "description": "護甲等級加值。" },
+        "saves": { "$ref": "#/definitions/effectValue", "description": "豁免加值。" },
+        "spellAttack": { "$ref": "#/definitions/effectValue", "description": "法術攻擊檢定加值。" },
+        "spellSaveDc": { "$ref": "#/definitions/effectValue", "description": "法術豁免 DC 加值。" },
+        "condition": { "enum": ["unarmored", "held"], "description": "ac／saves／spellAttack／spellSaveDc 的生效條件。unarmored：未穿戴護甲且未使用盾牌；held：這件武器裝備在主手或副手（只用於有基本款的物品；沒有基本款的物品用 use）。" },
+        "extraDamage": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["dice", "type"],
+            "properties": {
+              "dice": { "$ref": "#/definitions/dice" },
+              "type": { "oneOf": [{ "$ref": "#/definitions/damageType" }, { "const": "weapon", "description": "與這件武器目前的傷害類型相同。" }] }
+            }
+          },
+          "description": "這件武器每次命中都有的額外傷害骰，接在攻擊列的傷害後面（同類型時併進前面的骰子）。只用於武器類（有基本款且不是護甲、盾牌）。"
+        },
+        "damageType": { "$ref": "#/definitions/damageType", "description": "這件武器造成的傷害類型（取代基本款的類型）。只用於武器類。" },
+        "finesse": { "const": true, "description": "這件武器具有靈巧屬性。只用於固定基本款的武器類。" },
+        "thrown": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "integer", "minimum": 5 }, "description": "這件武器具有投擲屬性：[一般射程, 遠射程]（呎）。只用於固定基本款的武器類。" },
+        "proficiencyAs": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "熟練其中任一件武器（equipment-data.js 的品名）時，也熟練這件武器。只用於武器類。" },
+        "weapons": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["names"],
+          "minProperties": 2,
+          "properties": {
+            "names": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "基本款品名（魔法款也算）。" },
+            "attack": { "type": "integer", "minimum": 1 },
+            "damage": { "type": "integer", "minimum": 1 }
+          },
+          "description": "拿指定武器攻擊時的命中、傷害加值（例如射手護腕的長弓、短弓）。"
+        },
+        "abilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "str": { "$ref": "#/definitions/abilityEffect" },
+            "dex": { "$ref": "#/definitions/abilityEffect" },
+            "con": { "$ref": "#/definitions/abilityEffect" },
+            "int": { "$ref": "#/definitions/abilityEffect" },
+            "wis": { "$ref": "#/definitions/abilityEffect" },
+            "cha": { "$ref": "#/definitions/abilityEffect" }
+          },
+          "description": "屬性的有效值（屬性欄保留原值，不存檔）：原值 → 加值（夾上限）→ 與設定值比，取最高。只在物品生效時（已同調、穿戴或手持）算。"
+        },
+        "skills": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "integer", "minimum": 1 },
+          "description": "技能檢定的固定加值：技能 ID（character-rules.js 的 CharacterSkillAbilities）→ 加值，例如竊賊手套 { 巧手: 5 }。只在自動計算開啟時寫進技能欄；有條件的加值寫 hints。"
+        },
+        "checks": { "type": "integer", "minimum": 1, "description": "所有屬性檢定的固定加值：加在每個技能檢定、先攻與跑團的屬性檢定按鈕（幸運石）。豁免另寫 saves。" },
+        "proficiencyBonus": { "type": "integer", "minimum": 1, "description": "熟練加值增加的點數（艾恩石精進）：用到熟練加值的技能、豁免、攻擊、法術數值與次數都跟著變。" },
+        "hitPoints": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["perLevel"],
+          "properties": {
+            "perLevel": { "type": "integer", "minimum": 1, "description": "每個角色等級增加的生命值上限。" },
+            "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就算，不看裝備位置（狂戰斧）。省略時和其他效果相同。" }
+          },
+          "description": "生命值上限加值（只在自動計算開啟時寫進生命值上限）。"
+        },
+        "proficiencies": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "擁有這些武器的熟練（equipment-data.js 的品名，魔法款依基本款），例如射手護腕的長弓、短弓。只影響攻擊列與裝備摘要，不改職業的武器熟練與精通選項。" },
+        "trained": { "const": true, "description": "未受過這件護甲所屬類別的訓練時，也視為受過訓練（精靈鏈甲）。只用於護甲類。" },
+        "deathSaveMinimum": { "type": "integer", "minimum": 2, "maximum": 19, "description": "死亡豁免的原骰低於這個數字時改成這個數字（癒合護符 10）。擲出 20 仍恢復 1 HP。" },
+        "unarmoredAc": { "type": "integer", "minimum": 10, "description": "沒穿護甲時的基礎 AC＝這個值＋敏捷調整值（大法師法袍；可以用盾牌）。和無甲防禦等其他算法取最高。" },
+        "noStrengthRequirement": { "const": true, "description": "這件護甲沒有力量需求（秘銀護甲）。只用於護甲類。" },
+        "noStealthDisadvantage": { "const": true, "description": "這件護甲不會讓敏捷（隱匿）檢定有劣勢（秘銀護甲）。只用於護甲類。" },
+        "movement": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "swim": { "$ref": "#/definitions/movementSpeed", "description": "游泳速度。" },
+            "climb": { "$ref": "#/definitions/movementSpeed", "description": "攀爬速度。" },
+            "fly": { "$ref": "#/definitions/movementSpeed", "description": "飛行速度。" },
+            "hover": { "const": true, "description": "飛行時可以懸停（要和 fly 一起寫）。" },
+            "minimum": { "type": "integer", "minimum": 5, "description": "步行速度至少為這個值（原本較高時用原本的）。" },
+            "ignoreArmorStrength": { "const": true, "description": "力量未達護甲需求時不降低速度。" }
+          },
+          "description": "移動方式：跑團速度那一格寫出游泳、攀爬、飛行（多個來源取最大）；角色卡速度欄只算步行。荒野形態依變身時「其他」格的選擇，接在野獸速度上。"
+        },
+        "unarmedStrike": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["dice", "type"],
+          "properties": {
+            "dice": { "$ref": "#/definitions/dice" },
+            "type": { "$ref": "#/definitions/damageType" },
+            "attack": { "type": "integer", "minimum": 1 },
+            "damage": { "type": "integer", "minimum": 1 }
+          },
+          "description": "徒手打擊的傷害骰與類型（武僧的武藝骰較大時用武藝骰），以及命中、傷害加值。角色卡只有武僧的「武藝」有攻擊列，其他職業請另寫 hints。"
+        }
+      }
+    },
+    "hint": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "提示（只顯示，不計算）：標題是物品名稱，同一件物品在同一處的提示接成一段。結構化的詞產生固定說法，text 接在後面。",
+      "properties": {
+        "panel": { "enum": ["overview", "skills", "weapon"], "description": "顯示位置：overview 跑團總覽（預設）、skills 跑團技能頁籤、weapon 武器說明（裝備摘要與跑團武器卡；只用於武器類）。" },
+        "when": { "enum": ["owned"], "description": "owned：持有（需同調的要已同調）就顯示，不看裝備位置與穿戴。省略時和自動計算相同：有基本款的物品要裝備（拿在手上或穿著），沒有基本款的依 use。" },
+        "resistances": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/definitions/damageType" }, "description": "傷害抗性（「火焰傷害抗性」）。" },
+        "immunities": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/definitions/damageType" }, "description": "傷害免疫（「免疫毒素傷害」）。" },
+        "darkvision": { "type": "integer", "minimum": 1, "description": "黑暗視覺呎數（「黑暗視覺 60 呎」）。" },
+        "languages": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "懂的語言（「懂矮人語」）；不改角色卡的語言欄。" },
+        "advantage": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "無條件有優勢的檢定：技能 ID（character-rules.js 的 CharacterSkillAbilities）或「先攻」。有條件的優勢寫 text。" },
+        "text": { "type": "string", "minLength": 1, "description": "自由文字，以句號結尾。" }
+      }
+    },
+    "hints": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/hint" } },
+    "pool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "max"],
+      "description": "次數池：充能、每日一次、冷卻、珠子等。剩餘次數存在物品欄那一筆的 charges（{ 池 id: 剩幾次 }，沒寫表示滿的）。",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "池 ID，寫進物品欄存檔的 charges：不可改名（列在基準檔「物品 id:pool:池 id」）。" },
+        "label": { "type": "string", "minLength": 1, "description": "池的名稱（例如「充能」「汲取生命」），物品詳情顯示「充能 剩 5/7」。" },
+        "max": { "type": "integer", "minimum": 1, "maximum": 99, "description": "最大值。隨機初始次數（例如 1d8 + 1）寫骰式的最大值，取得時是滿的。" },
+        "recover": { "enum": ["dawn", "dusk", "shortRest", "longRest", "cooldown"], "description": "恢復時機：dawn 黎明、dusk 黃昏、cooldown 冷卻（這三種由玩家在物品詳情按）；shortRest 短休或長休、longRest 長休（跑團的休息完成時自動恢復）。省略表示不恢復（珠子、粉末等）。" },
+        "amount": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "string", "pattern": "^[1-9]\\d*d(3|4|6|8|10|12|20)( [+-] [1-9]\\d*)?$" }
+          ],
+          "description": "恢復量：整數或骰式（例如 1d6 + 1，按恢復時用 DiceRoller 擲）。省略表示全部恢復。"
+        },
+        "cooldown": { "type": "string", "minLength": 1, "description": "冷卻多久（例如「7 天」），只用於 recover: cooldown，寫在恢復按鈕上。" }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "description": "能力：跑團模式依 type 放在動作、附贈或反應頁的按鈕，按鈕文字與說明都是這裡的資料。寫了 spell 的是從物品施放的法術：放在跑團法術頁的「物品」分組，不寫 name、type、text。",
+      "if": { "required": ["spell"] },
+      "then": { "not": { "anyOf": [{ "required": ["name"] }, { "required": ["type"] }, { "required": ["text"] }] } },
+      "else": {
+        "required": ["name", "type", "text"],
+        "not": { "anyOf": [{ "required": ["level"] }, { "required": ["maxLevel"] }, { "required": ["saveDc"] }, { "required": ["attackBonus"] }, { "required": ["stats"] }, { "required": ["castingTime"] }, { "required": ["concentration"] }, { "required": ["note"] }] }
+      },
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "能力 ID：跑團隱藏偏好的 key（official:<分頁>:magic-item-<物品 id>-<能力 id>），不可改名（列在基準檔「物品 id:action:能力 id」）。" },
+        "name": { "type": "string", "minLength": 1, "description": "按鈕文字。" },
+        "type": { "enum": ["action", "magic", "attack", "bonus", "reaction"], "description": "動作類型：action 動作、magic 魔法動作、attack 攻擊動作（這三種在動作頁）、bonus 附贈動作、reaction 反應。" },
+        "text": { "type": "string", "minLength": 1, "description": "說明（純文字，以句號結尾）。" },
+        "pool": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "使用時扣哪個次數池（這件物品的 pools id）。省略表示不扣次數，只有說明。" },
+        "cost": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "integer", "minimum": 1 } }
+          ],
+          "description": "每次花費：整數（預設 1），或 [最少, 最多]（按下後選這次花幾次）。要和 pool 一起寫。"
+        },
+        "when": { "enum": ["owned"], "description": "owned：持有（需同調的已同調）就能用。省略時和自動計算相同：有基本款的要裝備著，沒有基本款的依 use。" },
+        "option": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "additionalProperties": { "type": "string" },
+          "description": "{ 選項 id: 值 }：只有選了這個選項時才有這個能力（命令元素戒指依元素位面的法術表）。"
+        },
+        "alsoPool": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "另外再扣 1 次的池（吉兆之刃的祈願：扣充能，也扣每日一次的池）。要和 pool 一起寫。" },
+        "spell": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "從物品施放的法術 ID（任何法術，含只有 SRD 版的）。不要求法術在職業法表。" },
+        "level": { "type": "integer", "minimum": 1, "maximum": 9, "description": "施放的環階（固定版本，例如星辰法袍 5 環魔法飛彈）；省略＝法術本身的環階。cost 是 [最少, 最多] 時是付最少花費的環階，每多付 1 次 +1 環。" },
+        "maxLevel": { "type": "integer", "minimum": 2, "maximum": 9, "description": "多付花費升環的上限（火球項鍊：每多一顆珠子 +1d6、最多 12d6）。只用於 cost 是範圍時。" },
+        "saveDc": { "type": "integer", "minimum": 1, "maximum": 30, "description": "物品固定的法術豁免 DC（魔杖 DC 15 等）。" },
+        "attackBonus": { "type": "integer", "minimum": -5, "maximum": 20, "description": "物品固定的法術攻擊加值（爆裂頭飾 +5）。" },
+        "stats": { "enum": ["yours"], "description": "yours：用角色卡的法術豁免 DC 與法術攻擊（含物品加值），角色沒有施法屬性時不能施放。省略且沒寫 saveDc／attackBonus 表示說明沒寫（或法術不需要）。" },
+        "castingTime": { "enum": ["action", "bonus-action", "reaction"], "description": "覆寫法術的施放時間（念珠項鍊的附贈動作）。" },
+        "concentration": { "const": false, "description": "false：這次施放不需專注（水晶球的暗示術）。" },
+        "note": { "type": "string", "minLength": 1, "description": "目標限制或備註（純文字，以句號結尾），寫在法術旁，例如「只能以你自己為目標。」。" }
+      }
+    },
+    "base": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "基本款，擇一：fixed（固定一種）、from（列出可選品名）、any（裝備分類）。品名須對得上 equipment-data.js。",
+      "properties": {
+        "fixed": { "type": "string", "minLength": 1 },
+        "from": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "any": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["simple-weapon", "martial-weapon", "melee-weapon", "light-armor", "medium-armor", "heavy-armor", "ammunition"] }
+        },
+        "except": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "any 要排除的品名。" },
+        "label": { "type": "string", "minLength": 1, "description": "any 的顯示文字（例如「任意近戰武器」），接在類別後的括弧。" }
+      }
+    },
+    "choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "label"],
+      "properties": {
+        "value": { "type": ["integer", "string"], "description": "選項值，寫進物品欄存檔：不可改名（列在基準檔）。" },
+        "label": { "type": "string", "minLength": 1, "description": "選項文字；也是顯示名稱括弧內的文字。" },
+        "rarity": { "$ref": "#/definitions/rarity", "description": "此選項的稀有度（物品的 rarity 為 varies 時必填）。" },
+        "effects": { "$ref": "#/definitions/effects", "description": "選了此項才有的固定數值。" },
+        "heal": { "type": "string", "pattern": "^\\d+d\\d+( \\+ \\d+)?$", "description": "治療藥水恢復的生命值骰式。" },
+        "score": { "type": "integer", "minimum": 1, "description": "巨人之力藥水賦予的力量值（只是資料，不自動計算；穿戴類物品改用 effects.abilities）。" },
+        "saveDc": { "type": "integer", "minimum": 1, "description": "法術卷軸的豁免 DC。" },
+        "attackBonus": { "type": "integer", "minimum": 1, "description": "法術卷軸的攻擊加值。" },
+        "omitInName": { "const": true, "description": "顯示名稱不加這個選項（一般的治療藥水）。" },
+        "hints": { "$ref": "#/definitions/hints", "description": "選了此項才有的提示。" }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "choices"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-zA-Z]*$", "description": "選項 ID，是物品欄存檔 magic 物件的欄位名：不可改名（列在基準檔）。bonus 是 +N 加值。" },
+        "label": { "type": "string", "minLength": 1, "description": "選項組的名稱（例如「加值」「傷害類型」）。" },
+        "choices": { "type": "array", "minItems": 2, "items": { "$ref": "#/definitions/choice" } }
+      }
+    },
+    "form": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "形態 ID，寫進物品欄存檔的 magic.form：不可改名（列在基準檔）。第一個是原本形態（不寫進存檔）。" },
+        "label": { "type": "string", "minLength": 1, "description": "「目前形態」下拉的文字。" },
+        "base": { "type": "string", "minLength": 1, "description": "這個形態當作哪一件武器（品名），傷害、屬性、精通跟著它。省略時沿用物品的基本款。" },
+        "noEffects": { "const": true, "description": "這個形態沒有物品的 effects（固定加值等）；形態自己的 effects 照算。" },
+        "effects": { "$ref": "#/definitions/effects", "description": "這個形態才有的自動計算（例如火焰之刃的額外傷害），加在物品的 effects 上。" },
+        "hints": { "$ref": "#/definitions/hints", "description": "這個形態才有的提示。" }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "nameEn", "source", "category", "rarity", "attunement", "text"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "穩定 key，由 nameEn 轉成 kebab-case（「X, +1, +2, or +3」為 x-plus，括弧內別名不算）。寫進物品欄存檔：不可改名（列在基準檔）。" },
+        "name": { "type": "string", "minLength": 1, "description": "中文譯名，以譯名表定稿為準。" },
+        "nameEn": { "type": "string", "minLength": 1, "description": "SRD 英文名。" },
+        "source": { "enum": ["srd"], "description": "內容來源。" },
+        "category": { "enum": ["weapon", "armor", "potion", "ring", "scroll", "rod", "staff", "wand", "wondrous"], "description": "類別：武器、護甲、藥水、戒指、卷軸、權杖、法杖、魔杖、奇物。" },
+        "group": { "enum": ["wearable", "container", "consumable", "tool", "book", "curio"], "description": "奇物的小標：穿戴、容器、消耗品、工具與載具、書籍、奇珍。只有奇物要寫。" },
+        "rarity": { "enum": ["common", "uncommon", "rare", "very-rare", "legendary", "artifact", "varies"], "description": "稀有度；隨選項變動時寫 varies，並在選項寫各自的 rarity。" },
+        "rarityText": { "type": "string", "minLength": 1, "description": "varies 的副標文字（省略時為「稀有度不定」）。" },
+        "attunement": { "type": ["boolean", "string"], "minLength": 1, "description": "false 不需同調、true 需同調，或限定條件文字（例如「由法師」，顯示為「需由法師同調」）。" },
+        "use": {
+          "enum": ["worn", "held", "wornOrHeld", "carried"],
+          "description": "使用方式（沒有基本款的物品才寫，依說明文字）：worn 穿戴時（物品詳情的「裝備」按鈕）、held 手持時（放進主手或副手）、wornOrHeld 穿戴或手持時（任一即可）、carried 帶在身上就算。效果只在符合使用方式時生效。有 effects 或 hints（when: owned 除外）的物品必填；說明只講啟動方式的物品可以不寫。"
+        },
+        "base": { "$ref": "#/definitions/base" },
+        "options": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/option" }, "description": "取得時要選的項目。沒有自訂項時省略。" },
+        "effects": { "$ref": "#/definitions/effects" },
+        "hints": { "$ref": "#/definitions/hints" },
+        "pools": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/pool" }, "description": "次數池（充能、每日一次、冷卻、珠子等）。" },
+        "actions": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/action" }, "description": "能力：跑團模式的動作、附贈、反應按鈕。" },
+        "spellLinks": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }, "description": "藥水與油「獲得某法術的效果」：物品詳情多一列「法術效果：…」連到法術說明（不是施法）。" },
+        "displayName": { "type": "string", "minLength": 1, "description": "選定後的顯示名稱樣板：{base} 為基本款，{選項 ID} 為該選項的 label。省略時為「名稱（基本款、選項）」。" },
+        "consumable": { "const": true, "description": "用掉就減 1。" },
+        "container": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "容器：物品欄可以把其他物品放進去（不限容量），一件一筆、不合併不拆分。只有奇物的 group: container 才寫。空物件 {} 是普通容器。",
+          "properties": {
+            "extradimensional": { "const": true, "description": "異次元空間：裡面的物品（含更深層）不算重量，容器本身照算；把一個異次元容器放進另一個時提示兩件都會被摧毀（不自動刪除）。" },
+            "devour": { "type": "string", "pattern": "^[1-9][0-9]?d(4|6|8|10|12|20)$", "description": "裡面有東西時以真實時間計時（骰式，單位分鐘），到期吃掉內容物。骰子在程式內部悄悄擲，不進擲骰歷史、不提示玩家。" }
+          }
+        },
+        "forms": { "type": "array", "minItems": 2, "items": { "$ref": "#/definitions/form" }, "description": "可切換的形態（王者權杖）：物品視窗的「目前形態」下拉，存在這一筆的 magic.form。裝備欄位的值不變。" },
+        "bonusTransfer": { "const": true, "description": "武器的攻擊與傷害加值可以部分或全部轉移到 AC（防禦者）。物品視窗與跑團武器卡有步進器，不存檔；要有 effects.attack。" },
+        "manualEffect": { "const": true, "description": "這件物品會改變角色卡的數值或武器資料（命中、傷害、AC、豁免、屬性、速度、技能、熟練、生命值），但還有部分沒有自動計算：商店與物品欄的說明下方會提示玩家依說明處理。只做成提示的效果（抗性、優勢、詛咒等）不算自動計算。" },
+        "equipmentName": { "type": "string", "minLength": 1, "description": "一般商店也賣的同一件物品的裝備品名（須是 equipment-data.js 的品名）：裝備詳情改顯示這件的說明。" },
+        "sitePrice": { "type": "string", "minLength": 1, "description": "網站版的價格文字（只有寫 siteText 的物品才寫），放在網站版內文上方。" },
+        "siteText": { "type": "string", "minLength": 1, "description": "網站版說明（純文字，保留換行）。有寫時詳情顯示「網站版｜SRD 版」頁籤，text 是 SRD 版。只用於寫了 equipmentName 的物品。" },
+        "weight": { "type": "number", "exclusiveMinimum": 0, "description": "每件磅數，只在譯文明寫時填。" },
+        "text": { "type": "string", "minLength": 1, "description": "說明本文（逐字取自譯文，不含副標）。支援 _斜體_、**粗體**、「- 」清單、#### 小標與 GFM 表格，建置時轉成 HTML。" }
+      }
+    }
+  }
+}

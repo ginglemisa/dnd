@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: manual-of-golems
+name: 魔像手冊
+nameEn: "Manual of Golems"
+source: srd
+category: wondrous
+group: book
+rarity: very-rare
+attunement: false
+options:
+  - id: golem
+    label: 魔像類型
+    choices:
+      - { value: clay, label: 黏土魔像 }
+      - { value: flesh, label: 血肉魔像 }
+      - { value: iron, label: 鐵魔像 }
+      - { value: stone, label: 石魔像 }
+text: |-
+  這本書含有製作特定類型魔像所需的資訊與咒文。DM選擇類型，或擲隨附的表格隨機決定。要解讀並使用這本書，你必須是至少有兩個5環法術位的施法者。無法使用_魔像手冊_卻試圖閱讀它的生物，受到6d6心靈傷害。
+
+  要製作魔像，你必須花費表中所示的時間，手邊備有手冊不間斷地工作，且每天休息不超過8小時。你也必須支付購買補給品的指定成本。
+
+  一旦你完成魔像的製作，書便在詭異的火焰中被焚毀。把手冊的灰燼灑在魔像上，魔像就會活動起來。魔像的數據塊見「怪物」章節。魔像受你控制，並聽得懂、服從你的命令。
+
+  | 1d20 | 魔像 | 時間 | 成本 |
+  | --- | --- | --- | --- |
+  | 1–5 | 黏土魔像 | 30天 | 65,000 GP |
+  | 6–17 | 血肉魔像 | 60天 | 50,000 GP |
+  | 18 | 鐵魔像 | 120天 | 100,000 GP |
+  | 19–20 | 石魔像 | 90天 | 80,000 GP |

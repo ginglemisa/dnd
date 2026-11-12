@@ -384,7 +384,7 @@
     const main2Shield = globalScope.isEffectiveEquippedShield?.() && document.getElementById("offHandAsMain")?.checked;
     const equipment = {};
     for (const [key, label, field] of [["armor", "護甲", "armor"], ["main", "主手", "mainHand"], ["off", "副手", "offHand"], ["other", "其他裝備", ""]]) {
-      const equipped = key === "off" && main2Shield ? "盾牌" : (field ? document.getElementById(field)?.value || "" : "");
+      const equipped = key === "off" && main2Shield ? globalScope.getMain2ShieldLabel?.() || "盾牌" : (field ? document.getElementById(field)?.value || "" : "");
       // 沒裝備的欄位不列出，送出「融入」（沒有東西可穿戴或掉落）。
       if (field && !equipped) { equipment[key] = { value: "merge" }; continue; }
       equipment[key] = selectField(advancedBody, `${label}${equipped ? `：${equipped}` : ""}`, [
@@ -736,7 +736,7 @@
     const main2Shield = document.getElementById("offHandAsMain")?.checked === true
       && globalScope.isEffectiveEquippedShield?.();
     const hands = main2Shield ? ["main"] : ["main", "off"];
-    const weapons = hands.filter(hand => c.druid.equipment[hand] === "wear").map(getWeaponData).filter(item => item.name && item.name !== "盾牌");
+    const weapons = hands.filter(hand => c.druid.equipment[hand] === "wear").map(getWeaponData).filter(item => item.name && !globalScope.isShieldItem?.(item.name));
     target.replaceChildren(wrap, ...weapons.map(createWeaponSummary));
     if (weapons.length && !globalScope.isWeaponAttackAutomationEnabled?.()) target.append(el("p", "目前武器為手填模式，請依變形後屬性自行裁定武器加值；野獸攻擊可直接擲骰。"));
     return true;

@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-animal-friendship
+name: 化獸為友藥水
+nameEn: "Potion of Animal Friendship"
+source: srd
+category: potion
+rarity: uncommon
+attunement: false
+consumable: true
+spellLinks: [ animal-friendship ]
+text: |-
+  喝下這瓶藥水時，你可以施放_化獸為友_法術的3環版本（豁免DC 13）。
+
+  搖晃這瓶藥水的混濁液體，會有些許小東西浮現：一片魚鱗、一根蜂鳥羽毛、一根貓爪，或一根松鼠毛。

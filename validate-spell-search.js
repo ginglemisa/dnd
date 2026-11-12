@@ -19,6 +19,7 @@ async function main() {
   assert.match(searchScripts[0][0], /\bdefer\b/, "search uses the existing deferred loading strategy");
   new vm.Script(fs.readFileSync(path.join(__dirname, "search.js"), "utf8"), { filename: "search.js" });
   new vm.Script(fs.readFileSync(path.join(__dirname, "equipment-shop.js"), "utf8"), { filename: "equipment-shop.js" });
+  new vm.Script(fs.readFileSync(path.join(__dirname, "magic-item-shop.js"), "utf8"), { filename: "magic-item-shop.js" });
   for (const [index, match] of [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].entries()) {
     if (!/\bsrc\s*=|application\/ld\+json/i.test(match[1])) {
       new vm.Script(match[2], { filename: `index.html:inline-${index}` });
@@ -604,8 +605,514 @@ async function validateEquipmentSearch(page) {
   await page.locator("#equipment-search-fab").click();
   assert.equal(await input.inputValue(), "", "switching tabs clears equipment search");
   assert.equal(await results.isVisible(), false);
+  // 目錄測試要在說明第一次載入之前：治療藥水與法術卷軸的詳情也會載入魔法物品說明。
+  await validateMagicItemCatalog(page);
   await validateEquipmentShop(page);
   await validateInventory(page);
+  await validateMagicItemShop(page);
+}
+
+// 魔法商店：切換按鈕與模式、分類與清單、取得視窗的基本款與選項、寫入物品欄的形狀，以及物品視窗的說明與使用。
+async function validateMagicItemShop(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await page.evaluate(() => { TabletopMode.setMode("sheet"); });
+  await page.locator('[aria-controls="tab-equipment"]').click();
+  await page.evaluate(() => {
+    document.getElementById("gear-notes").value = "";
+    Inventory.restore({ version: 1, items: [] });
+  });
+  const shop = page.locator('.app-dialog[data-variant="equipment-shop"]');
+  const grant = page.locator('.app-dialog[data-variant="magic-item-grant"]');
+  const toggle = shop.locator(".equipment-shop__magic-toggle");
+  const chrome = () => shop.evaluate(root => ({
+    title: root.querySelector("h2").textContent,
+    balance: root.querySelector(".equipment-shop__balance").textContent,
+    pressed: root.querySelector(".equipment-shop__magic-toggle").getAttribute("aria-pressed"),
+    cartDisabled: root.querySelector(".equipment-shop__cart-button").disabled,
+    badge: root.querySelector(".equipment-shop__badge").textContent,
+    footer: getComputedStyle(root.querySelector(".app-dialog__actions")).display !== "none"
+  }));
+  const row = id => shop.locator(`[data-magic-item-id="${id}"] button`);
+  const openGrant = async (id) => {
+    await row(id).click();
+    await grant.locator(".magic-item-detail__text").getByText("載入說明中").waitFor({ state: "detached" });
+  };
+  const get = () => grant.getByRole("button", { name: "獲得", exact: true });
+  const finishGrant = async () => {
+    await get().click();
+    await grant.waitFor({ state: "detached" });
+  };
+
+  // 取得開關：預設關閉，商店沒有魔法物品按鈕；這台裝置第一次打開先說明，取消就維持關閉，之後直接切換。
+  const more = page.locator("#inventory-more");
+  const magicSwitch = page.locator("#inventory-magic-toggle");
+  const acquireState = () => page.evaluate(() => [document.getElementById("magic-item-acquire").checked,
+    document.getElementById("inventory-magic-toggle").getAttribute("aria-pressed"), dndStorage.getItem("dnd.magicItemAcquireNoticeSeen.v1")]);
+  const shopHasMagicButton = async () => {
+    await page.evaluate(() => { EquipmentShop.open(); });
+    const count = await toggle.count();
+    await page.keyboard.press("Escape");
+    await shop.waitFor({ state: "detached" });
+    return count > 0;
+  };
+  assert.deepEqual(await acquireState(), [false, "false", null], "the magic item switch starts off");
+  assert.equal(await shopHasMagicButton(), false, "the shop has no magic button while the switch is off");
+  await more.click();
+  assert.deepEqual(await page.locator("#inventory-more-panel button:not([hidden])").evaluateAll(buttons => buttons.map(button => button.id)).then(ids => ids.slice(ids.indexOf("inventory-coins-toggle"))),
+    ["inventory-coins-toggle", "inventory-weight-toggle", "inventory-magic-toggle", "inventory-text-only"], "the switch sits with the coin and weight switches");
+  const notice = page.getByRole("alertdialog", { name: "開啟魔法物品？" });
+  await magicSwitch.click();
+  assert.equal(await notice.innerText().then(text => text.includes("魔法物品通常由 DM 在冒險中給予。開啟後，商店會出現魔法物品按鈕，取得不花錢。")), true, "the first switch-on explains where magic items come from");
+  assert.equal(await more.getAttribute("aria-expanded"), "false", "the menu closes behind the explanation");
+  await notice.getByRole("button", { name: "取消", exact: true }).click();
+  await notice.waitFor({ state: "detached" });
+  assert.deepEqual([...await acquireState(), await more.evaluate(button => button === document.activeElement)], [false, "false", null, true], "cancel keeps the switch off and returns focus to the menu button");
+  await more.click();
+  await magicSwitch.click();
+  await notice.getByRole("button", { name: "開啟", exact: true }).click();
+  await notice.waitFor({ state: "detached" });
+  assert.deepEqual(await acquireState(), [true, "true", "true"], "confirming turns the switch on and remembers the explanation");
+  await more.click();
+  await magicSwitch.click();
+  assert.deepEqual([...await acquireState(), await more.getAttribute("aria-expanded")], [false, "false", "true", "true"], "switching off asks nothing and keeps the menu open");
+  await magicSwitch.click();
+  assert.deepEqual([await notice.count(), ...await acquireState()], [0, true, "true", "true"], "after the first time the switch turns on directly");
+  await page.keyboard.press("Escape");
+
+  // 從明確的品項開啟，上一段測試留下的分類與搜尋不影響這裡。
+  await page.evaluate(() => { EquipmentShop.open({ focusName: "繩索" }); });
+  assert.deepEqual(await shop.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.classList[button.classList.length - 1])),
+    ["equipment-shop__magic-toggle", "equipment-shop__cart-button", "app-dialog__close"], "the magic toggle sits left of the cart");
+  assert.equal(await toggle.locator("svg").getAttribute("viewBox"), "0 0 24 24", "the toggle is an inline SVG icon");
+  await shop.locator(".equipment-shop__add").first().click();
+  const normal = await chrome();
+  assert.deepEqual([normal.title, normal.pressed, normal.cartDisabled, normal.footer], ["商店", "false", false, true], "shop starts in normal mode");
+
+  await toggle.click();
+  assert.deepEqual(await chrome(), { title: "魔法物品", balance: "點物品查看效果後獲得，不花費金幣", pressed: "true", cartDisabled: true, badge: normal.badge, footer: false }, "magic mode swaps the header and hides checkout, keeping the cart");
+  assert.deepEqual(await shop.locator(".equipment-shop__category").allTextContents(), ["全部", "武器", "護甲", "藥水", "戒指", "卷軸", "權杖", "法杖", "魔杖", "奇物"]);
+  // 按下後滑鼠還停在按鈕上：底色要維持按下狀態，否則淺色主題的圖示看不見。
+  const toggleColors = () => toggle.evaluate((element) => {
+    element.style.transition = "none";
+    const { backgroundColor, color } = getComputedStyle(element);
+    return [backgroundColor, color];
+  });
+  await toggle.hover();
+  const hoveredColors = await toggleColors();
+  await page.mouse.move(0, 0);
+  assert.deepEqual(await toggleColors(), hoveredColors, "the pressed magic toggle keeps its colours while hovered");
+  await toggle.evaluate((element) => { element.style.transition = ""; });
+  assert.equal(await shop.locator(".equipment-shop__item--magic").count(), 258, "all magic items are listed");
+  assert.equal(await shop.locator(".equipment-shop__price, .equipment-shop__add").count(), 0, "magic rows have no price or add button");
+  // 依稀有度分段，同一段再依種類；隨選項變動的物品排在最低的那一段，範圍由低寫到高。
+  const shopSections = () => shop.locator(".equipment-shop__section").evaluateAll(sections => sections.map(section => ({
+    title: section.querySelector(".equipment-shop__section-title").textContent,
+    groups: Array.from(section.querySelectorAll(".equipment-shop__group"), group => group.textContent),
+    ids: Array.from(section.querySelectorAll("[data-magic-item-id]"), row => row.dataset.magicItemId)
+  })));
+  const RARITIES = ["常見", "非常見", "稀有", "極稀有", "傳說", "神器"];
+  const KINDS = ["武器", "護甲", "藥水", "戒指", "卷軸", "權杖", "法杖", "魔杖", "奇物"];
+  const allSections = await shopSections();
+  assert.deepEqual(allSections.map(section => section.title), RARITIES, "magic items are grouped from common to artifact");
+  allSections.forEach(({ title, groups }) => assert.deepEqual(groups, KINDS.filter(kind => groups.includes(kind)), `${title} lists its items by kind`));
+  const sectionOf = id => allSections.find(section => section.ids.includes(id))?.title;
+  assert.deepEqual([sectionOf("potions-of-healing"), sectionOf("weapon-plus"), sectionOf("armor-plus"), sectionOf("flame-tongue")], ["常見", "非常見", "稀有", "稀有"], "items with several rarities sit under the lowest one");
+  const ranges = await shop.locator(".magic-shop__meta").evaluateAll(metas => metas.map(meta => meta.firstChild.textContent).filter(text => text.includes("～")));
+  assert.ok(ranges.length > 0, "some rows show a rarity range");
+  ranges.forEach((text) => {
+    const [low, high] = text.split("～");
+    assert.ok(RARITIES.indexOf(low) < RARITIES.indexOf(high), `${text} reads from low to high`);
+  });
+  const categoryToggle = shop.locator(".equipment-shop__category-toggle");
+  const categoryMenu = shop.locator(".equipment-shop__categories");
+  const chooseMagicCategory = async (name) => {
+    await categoryToggle.click();
+    await categoryMenu.getByRole("button", { name, exact: true }).click();
+    await categoryToggle.click();
+    await categoryMenu.waitFor({ state: "hidden" });
+  };
+  await chooseMagicCategory("武器");
+  const weaponSections = await shopSections();
+  assert.deepEqual(weaponSections.map(section => section.title), RARITIES.filter(rarity => weaponSections.some(section => section.title === rarity)), "one category keeps the rarity order");
+  assert.ok(weaponSections.length > 0 && weaponSections.every(section => section.groups.every(group => ["可選基本款", "固定基本款"].includes(group))), "weapons keep their own subheadings");
+  await chooseMagicCategory("奇物");
+  assert.ok((await shopSections()).flatMap(section => section.groups).includes("穿戴"), "wondrous items keep their subheadings");
+  await chooseMagicCategory("全部");
+  assert.match(await row("flame-tongue").innerText(), /焰舌[\s\S]*稀有[\s\S]*需同調/u, "rows show rarity and attunement");
+  await shop.locator(".equipment-shop__search").fill("flame tongue");
+  assert.deepEqual(await shop.locator(".magic-shop__name").allTextContents(), ["焰舌"], "search matches English names");
+  await shop.locator(".equipment-shop__search").fill("焰舌");
+  assert.deepEqual(await shop.locator(".magic-shop__name").allTextContents(), ["焰舌"], "search matches Chinese names");
+  await shop.locator(".equipment-shop__search").fill("");
+
+  // 基本款沒選時提示且不關視窗；分段按鈕預設第一項。
+  await openGrant("weapon-plus");
+  assert.equal(await grant.locator("h2").textContent(), "武器+1／+2／+3");
+  assert.equal(await grant.locator(".magic-item-detail__subtitle").textContent(), "武器（任意簡易或軍用武器），非常見（+1）、稀有（+2）或極稀有（+3）");
+  assert.equal(await grant.locator(".magic-item-detail__manual").count(), 0, "items the sheet applies have no manual note");
+  await get().click();
+  assert.equal(await grant.locator(".starting-equipment-error").first().textContent(), "請先選擇基本款。");
+  assert.equal(await grant.count(), 1, "a missing base keeps the dialog open");
+  assert.deepEqual(await page.evaluate(() => Inventory.entries()), [], "a missing base writes nothing");
+  await grant.locator("select").first().selectOption("長劍");
+  assert.deepEqual(await grant.locator(".magic-item-segmented__button").evaluateAll(buttons => buttons.map(button => [button.textContent, button.getAttribute("aria-pressed")])),
+    [["+1", "true"], ["+2", "false"], ["+3", "false"]], "up to four options use segmented buttons");
+  await grant.locator(".magic-item-segmented__button", { hasText: "+2" }).click();
+  await finishGrant();
+  assert.equal(await shop.locator("h2").textContent(), "魔法物品", "getting an item keeps the magic shop open");
+  assert.match(await page.locator(".app-toast__message").last().textContent(), /長劍\+2/u);
+
+  // 沒有自訂項的物品只有效果與取消／獲得；需要手動處理的物品多一行提示。
+  await openGrant("bag-of-holding");
+  assert.equal(await grant.locator("select, .magic-item-segmented, .inventory-stepper").count(), 0, "no options means no controls");
+  await finishGrant();
+  // 速度之靴在第 5 步做成跑團按鈕、警示權杖在第 6 步接上法術，都不再提示；活化盾牌還沒有接，仍提示。
+  await openGrant("animated-shield");
+  assert.equal(await grant.locator(".magic-item-detail__manual").textContent(), "角色卡不會自動套用這項效果，請依說明處理");
+  await grant.getByRole("button", { name: "取消", exact: true }).click();
+  await grant.waitFor({ state: "detached" });
+  // 健康護符的體質已自動計算（effects.abilities），不再有手動處理的提示。
+  await openGrant("amulet-of-health");
+  assert.equal(await grant.locator(".magic-item-detail__manual").count(), 0, "items whose ability score the sheet applies have no manual note");
+  await finishGrant();
+
+  // 治療藥水一般款與法術卷軸沿用既有寫法；高等是魔法物品。
+  // 只有一般款有「網站版｜SRD 版」；按等級時切換鈕跟著出現或消失，高等以上直接顯示譯文。
+  const potionTabs = grant.locator(".spell-version__tab");
+  const choosePotency = label => grant.locator(".magic-item-segmented__button", { hasText: label }).click();
+  const assertOrdinaryPotion = async (message) => {
+    assert.deepEqual(await potionTabs.allTextContents(), ["網站版", "SRD 版"], message);
+    assert.match(await grant.locator(".spell-version__site").innerText(), /50 金幣[\s\S]*飲用者恢復 2d4 \+ 2 生命值/u, `${message}: the website version is shown`);
+    assert.equal(await grant.locator(".magic-item-detail__text").count(), 0, `${message}: no SRD-only text`);
+  };
+  const assertSrdOnlyPotion = async (message) => {
+    assert.equal(await potionTabs.count(), 0, `${message}: no version tabs`);
+    assert.equal(await grant.locator(".spell-version__site").count(), 0, `${message}: no website version`);
+    await grant.locator(".magic-item-detail__text").getByText("恢復的生命值", { exact: true }).first().waitFor();
+    const text = await grant.locator(".magic-item-detail").innerText();
+    assert.match(text, /10d4 \+ 20/u, `${message}: the SRD translation is shown`);
+    assert.equal(/飲用者恢復|50 金幣/u.test(text), false, `${message}: the old description and its price are gone`);
+  };
+  await openGrant("potions-of-healing");
+  await assertOrdinaryPotion("the ordinary potion offers both versions");
+  await finishGrant();
+  await openGrant("potions-of-healing");
+  for (const label of ["高等", "強效", "極效"]) {
+    await choosePotency(label);
+    await assertSrdOnlyPotion(`${label} potion`);
+  }
+  await choosePotency("一般");
+  await assertOrdinaryPotion("going back to the ordinary potion brings the tabs back");
+  await choosePotency("高等");
+  await assertSrdOnlyPotion("switching to greater again");
+  await finishGrant();
+  await openGrant("spell-scroll");
+  assert.deepEqual(await grant.locator("select").first().locator("option").allTextContents(), ["戲法", "1環", "2環", "3環", "4環", "5環"], "scrolls offer cantrips to 5th level");
+  await get().click();
+  assert.deepEqual(await grant.locator(".starting-equipment-error").allTextContents(), ["", "請先選擇法術。"], "a missing spell keeps the dialog open");
+  // 卷軸的網站版只描述戲法與 1 環：選 2 環以上時切換鈕消失、直接顯示譯文，選回來時切換鈕也回來。
+  await grant.locator("select").first().selectOption({ label: "3環" });
+  assert.equal(await potionTabs.count(), 0, "a 3rd-level scroll has no version tabs");
+  assert.equal(await grant.locator(".spell-version__site").count(), 0, "a 3rd-level scroll has no website version");
+  await grant.locator(".magic-item-detail__text").getByText(/卷軸上寫有單一法術的文字/u).first().waitFor();
+  await grant.locator("select").first().selectOption({ label: "1環" });
+  assert.deepEqual(await potionTabs.allTextContents(), ["網站版", "SRD 版"], "going back to a 1st-level scroll brings the tabs back");
+  await grant.locator("select").nth(1).selectOption({ label: "命令術" });
+  await finishGrant();
+
+  // 魔法彈藥多一個數量欄；超過 4 項的選項用下拉，沒選時提示。
+  await openGrant("ammunition-plus");
+  assert.equal(await grant.locator(".inventory-stepper__input").inputValue(), "20", "magic ammunition defaults to 20");
+  await grant.locator("select").first().selectOption("箭矢");
+  await finishGrant();
+  await openGrant("ring-of-resistance");
+  await get().click();
+  assert.equal(await grant.locator(".starting-equipment-error").first().textContent(), "請先選擇傷害類型。", "long option lists use a select with a prompt");
+  await page.keyboard.press("Escape");
+  await grant.waitFor({ state: "detached" });
+
+  const saved = await page.evaluate(() => Inventory.getState().items.map(({ uid, ...entry }) => entry));
+  assert.deepEqual(saved, [
+    { quantity: 1, itemId: "長劍", magic: { id: "weapon-plus", bonus: 2 } },
+    { quantity: 1, magic: { id: "bag-of-holding" } },
+    { quantity: 1, magic: { id: "amulet-of-health" } },
+    { quantity: 1, itemId: "治療藥水" },
+    { quantity: 1, magic: { id: "potions-of-healing", potency: "greater" } },
+    { quantity: 1, itemId: "法術卷軸", name: "命令術法術卷軸", spellId: "command" },
+    { quantity: 20, itemId: "箭矢", magic: { id: "ammunition-plus", bonus: 1 } }
+  ], "granted items use the agreed inventory shape");
+
+  // 切回一般商店時購物清單還在，關閉後恢復一般模式。
+  await toggle.click();
+  const back = await chrome();
+  assert.deepEqual([back.title, back.pressed, back.cartDisabled, back.badge, back.footer], ["商店", "false", false, normal.badge, true], "returning to the shop keeps the cart");
+  await toggle.click();
+  await page.keyboard.press("Escape");
+  await shop.waitFor({ state: "detached" });
+  await page.locator("#equipment-shop-open").click();
+  assert.equal((await chrome()).pressed, "false", "closing the shop leaves magic mode");
+  await emptyCartAndCloseShop(page);
+  await page.evaluate(() => { EquipmentShop.open({ wallet: { id: "validate:magic", readTotal: () => 100, purchaseItems: async () => false } }); });
+  assert.equal(await toggle.count(), 0, "the temporary wallet has no magic mode");
+  await page.keyboard.press("Escape");
+  await shop.waitFor({ state: "detached" });
+
+  // 物品欄的資料規則：標籤不是自訂物品，同 id 同選項同基本款才能合併，重量來自基本款或內容檔。
+  assert.deepEqual(await page.evaluate(() => {
+    const entries = Inventory.entries();
+    const find = label => entries.find(entry => Inventory.getLabel(entry) === label);
+    return {
+      tags: [...document.querySelectorAll("button.inventory-tag")].map(tag => tag.textContent),
+      custom: document.querySelectorAll("button.inventory-tag.is-custom").length,
+      weights: ["長劍+2", "次元袋", "健康護符", "治療藥水（高等）", "箭矢+1"].map(label => Inventory.getUnitWeight(find(label)))
+    };
+  }), {
+    // 次元袋是容器（第 9 步），排在最外層的「容器」分組。
+    tags: ["長劍+2", "健康護符", "治療藥水", "治療藥水（高等）", "命令術法術卷軸", "箭矢+1 ×20", "次元袋"],
+    custom: 0,
+    weights: [3, 5, null, 0.5, 0.05]
+  }, "magic items are labelled by the catalog and are not custom items");
+  assert.deepEqual(await page.evaluate(() => {
+    Inventory.restore({ version: 1, items: [
+      { uid: "a", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } },
+      { uid: "b", itemId: "長劍", quantity: 2, magic: { bonus: 1, id: "weapon-plus", base: "長劍" } },
+      { uid: "c", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } },
+      { uid: "d", itemId: "短劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } },
+      { uid: "e", itemId: "長劍", quantity: 1 },
+      { uid: "f", quantity: 1, magic: { id: "no-such-item", foo: "bar" } }
+    ] });
+    Inventory.update("f", { name: "改名", weight: 9, desc: "x" });
+    return {
+      targets: ["a", "c", "d", "e"].map(uid => Inventory.getMergeTargets(uid).map(entry => entry.uid)),
+      unknown: [Inventory.getLabel(Inventory.getEntry("f")), Inventory.getEntry("f")],
+      merged: Inventory.merge("a", "b") && Inventory.getEntry("b").quantity
+    };
+  }), { targets: [["b"], [], [], []], unknown: ["未知魔法物品", { uid: "f", quantity: 1, magic: { id: "no-such-item", foo: "bar" } }], merged: 3 }, "stacking needs the same id, options and base; unknown items are kept");
+  assert.deepEqual(await page.evaluate(() => [
+    { quantity: 1, magic: { id: "weapon-plus", bonus: 1 } },
+    { quantity: 1, magic: "weapon-plus" },
+    { quantity: 1, magic: { id: "" } },
+    { quantity: 1, magic: { id: "x".repeat(65) } },
+    { quantity: 1, magic: { id: "weapon-plus", bonus: { value: 1 } } },
+    { quantity: 1, magic: { id: "weapon-plus", note: "x".repeat(65) } }
+  ].map(entry => isValidInventoryState({ version: 1, items: [entry] }))), [true, false, false, false, false, false], "the import preflight checks magic types and lengths");
+
+  // 物品視窗：副標、說明、提示與使用；治療藥水有 getHeal() 時是飲用。
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [
+    { uid: "scroll", itemId: "法術卷軸", name: "奧術之手法術卷軸", spellId: "arcane-hand", quantity: 1 },
+    { uid: "scroll1", itemId: "法術卷軸", name: "命令術法術卷軸", spellId: "command", quantity: 1 },
+    { uid: "greater", quantity: 2, magic: { id: "potions-of-healing", potency: "greater" } },
+    { uid: "climbing", quantity: 2, magic: { id: "potion-of-climbing" } },
+    { uid: "amulet", quantity: 1, magic: { id: "amulet-of-health" } },
+    { uid: "lost", quantity: 1, magic: { id: "no-such-item" } },
+    { uid: "bag", quantity: 1, magic: { id: "bag-of-holding" } }
+  ] }));
+  const item = page.locator('.app-dialog[data-variant="inventory-item"]');
+  const openItem = async (uid) => {
+    await page.locator(`[data-inventory-uid="${uid}"]`).click();
+    await item.waitFor();
+  };
+  const closeItem = async () => {
+    await page.keyboard.press("Escape");
+    await item.waitFor({ state: "detached" });
+  };
+  await openItem("amulet");
+  assert.equal(await item.locator(".magic-item-detail__subtitle").textContent(), "奇物，稀有（需同調）");
+  // 健康護符的體質已自動計算，物品視窗不再提示手動處理（提示本身由商店視窗的活化盾牌檢查）。
+  assert.equal(await item.locator(".magic-item-detail__manual").count(), 0, "the inventory dialog has no manual note for an item the sheet applies");
+  assert.deepEqual(await item.locator(".inventory-item-actions .inventory-action-button").allTextContents(), ["裝備", "開始同調"], "non-consumable items have no use button; wearable items that need attunement have the wear and attunement switches");
+  assert.equal(await item.locator(".inventory-item-actions .inventory-action-row__text").textContent(), "需要穿戴並同調才會生效。");
+  await closeItem();
+  await openItem("bag");
+  assert.equal(await item.locator(".inventory-item-actions .inventory-action-button").count(), 0, "non-consumable items without attunement have no buttons");
+  await closeItem();
+  await openItem("greater");
+  assert.equal(await item.getByRole("button", { name: "飲用治療藥水（高等）" }).count(), 1, "potions with a heal roll use the drink flow");
+  assert.equal(await item.locator(".spell-version__tab").count(), 0, "a greater potion in the inventory has no version tabs");
+  await item.locator(".magic-item-detail__text").getByText("恢復的生命值", { exact: true }).first().waitFor();
+  assert.equal((await item.locator(".magic-item-detail").innerText()).includes("飲用者恢復"), false, "a greater potion in the inventory shows only the SRD translation");
+  await closeItem();
+  await openItem("climbing");
+  await item.getByRole("button", { name: "使用攀爬藥水" }).click();
+  assert.equal(await page.evaluate(() => Inventory.getEntry("climbing").quantity), 1, "using a consumable takes one");
+  await closeItem();
+  await openItem("scroll1");
+  assert.match(await item.locator(".spell-version__site").innerText(), /記載一個戲法或 1 環法術/u, "spell scrolls open on the website version");
+  await item.locator('[data-spell-version="srd"]').click();
+  assert.match(await item.locator(".spell-version__srd-body").innerText(), /卷軸上寫有單一法術的文字/u, "the SRD version shows the translation");
+  await closeItem();
+  await openItem("scroll");
+  assert.equal(await item.locator(".spell-version__tab").count(), 0, "scrolls above 1st level have no version tabs");
+  await item.locator(".magic-item-detail__text").getByText(/卷軸上寫有單一法術的文字/u).first().waitFor();
+  await item.getByRole("button", { name: "使用奧術之手法術卷軸" }).click();
+  await item.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(() => Inventory.getEntry("scroll")), null, "the last scroll closes the dialog");
+  await openItem("lost");
+  assert.equal(await item.locator("h2").textContent(), "未知魔法物品");
+  assert.match(await item.locator(".inventory-item-note").first().textContent(), /網站找不到這件魔法物品的資料/u);
+  await closeItem();
+
+  // 治療藥水與法術卷軸的詳情：裝備清單與商店名稱連結都先顯示網站版，切換後是譯文，一般商店的價格與重量不變。
+  assert.deepEqual(await page.evaluate(() => {
+    const pick = name => EQUIPMENT_SHOP_ITEMS.filter(entry => entry.name === name).map(entry => [entry.variant, entry.amount, entry.currency, entry.spellLevel ?? null, entry.weight]);
+    return [pick("治療藥水"), pick("法術卷軸")];
+  }), [[["", 50, "金幣", null, 0.5]], [["戲法", 30, "金幣", 0, 0], ["1 環", 50, "金幣", 1, 0]]], "shop prices, weights and scroll levels are unchanged");
+  await page.locator("#equipment-notes-section details").evaluateAll(nodes => nodes.forEach(node => { node.open = true; }));
+  await page.locator("#equipment-notes-section .equipment-item-link", { hasText: /^治療藥水$/u }).click();
+  const detail = page.locator("#equipment-detail-modal");
+  await detail.locator(".spell-version__site").getByText("飲用者恢復 2d4 + 2 生命值").waitFor();
+  await detail.locator('[data-spell-version="srd"]').click();
+  await detail.locator(".spell-version__srd-body").getByText("恢復的生命值", { exact: true }).first().waitFor();
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => { EquipmentShop.open({ focusName: "治療藥水" }); });
+  await shop.locator(".equipment-shop__detail", { hasText: /^治療藥水$/u }).first().click();
+  const shopDetail = page.locator('.app-dialog[data-variant="equipment-detail"]');
+  await shopDetail.locator(".spell-version__site").getByText("飲用者恢復 2d4 + 2 生命值").waitFor();
+  await shopDetail.locator('[data-spell-version="srd"]').click();
+  await shopDetail.locator(".spell-version__srd-body").getByText("恢復的生命值", { exact: true }).first().waitFor();
+  await shopDetail.getByRole("button", { name: "關閉", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await shop.waitFor({ state: "detached" });
+
+  // 關掉開關只影響取得：已有的魔法物品照常顯示、同調與計算，同調按鈕不看開關；有魔法物品也不會自動打開。
+  await page.evaluate(() => {
+    document.getElementById("gear-notes").value = "";
+    Inventory.restore({ version: 1, items: [{ uid: "ring", quantity: 1, magic: { id: "ring-of-protection" }, attuned: true, worn: true }] });
+  });
+  const ownedMagic = () => page.evaluate(() => [Inventory.getLabel(Inventory.getEntry("ring")), document.getElementById("inventory-attunement").hidden,
+    document.getElementById("attunement-open").hidden, getActiveMagicEffects().ac]);
+  const withSwitchOn = await ownedMagic();
+  await more.click();
+  await magicSwitch.click();
+  await page.keyboard.press("Escape");
+  assert.deepEqual(await ownedMagic(), withSwitchOn, "turning the switch off leaves owned magic items alone");
+  assert.equal(withSwitchOn[1] || withSwitchOn[2], false, "attunement shows regardless of the switch");
+  await page.evaluate(() => Inventory.restore(Inventory.getState()));
+  assert.deepEqual(await acquireState(), [false, "false", "true"], "owning magic items does not turn the switch on");
+  assert.equal(await shopHasMagicButton(), false, "the magic button disappears again when the switch is off");
+  await more.click();
+  await magicSwitch.click();
+  await page.keyboard.press("Escape");
+
+  // 只以文字管理物品：寫進攜帶物品文字，物品欄仍是空的；物品欄滿時提示且不寫入。
+  await page.evaluate(() => {
+    document.getElementById("gear-notes").value = "";
+    Inventory.restore({ version: 1, textOnly: true, items: [] });
+  });
+  assert.deepEqual(await page.evaluate(() => [document.getElementById("inventory-magic-toggle").hidden, document.getElementById("inventory-magic-toggle").getAttribute("aria-pressed")]),
+    [false, "true"], "text-only mode keeps the magic item switch");
+  await page.locator("#equipment-shop-open").click();
+  await toggle.click();
+  await openGrant("bag-of-holding");
+  await finishGrant();
+  assert.deepEqual(await page.evaluate(() => [document.getElementById("gear-notes").value.trim(), Inventory.entries().length]), ["購買物品：次元袋", 0], "text-only mode writes the name into the notes");
+  await page.keyboard.press("Escape");
+  await shop.waitFor({ state: "detached" });
+  await page.evaluate(() => Inventory.restore({ version: 1, items: Array.from({ length: 300 }, (_, index) => ({ uid: `full${index}`, name: `物品${index}`, quantity: 1 })) }));
+  await page.locator("#equipment-shop-open").click();
+  await toggle.click();
+  await openGrant("bag-of-holding");
+  await get().click();
+  await page.locator(".app-toast__message", { hasText: "物品欄最多 300 筆" }).waitFor();
+  assert.deepEqual([await grant.count(), await page.evaluate(() => Inventory.entries().length)], [1, 300], "a full inventory warns and writes nothing");
+  await page.keyboard.press("Escape");
+  await grant.waitFor({ state: "detached" });
+
+  // 窄螢幕：商店與取得視窗不超出畫面。
+  await page.setViewportSize({ width: 375, height: 760 });
+  assert.equal(await shop.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, "narrow magic shop fits");
+  await openGrant("weapon-plus");
+  assert.equal(await grant.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, "narrow grant dialog fits");
+  await page.keyboard.press("Escape");
+  await grant.waitFor({ state: "detached" });
+  await page.keyboard.press("Escape");
+  await shop.waitFor({ state: "detached" });
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
+}
+
+// 魔法物品目錄：件數與基準檔、基本款對得上裝備資料、顯示名稱與固定數值、說明延遲載入。UI 由之後的階段接上。
+async function validateMagicItemCatalog(page) {
+  const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, "magic-item-id-baseline.json"), "utf8"));
+  const result = await page.evaluate(async () => {
+    const catalog = window.MagicItemCatalog;
+    const all = catalog.getAll();
+    const equipment = [...weapons_simple_melee, ...weapons_simple_ranged, ...weapons_martial_melee, ...weapons_martial_ranged, ...armors, ...shield].map(item => item["名稱"]);
+    const known = new Set([...equipment, ...Object.keys(EQUIPMENT_ENGLISH_NAMES)]);
+    const textBefore = typeof globalThis.magicItemText;
+    const text = await catalog.loadText();
+    return {
+      ids: all.map(item => item.id).sort(),
+      categories: catalog.getCategories().map(category => [category.id, category.count, category.groups.map(group => [group.id, group.count])]),
+      badBases: all.flatMap(item => catalog.getBaseChoices(item.id).filter(name => !known.has(name)).map(name => `${item.id}:${name}`)),
+      missingBases: all.filter(item => ["weapon", "armor", "staff"].includes(item.category) && !catalog.getBaseChoices(item.id).length).map(item => item.id),
+      textBefore,
+      missingText: all.filter(item => !text[item.id]?.html).map(item => item.id),
+      rawMarkup: Object.keys(text).filter(id => /\*\*|<script|&lt;/.test(text[id].html)),
+      english: Object.keys(text).filter(id => /[A-Za-z]{4,}/.test(text[id].html.replace(/<[^>]*>/g, "").replace(/&[a-z]+;/g, ""))),
+      unknownText: await catalog.getText("no-such-item"),
+      sunBlade: (await catalog.getText("sun-blade")).html.includes("<em>光輝之刃。</em>"),
+      names: [
+        catalog.getDisplayName("weapon-plus", { base: "長劍", bonus: 1 }),
+        catalog.getDisplayName("armor-plus", { base: "全身板甲", bonus: 3 }),
+        catalog.getDisplayName("shield-plus", { base: "盾牌", bonus: 2 }),
+        catalog.getDisplayName("wand-of-the-war-mage-plus", { bonus: 2 }),
+        catalog.getDisplayName("potions-of-healing", { potency: "normal" }),
+        catalog.getDisplayName("potions-of-healing", { potency: "greater" }),
+        catalog.getDisplayName("flame-tongue", { base: "長劍" }),
+        catalog.getDisplayName("sun-blade", { base: "長劍" }),
+        catalog.getDisplayName("ring-of-resistance", { damageType: "fire" }),
+        catalog.getDisplayName("weapon-plus", { bonus: 9 }),
+        catalog.getDisplayName("no-such-item", {})
+      ],
+      effects: [
+        catalog.getEffects("weapon-plus", { base: "長劍", bonus: 2 }),
+        catalog.getEffects("weapon-plus", {}),
+        catalog.getEffects("armor-plus", { base: "皮甲", bonus: 1 }),
+        catalog.getEffects("mace-of-smiting", { base: "硬頭錘" }),
+        catalog.getEffects("luck-blade", { base: "長劍" }),
+        catalog.getEffects("bracers-of-defense"),
+        catalog.getEffects("staff-of-power"),
+        catalog.getEffects("ioun-stone", { kind: "protection" }),
+        catalog.getEffects("ioun-stone", { kind: "agility" }),
+        catalog.getEffects("arrow-catching-shield", { base: "盾牌" })
+      ],
+      bases: [
+        catalog.getBaseChoices("sun-blade"),
+        catalog.getBaseChoices("staff-of-power"),
+        catalog.getBaseChoices("rod-of-lordly-might"),
+        catalog.getBaseChoices("cloak-of-protection"),
+        catalog.getBaseChoices("mithral-armor").includes("獸皮甲"),
+        catalog.getBaseChoices("defender").includes("長弓")
+      ],
+      rarity: [catalog.getRarity("armor-plus", { bonus: 3 }), catalog.getRarity("potions-of-healing", {}), catalog.getRarity("sun-blade"), catalog.getRarityLabel("very-rare")],
+      heal: [catalog.getHeal("potions-of-healing", { potency: "supreme" }), catalog.getHeal("potions-of-healing", {})],
+      subtitles: [catalog.getSubtitle("defender"), catalog.getSubtitle("dwarven-plate"), catalog.getSubtitle("weapon-plus"), catalog.getSubtitle("staff-of-power"), catalog.getSubtitle("hat-of-many-spells")]
+    };
+  });
+  assert.deepEqual(result.ids, baseline.items, "magic item ids match the baseline");
+  assert.equal(result.ids.length, 258, "all SRD magic items are present");
+  assert.deepEqual(result.categories, [
+    ["weapon", 33, []], ["armor", 19, []], ["potion", 24, []], ["ring", 22, []], ["scroll", 1, []], ["rod", 7, []], ["staff", 12, []], ["wand", 13, []],
+    ["wondrous", 127, [["wearable", 57], ["container", 11], ["consumable", 11], ["tool", 27], ["book", 7], ["curio", 14]]]
+  ], "magic item categories and wondrous groups");
+  assert.deepEqual(result.badBases, [], "magic item base names exist in equipment data");
+  assert.deepEqual(result.missingBases, [], "weapons, armor and staves have a base item");
+  assert.equal(result.textBefore, "undefined", "magic item text is loaded on demand");
+  assert.deepEqual(result.missingText, [], "every magic item has text");
+  assert.deepEqual(result.rawMarkup, [], "magic item text is rendered to HTML at build time");
+  assert.deepEqual(result.english, [], "magic item text has no English body text");
+  assert.equal(result.unknownText, null);
+  assert.equal(result.sunBlade, true, "markdown emphasis becomes HTML");
+  assert.deepEqual(result.names, ["長劍+1", "全身板甲+3", "盾牌+2", "戰法魔杖+2", "治療藥水", "治療藥水（高等）", "焰舌（長劍）", "陽炎劍", "抗性戒指（火焰）", "武器+1／+2／+3", ""], "magic item display names");
+  assert.deepEqual(result.effects, [
+    { attack: 2, damage: 2 }, {}, { ac: 1 }, { attack: 1, damage: 1 }, { attack: 1, damage: 1, saves: 1 }, { ac: 2, condition: "unarmored" },
+    { attack: 2, damage: 2, ac: 2, saves: 2, spellAttack: 2, condition: "held" }, { ac: 1 }, { abilities: { dex: { bonus: 2, max: 20 } } }, {}
+  ], "magic item fixed effects; conditional bonuses stay in the text");
+  assert.deepEqual(result.bases, [["長劍"], ["長棍"], ["硬頭錘"], [], false, false], "magic item base choices");
+  assert.deepEqual(result.rarity, ["legendary", null, "rare", "極稀有"]);
+  assert.deepEqual(result.heal, ["10d4 + 20", null]);
+  assert.deepEqual(result.subtitles, ["武器（任意近戰武器），傳說（需同調）", "護甲（半身板甲或全身板甲），極稀有", "武器（任意簡易或軍用武器），非常見（+1）、稀有（+2）或極稀有（+3）", "法杖，極稀有（需由術士、契術師或法師同調）", "奇物，極稀有（需由法師同調）"], "magic item subtitles");
 }
 
 // 物品欄：目錄 ID 與套組資料、舊文字整理、標籤與容器、新增／調整／刪除、負重，以及只列物品欄的裝備下拉。
@@ -1025,6 +1532,777 @@ async function validateInventory(page) {
   }
   await validateInventoryItemActions(page);
   await validateInventoryStacks(page);
+  await validateMagicItemCharges(page);
+  await validateItemSpells(page);
+  await validateMagicAmmunition(page);
+  await validateMagicContainers(page);
+}
+
+// 魔法容器（內容檔 container 詞）：次元袋等是容器、舊存檔一筆多件拆開、異次元容器裡（含更深層）不算重量、吞噬袋照算、
+// 兩個異次元容器互放只提示不刪除、箭袋裡的裝備彈藥照常扣；吞噬袋的隱藏計時不經 DiceRoller、到期跳視窗並移除內容物。
+async function validateMagicContainers(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  const data = await page.evaluate(() => {
+    applyStateObject({ class: "fighter", level: "5", mainHand: "長弓", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "bow", itemId: "長弓", quantity: 1 },
+      { uid: "bh", quantity: 2, magic: { id: "bag-of-holding" } },
+      { uid: "hh", quantity: 1, magic: { id: "handy-haversack" } },
+      { uid: "ph", quantity: 1, magic: { id: "portable-hole" } },
+      { uid: "eq", quantity: 1, magic: { id: "efficient-quiver" } },
+      { uid: "bd", quantity: 1, magic: { id: "bag-of-devouring" } },
+      { uid: "tricks", quantity: 1, magic: { id: "bag-of-tricks", color: "gray" } },
+      { uid: "bp", itemId: "背包", quantity: 1, in: "bh" },
+      { uid: "rope", itemId: "繩索", quantity: 1, in: "bp" },
+      { uid: "arrows", itemId: "箭矢", quantity: 2, in: "eq", ammo: true },
+      { uid: "torch", itemId: "火把", quantity: 3, in: "bd" }
+    ] } });
+    const unit = uid => Inventory.getUnitWeight(Inventory.getEntry(uid));
+    const outer = ["bow", "bh", "hh", "ph", "eq", "bd", "tricks", "torch"];
+    const result = {
+      containers: ["bh", "hh", "ph", "eq", "bd", "tricks", "bow"].map(uid => Inventory.isContainer(Inventory.getEntry(uid))),
+      traits: ["bh", "eq", "bd", "tricks"].map(uid => Inventory.getMagicContainer(Inventory.getEntry(uid))),
+      split: Inventory.entries().filter(entry => entry.magic?.id === "bag-of-holding").map(entry => [entry.quantity, entry.uid === "bh"]),
+      placed: ["bp", "rope", "arrows", "torch"].map(uid => Inventory.getEntry(uid).in),
+      targets: Inventory.getContainerTargets("rope").length,
+      weight: Inventory.getWeight(),
+      unweighted: Inventory.entries().filter(entry => !Number.isFinite(Inventory.getUnitWeight(entry))).map(entry => entry.magic?.id || entry.itemId),
+      inner: ["bp", "rope", "arrows"].map(uid => unit(uid) > 0),
+      nestingBefore: Inventory.getExtradimensionalNesting()
+    };
+    // 算重量的：最外層的物品、第二個次元袋與吞噬袋裡的火把；次元袋裡的背包、繩索與箭袋裡的箭矢不算。
+    const counted = [...outer, Inventory.entries().find(entry => entry.magic?.id === "bag-of-holding" && entry.uid !== "bh").uid];
+    result.expected = counted.reduce((sum, uid) => sum + (unit(uid) || 0) * Inventory.getEntry(uid).quantity, 0);
+    // 隔著背包也算放進異次元空間；吞噬袋不算異次元容器。
+    Inventory.update("hh", { in: "bp" });
+    Inventory.update("eq", { in: "bd" });
+    result.nesting = Inventory.getExtradimensionalNesting();
+    result.kept = ["hh", "bh"].map(uid => Boolean(Inventory.getEntry(uid)));
+    Inventory.update("eq", { in: "" });
+    // 箭袋裡的裝備彈藥照常扣。
+    result.ammo = Inventory.useAmmo()?.quantity;
+    Inventory.restore(Inventory.getState());
+    result.roundTrip = ["bp", "rope", "hh", "torch"].map(uid => Inventory.getEntry(uid)?.in);
+    result.emptied = Inventory.emptyContainer("bh");
+    result.afterEmpty = ["bp", "rope", "hh", "bh"].map(uid => Boolean(Inventory.getEntry(uid)));
+    result.emptyAgain = Inventory.emptyContainer("bh");
+    return result;
+  });
+  assert.deepEqual(data.containers, [true, true, true, true, true, false, false], "bags with the container word are containers; the bag of tricks is not");
+  assert.deepEqual(data.traits, [{ extradimensional: true }, { extradimensional: true }, { devour: "2d6" }, null], "container traits come from the content file");
+  assert.deepEqual(data.split, [[1, true], [1, false]], "an old stack of two bags of holding loads as two single containers");
+  assert.deepEqual(data.placed, ["bh", "bp", "eq", "bd"], "items can sit in the magic containers");
+  assert.ok(data.targets >= 6, "magic containers are offered as places");
+  assert.deepEqual(data.unweighted, ["portable-hole", "bag-of-devouring", "bag-of-tricks"], "only bags without a listed weight are unknown");
+  assert.deepEqual(data.inner, [true, true, true], "the items inside the bags have their own weight");
+  assert.deepEqual(data.weight, { weight: Math.round(data.expected * 100) / 100, unknown: 3 },
+    "items inside extradimensional containers (also inside a backpack in them) weigh nothing, the bags themselves and the devouring bag's contents still count");
+  assert.deepEqual(data.nestingBefore, [], "no nesting at first");
+  assert.deepEqual(data.nesting, [{ inner: "hh", outer: "bh" }], "a haversack in a backpack in a bag of holding is reported; the devouring bag is not extradimensional");
+  assert.deepEqual(data.kept, [true, true], "nesting never deletes the bags");
+  assert.equal(data.ammo, 1, "equipped ammunition in the efficient quiver is still used");
+  assert.deepEqual(data.roundTrip, ["bh", "bp", "bp", "bd"], "containment in magic containers survives a save round trip");
+  assert.equal(data.emptied, "背包（便利袋、繩索）", "emptying returns what was inside (in inventory order)");
+  assert.deepEqual(data.afterEmpty, [false, false, false, true], "emptying removes everything inside but keeps the bag");
+  assert.equal(data.emptyAgain, "", "an empty container returns nothing");
+
+  // 介面：異次元容器的說明、互放提示（載入時不提示）。
+  await page.evaluate(() => {
+    AppDialog.dismissToasts();
+    Inventory.restore({ version: 1, items: [
+      { uid: "bh", quantity: 1, magic: { id: "bag-of-holding" } },
+      { uid: "hh", quantity: 1, magic: { id: "handy-haversack" }, in: "bh" },
+      { uid: "bd", quantity: 1, magic: { id: "bag-of-devouring" } },
+      { uid: "ph", quantity: 1, magic: { id: "portable-hole" } }
+    ] });
+  });
+  assert.equal(await page.locator(".app-toast", { hasText: "摧毀兩件物品" }).count(), 0, "loading nested bags shows no warning");
+  await page.evaluate(() => InventoryUI.openItemDialog("bh"));
+  const bagDialog = page.locator('.app-dialog[data-variant="inventory-item"]');
+  await bagDialog.waitFor();
+  assert.match(await bagDialog.locator(".inventory-item-note").first().innerText(), /內含 1 項物品；異次元空間裡的物品不算重量，只算容器本身。/u, "the bag of holding explains its weight");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => InventoryUI.openItemDialog("bd"));
+  await bagDialog.waitFor();
+  assert.match(await bagDialog.locator(".inventory-item-note").first().innerText(), /可以放入其他物品；容器不會減輕內容物的重量。/u, "the devouring bag reads like a plain container");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => Inventory.update("ph", { in: "bh" }));
+  const warning = page.locator(".app-toast", { hasText: "把便攜式次元洞放進次元袋會立即摧毀兩件物品" });
+  await warning.waitFor();
+  assert.match(await warning.innerText(), /角色卡不會自動刪除，請和 DM 確認後自行處理。/u, "moving one extradimensional container into another only warns");
+  assert.equal(await page.evaluate(() => Inventory.entries().length), 4, "nothing is deleted");
+  await page.evaluate(() => { Inventory.update("bh", { quantity: 1 }); AppDialog.dismissToasts(); });
+  assert.equal(await page.locator(".app-toast", { hasText: "摧毀兩件物品" }).count(), 0, "an unrelated change does not repeat the warning");
+
+  // 吞噬袋：放進東西就悄悄計時（Math.random 固定為 0 → 2d6 = 2 分鐘），不進擲骰歷史、不提示；時鐘過了到期時間、回到頁面時跳視窗。
+  // 到期的彩蛋（使用者設計）：放棄就移除；伸手搶救 50% 搶回（Math.random ≥ 0.5）、否則被吞，掙脫要擲運動（力量）1d20＋運動欄，
+  // 擲骰功能關閉也播放動畫；15 以上爬出來，低於 15 亮暗反轉並跳對應的視窗。亂數都換成可控的值，d20 由 crypto.getRandomValues 控制。
+  const devourDialog = page.locator(".app-dialog").last();
+  const history = () => page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1") || "[]").map(entry => entry.label || ""));
+  await page.evaluate(() => {
+    window.__devourReal = { now: Date.now, random: Math.random, crypto: crypto.getRandomValues };
+    window.__devourOffset = 0;
+    window.__devourRandom = 0;
+    window.__devourD20 = 10;
+    Date.now = () => window.__devourReal.now() + window.__devourOffset;
+    Math.random = () => window.__devourRandom;
+    crypto.getRandomValues = (array) => { array[0] = window.__devourD20 - 1; return array; };
+    document.documentElement.dataset.theme = "light";
+    DiceRoller.setEnabled(false);
+  });
+  const fill = () => page.evaluate(() => {
+    window.__devourRandom = 0;
+    Inventory.add([{ itemId: "背包" }], { into: "bd" });
+    const pack = Inventory.childrenOf("bd")[0].uid;
+    Inventory.add([{ itemId: "火把", quantity: 2 }], { into: pack });
+  });
+  const advance = seconds => page.evaluate((value) => {
+    window.__devourOffset += value * 1000;
+    document.dispatchEvent(new Event("visibilitychange"));
+    return [Inventory.descendantsOf("bd").length, document.documentElement.classList.contains("app-dialog-open")];
+  }, seconds);
+  const expire = async () => {
+    assert.deepEqual(await advance(119), [2, false], "nothing happens and nothing is shown before the hidden time is up");
+    assert.deepEqual(await advance(2), [2, true], "the dialog opens when the clock passes the hidden 2d6 minutes; nothing is removed yet");
+    await devourDialog.filter({ hasText: "吞噬袋吃掉了你的道具！" }).waitFor();
+  };
+  const historyBefore = await history();
+  try {
+    // 放棄：移除；到期視窗不能關掉，只有兩個按鈕。
+    await fill();
+    await expire();
+    assert.match(await devourDialog.innerText(), /吞噬袋吃掉了你的道具！[\s\S]*背包（火把 ×2）/u, "the dialog lists everything that was eaten");
+    assert.deepEqual(await devourDialog.locator(".app-dialog__button").allTextContents(), ["放棄", "伸手搶救"], "the dialog offers 放棄 and 伸手搶救");
+    assert.equal(await devourDialog.locator(".app-dialog__close").count(), 0, "the dialog has no close button");
+    await page.keyboard.press("Escape");
+    assert.equal(await devourDialog.isVisible(), true, "Escape does not dismiss the choice");
+    await devourDialog.getByRole("button", { name: "放棄" }).click();
+    assert.deepEqual(await page.evaluate(() => [Inventory.descendantsOf("bd").length, Boolean(Inventory.getEntry("bd"))]), [0, true], "giving up removes the eaten items and keeps the bag");
+    assert.deepEqual(await advance(3600), [0, false], "an empty bag does not time");
+
+    // 伸手搶救、搶回：物品放回身上，袋子空了不再計時。
+    await fill();
+    await expire();
+    await page.evaluate(() => { window.__devourRandom = 0.7; });
+    await devourDialog.getByRole("button", { name: "伸手搶救" }).click();
+    const rescued = devourDialog.filter({ hasText: "你搶回了道具！" });
+    await rescued.waitFor();
+    assert.deepEqual(await page.evaluate(() => [
+      Inventory.descendantsOf("bd").length,
+      Inventory.entries().filter(entry => !entry.in && entry.itemId === "背包").length,
+      Inventory.entries().filter(entry => entry.itemId === "火把").map(entry => Inventory.getLabel(Inventory.getEntry(entry.in)))
+    ]), [0, 1, ["背包"]], "the rescued items go back on the character, the backpack still holding its torches");
+    await rescued.getByRole("button").last().click();
+    assert.deepEqual(await advance(3600), [0, false], "the emptied bag stops timing");
+    await page.evaluate(() => Inventory.remove(Inventory.entries().find(entry => !entry.in && entry.itemId === "背包").uid, { keepContents: false }));
+
+    // 被吞：只有「掙脫逃命」，按下後擲骰視窗播放動畫（擲骰功能關閉也播放）。
+    const swallow = async ({ athletics, d20 }) => {
+      await fill();
+      await expire();
+      await page.evaluate(([value, roll]) => { document.getElementById("skill-運動").value = value; window.__devourD20 = roll; window.__devourRandom = 0.2; }, [athletics, d20]);
+      await devourDialog.getByRole("button", { name: "伸手搶救" }).click();
+      const trapped = devourDialog.filter({ hasText: "吸力把你整個人拖了進去" });
+      await trapped.waitFor();
+      assert.deepEqual(await trapped.locator(".app-dialog__button").allTextContents(), ["掙脫逃命"], "being swallowed leaves only 掙脫逃命");
+      assert.equal(await trapped.locator(".app-dialog__close").count(), 0, "the swallowed dialog cannot be closed");
+      await trapped.getByRole("button", { name: "掙脫逃命" }).click();
+      await page.locator("#dice-roller-modal.is-open #dice-roller-stage .dice-roller-animation").waitFor();
+      assert.equal(await page.evaluate(() => DiceRoller.isEnabled()), false, "the animation plays even with the dice roller turned off");
+    };
+    // 運動欄空白（當 0）、d20 = 14 → 14 < 15：亮色變暗色、「你  掛  了」。
+    await swallow({ athletics: "", d20: 14 });
+    await page.locator(".app-toast__message", { hasText: /^運動（力量）檢定：14$/u }).waitFor({ timeout: 6000 });
+    const dead = devourDialog.filter({ hasText: "掛" });
+    await dead.waitFor({ timeout: 6000 });
+    assert.equal(await dead.locator(".app-dialog__body p").last().innerText(), "你  掛  了", "the light-mode failure keeps the spaces of 你  掛  了");
+    assert.deepEqual(await page.evaluate(() => [
+      document.documentElement.dataset.theme, dndStorage.getItem("dnd.theme.v1"), Inventory.descendantsOf("bd").length,
+      document.getElementById("dice-roller-modal").classList.contains("is-open")
+    ]), ["dark", "dark", 0, false], "a check below 15 switches light to dark and remembers it like the toggle, removes the items and closes the dice window");
+    await dead.getByRole("button").last().click();
+
+    // 運動 +3、d20 = 12 → 15：爬出來，物品仍被吃掉，亮暗不變。
+    await swallow({ athletics: "+3", d20: 12 });
+    await page.locator(".app-toast__message", { hasText: /^運動（力量）檢定：12 \+ 3 = 15$/u }).waitFor({ timeout: 6000 });
+    const escaped = devourDialog.filter({ hasText: "你驚險地從袋口爬了出來，道具仍是被吃掉了。" });
+    await escaped.waitFor({ timeout: 6000 });
+    assert.deepEqual(await page.evaluate(() => [document.documentElement.dataset.theme, Inventory.descendantsOf("bd").length]), ["dark", 0], "15 or more escapes; the items are still gone and the theme stays");
+    await escaped.getByRole("button").last().click();
+
+    // 運動欄不是數字（當 0）、d20 = 5：暗色變亮色、靈魂之河。
+    await swallow({ athletics: "abc", d20: 5 });
+    await page.locator(".app-toast__message", { hasText: /^運動（力量）檢定：5$/u }).waitFor({ timeout: 6000 });
+    const river = devourDialog.filter({ hasText: "你不知身處何處，四周都是亮光，啊，那是靈魂之河..." });
+    await river.waitFor({ timeout: 6000 });
+    assert.deepEqual(await page.evaluate(() => [document.documentElement.dataset.theme, dndStorage.getItem("dnd.theme.v1")]), ["light", "light"], "a failure in dark mode switches to light");
+    await river.getByRole("button").last().click();
+    // 計時不進擲骰紀錄；掙脫的三次檢定照常進紀錄。
+    const after = await history();
+    assert.deepEqual(after.slice(0, 3), ["運動（力量）檢定", "運動（力量）檢定", "運動（力量）檢定"], "each escape roll is in the dice history");
+    assert.equal(after.length, Math.min(historyBefore.length + 3, 66), "the hidden timer adds nothing to the dice history");
+    // 自訂物品不吃（使用者決定）：袋子裡只有自訂物品時不計時。到期明細照樣列出全部（自訂物品也列）；玩家選擇時才改物品欄——
+    // 自訂物品連同裡面的東西回到身上（描述保留）、其餘移除；放棄與被吞的結局視窗之後才跳「……吞噬袋似乎不喜歡這個味道，把…吐了出來。」，搶回不跳。
+    const spatText = "……吞噬袋似乎不喜歡這個味道，把日記吐了出來。";
+    const topCustom = () => page.evaluate(() => Inventory.entries().filter(entry => !entry.in && Inventory.isCustom(entry)).map(entry => [entry.name, entry.desc || ""]));
+    const clearCustom = () => page.evaluate(() => Inventory.entries().filter(entry => !entry.in && Inventory.isCustom(entry)).forEach(entry => Inventory.remove(entry.uid, { keepContents: false })));
+    await page.evaluate(() => {
+      window.__devourRandom = 0;
+      Inventory.add([{ name: "日記", desc: "給妹妹的信" }], { into: "bd" });
+    });
+    assert.deepEqual(await advance(3600), [1, false], "a bag holding only custom items does not time");
+    await page.evaluate(() => {
+      Inventory.add([{ name: "自訂背包", container: true }], { into: "bd" });
+      const pack = Inventory.childrenOf("bd").find(entry => entry.name === "自訂背包").uid;
+      Inventory.add([{ itemId: "火把" }, { name: "地圖" }], { into: pack });
+      Inventory.add([{ itemId: "繩索" }], { into: "bd" });
+      Inventory.add([{ itemId: "背包" }], { into: "bd" });
+      const bag = Inventory.childrenOf("bd").find(entry => entry.itemId === "背包").uid;
+      Inventory.add([{ name: "筆記" }], { into: bag });
+    });
+    assert.deepEqual(await advance(119), [7, false], "adding catalog items starts the hidden timer");
+    assert.deepEqual(await advance(2), [7, true], "at expiry nothing is moved yet");
+    const mixed = devourDialog.filter({ hasText: "吞噬袋吃掉了你的道具！" });
+    await mixed.waitFor();
+    assert.deepEqual(await mixed.locator(".app-dialog__body p").allTextContents(), ["吞噬袋吃掉了你的道具！", "日記、自訂背包（火把、地圖）、繩索、背包（筆記）"],
+      "the expiry dialog lists everything, custom items too, and says nothing about spitting");
+    await mixed.getByRole("button", { name: "放棄" }).click();
+    const spatAll = devourDialog.filter({ hasText: "……吞噬袋似乎不喜歡這個味道，把日記、自訂背包（火把、地圖）、筆記吐了出來。" });
+    await spatAll.waitFor();
+    assert.deepEqual(await page.evaluate(() => {
+      const top = Inventory.entries().filter(entry => !entry.in && Inventory.isCustom(entry));
+      const pack = top.find(entry => entry.name === "自訂背包");
+      return {
+        bag: Inventory.descendantsOf("bd").length,
+        top: top.map(entry => [entry.name, entry.desc || ""]),
+        pack: Inventory.childrenOf(pack.uid).map(entry => Inventory.getLabel(entry)),
+        eaten: Inventory.entries().filter(entry => ["繩索", "背包"].includes(entry.itemId)).length
+      };
+    }), { bag: 0, top: [["日記", "給妹妹的信"], ["自訂背包", ""], ["筆記", ""]], pack: ["火把", "地圖"], eaten: 0 },
+    "giving up removes only the catalog items; custom items are back on the character with their notes, a custom container keeps everything inside it");
+    await spatAll.getByRole("button").last().click();
+    assert.deepEqual(await advance(3600), [0, false], "the emptied bag does not time");
+    await clearCustom();
+
+    // 被吞的兩種結局：結局視窗先出現（自訂物品此時已回到身上），關掉後才跳吐出來。
+    const mixedSwallow = async (d20) => {
+      await page.evaluate(() => { window.__devourRandom = 0; Inventory.add([{ name: "日記", desc: "給妹妹的信" }, { itemId: "繩索" }], { into: "bd" }); });
+      await advance(121);
+      await devourDialog.filter({ hasText: "日記、繩索" }).waitFor();
+      await page.evaluate((roll) => { document.getElementById("skill-運動").value = ""; window.__devourD20 = roll; window.__devourRandom = 0.2; }, d20);
+      await devourDialog.getByRole("button", { name: "伸手搶救" }).click();
+      await devourDialog.getByRole("button", { name: "掙脫逃命" }).click();
+    };
+    await mixedSwallow(18);
+    const crawled = devourDialog.filter({ hasText: "你驚險地從袋口爬了出來" });
+    await crawled.waitFor({ timeout: 8000 });
+    assert.equal(await page.locator(".app-dialog", { hasText: "吐了出來" }).count(), 0, "the spit dialog waits until the escape ending is closed");
+    assert.deepEqual(await topCustom(), [["日記", "給妹妹的信"]], "the custom item is already back on the character while the ending shows");
+    await crawled.getByRole("button").last().click();
+    const spatEscape = devourDialog.filter({ hasText: spatText });
+    await spatEscape.waitFor();
+    await spatEscape.getByRole("button").last().click();
+    await clearCustom();
+
+    const themeBefore = await page.evaluate(() => document.documentElement.dataset.theme);
+    await mixedSwallow(2);
+    const ending = devourDialog.filter({ hasText: themeBefore === "dark" ? "靈魂之河" : "掛" });
+    await ending.waitFor({ timeout: 8000 });
+    assert.equal(await page.locator(".app-dialog", { hasText: "吐了出來" }).count(), 0, "the spit dialog waits until 你  掛  了 / the soul river is closed");
+    await ending.getByRole("button").last().click();
+    const spatDead = devourDialog.filter({ hasText: spatText });
+    await spatDead.waitFor();
+    await spatDead.getByRole("button").last().click();
+    assert.deepEqual([await topCustom(), await page.evaluate(() => Inventory.descendantsOf("bd").length)], [[["日記", "給妹妹的信"]], 0], "after a failed escape the custom item is back and the rest is gone");
+    await clearCustom();
+    // 亮暗翻回原本的樣子，後面的檢查不受影響。
+    if (await page.evaluate(() => document.documentElement.dataset.theme) !== themeBefore) await page.evaluate(() => document.getElementById("color-mode-toggle").click());
+
+    // 搶回：全部拿回來（自訂物品也是），不跳吐出來。
+    await page.evaluate(() => { window.__devourRandom = 0; Inventory.add([{ name: "日記", desc: "給妹妹的信" }, { itemId: "繩索" }], { into: "bd" }); });
+    await advance(121);
+    await page.evaluate(() => { window.__devourRandom = 0.9; });
+    await devourDialog.getByRole("button", { name: "伸手搶救" }).click();
+    const rescuedMixed = devourDialog.filter({ hasText: "你搶回了道具！" });
+    await rescuedMixed.waitFor();
+    await rescuedMixed.getByRole("button").last().click();
+    assert.equal(await page.locator(".app-dialog", { hasText: "吐了出來" }).count(), 0, "a rescue never shows the spit dialog");
+    assert.deepEqual([await topCustom(), await page.evaluate(() => Inventory.entries().filter(entry => !entry.in && entry.itemId === "繩索").length)], [[["日記", "給妹妹的信"]], 1], "a rescue brings back everything");
+    await clearCustom();
+    await page.evaluate(() => Inventory.entries().filter(entry => !entry.in && entry.itemId === "繩索").forEach(entry => Inventory.remove(entry.uid)));
+  } finally {
+    await page.evaluate(() => {
+      Date.now = window.__devourReal.now;
+      Math.random = window.__devourReal.random;
+      crypto.getRandomValues = window.__devourReal.crypto;
+      delete window.__devourReal;
+      document.getElementById("skill-運動").value = "";
+    });
+  }
+  assert.equal(await page.evaluate(() => Inventory.getExtradimensionalNesting().length), 2, "the devouring bag leaves the other bags (the haversack and the hole in the bag of holding) alone");
+}
+
+// 魔法物品的次數池：存檔整理（滿的不記、不存在的池拿掉）、不合併、拆出的那件是滿的、匯入預檢，以及物品詳情的 −／＋ 與恢復按鈕。
+async function validateMagicItemCharges(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  const data = await page.evaluate(() => {
+    applyStateObject({ class: "fighter", level: "5", mainHand: "", offHand: "", armor: "", __inventory: { version: 1, items: [] } });
+    DiceRoller.setEnabled(false);
+    Inventory.restore({ version: 1, items: [
+      { uid: "wand", quantity: 1, magic: { id: "wand-of-fireballs" }, charges: { charges: 3, bogus: 1 } },
+      { uid: "full", quantity: 1, magic: { id: "wand-of-fireballs" }, charges: { charges: 99 } },
+      { uid: "pair", quantity: 2, magic: { id: "wand-of-fireballs" }, charges: { charges: 0 } },
+      { uid: "plain", quantity: 1, itemId: "長劍", charges: { charges: 1 } },
+      { uid: "lost", quantity: 1, magic: { id: "no-such-item" }, charges: { charges: 4 } }
+    ] });
+    const charges = uid => Inventory.getEntry(uid).charges;
+    const result = {
+      cleaned: [charges("wand"), charges("full"), charges("plain"), charges("lost")],
+      pools: Inventory.getCharges(Inventory.getEntry("wand")).map(pool => [pool.id, pool.label, pool.left, pool.max, pool.recover, pool.amount]),
+      mergeTargets: Inventory.getMergeTargets("wand").length,
+      merge: Inventory.merge("full", "wand")
+    };
+    const part = Inventory.split("pair", 1);
+    result.split = [charges("pair"), charges(part)];
+    result.set = [Inventory.setCharges("wand", "charges", -4), charges("wand"), Inventory.setCharges("wand", "charges", 70), charges("wand"), Inventory.setCharges("wand", "nope", 1)];
+    result.saved = Inventory.getState().items.find(item => item.uid === "pair").charges;
+    result.preflight = [{ charges: { charges: 3 } }, { charges: { charges: 100 } }, { charges: { charges: 1.5 } }, { charges: [] }, { charges: "3" }]
+      .map(extra => isValidInventoryState({ version: 1, items: [{ quantity: 1, magic: { id: "wand-of-fireballs" }, ...extra }] }))
+      .concat(isValidInventoryState({ version: 1, items: [{ quantity: 1, itemId: "長劍", charges: { charges: 1 } }] }));
+    const before = Inventory.entries().length;
+    Inventory.add([{ magic: { id: "wand-of-fireballs" } }, { magic: { id: "wand-of-fireballs" } }]);
+    result.added = Inventory.entries().length - before;
+    const d3 = Array.from({ length: 30 }, () => DiceRoller.rollExpression("1d3", { label: "d3", force: true, notify: false })?.total);
+    result.d3 = [Math.min(...d3), Math.max(...d3), DiceRoller.canRollExpression("1d30"), DiceRoller.canRollExpression("1d3 + 1")];
+    return result;
+  });
+  assert.deepEqual(data.cleaned, [{ charges: 3 }, undefined, undefined, { charges: 4 }], "charges keep known pools below max; full pools, plain items and unknown pools are dropped; unknown items keep theirs");
+  assert.deepEqual(data.pools, [["charges", "充能", 3, 7, "dawn", "1d6 + 1"]], "getCharges reads the content pools with the remaining count");
+  assert.equal(data.mergeTargets, 0, "items with pools have no merge targets");
+  assert.equal(data.merge, false, "items with pools never merge");
+  assert.deepEqual(data.split, [{ charges: 0 }, undefined], "the split-off unit is full; the current one keeps its charges");
+  assert.deepEqual(data.set, [0, { charges: 0 }, 7, undefined, null], "setCharges clamps to 0..max, drops full pools and rejects unknown pools");
+  assert.deepEqual(data.saved, { charges: 0 }, "remaining charges are saved on the entry");
+  assert.deepEqual(data.preflight, [true, false, false, false, false, false], "the import preflight checks charges (integers 0..99, only on magic items)");
+  assert.equal(data.added, 2, "two wands from the shop become two separate tags");
+  assert.deepEqual(data.d3, [1, 3, false, true], "DiceRoller expressions accept d3 without matching d30");
+
+  // 物品詳情：剩餘次數、−／＋、黎明恢復（擲骰進歷史，不超過最大值）。
+  const item = page.locator('.app-dialog[data-variant="inventory-item"]');
+  await page.locator('[aria-controls="tab-equipment"]').click();
+  await page.locator('[data-inventory-uid="pair"]').click();
+  await item.waitFor();
+  const row = item.locator('.inventory-charge-row[data-magic-pool="charges"]');
+  assert.equal(await row.locator(".inventory-action-row__text").textContent(), "充能：剩 0/7。", "the pool row shows the remaining charges");
+  const recover = row.getByRole("button", { name: "火球魔杖的充能：黎明恢復 1d6 + 1" });
+  assert.equal(await recover.textContent(), "黎明恢復 1d6 + 1", "the recover button names the timing and amount");
+  await row.getByRole("button", { name: "增加火球魔杖的充能剩餘次數" }).click();
+  assert.deepEqual(await page.evaluate(() => Inventory.getEntry("pair").charges), { charges: 1 }, "+ saves immediately");
+  const historyBefore = await page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1") || "[]").length);
+  await recover.click();
+  const recovered = await page.evaluate(() => Inventory.getCharges(Inventory.getEntry("pair"))[0].left);
+  assert.ok(recovered >= 3 && recovered <= 7, `dawn recovery adds 1d6 + 1 up to the maximum (got ${recovered})`);
+  assert.equal(await row.locator("input").inputValue(), String(recovered), "the stepper follows the recovered value");
+  assert.equal(await page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1") || "[]").length), historyBefore + 1, "the recovery roll enters the dice history even with dice off");
+  await page.evaluate(() => Inventory.setCharges("pair", "charges", 7));
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+  await page.locator('[data-inventory-uid="pair"]').click();
+  await item.waitFor();
+  assert.equal(await item.locator('.inventory-charge-row[data-magic-pool="charges"]').getByRole("button", { name: /黎明恢復/ }).isDisabled(), true, "recover is disabled when full");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+
+  // 短休、長休的池沒有恢復按鈕，只寫說明；不恢復的池寫「用完不恢復」。
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [
+    { uid: "boots", quantity: 1, magic: { id: "boots-of-speed" } },
+    { uid: "glue", quantity: 1, magic: { id: "sovereign-glue" }, charges: { ounces: 2 } }
+  ] }));
+  await page.locator('[data-inventory-uid="boots"]').click();
+  await item.waitFor();
+  assert.equal(await item.locator(".inventory-charge-row .inventory-action-row__text").textContent(), "使用時間（分鐘）：剩 10/10。長休時自動恢復。", "rest pools explain the automatic recovery");
+  assert.equal(await item.locator(".inventory-charge-row button.inventory-action-button").count(), 0, "rest pools have no recover button");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+  await page.locator('[data-inventory-uid="glue"]').click();
+  await item.waitFor();
+  assert.equal(await item.locator(".inventory-charge-row .inventory-action-row__text").textContent(), "膠水（盎司）：剩 2/7。用完不恢復。", "pools without recovery say so");
+  assert.equal(await item.locator(".inventory-item-actions .inventory-action-button", { hasText: "使用" }).count(), 0, "containers of ounces are pools, not consumables");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
+}
+
+// 彈藥（第 8 步）：普通與魔法彈藥都能在物品詳情「裝備」，同時只能一種；裝備中的可以留在箭袋、拆分與合併。
+// 彈藥種類由品名對到武器屬性「彈藥 (…；箭矢)」；裝備中的魔法彈藥加值只加在拿著對應武器的那一手，荒野形態不算。
+async function validateMagicAmmunition(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  const data = await page.evaluate(() => {
+    applyStateObject({ class: "fighter", level: "5", str: "16", dex: "14", mainHand: "長弓", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "bow", itemId: "長弓", quantity: 1 },
+      { uid: "q", itemId: "箭袋", quantity: 1 },
+      { uid: "a1", itemId: "箭矢", quantity: 20, in: "q", ammo: true },
+      { uid: "a2", itemId: "箭矢", quantity: 10, magic: { id: "ammunition-plus", bonus: 2 }, ammo: true },
+      { uid: "b", itemId: "弩矢", quantity: 5 },
+      { uid: "rope", itemId: "繩索", quantity: 1, ammo: true }
+    ] } });
+    const ammoUids = () => Inventory.entries().filter(entry => entry.ammo).map(entry => entry.uid);
+    const main = () => [document.getElementById("atk-main-hit").value, document.getElementById("atk-main-dmg").value];
+    const result = {
+      restored: [ammoUids(), Inventory.getEntry("a1").in],
+      types: ["箭矢", "弩矢", "子彈，火器", "彈丸，投石索", "針", "繩索"].map(name => Inventory.getAmmunitionType(name)),
+      weapons: ["長弓", "輕弩", "手弩", "投石索", "吹箭筒", "火繩槍", "長劍", "長弓+1"].map(name => Inventory.getWeaponAmmunition(name)),
+      users: [Inventory.getAmmunitionWeapons("箭矢"), Inventory.getAmmunitionWeapons("子彈，火器"), Inventory.getAmmunitionWeapons("繩索")],
+      plain: main(),
+      refuse: Inventory.setAmmo("rope", true)
+    };
+    result.swap = [Inventory.setAmmo("a2", true), ammoUids()];
+    result.magic = [main(), getActiveMagicEffects().hands.mainHand.label];
+    result.wildShape = getActiveMagicEffects({ wildShape: { armor: true, shield: true } }).hands.mainHand.attack;
+    Inventory.restore(Inventory.getState());
+    result.saved = Inventory.getState().items.filter(item => item.ammo).map(item => item.uid);
+    const part = Inventory.split("a2", 4);
+    result.split = [Inventory.getEntry("a2").ammo, Inventory.getEntry(part).ammo];
+    Inventory.merge("a2", part);
+    result.merged = [Inventory.getEntry(part).quantity, ammoUids()];
+    Inventory.update(part, { quantity: 3 });
+    result.quantity = [Inventory.getEntry(part).quantity, ammoUids()];
+    applyStateObject({ ...collectStateObject(), mainHand: "輕弩", __inventory: { version: 1, items: [{ uid: "x", itemId: "輕弩", quantity: 1 }, ...Inventory.getState().items] } });
+    result.otherWeapon = getActiveMagicEffects().hands.mainHand.attack;
+    result.off = [Inventory.setAmmo(part, false), ammoUids()];
+    result.part = part;
+    result.preflight = [true, false, "yes", 1].map(ammo => isValidInventoryState({ version: 1, items: [{ quantity: 1, itemId: "箭矢", ammo }] }));
+    // useAmmo：用到 0 保留；有完全相同、還有彈藥的另一堆時改裝那一堆（普通彈丸換普通彈丸），空的那堆放到身上；魔法彈丸不替代普通的；
+    // 裝備中的已是 0 時不扣（empty）；沒有裝備時回傳 null。
+    Inventory.restore({ version: 1, items: [
+      { uid: "pouch", itemId: "小包", quantity: 1 },
+      { uid: "s1", itemId: "彈丸，投石索", quantity: 1, in: "pouch", ammo: true },
+      { uid: "s2", itemId: "彈丸，投石索", quantity: 1, magic: { id: "ammunition-plus", bonus: 1 } },
+      { uid: "s3", itemId: "彈丸，投石索", quantity: 2, in: "pouch" }
+    ] });
+    const shot = () => { const used = Inventory.useAmmo(); return used && [used.empty, used.quantity, used.next?.uid || "", used.next?.quantity || 0]; };
+    const shots = [shot(), shot(), shot(), shot()];
+    result.useAmmo = [...shots, Inventory.entries().map(entry => [entry.uid, entry.quantity, entry.in || "", Boolean(entry.ammo)])];
+    Inventory.setAmmo("s3", false);
+    result.noAmmo = [Inventory.useAmmo(), Inventory.getEntry("s3").quantity];
+    // 數量 0：只有彈藥可以（restore、update、consume），其他物品照舊至少 1；×0 的文字、重量、商店買進同一堆都正常。
+    Inventory.restore({ version: 1, items: [
+      { uid: "z1", itemId: "箭矢", quantity: 0 },
+      { uid: "z2", itemId: "箭矢", quantity: 0, magic: { id: "ammunition-plus", bonus: 1 } },
+      { uid: "z3", itemId: "箭矢", quantity: -5 },
+      { uid: "z4", itemId: "長劍", quantity: 0 },
+      { uid: "z5", name: "雜物", quantity: 0 },
+      { uid: "bag", quantity: 1, magic: { id: "bag-of-holding" } },
+      { uid: "z6", itemId: "弩矢", quantity: 0, in: "bag" }
+    ] });
+    const quantities = () => Inventory.entries().map(entry => entry.quantity);
+    result.zero = { restored: quantities(), text: Inventory.formatText(), weight: Inventory.getWeight().weight };
+    Inventory.update("z4", { quantity: 0 });
+    Inventory.update("z1", { quantity: 5 });
+    Inventory.update("z1", { quantity: 0 });
+    result.zero.updated = [Inventory.getEntry("z4").quantity, Inventory.getEntry("z1").quantity];
+    result.zero.consume = [Inventory.consume("z1"), Inventory.getEntry("z1").quantity];
+    Inventory.update("z1", { quantity: 1 });
+    result.zero.consumeLast = [Inventory.consume("z1"), Boolean(Inventory.getEntry("z1"))];
+    Inventory.add([{ itemId: "箭矢", quantity: 20 }]);
+    result.zero.bought = Inventory.getEntry("z1").quantity;
+    result.zero.preflight = [
+      { itemId: "箭矢", quantity: 0 }, { itemId: "箭矢", quantity: 0, magic: { id: "ammunition-plus", bonus: 1 } }, { itemId: "箭矢", quantity: -1 },
+      { itemId: "長劍", quantity: 0 }, { name: "雜物", quantity: 0 }, { quantity: 0, magic: { id: "bag-of-holding" } }
+    ].map(item => isValidInventoryState({ version: 1, items: [item] }));
+    return result;
+  });
+  assert.deepEqual(data.restored, [["a1"], "q"], "only the first ammunition entry stays equipped, it can stay in the quiver, and non-ammunition drops the field");
+  assert.deepEqual(data.types, ["箭矢", "弩矢", "子彈", "彈丸", "針", ""], "the ammunition type is the item name before the comma");
+  assert.deepEqual(data.weapons, ["箭矢", "弩矢", "弩矢", "彈丸", "針", "子彈", "", ""], "weapons read their ammunition from the 彈藥 property");
+  assert.deepEqual(data.users, [["短弓", "長弓"], ["火繩槍", "手槍"], []], "the weapons that use each ammunition come from the equipment data");
+  assert.deepEqual(data.plain, ["+5", "1d8+2穿刺"], "plain ammunition adds nothing");
+  assert.deepEqual(data.refuse, { ok: false, previous: "" }, "only ammunition can be equipped as ammunition");
+  assert.deepEqual(data.swap, [{ ok: true, previous: "箭矢" }, ["a2"]], "equipping another ammunition takes the old one off");
+  assert.deepEqual(data.magic, [["+7", "1d8+4穿刺"], "箭矢+2"], "equipped magic arrows add to the longbow hand");
+  assert.equal(data.wildShape, 0, "Wild Shape drops the ammunition bonus with other items");
+  assert.deepEqual(data.saved, ["a2"], "the equipped ammunition is saved on the entry");
+  assert.deepEqual(data.split, [true, undefined], "the split-off part is not equipped");
+  assert.deepEqual(data.merged, [10, [data.part]], "merging the equipped part into the other keeps one equipped entry with both quantities");
+  assert.deepEqual(data.quantity, [3, [data.part]], "equipped ammunition can change its quantity");
+  assert.equal(data.otherWeapon, 0, "arrows do not boost a crossbow");
+  assert.deepEqual(data.off, [{ ok: true, previous: "" }, []], "ammunition can be taken off");
+  assert.deepEqual(data.preflight, [true, true, false, false], "the import preflight accepts only a boolean ammo field");
+  assert.deepEqual(data.useAmmo, [[false, 0, "s3", 2], [false, 1, "", 0], [false, 0, "", 0], [true, 0, "", 0],
+    [["pouch", 1, "", false], ["s1", 0, "", false], ["s2", 1, "", false], ["s3", 0, "pouch", true]]],
+    "using the last piece keeps the empty stack on the body and switches to an identical one; magic ammunition never replaces plain; an empty equipped stack stays equipped and uses nothing");
+  assert.deepEqual(data.noAmmo, [null, 0], "taking off empty ammunition keeps it, and nothing is used without equipped ammunition");
+  assert.deepEqual(data.zero, {
+    restored: [0, 0, 0, 1, 1, 1, 0], text: "箭矢 ×0、箭矢+1 ×0、箭矢 ×0、長劍、雜物、次元袋（弩矢 ×0）", weight: 8,
+    updated: [1, 0], consume: [null, 0], consumeLast: [{ removed: false, quantity: 0, uses: 0, emptied: false }, true], bought: 20,
+    preflight: [true, true, false, false, false, false]
+  }, "only ammunition may be ×0 (restore, update, consume, preflight); other items stay at least 1; text, weight and buying more work with ×0");
+
+  // 物品詳情：所有彈藥都有「裝備」，說明列出用這種彈藥的武器；換裝備時提示原本那種；標籤標示裝備中但留在箭袋裡。
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [
+    { uid: "q", itemId: "箭袋", quantity: 1 },
+    { uid: "a1", itemId: "箭矢", quantity: 20, in: "q" },
+    { uid: "a2", itemId: "箭矢", quantity: 10, magic: { id: "ammunition-plus", bonus: 1 } },
+    { uid: "rope", itemId: "繩索", quantity: 1 }
+  ] }));
+  const item = page.locator('.app-dialog[data-variant="inventory-item"]');
+  await page.locator('[aria-controls="tab-equipment"]').click();
+  const open = async (uid) => {
+    await page.evaluate(id => InventoryUI.openItemDialog(id), uid);
+    await item.waitFor();
+  };
+  const close = async () => {
+    await page.keyboard.press("Escape");
+    await item.waitFor({ state: "detached" });
+  };
+  await open("a1");
+  const row = item.locator(".inventory-action-row", { hasText: "跑團模式擲短弓、長弓的命中時扣 1 枚。" });
+  assert.equal(await row.count(), 1, "plain arrows explain which weapons use them");
+  assert.equal(await row.getByRole("button", { name: "裝備箭矢" }).getAttribute("aria-pressed"), "false");
+  await row.getByRole("button", { name: "裝備箭矢" }).click();
+  await page.waitForFunction(() => Inventory.getEntry("a1").ammo === true);
+  assert.equal(await item.locator(".inventory-holding .inventory-tag__badge", { hasText: "裝備中" }).isVisible(), true, "the dialog marks the equipped ammunition");
+  assert.equal(await item.getByRole("button", { name: "卸下箭矢" }).getAttribute("aria-pressed"), "true");
+  await close();
+  await page.locator('[data-inventory-toggle="q"]').click();
+  assert.deepEqual(await page.evaluate(() => {
+    const tag = document.querySelector('[data-inventory-uid="a1"]');
+    return [tag.classList.contains("is-equipped"), tag.closest(".is-fixed") === null, Inventory.getEntry("a1").in];
+  }), [true, true, "q"], "equipped ammunition looks equipped but stays movable inside the quiver");
+  await open("a2");
+  await item.getByRole("button", { name: "裝備箭矢+1" }).click();
+  await page.waitForFunction(() => Inventory.getEntry("a2").ammo === true && !Inventory.getEntry("a1").ammo);
+  assert.match(await page.locator("#app-toast > .app-toast:last-child .app-toast__message").textContent(), /改為裝備箭矢\+1（原本是箭矢）。/u, "swapping names the ammunition taken off");
+  await close();
+  await open("rope");
+  assert.equal(await item.getByRole("button", { name: /^裝備繩索$/u }).count(), 0, "other items have no ammunition button");
+  await close();
+  // ×0：彈藥在物品視窗把數量改成 0 按「完成」直接存成 0（不問刪除），標籤變灰顯示 ×0；「使用」停用。其他物品的 0 仍是刪除確認。
+  await open("a2");
+  await item.locator(".inventory-stepper__input").fill("0");
+  await item.getByRole("button", { name: "完成" }).click();
+  await item.waitFor({ state: "detached" });
+  assert.deepEqual(await page.evaluate(() => {
+    const tag = document.querySelector('[data-inventory-uid="a2"]');
+    return [Inventory.getEntry("a2")?.quantity, Inventory.getEntry("a2")?.ammo, tag.textContent, tag.classList.contains("is-empty")];
+  }), [0, true, "箭矢+1 ×0", true], "empty ammunition stays equipped as a grey ×0 tag");
+  await open("a2");
+  assert.equal(await item.getByRole("button", { name: "使用箭矢+1" }).isDisabled(), true, "there is nothing to use at ×0");
+  await item.getByRole("button", { name: "卸下箭矢+1" }).click();
+  await page.waitForFunction(() => Inventory.getEntry("a2")?.ammo === undefined);
+  await close();
+  assert.equal(await page.evaluate(() => Inventory.getEntry("a2")?.quantity), 0, "taking off empty ammunition keeps it");
+  await open("rope");
+  await item.locator(".inventory-stepper__input").fill("0");
+  await item.getByRole("button", { name: "完成" }).click();
+  const confirmDelete = page.locator(".app-dialog", { hasText: "數量為 0，確認後會從物品欄刪除這項物品。" });
+  await confirmDelete.waitFor();
+  await confirmDelete.getByRole("button", { name: "取消" }).click();
+  await item.getByRole("button", { name: "取消" }).click();
+  await item.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(() => Inventory.getEntry("rope")?.quantity), 1, "other items still ask before a quantity of 0 deletes them");
+  // 窄螢幕：彈藥列不超出視窗。
+  await page.setViewportSize({ width: 375, height: 800 });
+  await open("a2");
+  assert.equal(await item.evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth + 1), true, "the ammunition row fits a 375px dialog");
+  await close();
+  await page.setViewportSize({ width: 1100, height: 850 });
+  // ×0 經「純文字管理」來回一次：轉成文字寫「箭矢+1 ×0」，整理成標籤時只有彈藥保留 ×0（魔法彈藥查回魔法物品），不會憑空多一枚；之後仍可用 −／＋。
+  // 手上不拿東西：關閉純文字管理時已裝備的武器會補回物品欄，和這裡要看的彈藥無關。
+  await page.evaluate(() => {
+    applyStateObject({ ...collectStateObject(), mainHand: "", offHand: "", armor: "", "gear-notes": "", __inventory: { version: 1, items: [
+      { uid: "m0", itemId: "箭矢", quantity: 0, magic: { id: "ammunition-plus", bonus: 1 }, ammo: true },
+      { uid: "b0", itemId: "弩矢", quantity: 0 },
+      { uid: "a20", itemId: "箭矢", quantity: 20 },
+      { uid: "rope", itemId: "繩索", quantity: 1 }
+    ] } });
+    document.getElementById("gear-notes").value = "";
+  });
+  const more = async (id) => {
+    await page.locator("#inventory-more").click();
+    await page.locator(`#${id}`).click();
+  };
+  await more("inventory-text-only");
+  await page.locator(".app-dialog", { hasText: "只以文字管理物品？" }).getByRole("button", { name: "轉成文字" }).click();
+  await page.waitForFunction(() => Inventory.isTextOnly());
+  assert.equal(await page.locator("#gear-notes").inputValue(), "物品欄：箭矢+1 ×0、弩矢 ×0、箭矢 ×20、繩索", "text mode writes empty ammunition as ×0");
+  await more("inventory-text-only");
+  await page.waitForFunction(() => !Inventory.isTextOnly());
+  await more("inventory-tidy");
+  const tidy = page.locator('.app-dialog[data-variant="inventory-tidy"]');
+  await tidy.waitFor();
+  assert.deepEqual(await tidy.locator(".inventory-tags--preview .inventory-tag").allTextContents(), ["箭矢+1 ×0", "弩矢 ×0", "箭矢 ×20", "繩索"], "the tidy preview keeps ×0 and the magic ammunition name");
+  await tidy.getByRole("button", { name: "轉成標籤" }).click();
+  await tidy.waitFor({ state: "detached" });
+  assert.deepEqual(await page.evaluate(() => Inventory.entries().map(entry => [entry.itemId, entry.magic || null, entry.quantity])), [
+    ["箭矢", { id: "ammunition-plus", bonus: 1 }, 0], ["弩矢", null, 0], ["箭矢", null, 20], ["繩索", null, 1]
+  ], "after the round trip empty ammunition is still ×0 (magic ammunition stays magic) and nothing gains a piece");
+  assert.deepEqual(await page.evaluate(() => ["雜物 ×0", "箭矢 ×0", "箭矢+1 ×3", "長劍+1 ×2"].map(text => (({ itemId, name, magic, quantity }) => [itemId || name, magic?.id || "", quantity])(Inventory.parseItemText(text)))),
+    [["雜物", "", 1], ["箭矢", "", 0], ["箭矢", "ammunition-plus", 3], ["長劍+1", "", 2]], "only ammunition reads ×0 from text; other magic items stay names as before");
+  const boltsUid = await page.evaluate(() => Inventory.entries().find(entry => entry.itemId === "弩矢").uid);
+  await open(boltsUid);
+  await item.getByRole("button", { name: "增加數量" }).click();
+  await item.getByRole("button", { name: "完成" }).click();
+  await item.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(uid => Inventory.getEntry(uid).quantity, boltsUid), 1, "a ×0 stack from text can be raised with +");
+  await open(boltsUid);
+  await item.getByRole("button", { name: "減少數量" }).click();
+  await item.getByRole("button", { name: "完成" }).click();
+  await item.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(uid => Inventory.getEntry(uid)?.quantity, boltsUid), 0, "and lowered back to ×0 with −");
+  await page.evaluate(() => { document.getElementById("gear-notes").value = ""; });
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
+}
+
+// 從物品施放的法術（第 6 步）：內容檔 actions 的 spell。跑團法術頁的「物品」分組與物品視窗的施法列走同一個施法視窗：
+// 不耗法術位、不看職業法表、扣物品的次數池；花費是範圍時選次數升環；DC 三種來源；不需專注的覆寫；只有 SRD 版的法術也能施放與自動擲骰。
+async function validateItemSpells(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  const item = page.locator('.app-dialog[data-variant="inventory-item"]');
+  const confirmCast = page.getByRole("button", { name: "施法", exact: true });
+  const fighter = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "5", str: "16", dex: "14", con: "12", int: "10", wis: "10", cha: "10",
+    "spellcasting-ability": "", mainHand: "", offHand: "", armor: "" };
+  const load = (state, items) => page.evaluate(([state, items]) => {
+    TabletopMode.setMode("sheet");
+    applyStateObject({ ...state, __inventory: { version: 1, items } });
+    showTab("equipment");
+  }, [state, items]);
+  const openItem = async (uid) => {
+    await page.locator(`[data-inventory-uid="${uid}"]`).click();
+    await item.waitFor();
+  };
+  const closeItem = async () => {
+    await page.keyboard.press("Escape");
+    await item.waitFor({ state: "detached" });
+  };
+  const spellRow = id => item.locator(`.inventory-action-row[data-item-spell="${id}"]`);
+  const lastToast = () => page.waitForFunction(() => document.querySelector("#app-toast > .app-toast:last-child .app-toast__message")?.textContent, null, { timeout: 2000 })
+    .then(handle => handle.jsonValue());
+
+  // 內容檔：法術能力沒有按鈕欄位（不出現在跑團的動作頁）；每個法術都查得到（含只有 SRD 版的）。
+  assert.deepEqual(await page.evaluate(() => MagicItemCatalog.getAll().flatMap(rule => MagicItemCatalog.getActions(rule.id).filter(action => action.spell)
+    .filter(action => !SpellCatalog.getItemSpell(action.spell) || action.name || action.type)).map(action => action.id)), [], "every item spell names a catalog spell and no button fields");
+
+  // 戰士拿著火球魔杖：物品視窗的施法列；選 2 次是 4 環；扣魔杖的充能、不耗法術位；確認後視窗關閉。
+  await load({ ...fighter, mainHand: "火球魔杖" }, [{ uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-fireballs" } }]);
+  await openItem("wand");
+  assert.equal(await spellRow("fireball").locator(".inventory-action-row__text").textContent(), "火球術｜消耗 1～3 次充能（剩餘 7/7）・豁免 DC 15。");
+  await spellRow("fireball").getByRole("button", { name: "從火球魔杖施放火球術" }).click();
+  await confirmCast.waitFor();
+  assert.deepEqual(await page.locator("[data-cast-item-cost] option").allTextContents(), ["1 次（3 環）", "2 次（4 環）", "3 次（5 環）"], "each extra charge raises the level");
+  await page.locator("[data-cast-item-cost]").selectOption("2");
+  assert.match(await page.locator(".tabletop-cast-summary").textContent(), /有效環位4 環消耗2 次充能（剩餘 7\/7）.*豁免 DC／攻擊豁免 DC 15/u);
+  await page.getByRole("button", { name: "取消", exact: true }).last().click();
+  await confirmCast.waitFor({ state: "detached" });
+  assert.deepEqual([await item.isVisible(), await page.evaluate(() => Inventory.getEntry("wand").charges)], [true, undefined], "cancelling spends nothing");
+  await spellRow("fireball").getByRole("button", { name: "從火球魔杖施放火球術" }).click();
+  await page.locator("[data-cast-item-cost]").selectOption("2");
+  await confirmCast.click();
+  await item.waitFor({ state: "detached" });
+  assert.deepEqual(await page.evaluate(() => Inventory.getEntry("wand").charges), { charges: 5 }, "casting spends the chosen charges");
+  assert.match(await lastToast(), /^已施放火球術（4 環；火球魔杖，消耗 2 次充能（剩餘 5\/7））/u);
+  await page.waitForFunction(() => document.activeElement?.closest?.("[data-inventory-uid]")?.dataset.inventoryUid === "wand", null, { timeout: 2000 });
+
+  // 魔杖沒拿在手上：物品沒有生效，按鈕反灰寫原因。
+  await load(fighter, [{ uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-fireballs" } }]);
+  await openItem("wand");
+  assert.deepEqual([await spellRow("fireball").locator(".inventory-action-row__text").textContent(), await spellRow("fireball").locator("button.inventory-action-button").isDisabled()],
+    ["火球術｜這件物品生效時才能施放。", true], "items that are not in effect cannot cast");
+  await closeItem();
+  // 拿在手上但次數用完：反灰寫原因。
+  await load({ ...fighter, mainHand: "火球魔杖" }, [{ uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-fireballs" }, charges: { charges: 0 } }]);
+  await openItem("wand");
+  assert.deepEqual([await spellRow("fireball").locator(".inventory-action-row__text").textContent(), await spellRow("fireball").locator("button.inventory-action-button").isDisabled()],
+    ["火球術｜消耗 1～3 次充能（剩餘 0/7）・豁免 DC 15。充能不夠（剩餘 0/7）。", true]);
+  await closeItem();
+
+  // 「用你的」DC：沒有施法屬性的戰士反灰寫原因；法師用角色卡的數字（含威力法杖 +2），只有 SRD 版的寒冰錐自動擲 8d8、不耗法術位。
+  const staff = [{ uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id: "staff-of-power" } }];
+  await load({ ...fighter, mainHand: "威力法杖" }, staff);
+  await openItem("staff");
+  assert.deepEqual([await spellRow("cone-of-cold").locator(".inventory-action-row__text").textContent(), await spellRow("cone-of-cold").locator("button.inventory-action-button").isDisabled()],
+    ["寒冰錐｜消耗 5 次充能（剩餘 20/20）。這件物品使用你的法術豁免 DC 與攻擊，但你沒有施法屬性。", true], "your-DC items need a spellcasting ability");
+  await closeItem();
+  await load({ ...fighter, class: "wizard", level: "9", int: "18", "spellcasting-ability": "int", mainHand: "威力法杖" }, staff);
+  await page.evaluate(() => DiceRoller.setEnabled(true));
+  await openItem("staff");
+  const sheetNumbers = await page.evaluate(() => [document.getElementById("spell-save-dc").value, document.getElementById("spell-attack-bonus").value]);
+  assert.ok(sheetNumbers[0] && sheetNumbers[1], "the wizard has spell numbers");
+  assert.equal(await spellRow("cone-of-cold").locator(".inventory-action-row__text").textContent(),
+    `寒冰錐｜消耗 5 次充能（剩餘 20/20）・你的豁免 DC ${sheetNumbers[0]}・攻擊 ${sheetNumbers[1]}。`, "your-DC items show the sheet's spell numbers");
+  const slotsBefore = await page.evaluate(() => [...document.querySelectorAll("#spellslot5-row input:checked")].length);
+  await spellRow("cone-of-cold").getByRole("button", { name: "從威力法杖施放寒冰錐" }).click();
+  await confirmCast.click();
+  await item.waitFor({ state: "detached" });
+  await page.waitForFunction(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1") || "[]")[0]?.label?.startsWith("寒冰錐"));
+  assert.deepEqual(await page.evaluate(() => [Inventory.getEntry("staff").charges, JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1"))[0].expression,
+    [...document.querySelectorAll("#spellslot5-row input:checked")].length]), [{ charges: 15 }, "8d8", slotsBefore], "SRD-only spells auto-roll their srd.outcomes; no slot is spent");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => DiceRoller.setEnabled(false));
+
+  // 藥水與油：只連到法術說明；只有 SRD 版的以太化顯示 SRD 版、沒有施法按鈕。
+  await load(fighter, [{ uid: "speed", quantity: 1, magic: { id: "potion-of-speed" } }, { uid: "oil", quantity: 1, magic: { id: "oil-of-etherealness" } }]);
+  await openItem("speed");
+  assert.equal(await item.locator(".inventory-action-row").first().textContent(), "法術效果：加速術");
+  await closeItem();
+  await openItem("oil");
+  await item.getByRole("button", { name: "查看以太化的法術內容" }).click();
+  const detail = page.locator(".app-dialog").last();
+  await detail.locator(".spell-version__attribution").waitFor();
+  assert.deepEqual([await detail.locator(".spell-version__tab").count(), await detail.getByRole("button", { name: "施法", exact: true }).count()], [0, 0], "spell links show the SRD text without casting");
+  await page.keyboard.press("Escape");
+  await closeItem();
+
+  // 跑團法術頁：沒有施法能力也有「物品」分組；次數用完的卡片變灰；選項限定的法術只列選了的元素；不需專注的覆寫。
+  await load({ ...fighter, mainHand: "火球魔杖" }, [
+    { uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-fireballs" }, charges: { charges: 5 } },
+    { uid: "ball", quantity: 1, attuned: true, magic: { id: "crystal-ball-of-telepathy" } },
+    { uid: "beads", quantity: 1, magic: { id: "necklace-of-fireballs" }, charges: { beads: 0 } },
+    { uid: "ring", quantity: 1, attuned: true, worn: true, magic: { id: "ring-of-elemental-command", element: "air" } }
+  ]);
+  await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
+  await page.waitForFunction(() => [...document.querySelectorAll("#tabletop-selected-spells .tabletop-spell-level h4")].some(title => title.textContent === "物品"), null, { timeout: 5000 })
+    .catch(async (error) => {
+      console.error(await page.evaluate(() => [TabletopMode.getMode(), TabletopMode.getPanel(), document.getElementById("tabletop-selected-spells")?.innerText.slice(0, 300),
+        [...document.querySelectorAll(".app-dialog")].map(dialog => dialog.innerText.slice(0, 80))]));
+      throw error;
+    });
+  const cards = await page.evaluate(() => [...[...document.querySelectorAll("#tabletop-selected-spells .tabletop-spell-level")]
+    .find(section => section.querySelector("h4").textContent === "物品").querySelectorAll(".tabletop-spell-card")].map(card => [
+    card.querySelector(".tabletop-spell-button").dataset.spellSourceKey, card.querySelector(".tabletop-spell-card__source").textContent, card.classList.contains("is-depleted")]));
+  assert.deepEqual(cards, [
+    ["magic-item:wand-of-fireballs:fireball", "火球魔杖5/7", false],
+    ["magic-item:crystal-ball-of-telepathy:scrying", "心靈感應水晶球", false],
+    ["magic-item:crystal-ball-of-telepathy:suggestion", "心靈感應水晶球1/1", false],
+    ["magic-item:necklace-of-fireballs:fireball", "火球項鍊0/9", true],
+    ["magic-item:ring-of-elemental-command:chain-lightning", "命令元素戒指（風）5/5", false],
+    ["magic-item:ring-of-elemental-command:feather-fall", "命令元素戒指（風）", false],
+    ["magic-item:ring-of-elemental-command:gust-of-wind", "命令元素戒指（風）5/5", false],
+    ["magic-item:ring-of-elemental-command:wind-wall", "命令元素戒指（風）5/5", false]
+  ], "the item group lists active item spells; options filter the element table; empty pools grey the card");
+  assert.equal(await page.locator("#tabletop-tab-spells").isHidden(), false, "the spell tab appears for item spells without spellcasting");
+  assert.equal(await page.locator("#tabletop-spells-empty").isHidden(), true);
+  const castFromPage = async (sourceKey) => {
+    await page.locator(`.tabletop-spell-button[data-spell-source-key="${sourceKey}"]`).click();
+    await confirmCast.click();
+    await confirmCast.click();
+    await confirmCast.waitFor({ state: "detached" });
+  };
+  await castFromPage("magic-item:crystal-ball-of-telepathy:suggestion");
+  assert.deepEqual(await page.evaluate(() => [TabletopMode.getConcentrationSpellId(), Inventory.getEntry("ball").charges]), ["", { suggestion: 0 }], "concentration: false does not start concentrating");
+  await castFromPage("magic-item:crystal-ball-of-telepathy:scrying");
+  assert.equal(await page.evaluate(() => TabletopMode.getConcentrationSpellId()), "scrying", "other item spells use the tabletop concentration tracking");
+  await page.evaluate(() => TabletopMode.stopConcentration(""));
+  // 祈願：扣祈願充能，也扣「每日一次」的池；今日已用過時變灰。
+  await page.evaluate(() => {
+    TabletopMode.setMode("sheet");
+    applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "5", mainHand: "吉兆之刃（長劍）", offHand: "", armor: "",
+      __inventory: { version: 1, items: [{ uid: "blade", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "luck-blade", base: "長劍" } }] } });
+    TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells");
+  });
+  await castFromPage("magic-item:luck-blade:wish");
+  assert.deepEqual(await page.evaluate(() => Inventory.getEntry("blade").charges), { wish: 0, charges: 2 }, "alsoPool spends the daily pool too");
+  await page.waitForFunction(() => document.querySelector('.tabletop-spell-button[data-spell-source-key="magic-item:luck-blade:wish"]')?.closest(".tabletop-spell-card").classList.contains("is-depleted"));
+  await page.evaluate(() => { TabletopMode.setMode("sheet"); applyStateObject({ class: "fighter", level: "5", mainHand: "", __inventory: { version: 1, items: [] } }); });
 }
 
 // 同名物品分堆：拆分、拖曳合併（醫療包總次數不變）、商店新標籤、裝備從物品欄拿 1 件、卸除成為獨立標籤與舊資料轉換。
@@ -1254,6 +2532,225 @@ async function validateInventoryStacks(page) {
     split: [[5, ""], [2, ""], [1, "mainHand"]], reloaded: [[5, ""], [2, ""], [1, "mainHand"]]
   }, "old data is converted without changing totals; slots stay out of save and share files and come back from the equipment fields");
 
+  // 載入的存檔沒有裝備時，下拉不留上一個角色的「X（不在物品欄）」。
+  const leftover = await page.evaluate(([base]) => {
+    const withoutEquipment = Object.fromEntries(Object.entries(base).filter(([key]) => !["mainHand", "offHand", "armor"].includes(key)));
+    const notInInventory = id => [...document.getElementById(id).options].map(option => option.textContent).filter(text => text.includes("不在物品欄"));
+    applyStateObject({ ...base, mainHand: "長劍", armor: "皮甲", __inventory: { version: 1, items: [] } });
+    Inventory.restore({ version: 1, items: [] });
+    applyStateObject({ ...withoutEquipment, __inventory: { version: 1, items: [] } });
+    return ["mainHand", "armor"].flatMap(notInInventory);
+  }, [blank]);
+  assert.deepEqual(leftover, [], "loading a save without equipment does not keep the previous character's item as a not-in-inventory option");
+
+  // 治療藥水與法術卷軸的詳情是「網站版｜SRD 版」：網站版是舊說明，SRD 版是譯文；裝備清單、物品欄與魔法模式視窗一致。一般商店的價格與重量不變。
+  const versions = await page.evaluate(async () => {
+    const read = async (box) => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+      const tabs = [...box.querySelectorAll(".spell-version__tab")].map(tab => tab.textContent);
+      const site = box.querySelector(".spell-version__site")?.textContent || "";
+      box.querySelector('[data-spell-version="srd"]')?.click();
+      await MagicItemCatalog.loadText();
+      await new Promise(resolve => setTimeout(resolve, 20));
+      return { tabs, site, srd: box.querySelector(".spell-version__srd")?.textContent || "", siteHidden: box.querySelector(".spell-version__site")?.hidden };
+    };
+    const box = () => document.createElement("div");
+    const potion = box();
+    MagicItemShop.renderDetail(potion, "potions-of-healing");
+    const scroll = box();
+    MagicItemShop.renderDetail(scroll, "spell-scroll", { hideSitePrice: true });
+    const detail = box();
+    renderEquipmentDetailInto(detail, "治療藥水");
+    const shopItems = EQUIPMENT_SHOP_ITEMS.filter(item => item.name === "治療藥水" || item.name === "法術卷軸").map(item => [item.name, item.amount, item.currency, item.weight ?? null, item.spellLevel ?? null]);
+    return { potion: await read(potion), scroll: await read(scroll), detail: await read(detail), detailTags: detail.querySelector(".equipment-detail-tags")?.textContent, shopItems };
+  });
+  assert.deepEqual(versions.potion.tabs, ["網站版", "SRD 版"]);
+  assert.match(versions.potion.site, /50 金幣.*重量：1\/2 磅.*飲用者恢復 2d4 \+ 2 生命值/su, "the website version of the potion is the old description with its price");
+  assert.match(versions.potion.srd, /恢復的生命值/u, "the SRD version is the translation");
+  assert.match(versions.scroll.site, /記載一個戲法或 1 環法術.*法術豁免 DC 13.*卷軸會消失/su, "the scroll keeps its old description");
+  assert.equal(versions.scroll.site.includes("金幣"), false, "the price stays outside when the caller shows it");
+  assert.equal(versions.detail.siteHidden, true, "switching hides the website version");
+  assert.equal(versions.detailTags, "50 金幣", "the equipment detail keeps its price line");
+  assert.deepEqual(versions.shopItems, [["治療藥水", 50, "金幣", 0.5, null], ["法術卷軸", 30, "金幣", 0, 0], ["法術卷軸", 50, "金幣", 0, 1]], "the normal shop still reads price and weight from the equipment notes");
+
+  // 魔法模式的法術卷軸開放到 5 環，5 環只有 SRD 版，仍寫成舊卷軸的寫法；一般商店維持戲法與 1 環。
+  const scrolls = await page.evaluate(() => {
+    const normal = [...new Set(EQUIPMENT_SHOP_ITEMS.filter(item => item.name === "法術卷軸").map(item => item.spellLevel))];
+    const fifth = SpellCatalog.getAllReferenceSpells().filter(spell => spell.level === 5);
+    return { normal, fifthCount: fifth.length, playable: fifth.filter(spell => spell.playable).length };
+  });
+  assert.deepEqual(scrolls, { normal: [0, 1], fifthCount: 38, playable: 0 }, "the normal shop stays at cantrips and level 1, and level 5 has 38 SRD-only spells");
+
+  // 魔法款和同名普通款是不同的選項，value 是魔法款自己的名稱；只有魔法款時不列普通選項。重新載入不互換，存檔寫魔法款但物品欄沒有時補上那一件。
+  const magicEquip = await page.evaluate(([base]) => {
+    const sword = { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } };
+    const plain = { uid: "plain", itemId: "長劍", quantity: 1 };
+    const inv = (...items) => ({ __inventory: { version: 1, items } });
+    const load = (...items) => applyStateObject({ ...base, ...inv(...items) });
+    const options = id => [...document.getElementById(id).options].filter(option => option.value && !option.disabled).map(option => [option.textContent, option.value]);
+    const choose = (id, value) => {
+      const select = document.getElementById(id);
+      select.value = value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      return select.value === value;
+    };
+    const selection = id => document.getElementById(id).value;
+    const slots = () => Inventory.entries().filter(entry => entry.slot).map(entry => [entry.uid, entry.slot]);
+    const reload = () => applyStateObject(collectStateObject());
+    const result = {};
+    load(plain, sword);
+    result.both = options("mainHand");
+    choose("mainHand", "長劍");
+    result.plainSlot = slots();
+    reload();
+    result.plainReload = [selection("mainHand"), slots(), Inventory.getState().items.find(entry => entry.uid === "plain")];
+    choose("mainHand", "長劍+2");
+    result.magicSlot = slots();
+    result.saved = [collectStateObject().mainHand, Object.keys(Inventory.getState().items.find(entry => entry.uid === "plus")).sort()];
+    reload();
+    result.magicReload = [selection("mainHand"), slots(), Inventory.entries().length];
+    // 重建下拉（物品欄變動）不會跳回普通款。
+    Inventory.add([{ name: "雜物" }]);
+    result.rebuilt = selection("mainHand");
+    load(sword);
+    result.onlyMagic = options("mainHand");
+    applyStateObject({ ...base, mainHand: "長劍", ...inv(sword) });
+    result.ensureAddsPlain = Inventory.entries().map(entry => [Boolean(entry.magic), entry.source || "", entry.slot || ""]);
+    applyStateObject({ ...base, mainHand: "長劍+2", ...inv(sword) });
+    result.ensureSkipsMagic = [Inventory.entries().length, slots(), selection("mainHand")];
+    applyStateObject({ ...base, mainHand: "長劍+2", ...inv() });
+    result.ensureAddsMagic = [Inventory.entries().map(entry => [entry.itemId, entry.magic, entry.source || "", entry.slot || ""]), selection("mainHand"), options("mainHand")];
+    // 名稱查表：不依賴物品欄，普通品名查不到魔法款，彈藥不算裝備；定義繼承基本款。
+    result.lookup = {
+      resolved: MagicItemCatalog.resolveEquipmentName("長劍+2"),
+      fixed: getEquipmentBaseName("陽炎劍"),
+      plain: [MagicItemCatalog.resolveEquipmentName("長劍"), getEquipmentBaseName("長劍")],
+      ammunition: MagicItemCatalog.resolveEquipmentName("箭矢+1"),
+      weapon: (({ 名稱, 基本款, 傷害, 精通 }) => [名稱, 基本款, 傷害, 精通])(getWeaponByName("長劍+2")),
+      armor: (({ 名稱, 基本款, AC, 分類 }) => [名稱, 基本款, AC, 分類])(getArmorByName("鎖子甲+1")),
+      shield: [isShieldItem("盾牌+1"), isShieldItem("長劍+2")]
+    };
+    // 雙持同名
+    load({ uid: "p", itemId: "短劍", quantity: 1 }, { uid: "m", itemId: "短劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } });
+    choose("mainHand", "短劍+1");
+    result.offWhenMainMagic = options("offHand").filter(([label]) => label.startsWith("短劍"));
+    choose("mainHand", "短劍");
+    result.offWhenMainPlain = options("offHand").filter(([label]) => label.startsWith("短劍"));
+    // 一筆多件：裝備時拆出一件，下拉仍選著魔法款；兩手都拿得到。
+    load({ uid: "s", itemId: "短劍", quantity: 2, magic: { id: "weapon-plus", bonus: 1 } });
+    choose("mainHand", "短劍+1");
+    result.split = [Inventory.entries().map(entry => [entry.quantity, entry.slot || ""]), selection("mainHand")];
+    choose("offHand", "短劍+1");
+    result.bothHands = slots().map(([, slot]) => slot).sort();
+    // 盾牌的兩個位置：副手是下拉，主手 2 是勾選；只有一種時直接用那一面，兩種以上時勾選下方多一個只列盾牌的下拉，選擇會存檔。
+    const plainShield = { uid: "ps", itemId: "盾牌", quantity: 1 };
+    const magicShield = { uid: "ms", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 1 } };
+    load(plainShield, magicShield);
+    result.shieldOptions = options("offHand").filter(([label]) => label.startsWith("盾牌"));
+    choose("offHand", "盾牌+1");
+    result.offShield = slots();
+    const alternate = { ...base, offHandAsMain: true };
+    applyStateObject({ ...alternate, ...inv(plainShield, magicShield) });
+    const toggle = document.getElementById("main2Shield");
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    result.checkboxPlain = slots();
+    applyStateObject({ ...alternate, ...inv(magicShield) });
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    result.checkboxMagic = slots();
+    applyStateObject(collectStateObject());
+    result.checkboxReload = [slots(), Inventory.entries().length];
+    const pickShield = document.getElementById("main2ShieldItem");
+    const shieldSelect = () => [pickShield.hidden, [...pickShield.options].map(option => option.value), pickShield.value];
+    applyStateObject({ ...alternate, ...inv(magicShield) });
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    result.oneKind = shieldSelect()[0];
+    const otherShield = { uid: "os", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 2 } };
+    applyStateObject({ ...alternate, main2Shield: true, ...inv(plainShield, magicShield) });
+    result.twoKinds = [shieldSelect(), slots()];
+    pickShield.value = "盾牌+1";
+    pickShield.dispatchEvent(new Event("change", { bubbles: true }));
+    result.picked = slots();
+    const savedShield = collectStateObject();
+    result.savedShield = savedShield.main2ShieldItem;
+    applyStateObject({ ...base, __inventory: { version: 1, items: [] } });
+    applyStateObject(savedShield);
+    result.shieldReload = [shieldSelect(), slots()];
+    applyStateObject({ ...alternate, main2Shield: true, ...inv(magicShield, otherShield) });
+    result.twoMagic = [shieldSelect(), slots()];
+    applyStateObject({ ...alternate, main2Shield: true, main2ShieldItem: "盾牌+1", ...inv(plainShield) });
+    result.addsNamedShield = [slots().length, Inventory.entries().find(entry => entry.slot === "shield").magic];
+    const noField = { ...alternate, main2Shield: true, ...inv(plainShield) };
+    delete noField.main2ShieldItem;
+    applyStateObject(noField);
+    result.legacyShield = [shieldSelect()[0], slots()];
+    // 同調：上限、同種第二件、一筆多件；同調中不能合併或拆分，移除後自然消失。
+    load({ uid: "r1", quantity: 1, magic: { id: "ring-of-protection" } }, { uid: "r2", quantity: 1, magic: { id: "ring-of-protection" } },
+      { uid: "c", quantity: 1, magic: { id: "cloak-of-protection" } }, { uid: "b", quantity: 1, magic: { id: "bracers-of-defense" } },
+      { uid: "st", quantity: 1, magic: { id: "stone-of-good-luck" } }, { uid: "st2", quantity: 2, magic: { id: "periapt-of-wound-closure" } }, { uid: "bag", quantity: 1, magic: { id: "bag-of-holding" } });
+    result.attune = [Inventory.setAttuned("r1", true), Inventory.setAttuned("r2", true), Inventory.setAttuned("st2", true), Inventory.setAttuned("bag", true), Inventory.setAttuned("c", true), Inventory.setAttuned("b", true), Inventory.setAttuned("st", true), Inventory.getAttunement()];
+    result.attunedStack = [Inventory.getMergeTargets("r2").some(entry => entry.uid === "r1"), Inventory.getMergeTargets("r1").length];
+    Inventory.remove("r1");
+    result.afterRemove = Inventory.getAttunement().count;
+    Inventory.update("c", { quantity: 5 });
+    result.fixedQuantity = Inventory.getEntry("c").quantity;
+    const note = id => {
+      const box = document.createElement("div");
+      MagicItemShop.renderDetail(box, id);
+      return box.querySelector(".magic-item-detail__manual")?.textContent || "";
+    };
+    // 部分自動計算（吉兆之刃：祈願留到從物品施法）、沒有自動計算（巨人之力藥水）、全部完成（彈藥+N 在第 8 步裝備後自動算，防禦者、雷鳴巨棒與焰舌在第 5 步做成跑團按鈕後也不再提示）。
+    result.notes = ["luck-blade", "ammunition-plus", "potion-of-giant-strength", "defender", "thunderous-greatclub", "flame-tongue"].map(note);
+    return result;
+  }, [blank]);
+  assert.deepEqual(magicEquip, {
+    both: [["長劍", "長劍"], ["長劍+2", "長劍+2"]],
+    plainSlot: [["plain", "mainHand"]],
+    plainReload: ["長劍", [["plain", "mainHand"]], { uid: "plain", quantity: 1, itemId: "長劍" }],
+    magicSlot: [["plus", "mainHand"]],
+    saved: ["長劍+2", ["itemId", "magic", "quantity", "uid"]],
+    magicReload: ["長劍+2", [["plus", "mainHand"]], 2],
+    rebuilt: "長劍+2",
+    onlyMagic: [["長劍+2", "長劍+2"]],
+    ensureAddsPlain: [[true, "", ""], [false, "equipped", "mainHand"]],
+    ensureSkipsMagic: [1, [["plus", "mainHand"]], "長劍+2"],
+    ensureAddsMagic: [[["長劍", { id: "weapon-plus", bonus: 2 }, "equipped", "mainHand"]], "長劍+2", [["長劍+2", "長劍+2"]]],
+    lookup: {
+      resolved: { name: "長劍+2", id: "weapon-plus", selection: { bonus: 2, base: "長劍" }, base: "長劍" },
+      fixed: "長劍",
+      plain: [null, "長劍"],
+      ammunition: null,
+      weapon: ["長劍+2", "長劍", "1d8 揮砍", "削弱"],
+      armor: ["鎖子甲+1", "鎖子甲", "16", "重甲"],
+      shield: [true, false]
+    },
+    offWhenMainMagic: [["短劍", "短劍"]],
+    offWhenMainPlain: [["短劍+1", "短劍+1"]],
+    split: [[[1, ""], [1, "mainHand"]], "短劍+1"],
+    bothHands: ["mainHand", "offHand"],
+    shieldOptions: [["盾牌", "盾牌"], ["盾牌+1", "盾牌+1"]],
+    offShield: [["ms", "offHand"]],
+    checkboxPlain: [["ps", "shield"]],
+    checkboxMagic: [["ms", "shield"]],
+    checkboxReload: [[["ms", "shield"]], 1],
+    oneKind: true,
+    twoKinds: [[false, ["盾牌", "盾牌+1"], "盾牌"], [["ps", "shield"]]],
+    picked: [["ms", "shield"]],
+    savedShield: "盾牌+1",
+    shieldReload: [[false, ["盾牌", "盾牌+1"], "盾牌+1"], [["ms", "shield"]]],
+    twoMagic: [[false, ["盾牌+1", "盾牌+2"], "盾牌+1"], [["ms", "shield"]]],
+    addsNamedShield: [1, { id: "shield-plus", bonus: 1 }],
+    legacyShield: [true, [["ps", "shield"]]],
+    attune: ["ok", "duplicate", "stack", "unavailable", "ok", "ok", "limit", { count: 3, max: 3, needed: true }],
+    attunedStack: [false, 0],
+    afterRemove: 2,
+    fixedQuantity: 1,
+    // 防禦者的加值轉移已做完，不再提示；雷鳴巨棒的額外傷害會算，力量 20 還沒有。
+    notes: ["部分效果會自動計算，其餘請依說明處理", "", "角色卡不會自動套用這項效果，請依說明處理", "", "", ""]
+  }, "magic and plain items with the same base stay apart in every equipment path, and attunement follows its limits");
+
   // 物品欄滿 300 筆又要多開一筆時裝備失敗：下拉改回原本的選擇並提示；×1 的標籤不用多開一筆，照常裝備。
   const fullItems = [{ uid: "d2", itemId: "匕首", quantity: 2 }, ...Array.from({ length: 299 }, (_, index) => ({ name: `雜物${index}`, quantity: 1 }))];
   await reset(fullItems);
@@ -1301,7 +2798,8 @@ async function validateInventoryItemActions(page) {
     await page.keyboard.press("Escape");
     await item.waitFor({ state: "detached" });
   };
-  const actionButtons = () => item.locator(".inventory-item-actions button").allTextContents();
+  // 次數池的 −／＋ 不算互動按鈕（另由 validateMagicItemCharges 檢查）。
+  const actionButtons = () => item.locator(".inventory-item-actions button:not(.inventory-stepper__button)").allTextContents();
   const itemClosed = () => item.waitFor({ state: "detached" });
   const lastToast = () => page.waitForFunction(() => document.querySelector("#app-toast > .app-toast:last-child .app-toast__message")?.textContent, null, { timeout: 2000 })
     .then(handle => handle.jsonValue());
@@ -1567,6 +3065,17 @@ async function validateInventoryItemActions(page) {
   assert.deepEqual([await castButton("命令術").isDisabled(), await scrollRow().locator(".inventory-action-row__text").textContent()],
     [false, "命令術｜手動管理法術，請自行確認能否使用。豁免 DC 13・攻擊 +5，施法後卷軸消失。"], "manual spell management is not blocked");
   await closeItem();
+  // 魔法模式的卷軸到 5 環：豁免 DC 與攻擊加值依環階，能施法時只有「施法」；只有 SRD 版的法術不能施法，只有「使用」。
+  await page.evaluate(items => Inventory.add(items), [scroll("火球術", 1, "fireball"), scroll("奧術之手", 1, "arcane-hand")]);
+  await openItem("火球術法術卷軸");
+  assert.match(await scrollRow().first().locator(".inventory-action-row__text").textContent(), /豁免 DC 15・攻擊 \+7/u, "a 3rd-level scroll uses its own numbers");
+  assert.equal(await item.getByRole("button", { name: "使用火球術法術卷軸" }).count(), 0, "a castable scroll has no separate use button");
+  assert.equal(await item.locator(".spell-version__tab").count(), 0, "a 3rd-level scroll in the inventory shows only the SRD version");
+  await closeItem();
+  await openItem("奧術之手法術卷軸");
+  assert.equal(await castButton("奧術之手").count(), 0, "SRD-only spells cannot be cast from a scroll");
+  assert.equal(await item.getByRole("button", { name: "使用奧術之手法術卷軸" }).count(), 1, "SRD-only scrolls can still be used up");
+  await closeItem();
   await page.evaluate(() => SpellManagement.setManual(false, { confirm: false }));
 
   // 攻擊用卷軸的 +5，治療加的調整值用角色卡的；毒藥只留塗抹；文字清單的卷軸與目錄同款、手打的自訂物品沒有施法。
@@ -1585,6 +3094,112 @@ async function validateInventoryItemActions(page) {
   assert.deepEqual(await page.evaluate(() => Inventory.entries().filter(entry => entry.name?.endsWith("法術卷軸")).map(entry => [entry.name, entry.itemId || "", Inventory.getScrollSpellId(entry)])),
     [["假法術卷軸", "", ""], ["命令術法術卷軸", "法術卷軸", "command"]]);
   await page.evaluate(() => DiceRoller.setEnabled(false));
+
+  // 穿戴類魔法物品：「裝備」從一筆多件拆出一件穿上（視窗關閉，標籤到「裝備中」）；卸下保留同調；開始同調時自動穿上。
+  // 手持類（魔杖）照武器的選手視窗放進主手或副手；可以穿戴也可以手持的護符分成「手持」「穿戴」兩顆按鈕。
+  // AC 與法術數字要自動計算：這個角色還原後開關是關的，直接打開（不觸發確認視窗），結束時還原。
+  const keyStatsWasOn = await page.evaluate(() => document.getElementById("auto-calculate-key-stats-toggle").checked);
+  await page.evaluate(() => applyStateObject({ class: "wizard", level: "5", int: "16", dex: "14", mainHand: "", offHand: "", armor: "", "spellcasting-ability": "int", __inventory: { version: 1, items: [
+    { uid: "rings", quantity: 2, magic: { id: "ring-of-protection" } },
+    { uid: "cloak", quantity: 1, magic: { id: "cloak-of-protection" } },
+    { uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-the-war-mage-plus", bonus: 1 } },
+    { uid: "talisman", quantity: 1, magic: { id: "talisman-of-pure-good" } }
+  ] } }));
+  await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
+  const group = name => page.evaluate(groupName => [...document.querySelectorAll(`[data-inventory-group="${groupName}"] .inventory-tag`)].map(tag => tag.dataset.inventoryUid), name);
+  const numbers = () => page.evaluate(() => ["ac-display", "spell-attack-bonus"].map(id => document.getElementById(id).value));
+  const openUid = async (uid) => {
+    await page.locator(`[data-inventory-uid="${uid}"]`).click();
+    await item.waitFor();
+  };
+  await openUid("rings");
+  assert.deepEqual(await actionButtons(), ["裝備", "開始同調"]);
+  await item.getByRole("button", { name: "穿上防禦戒指" }).click();
+  await itemClosed();
+  const wornRing = await page.evaluate(() => Inventory.entries().find(entry => entry.worn).uid);
+  assert.deepEqual([await group("equipped"), await page.evaluate(() => Inventory.getEntry("rings").quantity)], [[wornRing], 1], "wearing one ring of a pair splits it into the equipped group");
+  assert.deepEqual(await numbers(), ["12", "+6"], "an unattuned ring does nothing yet");
+  await openUid(wornRing);
+  assert.deepEqual([await actionButtons(), await item.locator(".inventory-item-meta .inventory-tag__badge").isVisible(), await item.locator(".inventory-holding__row").isVisible()],
+    [["卸下", "開始同調"], true, false], "a worn ring shows 卸下, the equipped badge and no quantity row");
+  await item.getByRole("button", { name: "切換防禦戒指的同調" }).click();
+  await page.waitForFunction(() => document.getElementById("ac-display").value === "13", null, { timeout: 2000 });
+  assert.deepEqual([await actionButtons(), await numbers()], [["卸下", "結束同調"], ["13", "+6"]], "a worn, attuned ring adds AC");
+  await item.getByRole("button", { name: "卸下防禦戒指" }).click();
+  await page.waitForFunction(() => document.getElementById("ac-display").value === "12", null, { timeout: 2000 });
+  assert.deepEqual([await actionButtons(), await page.evaluate(uid => Inventory.getEntry(uid).attuned, wornRing)], [["裝備", "結束同調"], true], "taking the ring off keeps attunement");
+  assert.equal(await item.locator(".inventory-item-actions .inventory-action-row__text").textContent(), "需要穿戴才會生效。");
+  await closeItem();
+  assert.deepEqual(await group("equipped"), [], "a ring taken off leaves the equipped group");
+  await openUid("cloak");
+  await item.getByRole("button", { name: "切換防護斗篷的同調" }).click();
+  await page.waitForFunction(() => document.getElementById("ac-display").value === "13", null, { timeout: 2000 });
+  assert.deepEqual([await actionButtons(), await page.evaluate(() => Inventory.getEntry("cloak").worn)], [["卸下", "結束同調"], true], "attuning a cloak puts it on");
+  await closeItem();
+  await openUid("wand");
+  assert.deepEqual(await actionButtons(), ["裝備", "結束同調"], "a wand is equipped like a weapon");
+  await item.getByRole("button", { name: "裝備戰法魔杖+1" }).click();
+  await equipDialog.getByRole("button", { name: "主手", exact: true }).click();
+  await itemClosed();
+  assert.deepEqual([await slots(), (await numbers())[1], await page.inputValue("#atk-main-name")], [["戰法魔杖+1", "", ""], "+7", ""], "a wand in the main hand raises spell attacks without an attack row");
+  await openUid("talisman");
+  assert.deepEqual(await actionButtons(), ["手持", "穿戴", "開始同調"], "a talisman can be held or worn");
+  await item.getByRole("button", { name: "穿上純善護符" }).click();
+  await page.waitForFunction(() => Inventory.getEntry("talisman").worn === true, null, { timeout: 2000 });
+  assert.deepEqual(await actionButtons(), ["卸下", "開始同調"], "a worn talisman cannot be put in a hand");
+  assert.equal(await page.locator("#offHand option", { hasText: "純善護符" }).count(), 0, "a worn talisman is not offered to the hands");
+  await closeItem();
+  // 窄螢幕：穿戴與同調兩顆按鈕不超出視窗。
+  await page.setViewportSize({ width: 375, height: 800 });
+  await openUid("rings");
+  assert.equal(await item.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, "the wear row fits at 375px");
+  await closeItem();
+  await page.setViewportSize({ width: 1100, height: 850 });
+
+  // 同調視窗（裝備頁的「同調 N/3」）：三格下拉只列需同調的物品，選了立刻生效並列出數字變化；同一種已在別格不能選，
+  // 一筆多件選了拆一件，限定條件只提示。物品欄沒有需同調物品或純文字管理時按鈕隱藏。
+  await page.evaluate(() => applyStateObject({ class: "wizard", level: "5", str: "10", int: "16", dex: "14", con: "12", mainHand: "", offHand: "", armor: "", "spellcasting-ability": "int", __inventory: { version: 1, items: [
+    { uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-giant-strength", giant: "hill" } },
+    { uid: "headband", quantity: 1, magic: { id: "headband-of-intellect" } },
+    { uid: "stones", quantity: 2, magic: { id: "ioun-stone", kind: "intellect" } },
+    { uid: "robe", quantity: 1, magic: { id: "robe-of-the-archmagi" } },
+    { uid: "rope", name: "繩子", quantity: 1 }
+  ] } }));
+  await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; showTab("equipment"); });
+  const attuneButton = page.locator("#attunement-open");
+  const attuneDialog = page.locator('.app-dialog[data-variant="attunement"]');
+  const attuneSelects = attuneDialog.locator(".attunement-slot__select");
+  assert.deepEqual([await attuneButton.isVisible(), await attuneButton.textContent(), await page.evaluate(() => [...document.querySelector(".equipment-loadout-heading").children].map(child => child.id || child.tagName))],
+    [true, "同調 1/3", ["H3", "P", "attunement-open"]], "the attunement button sits at the end of the equipment heading");
+  await attuneButton.click();
+  await attuneDialog.waitFor();
+  const optionTexts = index => attuneSelects.nth(index).evaluate(select => [...select.options].map(option => `${option.textContent}${option.disabled ? "×" : ""}`));
+  assert.deepEqual([await attuneSelects.count(), await attuneSelects.evaluateAll(selects => selects.map(select => select.value)), await optionTexts(1)],
+    [3, ["belt", "", ""], ["— 不同調 —", "巨人之力腰帶（山丘）（已在第 1 格）×", "智力頭帶", "艾恩石（智識） ×2（選了拆一件）", "大法師法袍"]], "only items that need attunement are listed; one already in another slot is disabled");
+  await attuneSelects.nth(1).selectOption("headband");
+  assert.deepEqual([await attuneButton.textContent(), await page.evaluate(() => [Inventory.getEntry("headband").attuned, Inventory.getEntry("headband").worn]), await attuneDialog.locator(".attunement-changes").textContent()],
+    ["同調 2/3", [true, true], "這次的變化：智力 16 → 19、法術豁免 DC 14 → 15、法術攻擊 +6 → +7"], "choosing an item attunes and wears it at once and lists what changed");
+  await attuneSelects.nth(2).selectOption("stones");
+  const stoneUid = await page.evaluate(() => Inventory.entries().find(entry => entry.magic?.id === "ioun-stone" && entry.attuned)?.uid);
+  assert.deepEqual([await page.evaluate(() => Inventory.getEntry("stones").quantity), Boolean(stoneUid) && stoneUid !== "stones", await attuneSelects.nth(2).inputValue() === stoneUid, await optionTexts(1).then(list => list.includes("艾恩石（智識）（已在第 3 格）×"))],
+    [1, true, true, true], "choosing one of a stack splits off one to attune");
+  assert.equal(await attuneDialog.locator(".attunement-changes").textContent(), "這次的變化：智力 16 → 19、法術豁免 DC 14 → 15、法術攻擊 +6 → +7", "a capped +2 stone (18) does not beat the headband (19)");
+  await attuneSelects.nth(2).selectOption("robe");
+  assert.deepEqual([await page.evaluate(uid => Boolean(Inventory.getEntry(uid).attuned), stoneUid), await attuneDialog.locator(".attunement-slot__note").allTextContents()],
+    [false, ["需由術士、契術師或法師同調，請自行確認。"]], "switching a slot ends the old attunement; restrictions are only hints");
+  await attuneSelects.nth(0).selectOption("");
+  assert.deepEqual([await attuneButton.textContent(), await page.evaluate(() => [Boolean(Inventory.getEntry("belt").attuned), Inventory.getEntry("belt").worn]), (await attuneDialog.locator(".attunement-changes").textContent()).startsWith("這次的變化：力量 21 → 10")],
+    ["同調 2/3", [false, true], true], "clearing a slot ends attunement and keeps the item worn");
+  await page.setViewportSize({ width: 375, height: 800 });
+  assert.equal(await attuneDialog.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, "the attunement dialog fits at 375px");
+  await attuneDialog.getByRole("button", { name: "完成" }).click();
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [{ uid: "rope", name: "繩子", quantity: 1 }] }));
+  assert.equal(await attuneButton.isVisible(), false, "no item needing attunement hides the button");
+  await page.evaluate(() => Inventory.restore({ version: 1, textOnly: true, items: [] }));
+  assert.equal(await attuneButton.isVisible(), false, "text-only inventory hides the button");
+  await page.evaluate(() => Inventory.restore({ version: 1, items: [] }));
+  await page.evaluate(on => { document.getElementById("auto-calculate-key-stats-toggle").checked = on; }, keyStatsWasOn);
 }
 
 async function emptyCartAndCloseShop(page) {
@@ -1692,7 +3307,7 @@ async function validateEquipmentShop(page) {
   assert.equal(await shop.locator(".equipment-shop__balance").textContent(), "目前財產：1 白金幣", "balance sits under the title");
   assert.equal(await shop.getByRole("button", { name: "關閉", exact: true }).count(), 0, "the corner close button replaces the footer close");
   assert.deepEqual(await shop.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.classList[button.classList.length - 1])),
-    ["equipment-shop__cart-button", "app-dialog__close"], "cart button sits left of the close button");
+    ["equipment-shop__cart-button", "app-dialog__close"], "cart button sits left of the close button; no magic button while the magic item switch is off");
   assert.equal(await badge.isHidden(), true, "empty cart hides the badge");
 
   // The category button keeps the chosen filter after collapsing.

@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: gloves-of-swimming-and-climbing
+name: 運動健將手套
+nameEn: "Gloves of Swimming and Climbing"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+use: worn
+effects: { movement: { climb: speed, swim: speed } }
+hints:
+  - panel: skills
+    text: 攀爬或游泳的力量（運動）檢定 +5。
+text: |-
+  穿戴這雙手套時，你擁有等同於你的速度的攀爬速度與游泳速度，且你進行攀爬或游泳的力量（運動）檢定時獲得+5加值。

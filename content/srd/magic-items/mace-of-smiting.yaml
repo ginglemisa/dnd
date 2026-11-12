@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: mace-of-smiting
+name: 打擊之錘
+nameEn: "Mace of Smiting"
+source: srd
+category: weapon
+rarity: rare
+attunement: false
+base: { fixed: 硬頭錘 }
+effects: { attack: 1, damage: 1 }
+hints:
+  - panel: weapon
+    text: 攻擊構裝生物時加值改為 +3；擲出 20 時額外 7 點鈍擊傷害（構裝生物 14 點，之後生命值 25 以下被摧毀）。
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。當你使用這件武器攻擊構裝生物時，加值增加為+3。
+
+  當你使用這件武器進行的攻擊檢定擲出20時，目標額外受到7點鈍擊傷害；若目標是構裝生物，則改為額外受到14點鈍擊傷害。若構裝生物在承受此傷害後生命值為25點或更少，它就被摧毀。

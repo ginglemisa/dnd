@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ioun-stone
+name: 艾恩石
+nameEn: "Ioun Stone"
+source: srd
+category: wondrous
+group: curio
+rarity: varies
+attunement: true
+use: worn
+options:
+  - id: kind
+    label: 種類
+    choices:
+      - { value: absorption, label: 吸收, rarity: very-rare }
+      - { value: agility, label: 靈活, rarity: very-rare, effects: { abilities: { dex: { bonus: 2, max: 20 } } } }
+      - { value: awareness, label: 警覺, rarity: rare, hints: [ { advantage: [ 先攻, 察覺 ] } ] }
+      - { value: fortitude, label: 堅忍, rarity: very-rare, effects: { abilities: { con: { bonus: 2, max: 20 } } } }
+      - { value: greater-absorption, label: 高等吸收, rarity: legendary }
+      - { value: insight, label: 洞悉, rarity: very-rare, effects: { abilities: { wis: { bonus: 2, max: 20 } } } }
+      - { value: intellect, label: 智識, rarity: very-rare, effects: { abilities: { int: { bonus: 2, max: 20 } } } }
+      - { value: leadership, label: 領導, rarity: very-rare, effects: { abilities: { cha: { bonus: 2, max: 20 } } } }
+      - { value: mastery, label: 精進, rarity: legendary, effects: { proficiencyBonus: 1 } }
+      - { value: protection, label: 防護, rarity: rare, effects: { ac: 1 } }
+      - { value: regeneration, label: 再生, rarity: legendary }
+      - { value: reserve, label: 儲存, rarity: rare }
+      - { value: strength, label: 力量, rarity: very-rare, effects: { abilities: { str: { bonus: 2, max: 20 } } } }
+      - { value: sustenance, label: 維生, rarity: rare }
+text: |-
+  大小約如彈珠的_艾恩石_，得名自艾恩，一位在某些世界受到崇敬的知識與預言之神。_艾恩石_有許多種類，每種都是形狀與顏色的獨特組合。
+
+  當你進行魔法動作將一顆_艾恩石_拋向空中時，石頭會在距你頭部1d3呎處環繞，並在環繞期間賜予你它的益處。你最多可以同時有三顆_艾恩石_環繞你的頭部。
+
+  每顆環繞你頭部的_艾恩石_都視為你所穿戴的物體。環繞的石頭會避免接觸其他生物與物體，調整軌道以避免碰撞，並阻擋其他生物攻擊或奪取它的所有嘗試。
+
+  作為使用動作，你可以抓住並收起任意數量環繞你頭部的_艾恩石_。若你與某顆_艾恩石_的同調在它環繞你頭部時結束，該石頭會如同你丟下它一般墜落。
+
+  石頭的種類決定其稀有度與效果。
+
+  _吸收（極稀有）。_ 當這個淡薰衣草色橢球體環繞你頭部時，你可以進行反應動作，取消你看得見的生物所施放的4環或更低環法術。被取消的法術沒有效果，施放它所用的任何資源都白白浪費。一旦這顆石頭取消了累計20環的法術，它就會燒盡、變成暗灰色並失去魔力。
+
+  _靈活（極稀有）。_ 當這個深紅色球體環繞你頭部時，你的敏捷增加2，最高為20。
+
+  _警覺（稀有）。_ 當這個深藍色菱面體環繞你頭部時，你的先攻擲骰與感知（察覺）檢定具有優勢。
+
+  _堅忍（極稀有）。_ 當這個粉紅色菱面體環繞你頭部時，你的體質增加2，最高為20。
+
+  _高等吸收（傳說）。_ 當這個大理石紋的薰衣草色與綠色橢球體環繞你頭部時，你可以進行反應動作，取消你看得見的生物所施放的8環或更低環法術。被取消的法術沒有效果，施放它所用的任何資源都白白浪費。一旦這顆石頭取消了累計20環的法術，它就會燒盡、變成暗灰色並失去魔力。
+
+  _洞悉（極稀有）。_ 當這個熾亮的藍色球體環繞你頭部時，你的感知增加2，最高為20。
+
+  _智識（極稀有）。_ 當這個大理石紋的緋紅色與藍色球體環繞你頭部時，你的智力增加2，最高為20。
+
+  _領導（極稀有）。_ 當這個大理石紋的粉紅色與綠色球體環繞你頭部時，你的魅力增加2，最高為20。
+  _精進（傳說）。_ 當這個淡綠色稜柱體環繞你頭部時，你的熟練加值增加1。
+
+  _防護（稀有）。_ 當這個灰玫瑰色稜柱體環繞你頭部時，你的AC獲得+1加值。
+
+  _再生（傳說）。_ 若你至少有1點生命值，當這個珍珠白色紡錘體環繞你頭部時，你在每個小時結束時恢復15點生命值。
+
+  _儲存（稀有）。_ 這個鮮豔的紫色稜柱體會儲存施放進它的法術，並保留到你使用它們為止。這顆石頭一次最多可儲存4環的法術。發現時，其中有由DM選擇的1d4環已儲存的法術。
+
+  任何生物都可以在施放1至4環的法術時碰觸石頭，將法術施放進石頭中。該法術除了被儲存在石頭中以外沒有任何效果。若石頭無法容納該法術，法術就會被消耗而沒有效果。施放法術所用的法術位環階，決定它佔用多少空間。
+
+  當這顆石頭環繞你頭部時，你可以施放其中儲存的任何法術。該法術使用原施法者的法術位環階、法術豁免DC、法術攻擊加值與施法屬性，但除此之外視為由你施放。從石頭施放出的法術不再儲存其中，從而騰出空間。
+
+  _力量（極稀有）。_ 當這個淡藍色菱面體環繞你頭部時，你的力量增加2，最高為20。
+
+  _維生（稀有）。_ 當這個透明的紡錘體環繞你頭部時，你不需要飲食。

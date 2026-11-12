@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: gloves-of-thievery
+name: 竊賊手套
+nameEn: "Gloves of Thievery"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: false
+use: worn
+effects: { skills: { 巧手: 5 } }
+text: |-
+  這雙手套穿戴時無法被察覺。穿戴它們時，你進行敏捷（巧手）檢定獲得+5加值。

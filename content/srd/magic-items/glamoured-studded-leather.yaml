@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: glamoured-studded-leather
+name: 幻惑鑲釘皮甲
+nameEn: "Glamoured Studded Leather"
+source: srd
+category: armor
+rarity: rare
+attunement: false
+base: { fixed: 鑲釘皮甲 }
+effects: { ac: 1 }
+actions:
+  - { id: glamour, name: 變換外觀, type: bonus, text: 讓護甲看起來像一般衣物或其他護甲（顏色、款式由你決定），體積與重量不變；持續到再次使用或脫下護甲。 }
+text: |-
+  穿戴這件護甲時，你獲得+1護甲等級加值。你也可以進行附贈動作，使護甲呈現出一般衣物或其他種類護甲的外觀。你決定它的外觀，包括顏色、款式與配件，但護甲仍保有其正常的體積與重量。這種幻象外觀持續到你再次使用此特性，或脫下護甲為止。

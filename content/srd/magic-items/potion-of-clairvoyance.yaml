@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-clairvoyance
+name: 鷹眼術藥水
+nameEn: "Potion of Clairvoyance"
+source: srd
+category: potion
+rarity: rare
+attunement: false
+consumable: true
+spellLinks: [ clairvoyance ]
+text: |-
+  喝下這瓶藥水時，你獲得_鷹眼術_法術的效果（不需專注）。
+
+  一顆眼球漂浮在這瓶藥水淡黃色的液體中，但藥水被打開時就會消失。

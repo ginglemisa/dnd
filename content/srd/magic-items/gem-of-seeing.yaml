@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: gem-of-seeing
+name: 真視寶石
+nameEn: "Gem of Seeing"
+source: srd
+category: wondrous
+group: curio
+rarity: rare
+attunement: true
+pools:
+  - { id: charges, label: 充能, max: 3, recover: dawn, amount: 1d3 }
+actions:
+  - { id: true-sight, name: 真實視覺, type: magic, pool: charges, when: owned, text: 接下來 10 分鐘內，透過寶石凝視時擁有 120 呎真實視覺。 }
+text: |-
+  這顆寶石有3次充能。作為魔法動作，你可以消耗1次充能。接下來10分鐘內，當你透過寶石凝視時，擁有範圍120呎的真實視覺。
+
+  寶石每天黎明恢復1d3次已消耗的充能。

@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-mind-reading
+name: 讀心藥水
+nameEn: "Potion of Mind Reading"
+source: srd
+category: potion
+rarity: rare
+attunement: false
+consumable: true
+spellLinks: [ detect-thoughts ]
+text: |-
+  當你喝下這瓶藥水時，你獲得_偵測思想_法術（豁免DC 13）的效果，持續10分鐘（不需專注）。
+
+  這瓶藥水的濃稠紫色液體中，漂浮著一團卵形的粉紅色雲霧。

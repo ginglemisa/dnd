@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: elixir-of-health
+name: 健康靈藥
+nameEn: "Elixir of Health"
+source: srd
+category: potion
+rarity: rare
+attunement: false
+consumable: true
+text: |-
+  當你喝下這瓶藥水時，你所有的魔法傳染病都會被治癒。此外，你身上的以下狀態會結束：失明、耳聾、麻痺與中毒。
+
+  這種清澈的紅色液體中帶有微小的光泡。

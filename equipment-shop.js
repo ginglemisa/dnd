@@ -9,6 +9,10 @@
  * - 購物清單：標題列購物車按鈕開啟的 AppDialog，與商店同尺寸疊放；返回與 Escape 只關閉清單，
  *   關閉鈕與結帳成立時連同商店一起關閉。
  * - 法術卷軸：環階與法術取自 SpellCatalog，名稱寫成「法術名稱法術卷軸」。
+ * - 魔法物品模式：標題列的切換按鈕把清單換成 magic-item-shop.js 的內容（MagicItemShop.mode 提供分類、清單與每一列），購物車停用、結帳列隱藏，
+ *   購物清單不動；一般商店的分類與搜尋在切回時還原。模式只留在記憶體，關閉商店後恢復一般模式；暫存錢包與分享模式沒有這個按鈕。
+ *   角色欄位 #magic-item-acquire（物品欄「⋯ 更多」的「魔法物品」開關，預設關閉）關著時也沒有這個按鈕；每次開商店時讀一次。
+ *   開關只管能不能取得，已有的魔法物品不受影響。
  * - 購物清單、分類、展開狀態與搜尋只留在記憶體，不進角色 JSON、分享或 autosave。
  * - 暫存錢包：open({ wallet }) 改用呼叫端的餘額與結帳（如快速創角），不讀寫角色卡的財產或攜帶物品；
  *   只提供付款結帳，合計超過餘額時停用，不能免費取得或賒帳。購物清單只保留最近一個 wallet.id 的內容。
@@ -56,6 +60,8 @@
   let cartView = null;
   let spellOptionsByLevel = null;
   let finishCategoryMotion = null;
+  let shopMode = null;
+  let normalFilters = null;
 
   function createElement(tagName, className = "", text = "") {
     const element = document.createElement(tagName);
@@ -74,8 +80,12 @@
     return Array.isArray(globalScope.EQUIPMENT_SHOP_ITEMS) ? globalScope.EQUIPMENT_SHOP_ITEMS : [];
   }
 
+  function getCategoryList() {
+    return shopMode ? shopMode.getCategories() : CATEGORIES;
+  }
+
   function getCategoryLabel(id) {
-    return CATEGORIES.find(([categoryId]) => categoryId === id)?.[1] || "全部";
+    return getCategoryList().find(([categoryId]) => categoryId === id)?.[1] || "全部";
   }
 
   // 彈藥在名稱後標示每份數量，例如「箭矢 (20)」。
@@ -158,6 +168,7 @@
 
   // 「全部」依類別順序接續，跨類別品項只留在 ALL_VIEW_HOMES 指定的類別。
   function getVisibleSections() {
+    if (shopMode) return shopMode.getSections(activeCategory, keyword);
     const categoryIds = activeCategory === "all" ? CATEGORIES.slice(1).map(([id]) => id) : [activeCategory];
     return categoryIds.flatMap(categoryId => getCategorySections(categoryId).map(section => ({
       ...section,
@@ -319,7 +330,9 @@
         if (name) list.appendChild(createElement("li", "equipment-shop__group", name));
         const renderedScrolls = new Set();
         items.forEach(item => {
-          if (!Number.isInteger(item.spellLevel)) {
+          if (shopMode) {
+            list.appendChild(shopMode.createRow(item));
+          } else if (!Number.isInteger(item.spellLevel)) {
             list.appendChild(createItemRow(item));
           } else if (!renderedScrolls.has(item.name)) {
             renderedScrolls.add(item.name);
@@ -362,7 +375,7 @@
       view.badge.textContent = quantity > 99 ? "99+" : String(quantity);
       view.badge.hidden = !quantity;
       view.cartButton.setAttribute("aria-label", quantity ? `購物清單，${quantity} 個物品` : "購物清單，尚未加入物品");
-      view.balance.textContent = `${wallet?.balanceLabel || "目前財產"}：${formatCopper(readBalance())}`;
+      view.balance.textContent = shopMode ? shopMode.note : `${wallet?.balanceLabel || "目前財產"}：${formatCopper(readBalance())}`;
       const walletShortfall = wallet && lines.length ? total - readBalance() : 0;
       view.total.textContent = !lines.length ? ""
         : walletShortfall > 0 ? `合計 ${formatCopper(total)}，尚缺 ${formatCopper(walletShortfall)}`
@@ -641,6 +654,19 @@
     animateCategories(categoriesExpanded);
   }
 
+  function renderCategoryButtons(container) {
+    container.replaceChildren(...getCategoryList().map(([id, label]) => {
+      const button = createButton("equipment-shop__category", label);
+      button.dataset.shopCategory = id;
+      button.addEventListener("click", () => {
+        activeCategory = id;
+        renderCategoryToggle();
+        renderList();
+      });
+      return button;
+    }));
+  }
+
   function buildView(body) {
     const shop = createElement("div", "equipment-shop");
     const toolbar = createElement("div", "equipment-shop__toolbar");
@@ -664,16 +690,7 @@
     categories.id = "equipment-shop-categories";
     categories.setAttribute("role", "group");
     categories.setAttribute("aria-label", "物品分類");
-    CATEGORIES.forEach(([id, label]) => {
-      const button = createButton("equipment-shop__category", label);
-      button.dataset.shopCategory = id;
-      button.addEventListener("click", () => {
-        activeCategory = id;
-        renderCategoryToggle();
-        renderList();
-      });
-      categories.appendChild(button);
-    });
+    renderCategoryButtons(categories);
 
     const list = createElement("div", "equipment-shop__list");
     list.setAttribute("aria-label", "商店物品");
@@ -687,7 +704,53 @@
     return { shop, search, categoryToggle, categories, list, status };
   }
 
-  // 標題下方顯示目前財產，標題列右側為購物車（含數量徽章）與關閉按鈕。
+  function canUseMagicMode() {
+    return !wallet && !globalScope.SHARE_MODE && Boolean(globalScope.MagicItemShop)
+      && document.getElementById("magic-item-acquire")?.checked === true;
+  }
+
+  // 一般商店的分類與搜尋先記下，切回時還原；魔法物品模式從「全部」與空白搜尋開始。
+  function setShopMode(mode) {
+    finishCategoryMotion?.();
+    if (mode) {
+      normalFilters = { activeCategory, keyword, keywordText };
+      activeCategory = "all";
+      keyword = "";
+      keywordText = "";
+    } else if (normalFilters) {
+      ({ activeCategory, keyword, keywordText } = normalFilters);
+      normalFilters = null;
+    }
+    shopMode = mode;
+  }
+
+  function toggleMagicMode() {
+    setShopMode(shopMode ? null : globalScope.MagicItemShop.mode);
+    const magic = Boolean(shopMode);
+    view.search.value = keywordText;
+    view.title.textContent = shopMode?.title || "商店";
+    view.magicToggle.setAttribute("aria-pressed", String(magic));
+    view.cartButton.disabled = magic;
+    if (magic) view.root.dataset.shopMode = "magic";
+    else delete view.root.dataset.shopMode;
+    renderCategoryButtons(view.categories);
+    renderCategoryToggle();
+    renderList();
+    renderCartState();
+    announce(magic ? "已切換到魔法物品。" : "已切換到一般商店。");
+  }
+
+  function createMagicToggle() {
+    const toggle = createButton("equipment-shop__icon-button equipment-shop__magic-toggle");
+    toggle.setAttribute("aria-pressed", "false");
+    toggle.setAttribute("aria-label", "魔法物品");
+    toggle.title = "魔法物品";
+    toggle.innerHTML = globalScope.MagicItemShop.mode.icon;
+    toggle.addEventListener("click", toggleMagicMode);
+    return toggle;
+  }
+
+  // 標題下方顯示目前財產，標題列右側為魔法物品切換、購物車（含數量徽章）與關閉按鈕。
   function decorateShopHeader() {
     const header = view.root.querySelector(".app-dialog__header");
     const title = header.querySelector("h2");
@@ -703,8 +766,9 @@
     badge.setAttribute("aria-hidden", "true");
     cartButton.appendChild(badge);
     cartButton.addEventListener("click", () => openCartDialog(cartButton));
-    createHeaderActions(view.root, [cartButton]);
-    Object.assign(view, { cartButton, badge });
+    const magicToggle = canUseMagicMode() ? createMagicToggle() : null;
+    createHeaderActions(view.root, [magicToggle, cartButton].filter(Boolean));
+    Object.assign(view, { cartButton, badge, magicToggle, title });
   }
 
   function focusItem(itemKey) {
@@ -751,6 +815,7 @@
       },
       onClose() {
         finishCategoryMotion?.();
+        setShopMode(null);
         view = null;
         wallet = null;
         cart = sheetCart;
@@ -798,5 +863,5 @@
     return missing;
   }
 
-  globalScope.EquipmentShop = Object.freeze({ open, clearWalletCart, moveWalletCart });
+  globalScope.EquipmentShop = Object.freeze({ open, clearWalletCart, moveWalletCart, getSpellOptions });
 })(window);

@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: periapt-of-wound-closure
+name: 癒合護符
+nameEn: "Periapt of Wound Closure"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+use: worn
+effects: { deathSaveMinimum: 10 }
+hints:
+  - text: 擲生命骰恢復生命值時，恢復的生命值加倍。
+text: |-
+  穿戴這件墜飾時，你獲得下列益處。
+
+  **_保全生命。_** 每當你進行死亡豁免時，你可以將9或更低的擲骰結果改為10，使失敗的豁免變成成功。
+
+  **_強化自然療癒。_** 每當你擲生命骰以恢復生命值時，將其恢復的生命值加倍。

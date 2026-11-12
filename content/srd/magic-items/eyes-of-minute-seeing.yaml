@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: eyes-of-minute-seeing
+name: 微視鏡片
+nameEn: "Eyes of Minute Seeing"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: false
+use: worn
+hints:
+  - text: 1 呎內有黑暗視覺。
+  - panel: skills
+    text: 檢視 1 呎內事物的智力（調查）檢定有優勢。
+text: |-
+  這些水晶鏡片可戴在眼睛上。穿戴它們時，你的視力在1呎範圍內大幅提升，使你在該範圍內獲得黑暗視覺，並且在檢視該範圍內事物時進行的智力（調查）檢定具有優勢。

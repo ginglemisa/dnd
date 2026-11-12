@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: elemental-gem
+name: 元素寶石
+nameEn: "Elemental Gem"
+source: srd
+category: wondrous
+group: consumable
+rarity: uncommon
+attunement: false
+options:
+  - id: gem
+    label: 寶石
+    choices:
+      - { value: sapphire, label: 藍寶石 }
+      - { value: emerald, label: 祖母綠 }
+      - { value: corundum, label: 紅剛玉 }
+      - { value: yellow-diamond, label: 黃鑽石 }
+consumable: true
+text: |-
+  這顆寶石蘊含一絲元素能量。當你進行使用動作打碎寶石時，會召喚出一個元素生物（數據塊見「怪物」章節），而寶石不再具有魔力。元素生物出現在盡可能靠近破碎寶石的一個未被佔據的空間，聽得懂你的語言、服從你的命令，並在你的先攻順位上緊接在你之後進行回合。元素生物會在1小時後、死亡時，或你以附贈動作遣散它時消失。寶石的種類決定元素生物的種類，如下表所示。
+
+  | 寶石 | 召喚的元素生物 |
+  | --- | --- |
+  | 藍寶石 | 風元素 |
+  | 祖母綠 | 水元素 |
+  | 紅剛玉 | 火元素 |
+  | 黃鑽石 | 土元素 |

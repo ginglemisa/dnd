@@ -1,6 +1,6 @@
 # 內容檔
 
-網站的職業、子職、專長、背景、種族、法術與怪物資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、專長、背景、種族、法術、怪物各一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；專長、背景、種族、法術與怪物見下方「專長」「背景」「種族」「法術」「怪物」。
+網站的職業、子職、專長、背景、種族、法術、怪物與魔法物品資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、專長、背景、種族、法術、怪物各一個檔，魔法物品全部在同一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；專長、背景、種族、法術、怪物與魔法物品見下方「專長」「背景」「種族」「法術」「怪物」「魔法物品」。
 
 職業與子職的說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
 
@@ -17,6 +17,7 @@
 | 公開種族 | `content/srd/races/<種族 ID>.yaml` |
 | 公開法術 | `content/srd/spells/<法術 ID>.yaml` |
 | 公開怪物（野獸、召喚物） | `content/srd/monsters/<key>.yaml` |
+| 公開魔法物品（一件一檔） | `content/srd/magic-items/<id>.yaml` |
 | 私人內容包（不進公開 repo） | `content/private/classes/`、`content/private/subclasses/` |
 | 私人法術（格式已訂、尚未啟用） | `content/private/spells/<法術 ID>.yaml` |
 | 私人內容包補充既有職業（例如兼職） | `content/private/class-extensions/<職業 ID>.yaml` |
@@ -250,7 +251,7 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 
 選項的 `id`、起始裝備組合的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註；子職法術的來源識別碼（見「能力給予的法術」）會寫進角色的法術清單。改顯示文字沒關係，這些 ID 不可改。
 
-這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；專長、背景、種族、法術與怪物各有 `feat-id-baseline.json`、`background-id-baseline.json`、`race-id-baseline.json`、`spell-id-baseline.json`、`monster-id-baseline.json`（見各節）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
+這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；專長、背景、種族、法術、怪物與魔法物品各有 `feat-id-baseline.json`、`background-id-baseline.json`、`race-id-baseline.json`、`spell-id-baseline.json`、`monster-id-baseline.json`、`magic-item-id-baseline.json`（見各節）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
 
 ```bash
 npm run build -- --update-id-baseline
@@ -542,10 +543,11 @@ en:
 | `srd.classes` | SRD 的職業清單，只在有 `site`、且與 `classes` 不同時才寫。只用於查閱與搜尋的職業分類（兩者的聯集），不影響職業法表與準備法術。建置檢查職業 ID，`tools/spell-reference/validate.js --srd` 與 SRD 比對。 |
 | `site.tabletop` | 跑團版說明（跑團動作分頁與跑團法術詳情）；省略時用 `site.body`。目前沒有法術使用。 |
 | `site.wildCompanion` | 德魯伊荒野夥伴施放時的跑團說明（特例，只有 `find-familiar`）：`castingTime`、`components`（不含材料）、`duration`、`body`，學派與射程同法術。只有跑團的荒野夥伴動作與法術頁的荒野夥伴法術詳情使用；SRD 版、法術書、搜尋與其他職業仍是一般版本。 |
+| `srd.outcomes` | 只有 SRD 版（沒有 `site`）的法術從魔法物品施放時的擲骰資料，格式同 `site.outcomes`；只補施法當下就有骰子的法術（例如寒冰錐、醫療術），沒有骰子的不寫。不會讓法術變成角色可用的法術（沒有 `playable`，也不進 `spell-id-baseline.json`），畫面仍顯示 SRD 版。 |
 | `site.outcomes` | 跑團施法結果（擲骰按鈕）：`kind`（`damage`／`healing`／`temporary-hp`／`attack`）、`formula` 或 `fixed`、`cantripAt5`、`upcastDice`、`damageType`（或可選的 `damageTypes`）、`autoOnCast`（施法時自動擲骰）、`context` 等，欄位說明見格式定義。 |
 
 - 建置檢查：格式、檔名、名稱不重複、成分與材料、觸發條件、`upcast` 與網站版說明、`outcomes` 的骰式與升環欄位，以及 `spell-id-baseline.json`（只列有 `site` 的法術；新增可用法術或移除 `site` 都須確認後更新基準檔）。
-- `npm run build` 產生根目錄的 `spell-content.generated.js`：`spellRules`（全部法術的規則；`playable` 為角色可用）、`spellText`（網站版的 `desc` 標頭＋說明、`header` 標頭各項、`tabletop`、`wildCompanion`）。網站經 `spell-list.js` 的 `SpellCatalog` 讀取，不從說明文字反推規則。`spell-srd.generated.js` 是 SRD 版的 HTML，網站第一次切到「SRD 版」時才載入，離線版內嵌。英文原文不寫進任何產生檔。
+- `npm run build` 產生根目錄的 `spell-content.generated.js`：`spellRules`（全部法術的規則；`playable` 為角色可用；只有 SRD 版的法術有 `srd.outcomes` 時也帶 `outcomes`，經 `SpellCatalog.getItemSpell()`／`resolveCastOutcomes()` 只供物品施法）、`spellText`（網站版的 `desc` 標頭＋說明、`header` 標頭各項、`tabletop`、`wildCompanion`）。網站經 `spell-list.js` 的 `SpellCatalog` 讀取，不從說明文字反推規則。`spell-srd.generated.js` 是 SRD 版的 HTML，網站第一次切到「SRD 版」時才載入，離線版內嵌。英文原文不寫進任何產生檔。
 - SRD 譯文的用語與檢查見 [tools/spell-reference/README.md](../tools/spell-reference/README.md)。
 
 ### 私人法術（尚未啟用）
@@ -669,14 +671,171 @@ en:
 - 異界坐騎不在 SRD 的怪物章節，是尋獲坐騎法術內附的數據塊；`srd`、`en` 取自該法術的 SRD 譯文與原文。
 - 用語同法術譯文（見 [tools/spell-reference/glossary.md](../tools/spell-reference/glossary.md)）：傷害類型用 `SpellCatalog.damageTypeLabels`、狀態用 `condition.js` 的名稱，數字與單位之間不留空格。
 
+## 魔法物品
+
+SRD 5.2.1「魔法物品 A–Z」共 258 件，一件一個檔案：`content/srd/magic-items/<id>.yaml`（檔名等於 `id`，開頭是 `$schema` 註解），建置時依 SRD 的英文名順序排列，格式定義是 `content/schema/magic-item.schema.json`。魔法物品獨立於 `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；基本款只引用裝備的中文品名。說明文字逐字取自繁中譯文，只放中文和 `nameEn`，英文內文不進內容檔與產物。
+
+```yaml
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: dagger-of-venom
+name: 淬毒匕首
+nameEn: "Dagger of Venom"
+source: srd
+category: weapon
+rarity: rare
+attunement: false
+base: { fixed: 匕首 }
+effects: { attack: 1, damage: 1 }
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+1加值。
+```
+
+| 欄位 | 說明 |
+| --- | --- |
+| `id` | 穩定 key，由 `nameEn` 轉成 kebab-case（括弧內別名不算，「X, +1, +2, or +3」為 `x-plus`）。會寫進物品欄存檔，不可改名（列在 `magic-item-id-baseline.json`）。 |
+| `name`、`nameEn`、`source` | 中文譯名（以譯名表定稿為準）、SRD 英文名、內容來源（目前只有 `srd`）。全部物品的 `name`、`nameEn` 不可重複。 |
+| `category`、`group` | 類別：`weapon` 武器、`armor` 護甲、`potion` 藥水、`ring` 戒指、`scroll` 卷軸、`rod` 權杖、`staff` 法杖、`wand` 魔杖、`wondrous` 奇物。奇物必寫小標 `group`：`wearable` 穿戴、`container` 容器、`consumable` 消耗品、`tool` 工具與載具、`book` 書籍、`curio` 奇珍。 |
+| `rarity`、`rarityText` | `common`、`uncommon`、`rare`、`very-rare`、`legendary`、`artifact`。隨選項變動時寫 `varies`，並在剛好一組選項的每個 choice 寫 `rarity`；副標不是「稀有度不定」時另寫 `rarityText`（例如「非常見（+1）、稀有（+2）或極稀有（+3）」）。 |
+| `attunement` | `false`、`true`，或限定條件文字（以「由」開頭，例如「由法師」，顯示為「需由法師同調」）。 |
+| `use` | 使用方式，沒有 `base` 的物品才寫，依說明文字判斷：`worn`（寫「穿戴…時」，艾恩石的「視為你所穿戴」也算）、`held`（寫「手持…時」）、`wornOrHeld`（寫「穿戴或手持」）、`carried`（寫「帶在身上」「在你身上」）。效果只在符合時生效：穿戴要在物品詳情按「裝備」、手持要放在主手或副手、帶在身上持有就算，需要同調的仍要同調。有 `effects`（含選項的 `effects`）或 `hints`（`when: owned` 的除外）的物品必寫；說明只講啟動方式、看不出有沒有持續效果的物品（例如火球項鍊、支配權杖）可以不寫。有 `base` 的武器、護甲、盾牌、法杖用裝備欄位，不寫這欄。 |
+| `base` | 基本款，擇一：`{ fixed: 長劍 }`（固定一種）、`{ from: [長弓, 短弓] }`（列出品名）、`{ any: [melee-weapon], label: 任意近戰武器 }`（裝備分類：`simple-weapon`、`martial-weapon`、`melee-weapon`、`light-armor`、`medium-armor`、`heavy-armor`、`ammunition`；可加 `except` 排除品名）。品名須對得上 `equipment-data.js`。武器與護甲必寫，法杖、權杖可寫（可當作長棍或硬頭錘揮舞時），其他類別不寫。 |
+| `options` | 取得時要選的項目：`[{ id, label, choices: [{ value, label, ... }] }]`。`id` 與 `value` 會寫進物品欄存檔的 `magic` 物件，不可改名（列在基準檔），`id` 不可用 `id`、`base`、`form`、`pool`、`action`。`id: bonus` 是 +N 加值，`id: damageType` 的值須是法術的傷害類型 ID。`choices` 可寫 `rarity`、`effects`（選了才有的自動計算，不可寫 `condition`）、`hints`（選了才有的提示，例如抗性戒指每種傷害類型的抗性）、`heal`（治療藥水骰式，例如 `4d4 + 4`）、`score`（巨人之力藥水的力量值，只是資料、不計算；穿戴類物品寫 `effects.abilities`）、`saveDc`／`attackBonus`（法術卷軸）、`omitInName: true`（顯示名稱不加這個選項）。 |
+| `effects` | 只放角色卡會自動計算的恆定效果，用下方「效果與提示的詞」描述。對特定目標才有的加值、擲 20 才有的效果、命中後選用或要豁免的效果、只對遠程的 AC 等條件式效果不寫，改寫 `hints`（武器說明）或留在說明文字。 |
+| `hints` | 提示：只顯示、不計算的效果，例如常駐抗性、優勢、詛咒、看目標的額外傷害。見下方「效果與提示的詞」。 |
+| `spellLinks` | 藥水與油「獲得某法術的效果」的法術 ID 清單，只連到法術說明，不是施法（見下方「從物品施放的法術」）。 |
+| `pools`、`actions` | 次數池（充能、每日一次、冷卻、珠子等）與能力（跑團的動作、附贈、反應按鈕）。見下方「次數池與能力」。 |
+| `displayName` | 選定後的顯示名稱樣板，`{base}` 為基本款、`{選項 id}` 為該選項的 `label`，例如 `"{base}{bonus}"`。省略時為「名稱（可選的基本款、選項）」，例如「治療藥水（高等）」「焰舌（長劍）」；固定基本款不列入。 |
+| `consumable` | `true`：用掉就減 1（藥水、卷軸、彈藥、每顆一件的珠子等）。一個容器裡有好幾撮、好幾盎司的物品（乾燥粉、至尊膠、萬溶劑）改寫不恢復的 `pools`。 |
+| `container` | 容器（只有奇物 `group: container` 才寫）：物品欄可以把其他物品放進去，不限容量；一件一筆，不合併、不拆分。`{}` 是普通容器；`extradimensional: true` 是異次元空間（說明寫異次元空間的袋子、箭袋）：裡面的物品（含更深層）不算重量，容器本身照算，把一個異次元容器放進另一個時提示兩件都會被摧毀，但不自動刪除；`devour: 2d6` 是吞噬內容物：裡面有東西時以真實時間計時（骰式為分鐘），到期吃掉內容物。吞噬的骰子是使用者要的隱藏彩蛋，程式內部悄悄擲，不經 `DiceRoller`、不進擲骰歷史、不提示玩家。 |
+| `forms` | 可切換的形態（王者權杖）：`[{ id, label, base?, noEffects?, effects?, hints? }]`，物品視窗有「目前形態」下拉，存在這一筆的 `magic.form`（第一個是原本形態，不寫進存檔），`id` 列在基準檔。`base` 是這個形態當作哪一件武器；省略時沿用物品的基本款。`noEffects: true` 表示沒有物品的 `effects`；形態自己的 `effects`（例如火焰之刃的額外火焰傷害）與 `hints` 只在這個形態時加上。裝備欄位的值不隨形態改變。只用於固定基本款的物品。 |
+| `bonusTransfer` | `true`：武器的攻擊與傷害加值可以部分或全部轉移到 AC（防禦者），物品視窗與跑團武器卡有步進器，不存檔；要有 `effects.attack`。 |
+| `manualEffect` | `true`：這件物品會改變角色卡的數值或武器資料（命中、傷害、AC、豁免、屬性、速度、技能、熟練、生命值），或有之後才做的能力（例如從物品施法），但目前還有部分沒有自動計算。商店視窗與物品欄視窗的說明下方會多一行提示（有自動計算的 `effects` 時是「部分效果會自動計算，其餘請依說明處理」）。效果全部已自動計算、已寫成 `hints`（抗性、優勢、詛咒、武器說明等）或 `actions`（跑團按鈕）時不寫。 |
+| `equipmentName` | 一般商店也賣的同一件物品（治療藥水、法術卷軸）的裝備品名，須是 `equipment-data.js` 的品名。裝備詳情、商店名稱連結與物品欄視窗改顯示這件的說明。 |
+| `sitePrice`、`siteText` | 只有寫了 `equipmentName` 的物品才寫：詳情多「網站版｜SRD 版」頁籤，網站版是這段價格與說明（純文字、保留換行），SRD 版是 `text`。兩個欄位要一起寫。這段只描述一般款：選到其他選項（`omitInName` 以外，例如高等以上的治療藥水）或 2 環以上的法術卷軸時沒有頁籤，只顯示 `text`。 |
+| `weight` | 每件磅數，只有譯文明寫時才填。 |
+| `text` | 說明本文，不含類別與稀有度的副標（副標由上面的欄位組成）。段落之間空一行，支援 `_斜體_`、`**粗體**`、「- 」清單、`####` 小標與 GFM 表格；不可有 HTML。註腳的星號寫成 `*`。 |
+
+### 效果與提示的詞
+
+每件物品的規則只用下面這組固定的詞描述，網站程式只寫每種詞怎麼算（`character-rules.js` 的 `getActiveMagicEffects()`），不寫任何物品的特例。套不進這些詞的效果只留在說明文字；要新增詞時，先確認有兩件以上的物品會用到，或效果很重要。
+
+**生效條件**：需要同調的物品要已同調。有 `base` 的物品依裝備位置：武器、法杖、權杖拿在主手或副手，護甲穿著、盾牌持用；沒有 `base` 的物品依 `use`。`effects` 的 `condition` 與 `hints` 的 `when` 另有說明。
+
+**`effects`（自動計算）**，可寫在物品、選項的 `choices` 與 `forms`：
+
+| 詞 | 寫法與算法 |
+| --- | --- |
+| `attack`、`damage` | 武器攻擊與傷害的固定加值，只加在拿著這件武器的那一手。值是正整數或 `bonus`（取自 `bonus` 選項）。彈藥（`base.any: [ammunition]`）要在物品詳情按「裝備」，加在拿著用這種彈藥的武器（武器屬性「彈藥 (…；箭矢)」）的那一手。 |
+| `ac`、`saves`、`spellAttack`、`spellSaveDc` | AC、豁免、法術攻擊、法術豁免 DC 的固定加值。 |
+| `condition` | `ac`／`saves`／`spellAttack`／`spellSaveDc` 的生效條件：`unarmored`（未穿戴護甲且未使用盾牌）、`held`（這件武器裝備在主手或副手；只用於有 `base` 的物品，沒有 `base` 的物品改寫 `use`）。只能寫在物品本身。 |
+| `extraDamage` | 每次命中都有的額外傷害骰：`[{ dice: 1d6, type: cold }]`，`type` 是傷害類型 ID，或 `weapon`（與這件武器目前的傷害類型相同，例如惡毒武器）。攻擊列寫成 `1d8+3揮砍+1d6冷凍`，同類型時併進武器骰：`1d8+2d6+3揮砍`；跑團擲傷害時一起擲。只用於武器類（有 `base` 且不是護甲、盾牌）。 |
+| `damageType` | 這件武器的傷害類型改成這一種（能量弓的力場、陽炎劍的光耀）。只用於武器類。 |
+| `finesse` | `true`：武器多了靈巧屬性（力量、敏捷取高）。只用於固定基本款的武器類。 |
+| `thrown` | `[一般射程, 遠射程]`：武器多了投擲屬性，例如 `[20, 60]` 顯示為「投擲 (射程 20/60)」。只用於固定基本款的武器類，基本款要有空的屬性欄位。 |
+| `proficiencyAs` | `[長劍, 短劍]`：熟練其中任一件武器時也熟練這件（陽炎劍）。只用於武器類。 |
+| `weapons` | `{ names: [長弓, 短弓], attack?, damage? }`：拿這些武器（依基本款）攻擊時的命中、傷害加值，例如射手護腕。 |
+| `unarmedStrike` | `{ dice: 1d8, type: slashing, attack?, damage? }`：徒手打擊的傷害骰與類型，以及命中、傷害加值（惡魔護甲）。武僧的武藝骰較大時用武藝骰。角色卡只有武僧的「武藝」有攻擊列，其他職業的徒手打擊請另寫 `hints`。 |
+| `abilities` | 屬性的有效值，鍵是 `str`、`dex`、`con`、`int`、`wis`、`cha`，每個屬性擇一寫法：`{ set: 19 }`（屬性變成這個值，原本較高時用原本的）、`{ bonus: 2, max: 20 }`（增加，最高到上限，不會降低）、`{ setBonus: 4, max: 30, from: [物品 id…] }`（`from` 物品同時生效時，它們的 `set` 再增加，例如雷神之錘加在巨人之力腰帶上；建置檢查 `from` 的物品要有同一個屬性的 `set`）。每種寫法都可加 `when: owned`：持有（需同調的已同調）就算，不看穿戴或手持（雷鳴巨棒、雷神之錘的說明只寫同調）。算法：原值 → 加值依序加上（各自夾上限）→ 與設定值比 → 取最高。屬性欄只存原值，有效值不存檔（`character-rules.js` 的 `getEffectiveAbilityScore()` 回傳數值與決定它的物品名稱）。可用於任何類別；沒寫 `when` 時生效條件同其他效果（有基本款的武器要拿在手上）。手冊、藥水這類永久或暫時改屬性的物品不寫，只留說明。 |
+| `skills` | `{ 巧手: 5 }`：技能檢定的固定加值（竊賊手套），鍵是技能 ID（建置檢查）。自動計算開啟時寫進技能欄；有條件的加值（攀爬時、破門時）寫 `hints`。 |
+| `checks` | 所有屬性檢定的固定加值（幸運石）：加在每個技能檢定、先攻（使用者決定）與跑團的屬性檢定按鈕。豁免另寫 `saves`。 |
+| `proficiencyBonus` | 熟練加值增加的點數（艾恩石精進）：技能、豁免、先攻（警覺）、攻擊、法術數值、熟練加值次數的資源與 PDF 都跟著變。 |
+| `hitPoints` | `{ perLevel: 1, when?: owned }`：每個角色等級增加的生命值上限（狂戰斧，`when: owned` 同調就算）。只在自動計算開啟時寫進生命值上限。 |
+| `proficiencies` | `[長弓, 短弓]`：擁有這些武器的熟練（射手護腕，依基本款）。只影響攻擊列與裝備摘要的「未熟練」，不改職業的武器熟練，所以武器精通的選項不變。 |
+| `trained` | `true`：未受過這件護甲所屬類別的訓練時也視為受過訓練（精靈鏈甲）。只用於護甲類，穿著時才算。 |
+| `deathSaveMinimum` | 死亡豁免的原骰低於這個數字時改成這個數字（癒合護符 `10`，原骰 1 也改，變成成功）；擲出 20 仍恢復 1 HP。死亡豁免另加目前生效的 `saves`，總值 10 以上成功，擲出 1、20 看原骰。 |
+| `unarmoredAc` | 沒穿護甲時的基礎 AC＝這個值＋敏捷調整值（大法師法袍 15；可以用盾牌），和無甲防禦等算法取最高。 |
+| `noStrengthRequirement`、`noStealthDisadvantage` | `true`：這件護甲沒有力量需求、不讓隱匿有劣勢（秘銀護甲）。只用於護甲類；裝備摘要不顯示這兩項，速度不因力量需求降低。 |
+| `movement` | `{ swim?, climb?, fly?, hover?, minimum?, ignoreArmorStrength? }`：`swim`／`climb`／`fly` 是呎數或 `speed`（等於目前步行速度），寫在跑團速度那一格（「30 呎，游泳 60、攀爬 30」，多個來源取最大，等於速度的跟著目前速度與大步奔行）；`hover: true` 要和 `fly` 一起寫；`minimum` 是步行速度至少的呎數、`ignoreArmorStrength: true` 是不因護甲力量需求降速（跑跳之靴），這兩項角色卡與 PDF 的速度欄也算。角色卡速度欄只算步行。 |
+
+荒野形態的跑團畫面跟著變身時每一格的選擇（`getActiveMagicEffects({ wildShape: { armor, main, off, other } })`，物品在哪一格由 `character-rules.js` 的 `getWildShapeEquipmentGroup()` 決定）：選穿著的那一格照平常規則生效，融入、掉落的不算（含 `when: owned`）；力敏體以野獸數值為原值套用屬性效果。角色卡的數字不變。
+
+**`hints`（提示）**，可寫在物品、選項的 `choices` 與 `forms`，是清單，每筆：
+
+| 詞 | 寫法與顯示 |
+| --- | --- |
+| `panel` | 顯示位置：`overview` 跑團總覽（預設）、`skills` 跑團技能頁籤（有條件的技能加值與優勢、豁免優勢）、`weapon` 武器說明（裝備摘要的那一手、跑團武器卡的備註框；看目標、擲 20、命中後選用或豁免的效果；只用於武器類）。 |
+| `when` | `owned`：持有就顯示（需同調的要已同調），不看裝備位置與穿戴，例如狂戰斧的詛咒。省略時依上面的生效條件。武器說明不寫。 |
+| `resistances`、`immunities` | 傷害類型 ID 的清單，顯示為「火焰傷害抗性」「免疫毒素傷害」。 |
+| `darkvision` | 呎數，顯示為「黑暗視覺 60 呎」。 |
+| `languages` | 語言名稱的清單，顯示為「懂矮人語」；不改角色卡的語言欄。 |
+| `advantage` | 無條件有優勢的檢定：技能 ID 或「先攻」，顯示為「隱匿檢定有優勢」「先攻擲骰有優勢」，角色卡技能格、跑團技能按鈕與先攻格另加「優勢」標籤（`getMagicItemAdvantages()`）。有條件的優勢寫 `text`。 |
+| `text` | 自由文字，以句號結尾，接在上面幾個詞產生的句子後面。 |
+
+`resistances`、`immunities`、`darkvision`、`languages`、`advantage` 只放在跑團總覽。提示的標題是物品名稱，同一件物品在同一處的提示接成一段。每筆至少要有 `text` 或其中一個詞。
+
+### 次數池與能力
+
+```yaml
+pools:
+  - { id: charges, label: 充能, max: 7, recover: dawn, amount: 1d6 + 1 }
+actions:
+  - { id: terror, name: 釋放恐懼, type: magic, pool: charges, text: 你 30 呎內…重複豁免。 }
+```
+
+**`pools`（次數池）**：物品詳情每個池一列「充能：剩 5/7」，可 −／＋ 或直接改數字。剩餘次數存在物品欄那一筆的 `charges`（`{ 池 id: 剩幾次 }`，沒寫表示滿的，取得時都是滿的），autosave、JSON 與分享都帶；有次數池的物品不合併，一筆多件時只追蹤目前這件，拆出的那件是滿的。
+
+| 欄位 | 說明 |
+| --- | --- |
+| `id` | 池 ID，寫進存檔的 `charges`，不可改名（基準檔「物品 id:pool:池 id」）。 |
+| `label` | 池的名稱：「充能」，或每日一次的能力名稱（「汲取生命」）、冷卻的能力名稱、「珠子」「粉末（撮）」等。一件物品多個各自每日一次的能力各一個池。 |
+| `max` | 最大值。隨機初始次數（例如 1d8 + 1）寫骰式的最大值（9）。 |
+| `recover` | `dawn` 黎明、`dusk` 黃昏、`cooldown` 冷卻：物品詳情有恢復按鈕（「黎明恢復 1d6 + 1」「冷卻結束（7 天）」），由玩家自己按。`shortRest`（短休或長休）、`longRest`（長休）：跑團的休息完成時自動恢復，物品詳情只寫「長休時自動恢復」。省略表示不恢復（珠子、粉末、盎司、無恢復的充能）。 |
+| `amount` | 恢復量：整數或骰式（`1d6 + 1`，可以用 d3；按恢復時經 `DiceRoller` 擲，進擲骰歷史，加上去不超過 `max`）。省略表示全部恢復。 |
+| `cooldown` | 冷卻多久（例如「7 天」「1d12 小時」），只用於 `recover: cooldown`，寫在恢復按鈕上。 |
+
+**`actions`（能力）**：跑團模式的按鈕，生效條件同 `hints`（`when: owned` 時持有就算），荒野形態只留變身時選「穿著」那幾格物品的按鈕。按鈕文字、說明都是這裡的資料；扣次數的按鈕在物品名稱後面顯示「1/3」，不夠時變灰（仍可點開看說明），不隱藏。
+
+| 欄位 | 說明 |
+| --- | --- |
+| `id` | 能力 ID，跑團隱藏偏好的 key 是 `official:<頁>:magic-item-<物品 id>-<能力 id>`，不可改名（基準檔「物品 id:action:能力 id」）。 |
+| `name`、`text` | 按鈕文字與說明（純文字，以句號結尾；只寫跑團當下要看的重點，詳細規則留在說明本文）。 |
+| `type` | `action` 動作、`magic` 魔法動作、`attack` 攻擊動作（這三種在動作頁）、`bonus` 附贈動作、`reaction` 反應。 |
+| `pool`、`cost` | 使用時扣哪個池，與每次花費（預設 1；`[1, 3]` 表示按下後選這次花幾次）。沒有 `pool` 的按鈕只有說明。 |
+| `when` | `owned`：持有就能用（碗缽、號角等沒有 `use` 的物品）。沒有 `base` 也沒有 `use` 的物品要寫。 |
+| `option` | `{ 選項 id: 值 }`：只有選了這個選項時才有（命令元素戒指依元素位面的法術表）。 |
+| `alsoPool` | 另外再扣 1 次的池，要和 `pool` 一起寫（吉兆之刃的祈願：扣祈願充能，也扣「每日一次」的池）。 |
+
+**從物品施放的法術**：能力寫 `spell`（法術 ID，含只有 SRD 版的法術）時，就是從物品施放的法術，不寫 `name`、`type`、`text`（名稱與施放時間讀法術），不出現在動作／附贈／反應頁，而是放在跑團法術頁的「物品」分組。不耗法術位、不要求法術在職業法表，資格就是上面的生效條件；施法時扣 `pool`（沒寫 `pool` 表示隨意施放，例如花費 0 的法術、浮空之靴）。只有 SRD 版的法術畫面顯示 SRD 版，擲骰資料見「法術」的 `srd.outcomes`。
+
+```yaml
+actions:
+  - { id: fireball, spell: fireball, pool: charges, cost: [ 1, 3 ], level: 3, saveDc: 15 }   # 1 次是 3 環，每多 1 次 +1 環
+  - { id: cure-wounds, spell: cure-wounds, pool: charges, cost: [ 1, 4 ], stats: yours }
+  - { id: suggestion, spell: suggestion, pool: suggestion, saveDc: 17, concentration: false, when: owned, note: 透過探知術感應器…也結束。 }
+```
+
+| 欄位 | 說明 |
+| --- | --- |
+| `level` | 施放的環階（固定版本，例如星辰法袍的 5 環魔法飛彈）；省略是法術本身的環階。`cost` 是範圍時，付最少花費是這個環階，每多付 1 次 +1 環；`maxLevel` 是升環上限（火球項鍊）。 |
+| `saveDc`、`attackBonus` | 物品固定的法術豁免 DC 與攻擊加值（魔杖 DC 15、爆裂頭飾 +5）。 |
+| `stats` | `yours`：用角色卡的法術豁免 DC 與法術攻擊（含物品加值）；角色沒有施法屬性時不能施放，畫面寫原因。三者都不寫表示說明沒寫（或法術不需要），畫面不顯示 DC。治療等加的施法屬性調整值一律用角色卡的數值。 |
+| `castingTime` | 覆寫施放時間：`action`、`bonus-action`、`reaction`（念珠項鍊是附贈動作）。 |
+| `concentration` | `false`：這次施放不需專注（水晶球的暗示術）；其餘照法術本身，由跑團的專注追蹤處理。 |
+| `note` | 目標限制或備註，寫在法術旁（「只能以你自己為目標。」「只影響野獸。」），以句號結尾。材料成分只顯示在法術說明，不檢查。 |
+
+- 建置檢查：法術存在、`level` 不低於法術本身、戲法不升環、多付花費不超過 9 環（或寫 `maxLevel`）、`stats` 與固定數字擇一、`concentration: false` 只用於專注法術、`castingTime` 不與法術本身相同、`option` 是這件物品的選項、`alsoPool` 是另一個池；`spell` 與 `name`／`type`／`text` 不可同時寫。
+- 只放說明、不做法術的：驚奇魔杖的隨機表、萬法帽、神秘牌組、祈神蠟燭、法力再生珍珠。藥水與油的「獲得法術效果」不算施法，改寫 `spellLinks: [ haste ]`：物品視窗多一列「法術效果：…」連到法術說明（建置檢查法術 ID）。
+
+```yaml
+effects: { extraDamage: [ { dice: 1d6, type: cold } ] }
+hints:
+  - resistances: [ fire ]
+  - panel: weapon
+    text: 冰點以下的溫度中發光；拔出時可熄滅周圍 30 呎內非魔法的火焰（1 小時一次）。
+```
+
+- 建置檢查：格式、`id` 與 `nameEn` 對應、中英文名不重複、奇物的 `group`、`base` 的品名與分類、選項與稀有度的對應、`bonus` 與傷害類型、`effects`（武器類、護甲類專用的詞、武器品名、技能 ID、`movement.hover` 要有 `fly`、屬性欄位、`abilities.*.from` 的物品）、`hints`（位置、技能 ID、句號）、`use`（有 `base` 不寫、有 `effects` 或 `hints` 必寫）、`displayName` 的代入標記、魔法武器、護甲與手持物品的可能名稱彼此唯一且不與普通品名相撞、說明沒有英文內文，以及 `magic-item-id-baseline.json`（`items` 為物品 id，`options` 為「物品 id:選項 id:選項值」）。
+- `npm run build` 產生根目錄的 `magic-item-content.generated.js`（規則與名稱，網頁一開始就載入）與 `magic-item-text.generated.js`（說明本文的 HTML，第一次需要時才載入，離線版內嵌）。Markdown 在建置時轉成 HTML，執行時不解析。
+- 網站經 `magic-items.js` 的 `MagicItemCatalog` 讀取，不從顯示文字反推規則：`getAll()`、`get(id)`、`getByEquipmentName(name)`、`getCategories()`、`getBaseChoices(id)`、`getDisplayName(id, selection)`、`getEquipmentVariants()`、`resolveEquipmentName(name)`（裝備欄位的魔法款名稱查回 `{ name, id, selection, base }`；手持類物品的 `base` 是空字串）、`getEffects(id, selection)`（物品、形態、選項的 `effects` 合併）、`getHints(id, selection)`（物品、形態、選項的 `hints`）、`getForm(id, selection)`、`getRarity(id, selection)`、`getRarityLabel(rarity)`、`getSubtitle(id)`、`getHeal(id, selection)`、`loadText()`、`getText(id)`（回傳 `{ html }` 的 Promise）。`selection` 是 `{ base: 基本款品名, <選項 id>: 選項值 }`。
+
 ## 檢查與預覽
 
 | 指令 | 用途 |
 | --- | --- |
 | `npm run dev` | 開本機預覽，存檔後自動重新建置，重新整理瀏覽器即可看到；畫面網址會顯示在終端機 |
-| `npm run build` | 檢查全部內容檔並產生 `monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`class-content.private.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
+| `npm run build` | 檢查全部內容檔並產生 `magic-item-content.generated.js`、`magic-item-text.generated.js`、`monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`class-content.private.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
 | `npm run build -- --public-only` | 同上，但私人資料檔為空檔（只看公開內容） |
 | `npm run build -- --update-id-baseline` | 確定是刻意新增 ID 時更新各基準檔（見「不可改名的 ID」） |
 | `node tools/spell-reference/validate.js` | 檢查法術的 SRD 譯文（見 [tools/spell-reference/README.md](../tools/spell-reference/README.md)） |
 
-改完內容檔只要提交內容檔本身。`monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。這些檔案只含公開內容包；私人內容只寫進 `class-content.private.generated.js`（同樣不提交），上線建置與離線角色卡的這個檔一律是空檔。
+改完內容檔只要提交內容檔本身。`magic-item-content.generated.js`、`magic-item-text.generated.js`、`monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。這些檔案只含公開內容包；私人內容只寫進 `class-content.private.generated.js`（同樣不提交），上線建置與離線角色卡的這個檔一律是空檔。

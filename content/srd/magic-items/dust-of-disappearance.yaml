@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: dust-of-disappearance
+name: 無蹤粉
+nameEn: "Dust of Disappearance"
+source: srd
+category: wondrous
+group: consumable
+rarity: uncommon
+attunement: false
+consumable: true
+text: |-
+  這種粉末看起來像細沙。數量足夠使用一次。當你進行使用動作，將粉末拋向空中時，你以及以你為源頭的10呎發散區域內的每個生物與物體，都會陷入隱形狀態2d4分鐘。所有受影響者的持續時間相同，且粉末在其魔法生效時耗盡。受影響的生物在進行攻擊檢定、造成傷害或施放法術之後，該生物的隱形狀態立即結束。

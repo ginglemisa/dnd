@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: manual-of-quickness-of-action
+name: 靈巧手冊
+nameEn: "Manual of Quickness of Action"
+source: srd
+category: wondrous
+group: book
+rarity: very-rare
+attunement: false
+text: |-
+  這本書收錄協調與平衡的練習，字句中充滿魔力。若你在6天或更短的期間內花費48小時研讀書中內容並練習其指引，你的敏捷增加2，上限為30。之後這本書會失去魔力，但在一個世紀後恢復。

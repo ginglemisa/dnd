@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: robe-of-eyes
+name: 百眼法袍
+nameEn: "Robe of Eyes"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: true
+use: worn
+hints:
+  - darkvision: 120
+    text: 真實視覺 120 呎。
+  - panel: skills
+    text: 依賴視覺的感知（察覺）檢定有優勢。
+text: |-
+  這件法袍裝飾著眼睛狀的圖案。你穿戴這件法袍時，會獲得下列益處：
+
+  **全方位視覺。** 這件法袍使你在依賴視覺的感知（察覺）檢定上具有優勢。
+
+  **特殊感官。** 你擁有黑暗視覺與真實視覺，範圍皆為120呎。
+
+  _缺點。_ 對這件法袍施放的_光亮術_法術，或在法袍5呎內施放的_晝明術_法術，會使你陷入失明狀態1分鐘。在你的每個回合結束時，你進行一次體質豁免（_光亮術_為DC 11，_晝明術_為DC 15），成功則結束你身上的此狀態。

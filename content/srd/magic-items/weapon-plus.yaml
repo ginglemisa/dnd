@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: weapon-plus
+name: "武器+1／+2／+3"
+nameEn: "Weapon, +1, +2, or +3"
+source: srd
+category: weapon
+rarity: varies
+rarityText: "非常見（+1）、稀有（+2）或極稀有（+3）"
+attunement: false
+base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
+options:
+  - id: bonus
+    label: 加值
+    choices:
+      - { value: 1, label: "+1", rarity: uncommon }
+      - { value: 2, label: "+2", rarity: rare }
+      - { value: 3, label: "+3", rarity: very-rare }
+effects: { attack: bonus, damage: bonus }
+displayName: "{base}{bonus}"
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰具有加值。該加值由武器的稀有度決定。

@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: lantern-of-revealing
+name: 顯像提燈
+nameEn: "Lantern of Revealing"
+source: srd
+category: wondrous
+group: tool
+rarity: uncommon
+attunement: false
+actions:
+  - { id: hood, name: 降下燈罩, type: action, when: owned, text: 點燃時明亮光照 30 呎、微光再 30 呎，明亮光照內看得見隱形的生物與物體；降下燈罩時光線降為半徑 5 呎的微光。這是使用動作。 }
+text: |-
+  點燃時，這盞有罩的提燈用1品脫的油可燃燒6小時，在半徑30呎內散發明亮光照，並再向外30呎散發微光光照。隱形的生物與物體只要在提燈的明亮光照內就看得見。你可以進行使用動作降下燈罩，將提燈的光線降為半徑5呎的微光光照。

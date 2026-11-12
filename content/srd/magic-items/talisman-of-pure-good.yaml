@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: talisman-of-pure-good
+name: 純善護符
+nameEn: "Talisman of Pure Good"
+source: srd
+category: wondrous
+group: wearable
+rarity: legendary
+attunement: 由牧師或聖騎士
+use: wornOrHeld
+effects: { spellAttack: 2 }
+pools:
+  - { id: charges, label: 充能, max: 7 }
+actions:
+  - { id: rebuke, name: 純粹斥責, type: magic, pool: charges, text: 120 呎內你看得見、位於地面上的一個生物 DC 20 敏捷豁免（邪魔或不死生物有劣勢），失敗則墜入燃燒的裂隙被摧毀，成功受到 4d6 心靈傷害。 }
+text: |-
+  這個護符是善良的強大象徵。觸碰護符的邪魔或不死生物會受到8d6光耀傷害，且每次在其回合結束時仍握著或攜帶護符，就再次受到該傷害。
+
+  _聖徽。_ 你可以把護符當作聖徽使用。你穿戴或手持它時，法術攻擊檢定獲得+2加值。
+
+  _純粹斥責。_ 護符有7次充能。穿戴或手持護符時，你可以進行魔法動作並消耗1次充能，以你120呎內一個你能看見、位於地面上的生物為目標。目標腳下裂開一道燃燒的裂隙，目標進行一次DC 20的敏捷豁免。若目標是邪魔或不死生物，它的豁免具有劣勢。豁免失敗時，目標墜入裂隙並被摧毀，不留遺骸。豁免成功時，目標不會被投入裂隙，但會因這番折磨受到4d6心靈傷害。無論哪種情況，裂隙隨後都會閉合，不留下任何存在過的痕跡。當你消耗最後一次充能時，護符化為金色光點四散並被摧毀。

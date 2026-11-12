@@ -20,6 +20,8 @@ srd:
     此法術會自動解離大型或更小的非魔法物體，或魔法力場所創造之物。若這類目標為巨型或更大，則此法術會解離其中一塊10呎立方體的部分。
 
     _使用更高環階法術位。_ 法術位環階每比6環高一環，傷害增加3d6。
+  outcomes:
+    - { kind: damage, formula: 10d6+40, damageType: force, autoOnCast: true, context: 目標豁免失敗時的傷害 }
 en:
   material: a lodestone and dust
   body: |-

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: horseshoes-of-a-zephyr
+name: 西風馬蹄鐵
+nameEn: "Horseshoes of a Zephyr"
+source: srd
+category: wondrous
+group: tool
+rarity: very-rare
+attunement: false
+actions:
+  - { id: attach, name: 裝上／取下馬蹄鐵, type: magic, when: owned, text: 把一個馬蹄鐵固定到馬或類似生物的蹄上（或取下）；四個都裝上時，牠離地 4 吋漂浮移動、無視困難地形、不留足跡，每天旅行 12 小時不會力竭。 }
+text: |-
+  這些馬蹄鐵共四個一組。作為魔法動作，你可以把其中一個馬蹄鐵碰觸馬或類似生物的蹄，馬蹄鐵便會自行固定在蹄上。取下馬蹄鐵也需要一個魔法動作。
+
+  當四個馬蹄鐵都固定在馬或類似生物的蹄上時，它們讓該生物能在離表面4吋的高度漂浮並正常移動。此效果表示該生物可以越過或站在非固體或不穩定的表面上，例如水或熔岩。該生物不留下足跡，並無視困難地形。此外，該生物每天最多可以旅行12小時，而不會因長途旅行獲得力竭級數。

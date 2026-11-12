@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: talisman-of-ultimate-evil
+name: 至惡護符
+nameEn: "Talisman of Ultimate Evil"
+source: srd
+category: wondrous
+group: wearable
+rarity: legendary
+attunement: true
+use: wornOrHeld
+effects: { spellAttack: 2 }
+pools:
+  - { id: charges, label: 充能, max: 6 }
+actions:
+  - { id: end, name: 終極終結, type: magic, pool: charges, text: 120 呎內你看得見、位於地面上的一個生物 DC 20 敏捷豁免，失敗則墜入燃燒的裂隙被摧毀（見說明）。 }
+text: |-
+  這件物品象徵不知悔改的邪惡。不是邪魔也不是不死生物的生物接觸護符時，受到8d6黯蝕傷害，之後每次在其握著或攜帶護符的情況下結束回合時，再次受到同樣的傷害。
+
+  _聖徽。_ 你可以把護符當作聖徽使用。你穿戴或手持它時，法術攻擊檢定獲得+2加值。
+
+  _終極終結。_ 護符有6次充能。穿戴或手持護符時，你可以進行魔法動作，消耗1次充能，並以你自身120呎內一個你能看見、位於地面上的生物為目標。目標腳下裂開一道燃燒的裂隙，且目標進行一次DC 20的敏捷豁免。若目標是天界生物，則該豁免具有劣勢。豁免失敗時，目標墜入裂隙並被摧毀，不留遺骸。豁免成功時，目標不會被投入裂隙，但因這番折磨而受到4d6心靈傷害。無論哪種情況，裂隙隨後都會閉合，不留下任何存在過的痕跡。當你消耗最後一次充能時，護符會溶解成惡臭的黏液並被摧毀。

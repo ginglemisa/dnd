@@ -20,6 +20,9 @@ srd:
     豁免失敗時，目標受到4d8該靈體類型的傷害。豁免成功時，目標不再被該靈體束縛。
 
     _使用更高環階法術位。_ 每高於5環一環，傷害增加1d8。
+  outcomes:
+    - { kind: damage, formula: 8d8, damageTypes: [ lightning, thunder, fire, cold ], autoOnCast: false, context: 生物進入靈體空間或在 5 呎內開始回合、豁免失敗時 }
+    - { kind: damage, formula: 4d8, damageTypes: [ lightning, thunder, fire, cold ], autoOnCast: false, context: 被束縛的目標之後重複豁免失敗時 }
 en:
   body: |-
     You conjure a Large, intangible spirit from the Elemental Planes that appears in an unoccupied space within range. Choose the spirit's element, which determines its damage type: air (Lightning), earth (Thunder), fire (Fire), or water (Cold). The spirit lasts for the duration.

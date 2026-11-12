@@ -86,13 +86,120 @@
         customActionId: action.id
       }));
     const spellSource = api?.getSourceLabels?.().spell || "法術";
-    const all = [...officialOptions, ...(globalScope.TabletopDruid?.getActionOptions?.(mode) || []), ...customOptions]
+    const all = [...officialOptions, ...(globalScope.TabletopDruid?.getActionOptions?.(mode) || []), ...getMagicItemActionOptions(mode), ...customOptions]
       .filter(option => option.source !== spellSource && !option.spellId);
     return {
       all,
       visible: all.filter(option => !hiddenKeys.has(option.preferenceKey)
         && !(option.legacyKeys || []).some(key => hiddenKeys.has(getOfficialHiddenKey(mode, key))))
     };
+  }
+
+  // 魔法物品的能力（YAML 的 actions，經 getActiveMagicEffects().actions；荒野形態由 TabletopMode.getMagicEffects() 只留穿戴中的護甲與盾牌）。
+  // 動作、魔法動作、攻擊動作在動作頁，附贈、反應各在自己的頁。key 是 magic-item-<物品 id>-<能力 id>，隱藏偏好照常使用 official:<頁>:<key>。
+  const MAGIC_ACTION_PAGES = Object.freeze({ action: "action", magic: "action", attack: "action", bonus: "bonus", reaction: "reaction" });
+  const MAGIC_ACTION_TYPE_LABELS = Object.freeze({ action: "動作", magic: "魔法動作", attack: "攻擊動作", bonus: "附贈動作", reaction: "反應" });
+
+  function getMagicItemActionOptions(mode) {
+    const effects = globalScope.TabletopMode?.getMagicEffects?.() || globalScope.getActiveMagicEffects?.();
+    return (effects?.actions || []).filter(item => MAGIC_ACTION_PAGES[item.action.type] === mode).map((item) => {
+      const key = `magic-item-${item.itemId}-${item.action.id}`;
+      return {
+        key,
+        label: item.action.name,
+        description: `${MAGIC_ACTION_TYPE_LABELS[item.action.type]}：${item.action.text}`,
+        source: "魔法物品",
+        buttonTag: globalScope.MagicItemCatalog?.get(item.itemId)?.name || item.label,
+        magicItemAction: item,
+        preferenceKey: getOfficialHiddenKey(mode, key),
+        customActionId: ""
+      };
+    });
+  }
+
+  // 花費：[最少, 最多]；沒寫是 1。
+  function getMagicActionCost(action) {
+    return Array.isArray(action.cost) ? action.cost : [action.cost || 1, action.cost || 1];
+  }
+
+  // 目前的剩餘次數（按鈕繪製後可能已在物品詳情或別處改過）。
+  function getMagicActionPool(item) {
+    const entry = globalScope.Inventory?.getEntry(item.uid);
+    return entry ? globalScope.Inventory.getCharges(entry).find(pool => pool.id === item.action.pool) || null : null;
+  }
+
+  // 使用魔法物品的能力：固定花費先確認，可變花費選這次花幾次；扣該物品的次數池。
+  async function useMagicItemAction(option, trigger) {
+    const item = option.magicItemAction;
+    const pool = getMagicActionPool(item);
+    const [minimum, maximum] = getMagicActionCost(item.action);
+    if (!pool || pool.left < minimum) return;
+    const itemName = option.buttonTag;
+    let cost = minimum;
+    if (maximum > minimum) {
+      let select = null;
+      const confirmed = await globalScope.AppDialog.showContent({
+        title: `${itemName}：${item.action.name}`,
+        message: `這次要消耗幾次${pool.label}？（剩餘 ${pool.left}/${pool.max}）`,
+        cancelLabel: "取消",
+        confirmLabel: "使用能力",
+        dismissOnBackdrop: false,
+        trigger,
+        renderContent(body) {
+          const label = createElement("label", "", `消耗${pool.label} `);
+          select = document.createElement("select");
+          select.dataset.stateTransient = "true";
+          for (let value = minimum; value <= Math.min(maximum, pool.left); value += 1) {
+            const choice = createElement("option", "", `${value} 次`);
+            choice.value = String(value);
+            select.appendChild(choice);
+          }
+          label.appendChild(select);
+          body.appendChild(label);
+        }
+      });
+      if (!confirmed || !select) return;
+      cost = Number(select.value);
+    } else {
+      const confirmed = await globalScope.AppDialog.requestDecision({
+        title: `使用${item.action.name}`,
+        message: `確認後會消耗 ${cost} 次${itemName}的${pool.label}（目前剩餘 ${pool.left}/${pool.max}）。`,
+        cancelLabel: "取消",
+        confirmLabel: "使用能力",
+        dismissOnBackdrop: false,
+        trigger
+      });
+      if (!confirmed) return;
+    }
+    const current = getMagicActionPool(item);
+    if (!current || current.left < cost) {
+      globalScope.AppDialog?.notify("次數已變更或不足，未消耗任何次數。", { tone: "error" });
+      renderActionPanel(currentMode);
+      return;
+    }
+    const left = globalScope.Inventory.setCharges(item.uid, pool.id, current.left - cost);
+    globalScope.AppDialog?.notify(`已使用${item.action.name}；${itemName}的${pool.label}剩餘 ${left}/${pool.max}。`, { tone: "success" });
+    renderActionPanel(currentMode);
+  }
+
+  function appendMagicItemActionControl(description, option) {
+    const item = option.magicItemAction;
+    if (!item.action.pool) return;
+    const pool = getMagicActionPool(item);
+    if (!pool) return;
+    const [minimum, maximum] = getMagicActionCost(item.action);
+    const control = createElement("div", "tabletop-action-resource-control");
+    const costText = maximum > minimum ? `${minimum}～${maximum}` : String(minimum);
+    control.appendChild(createElement("span", "tabletop-action-resource-status", `消耗 ${costText} 次${pool.label} · 剩餘 ${pool.left}/${pool.max}`));
+    const useButton = createElement("button", "tabletop-compact-button tabletop-action-resource-use", "使用能力");
+    useButton.type = "button";
+    useButton.disabled = pool.left < minimum;
+    useButton.setAttribute("aria-label", useButton.disabled
+      ? `${option.label}；${pool.label}不足`
+      : `使用${option.label}；消耗 ${costText} 次${pool.label}，剩餘 ${pool.left}/${pool.max}`);
+    useButton.addEventListener("click", () => useMagicItemAction(option, useButton));
+    control.appendChild(useButton);
+    description.appendChild(control);
   }
 
   function getHiddenCountForMode(mode, preferences = getActionPreferences()) {
@@ -117,19 +224,10 @@
       .some(select => select.value === featName);
   }
 
-  function getAllWeaponDefinitions() {
-    return [
-      ...(globalScope.weapons_simple_melee || []),
-      ...(globalScope.weapons_simple_ranged || []),
-      ...(globalScope.weapons_martial_melee || []),
-      ...(globalScope.weapons_martial_ranged || [])
-    ];
-  }
-
   function getEquippedWeapon(hand) {
     const selectId = hand === "main" ? "mainHand" : "offHand";
     const weaponName = document.getElementById(selectId)?.value || "";
-    return getAllWeaponDefinitions().find(weapon => weapon?.名稱 === weaponName) || null;
+    return globalScope.getWeaponByName?.(weaponName) || null;
   }
 
   function weaponHasProperty(weapon, keyword) {
@@ -142,23 +240,62 @@
     const mastery = document.getElementById(`${prefix}-mastery`);
     const isAlternateMain = hand === "off" && document.getElementById("offHandAsMain")?.checked === true;
     const beast = globalScope.TabletopMode?.getDruidForm?.();
-    // 自動計算時依跑團狀態重算：野獸形態的力量與敏捷，以及橡棍術持續效果（不看角色卡的「☐橡棍術」）。
+    // 自動計算時依跑團狀態重算：野獸形態的力量與敏捷（含依變身選擇生效的屬性物品），橡棍術持續效果（不看角色卡的「☐橡棍術」），
+    // 以及魔法物品效果（荒野形態時跟著每一格的選擇：那一手選持用時魔法武器的加值、額外傷害骰、傷害類型照算）。
+    const beastModifier = ability => {
+      const value = Number.parseInt(globalScope.TabletopMode?.getDruidEffectiveValue?.(`${ability}-mod`, "") ?? "", 10);
+      return Number.isFinite(value) ? value : globalScope.calculateAbilityModifier(beast.abilities[ability]);
+    };
     const projected = globalScope.isWeaponAttackAutomationEnabled?.()
       ? globalScope.calculateHandAttacks?.({
         shillelaghHand: globalScope.TabletopMode?.getActiveShillelaghHand?.() ?? null,
-        ...(beast ? { strModifier: globalScope.calculateAbilityModifier(beast.abilities.str), dexModifier: globalScope.calculateAbilityModifier(beast.abilities.dex) } : {})
+        magicEffects: globalScope.TabletopMode?.getMagicEffects?.() || undefined,
+        ...(beast ? { strModifier: beastModifier("str"), dexModifier: beastModifier("dex") } : {})
       })?.find(item => item.key === hand)
       : null;
+    // 防禦者的加值分配：荒野形態時不顯示步進器（武器加值依變身選擇照算）。
+    const held = beast ? null : globalScope.Inventory?.entries().find(entry => entry.slot === (hand === "main" ? "mainHand" : "offHand"));
     return {
       hand,
+      held,
+      ammo: beast ? null : getHandAmmo(hand),
       label: hand === "main" ? "主手" : (isAlternateMain ? "主手2" : "副手"),
       name: readField(`${prefix}-name`),
       hit: projected?.hit ?? (beast ? "" : readField(`${prefix}-hit`)),
       damage: projected?.damage ?? (beast ? "" : readField(`${prefix}-dmg`)),
+      // 魔法武器的武器說明（內容檔 hints 的 panel: weapon），只在自動計算時有。
+      magicNotes: projected?.details?.magicNotes || [],
       note: readField(`${prefix}-note`),
       mastery: mastery && !mastery.hidden ? String(mastery.textContent || "").trim() : "",
       masteryRule: mastery && !mastery.hidden ? String(mastery.dataset.weaponRule || "").trim() : ""
     };
+  }
+
+  /**
+   * 這一手的武器用的彈藥正是裝備中的那種時，回傳 { uid, label, quantity }；否則 null（沒裝備彈藥、種類不同、不用彈藥）。
+   * 依裝備頁主手／副手下拉的武器基本款判斷，手填模式也一樣。荒野形態由呼叫端排除（彈藥和其他物品一樣融入形態）。
+   */
+  function getHandAmmo(hand) {
+    const inventory = globalScope.Inventory;
+    const ammo = inventory?.getEquippedAmmo?.();
+    if (!ammo) return null;
+    const name = document.getElementById(hand === "main" ? "mainHand" : "offHand")?.value || "";
+    const base = (name && globalScope.getEquipmentBaseName?.(name)) || name;
+    const type = inventory.getAmmunitionType(ammo.itemId);
+    if (!type || inventory.getWeaponAmmunition(base) !== type) return null;
+    return { uid: ammo.uid, label: inventory.getLabel(ammo), quantity: ammo.quantity };
+  }
+
+  // 擲了用裝備中彈藥的武器的命中：扣 1 枚（Inventory.useAmmo）。用到 0 時這一筆保留（×0）、仍是裝備中，之後擲命中不扣並提示彈藥用完；
+  // 還有完全相同的另一堆時自動改用那一堆，空的那堆放到身上。
+  function useHandAmmo(hand) {
+    if (globalScope.TabletopMode?.getDruidForm?.() || !getHandAmmo(hand)) return;
+    const used = globalScope.Inventory.useAmmo();
+    if (!used) return;
+    const notify = text => globalScope.AppDialog?.notify?.(text, { tone: "info" });
+    if (used.empty) notify(`彈藥用完：${used.label}剩 0，這次沒有扣。`);
+    else if (used.next) notify(`${used.label}用完了，空的那堆放到身上；改用另一筆${used.next.label}（剩 ${used.next.quantity}）。`);
+    else if (used.quantity === 0) notify(`${used.label}用完了（×0，仍是裝備中）；之後擲命中不再扣彈藥。`);
   }
 
   function hasWeaponData(weapon) {
@@ -173,7 +310,7 @@
   function canShowSecondaryWeapon() {
     if (globalScope.isWeaponAttackAutomationEnabled?.() === false) return true;
     const offHandName = document.getElementById("offHand")?.value || "";
-    if (!offHandName || offHandName === "盾牌") return false;
+    if (!offHandName || globalScope.isShieldItem?.(offHandName) || globalScope.getHeldMagicItem?.(offHandName)) return false;
 
     const mainWeapon = getEquippedWeapon("main");
     const isAlternateMain = document.getElementById("offHandAsMain")?.checked === true;
@@ -187,12 +324,14 @@
     return Number.isSafeInteger(modifier) ? modifier : null;
   }
 
+  // 魔法武器的額外傷害接在類型後面（1d8+3揮砍+1d6冷凍）：先拿掉兩段之間的類型文字再取骰式。
   function getDamageRollExpression(value) {
-    const normalized = String(value || "").trim().replace(/−/g, "-");
+    const normalized = String(value || "").trim().replace(/−/g, "-").replace(/(\d)\s*[^\d\s+-]+(?=\s*[+-]\s*\d)/gu, "$1");
     return normalized.match(/^\d+\s*d\s*\d+(?:\s*[+-]\s*(?:\d+\s*d\s*\d+|\d+))*/iu)?.[0] || "";
   }
 
-  function appendDefinition(list, term, value, rollType = "", label = "") {
+  // onRoll：擲骰之後呼叫（武器命中扣彈藥）。
+  function appendDefinition(list, term, value, rollType = "", label = "", onRoll = null) {
     const item = createElement("div", "tabletop-weapon-field");
     const description = createElement("dd");
     const displayValue = value || "—";
@@ -218,6 +357,7 @@
             includeModifier: true,
             label: `${label}${term}`
           });
+          onRoll?.();
           return;
         }
         globalScope.DiceRoller?.rollExpression?.(damageExpression, { label: `${label}${term}` });
@@ -319,7 +459,7 @@
 
     const list = createElement("dl", "weapon-attack-fields tabletop-weapon-fields");
     appendWeaponNameField(list, weapon);
-    appendDefinition(list, "命中", weapon.hit, "hit", `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}`);
+    appendDefinition(list, "命中", weapon.hit, "hit", `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}`, weapon.ammo ? () => useHandAmmo(weapon.hand) : null);
     appendDefinition(list, "傷害", weapon.damage, "damage", `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}`);
     const noteField = appendDefinition(list, "備註", weapon.note);
     if (weapon.mastery && weapon.masteryRule) {
@@ -334,8 +474,21 @@
       noteField.classList.add("tabletop-weapon-field--note-with-mastery");
       note?.replaceChildren(noteText, masteryButton);
     }
+    // 魔法武器的武器說明與裝備中的彈藥接在備註框裡的下一行；沒有備註也沒有精通時取代「—」。
+    const extraNotes = [
+      weapon.magicNotes.length ? createElement("span", "tabletop-weapon-magic-note", weapon.magicNotes.join("")) : null,
+      weapon.ammo ? createElement("span", "tabletop-weapon-magic-note tabletop-weapon-ammo", `彈藥：${weapon.ammo.label} 剩 ${weapon.ammo.quantity}`) : null
+    ].filter(Boolean);
+    if (extraNotes.length) {
+      const note = noteField.querySelector("dd");
+      noteField.classList.add("tabletop-weapon-field--magic-note");
+      if (!weapon.note && !(weapon.mastery && weapon.masteryRule)) note?.replaceChildren(...extraNotes);
+      else note?.append(...extraNotes);
+    }
     list.querySelectorAll("dt").forEach(term => term.classList.add("sr-only"));
     section.appendChild(list);
+    const transfer = weapon.held ? globalScope.InventoryUI?.buildBonusTransferControl?.(weapon.held) : null;
+    if (transfer) section.appendChild(transfer);
     return section;
   }
 
@@ -355,7 +508,10 @@
       elements.weaponSummary.replaceChildren(empty, choose);
       return;
     }
+    // 步進器按完會重繪，焦點留在同一顆按鈕。
+    const focusedLabel = document.activeElement?.closest?.("[data-bonus-transfer]") ? document.activeElement.getAttribute("aria-label") : null;
     elements.weaponSummary.replaceChildren(...weapons.filter(hasWeaponData).map(createWeaponSummary));
+    if (focusedLabel) [...elements.weaponSummary.querySelectorAll("[data-bonus-transfer] [aria-label]")].find(item => item.getAttribute("aria-label") === focusedLabel)?.focus();
   }
 
   function getWeaponRuleEntries() {
@@ -446,6 +602,10 @@
       globalScope.TabletopDruid?.appendActionControl?.(description, option);
       return description;
     }
+    if (option.magicItemAction) {
+      appendMagicItemActionControl(description, option);
+      return description;
+    }
     const resource = getActionResourceState(option);
     if (resource) {
       const control = createElement("div", "tabletop-action-resource-control");
@@ -488,8 +648,10 @@
       className: document.getElementById("class")?.value || "",
       race: document.getElementById("race")?.value || "",
       level: document.getElementById("level")?.value || "",
-      wisdomScore: document.getElementById("wis")?.value || "10",
-      charismaScore: document.getElementById("cha")?.value || "10"
+      wisdomScore: (globalScope.getEffectiveAbilityValue?.("wis") ?? document.getElementById("wis")?.value) || "10",
+      charismaScore: (globalScope.getEffectiveAbilityValue?.("cha") ?? document.getElementById("cha")?.value) || "10",
+      // 荒野形態時熟練加值依變身時的選擇（TabletopMode.getMagicEffects）。
+      proficiencyBonus: globalScope.getProficiencyBonus?.(globalScope.TabletopMode?.getMagicEffects?.() || undefined)
     });
   }
 
@@ -624,7 +786,7 @@
     if (option.resourceKey === "monk-wholeness") {
       const level = Number(document.getElementById("level")?.value);
       const die = globalScope.getMonkMartialArtsDieByLevel(level);
-      const wisdom = globalScope.calculateAbilityModifier(document.getElementById("wis")?.value || "10");
+      const wisdom = globalScope.calculateAbilityModifier((globalScope.getEffectiveAbilityValue?.("wis") ?? document.getElementById("wis")?.value) || "10");
       const expression = `${die}${wisdom >= 0 ? "+" : ""}${wisdom}`;
       if (globalScope.DiceRoller?.isEnabled?.()) {
         globalScope.DiceRoller.rollExpressionsInModal([
@@ -1050,7 +1212,14 @@
       button.appendChild(createElement("span", "", option.source === "職業"
         ? buttonLabel.replace(/（[^（）]+子職）$/u, "") : buttonLabel));
       const buttonTag = option.buttonTag || option.source;
-      if (buttonTag) button.appendChild(createElement("span", "tabletop-source-tag", buttonTag));
+      const tag = buttonTag ? createElement("span", "tabletop-source-tag", buttonTag) : null;
+      if (tag) button.appendChild(tag);
+      // 魔法物品的能力有次數池時，物品名稱後面接剩餘次數；不夠用時按鈕變灰（仍可點開看說明），不隱藏。
+      const pool = option.magicItemAction?.action.pool ? getMagicActionPool(option.magicItemAction) : null;
+      if (pool) {
+        (tag || button).appendChild(createElement("span", "tabletop-action-option__count", `${pool.left}/${pool.max}`));
+        if (pool.left < getMagicActionCost(option.magicItemAction.action)[0]) button.classList.add("is-depleted");
+      }
       button.addEventListener("click", () => {
         selectedOptionKeys.set(mode, option.key);
         renderActionPanel(mode);
@@ -1273,6 +1442,7 @@ function render() {
     }
     document.addEventListener("input", scheduleRender);
     document.addEventListener("change", scheduleRender);
+    document.addEventListener("inventory:change", scheduleRender);
     globalScope.addEventListener("actionpanelchange", scheduleRender);
     globalScope.addEventListener("tabletopstatechange", scheduleRender);
     globalScope.addEventListener("tabletopactionpreferenceschange", handleActionPreferencesChange);

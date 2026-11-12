@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: headband-of-intellect
+name: 智力頭帶
+nameEn: "Headband of Intellect"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+use: worn
+effects: { abilities: { int: { set: 19 } } }
+text: |-
+  你穿戴這條頭帶時，你的智力為19。若你不靠它智力就已是19或更高，它對你沒有效果。

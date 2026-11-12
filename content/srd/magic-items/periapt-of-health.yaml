@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: periapt-of-health
+name: 健康護身符
+nameEn: "Periapt of Health"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+use: worn
+hints:
+  - panel: skills
+    text: 避免或結束中毒狀態的豁免有優勢。
+pools:
+  - { id: heal, label: 恢復生命值, max: 1, recover: dawn }
+actions:
+  - { id: heal, name: 恢復生命值, type: magic, pool: heal, text: 恢復 2d4 + 2 點生命值。 }
+text: |-
+  穿戴這件墜飾時，你可以進行魔法動作，恢復2d4 + 2點生命值。此特性使用後，直到下次黎明前都無法再次使用。
+
+  此外，穿戴這件墜飾時，你進行豁免以避免或結束中毒狀態具有優勢。

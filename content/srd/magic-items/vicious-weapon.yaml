@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: vicious-weapon
+name: 惡毒武器
+nameEn: "Vicious Weapon"
+source: srd
+category: weapon
+rarity: rare
+attunement: false
+base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
+effects: { extraDamage: [ { dice: 2d6, type: weapon } ] }
+text: |-
+  這件魔法武器對其擊中的任何生物造成額外2d6傷害。此額外傷害的類型與武器的一般傷害類型相同。

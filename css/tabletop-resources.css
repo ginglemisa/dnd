@@ -542,6 +542,18 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tabletop-panel-acti
   gap: 0.45rem;
 }
 
+/* 魔法武器的武器說明：備註框裡另起一行，文字靠左、一般字重。 */
+#tabletop-panel-actions .tabletop-weapon-field--magic-note dd {
+  flex-wrap: wrap;
+}
+
+#tabletop-panel-actions .tabletop-weapon-magic-note {
+  flex: 1 0 100%;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: left;
+}
+
 #tabletop-panel-actions .tabletop-weapon-note-text {
   min-width: 0;
   overflow: hidden;

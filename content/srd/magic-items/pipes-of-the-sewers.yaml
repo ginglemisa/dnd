@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: pipes-of-the-sewers
+name: 喚鼠排笛
+nameEn: "Pipes of the Sewers"
+source: srd
+category: wondrous
+group: tool
+rarity: uncommon
+attunement: true
+use: carried
+pools:
+  - { id: charges, label: 充能, max: 3, recover: dawn, amount: 1d3 }
+actions:
+  - { id: call-rats, name: 召來鼠群, type: bonus, pool: charges, cost: [ 1, 3 ], text: 以魔法動作演奏排笛時，每消耗 1 次充能召來一群鼠群（半英里內要有足夠的老鼠，由 DM 判定），鼠群朝音樂移動但不受你控制。 }
+text: |-
+  這支排笛帶在你身上時，一般老鼠與巨鼠對你保持冷漠，除非你威脅或傷害牠們，否則不會攻擊你。
+
+  這支排笛有3次充能，每天黎明恢復1d3次已消耗的充能。若你以魔法動作演奏排笛，你可以進行附贈動作消耗1至3次充能，每消耗1次充能就召來一群鼠群，前提是你半英里內有足夠的老鼠能以這種方式召來（由DM判定）。若老鼠不足以組成一群，該次充能就浪費了。被召來的鼠群會循最短的可用路徑朝音樂移動，但除此之外不受你控制。
+
+  每當一群不受其他生物控制的鼠群，在你演奏排笛期間進入你30呎內時，該鼠群進行一次DC 15的感知豁免。豁免成功時，鼠群照常行動，且在接下來的24小時內不會被排笛的音樂左右。豁免失敗時，鼠群被排笛的音樂左右，只要你持續每輪以魔法動作演奏排笛，就對你與你的盟友保持友善。友善的鼠群服從你的命令。若你沒有對友善的鼠群下達命令，它會自衛，但除此之外不採取任何動作。若友善的鼠群在其回合開始時離你超過30呎，你對該鼠群的控制就會結束，鼠群照常行動，且在接下來的24小時內不會被排笛的音樂左右。

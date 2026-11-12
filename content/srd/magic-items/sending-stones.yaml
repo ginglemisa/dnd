@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: sending-stones
+name: 傳訊石
+nameEn: "Sending Stones"
+source: srd
+category: wondrous
+group: tool
+rarity: uncommon
+attunement: false
+pools:
+  - { id: sending, label: 短訊術, max: 1, recover: dawn }
+actions:
+  - { id: sending, spell: sending, pool: sending, when: owned, note: 目標是另一顆石頭的持有者；沒有人持有時你會知道，且不會施放。 }
+text: |-
+  _傳訊石_成對出現，每顆石頭都雕成與另一顆相配，因此容易認出它們是一對。當你觸碰其中一顆石頭時，你可以從它施放_短訊術_。目標是另一顆石頭的持有者。若沒有任何生物持有另一顆石頭，你在使用該石頭時就會立即知道這件事，且你不會施放該法術。
+
+  一旦使用任一顆石頭施放了_短訊術_，直到下次黎明前，這些石頭都無法再次使用。若一對石頭中的一顆被摧毀，另一顆就會變成非魔法物品。

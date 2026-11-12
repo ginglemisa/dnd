@@ -501,6 +501,42 @@ assert.deepEqual(buildRolls("ice-knife", 2).map(roll => roll.expression), ["1d20
   assert(!buildRolls(spellId).some(roll => roll.expression.startsWith("1d20")), `${spellId} 不應在施法時新增命中檢定`);
 });
 assert.deepEqual(buildRolls("true-strike").map(roll => roll.expression), ["1d20+6"], "克敵機先使用施法屬性加熟練，而非法術命中加值");
+// 只有 SRD 版的法術：srd.outcomes 只供從魔法物品施放，不能變成角色可用的法術。
+const itemOnlySpellIds = ["chain-lightning", "cone-of-cold", "conjure-elemental", "disintegrate", "fire-storm", "heal", "insect-plague",
+  "mass-cure-wounds", "prismatic-spray", "tsunami", "wall-of-ice", "wall-of-thorns"];
+itemOnlySpellIds.forEach(spellId => {
+  assert.equal(catalog.getSpell(spellId), undefined, `${spellId} 只有 SRD 版，不是角色可用的法術`);
+  assert.equal(catalog.getReferenceSpell(spellId).playable, false);
+  assert.equal(catalog.canCastFromTabletop(spellId), false, `${spellId} 只能從魔法物品施放`);
+  assert(catalog.getCastMetadata(spellId).outcomes.length, `${spellId} 要有擲骰資料`);
+  assert.equal(catalog.getItemSpell(spellId).playable, false);
+  // 職業法表與準備法術都讀 getSpellIds／getClassIds（只含角色可用的法術）。
+  assert.deepEqual([...catalog.getClassIds(spellId)], [], `${spellId} 不在任何職業法表`);
+  ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"].forEach(classId => {
+    assert(!catalog.getSpellIds(classId, catalog.getItemSpell(spellId).level).includes(spellId), `${spellId} 不能在 ${classId} 準備`);
+  });
+});
+assert(!spellIds.some(spellId => itemOnlySpellIds.includes(spellId)), "getAllSpells 不含只有 SRD 版的法術");
+assert.deepEqual(JSON.parse(fs.readFileSync("spell-id-baseline.json", "utf8")).filter(spellId => itemOnlySpellIds.includes(spellId)), [],
+  "spell-id-baseline.json 只列角色可用的法術");
+assert.equal(catalog.getItemSpell("fireball").playable, true);
+assert.equal(catalog.getItemSpell("wish").level, 9);
+assert.equal(catalog.getItemSpell("scrying").concentration, true);
+assert.equal(JSON.stringify(catalog.getItemSpell("scrying").castingTimes), JSON.stringify([{ minutes: 10 }]));
+const buildItemRolls = (spellId, castResult = {}) => [...rollSandbox.TabletopSpells.logic.buildRollEntries({
+  spellId, spell: catalog.getItemSpell(spellId), spellClass: "", spellSource: "magic-item"
+}, { effectiveLevel: catalog.getItemSpell(spellId).level, ...castResult })];
+assert.deepEqual(buildItemRolls("cone-of-cold").map(roll => roll.expression), ["8d8"]);
+assert.deepEqual(buildItemRolls("disintegrate").map(roll => roll.expression), ["10d6+40"]);
+assert.deepEqual(buildItemRolls("mass-cure-wounds").map(roll => roll.expression), ["5d8+3"], "群體療傷術加上角色的施法屬性調整值");
+assert.deepEqual(buildItemRolls("heal").map(roll => roll.fixed), [70]);
+assert.deepEqual(buildItemRolls("wall-of-ice").map(roll => roll.expression), ["10d6"], "之後才發生的傷害不在施法時擲");
+assert.deepEqual(buildItemRolls("conjure-elemental"), [], "元素召喚術沒有施法時擲的骰");
+assert.deepEqual(buildItemRolls("wish"), []);
+assert.deepEqual(buildItemRolls("scorching-ray", { numbers: { saveDc: 13, attackBonus: 5 } }).slice(0, 2).map(roll => roll.expression),
+  ["1d20+5", "2d6"], "物品固定的攻擊加值取代角色的法術攻擊");
+assert(buildItemRolls("scorching-ray", { numbers: { saveDc: 13, attackBonus: 5 } })[1].detail.includes("豁免 DC 13"), "物品的 DC 寫在擲骰說明");
+
 rollFields["spell-attack-bonus"] = "-2";
 assert.equal(buildRolls("fire-bolt")[0].expression, "1d20-2");
 rollFields["spell-attack-bonus"] = "+0";

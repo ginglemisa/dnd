@@ -16,6 +16,8 @@ srd:
     你釋放出一波冷空氣。以你為起點的60呎錐形區域內的每個生物都要進行一次體質豁免，豁免失敗時受到8d8冷凍傷害，成功則受到一半傷害。被此法術殺死的生物會變成一座冰凍雕像，直到解凍為止。
 
     _使用更高環階法術位。_ 每高於5環一環，傷害增加1d8。
+  outcomes:
+    - { kind: damage, formula: 8d8, damageType: cold, autoOnCast: true, context: 區域傷害擲一次；豁免依規則處理 }
 en:
   material: a small crystal or glass cone
   body: |-

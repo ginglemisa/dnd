@@ -15,6 +15,8 @@ srd:
     一波治癒能量從你在射程內可見的一點向外湧出。在以該點為中心、半徑30呎的球形區域內，最多選擇六個生物。每個目標恢復等同於5d8加上你的施法屬性調整值的生命值。
 
     _使用更高環階法術位。_ 所用法術位的環階每比5環高一環，治療量增加1d8。
+  outcomes:
+    - { kind: healing, formula: 5d8, abilityModifier: spellcasting, modifierTags: [ restores-hit-points, can-restore-other-creature-hit-points ], autoOnCast: true, context: 所有目標共用一次治療量；不直接修改角色 HP }
 en:
   body: |-
     A wave of healing energy washes out from a point you can see within range. Choose up to six creatures in a 30-foot-radius Sphere centered on that point. Each target regains Hit Points equal to 5d8 plus your spellcasting ability modifier.

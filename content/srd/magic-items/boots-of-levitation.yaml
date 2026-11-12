@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: boots-of-levitation
+name: 浮空之靴
+nameEn: "Boots of Levitation"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: true
+use: worn
+actions:
+  - { id: levitate, spell: levitate, note: 只能以你自己為目標。 }
+text: |-
+  穿戴這雙靴子時，你可以對自己施放_浮空術_。

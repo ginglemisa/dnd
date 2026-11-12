@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-invisibility
+name: 隱形藥水
+nameEn: "Potion of Invisibility"
+source: srd
+category: potion
+rarity: rare
+attunement: false
+consumable: true
+text: |-
+  這瓶藥水的容器看起來是空的，摸起來卻像裝有液體。喝下藥水時，你陷入隱形狀態1小時。若你進行攻擊檢定、造成傷害或施放法術，該效果會提早結束。

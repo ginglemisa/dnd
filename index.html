@@ -108,20 +108,22 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261111-menu-layout">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/sheet-spells.css?v=20261111-menu-layout">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261112-skill-effect-tips">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261112-magic-effects-8b">
+  <link rel="stylesheet" href="css/sheet-spells.css?v=20261112-merge-main-menu">
   <link rel="stylesheet" href="css/utility.css?v=20261111-menu-layout">
   <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
   <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/tabletop.css?v=20261111-al-rules">
-  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/tabletop-resources.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/tabletop.css?v=20261112-merge-main-menu">
+  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261112-skill-effect-tips">
+  <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
   <link rel="stylesheet" href="css/quick-build.css?v=20261110-safari">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
-  <script src="dice-roller.js?v=20261110-safari" defer></script>
+  <script src="dice-roller.js?v=20261112-magic-effects-9" defer></script>
+  <script src="magic-item-content.generated.js?v=0" defer></script>
+  <script src="magic-items.js?v=20261112-magic-effects-8c" defer></script>
   <script src="monster-content.generated.js?v=0" defer></script>
   <script src="monster.js?v=20261108-wild-shape-ux" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261108-new-forms" defer></script>
@@ -131,23 +133,23 @@
   <script src="background-content.generated.js?v=c9f6c95f6ead" defer></script>
   <script src="tool-data.js?v=20261104-class-picks" defer></script>
   <script src="feat-content.generated.js?v=472eb42de3f0" defer></script>
-  <script src="equipment-notes.js?v=20261109-trap-pouch" defer></script>
+  <script src="equipment-notes.js?v=20261109-merge-main" defer></script>
   <script src="spell-content.generated.js?v=0" defer></script>
-  <script src="spell-list.js?v=20261107-companion-variant" defer></script>
-  <script src="condition.js?v=20261021-bonus-wording" defer></script>
-  <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
-  <script src="character-rules.js?v=20261106-skills-auto" defer></script>
+  <script src="spell-list.js?v=20261111-magic-effects-6" defer></script>
+  <script src="condition.js?v=20261111-magic-abilities" defer></script>
+  <script src="action-panel.js?v=20261111-magic-effects-4" defer></script>
+  <script src="character-rules.js?v=20261112-merge-ammo-wildshape" defer></script>
   <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261110-safari" defer></script>
-  <script src="tabletop-druid.js?v=20261111-dice-label" defer></script>
-  <script src="tabletop-resources.js?v=20261108-wild-shape-ux" defer></script>
-  <script src="tabletop-actions.js?v=20261108-wild-shape-savage" defer></script>
+  <script src="tabletop-mode.js?v=20261112-wild-shape-slots" defer></script>
+  <script src="tabletop-druid.js?v=20261112-merge-main-menu" defer></script>
+  <script src="tabletop-resources.js?v=20261112-wild-shape-slots" defer></script>
+  <script src="tabletop-actions.js?v=20261112-merge-ammo-wildshape" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
-  <script src="tabletop-spells.js?v=20261109-item-actions" defer></script>
+  <script src="tabletop-spells.js?v=20261111-magic-effects-6" defer></script>
   <script src="legal-modal.js?v=20261111-serif-big5" defer></script>
-  <script src="onboarding-tour.js?v=20261109-tour-point-buy-focus" defer></script>
+  <script src="onboarding-tour.js?v=20261109-merge-main" defer></script>
   <script src="quick-build.js?v=20261111-review-dedupe" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
   <script src="spell-management.js?v=20261107-share-readonly" defer></script>
@@ -400,6 +402,7 @@
       <div id="tabletop-active-conditions" class="tabletop-active-conditions" aria-live="polite">
         <p class="tabletop-condition-empty">目前沒有標記狀態或危害。</p>
       </div>
+      <div id="tabletop-dropped-hands" class="tabletop-dropped-hands" hidden></div>
     </section>
         </div>
       </div>
@@ -877,32 +880,32 @@
       <div class="ability">
         <div class="ability-title">STR</div>
         <div class="modifier" id="str-mod"></div>
-        <input type="number" id="str" class="ability-score" min="1" max="20" placeholder="力量">
+        <input type="number" id="str" class="ability-score" min="1" max="30" placeholder="力量">
       </div>
       <div class="ability">
         <div class="ability-title">DEX</div>
         <div class="modifier" id="dex-mod"></div>
-        <input type="number" id="dex" class="ability-score" min="1" max="20" placeholder="敏捷">
+        <input type="number" id="dex" class="ability-score" min="1" max="30" placeholder="敏捷">
       </div>
       <div class="ability">
         <div class="ability-title">CON</div>
         <div class="modifier" id="con-mod"></div>
-        <input type="number" id="con" class="ability-score" min="1" max="20" placeholder="體質">
+        <input type="number" id="con" class="ability-score" min="1" max="30" placeholder="體質">
       </div>
       <div class="ability">
         <div class="ability-title">INT</div>
         <div class="modifier" id="int-mod"></div>
-	<input type="number" id="int" class="ability-score" min="1" max="20" placeholder="智力">
+	<input type="number" id="int" class="ability-score" min="1" max="30" placeholder="智力">
       </div>
       <div class="ability">
         <div class="ability-title">WIS</div>
         <div class="modifier" id="wis-mod"></div>
-        <input type="number" id="wis" class="ability-score" min="1" max="20" placeholder="感知">
+        <input type="number" id="wis" class="ability-score" min="1" max="30" placeholder="感知">
       </div>
       <div class="ability">
         <div class="ability-title">CHA</div>
         <div class="modifier" id="cha-mod"></div>
-        <input type="number" id="cha" class="ability-score" min="1" max="20" placeholder="魅力">
+        <input type="number" id="cha" class="ability-score" min="1" max="30" placeholder="魅力">
       </div>
     </div>
   </div>
@@ -1178,6 +1181,7 @@
     <div class="equipment-loadout-heading">
       <h3>裝備</h3>
       <p class="equipment-loadout-intro">從攜帶物品中選擇裝備。</p>
+      <button id="attunement-open" type="button" hidden aria-haspopup="dialog">同調 0/3</button>
     </div>
 
     <div class="equipment-loadout-controls">
@@ -1210,6 +1214,7 @@
         <input type="checkbox" id="main2Shield">
         <span>裝備盾牌</span>
       </label>
+      <select id="main2ShieldItem" class="equipment-main2-shield-select" aria-label="主手 2 的盾牌" hidden></select>
     </div>
     <!-- 武器傷害類型選擇與角色卡的橡棍術開關（WEAPON_DAMAGE_TYPE_CHOICES、shillelaghWeaponHand）：各處下拉與勾選框都寫回這裡。 -->
     <input type="text" id="pactWeaponDamageType" value="" hidden>
@@ -1229,8 +1234,10 @@
 
   <div class="section">
     <!-- 標題列「⋯ 更多」選單、物品欄、攜帶物品文字框與底部按鈕列跟著在角色卡與跑團模式之間搬移（tabletop-mode.js）；物品標籤由 inventory-ui.js 繪製。
-         錢財列只在角色卡；選單裡標 data-inventory-sheet-only 的錢財項目在跑團模式隱藏。 -->
-    <div class="inventory-heading"><h3>攜帶物品</h3><div id="inventory-heading-sheet-mount" class="inventory-heading-mount"><div id="inventory-heading-tools" class="inventory-heading-tools"><button type="button" id="inventory-more" class="inventory-more" aria-expanded="false" aria-controls="inventory-more-panel" aria-label="更多物品欄選項" title="更多"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg><span class="inventory-more__dot" hidden></span></button><div id="inventory-more-panel" class="inventory-more-panel" hidden><button type="button" id="inventory-tidy" class="inventory-more-item" aria-haspopup="dialog" data-more-close hidden>整理成標籤</button><button type="button" id="inventory-arrange" class="inventory-more-item" aria-pressed="false" data-more-close>整理排列</button><button type="button" id="money-adjust-toggle" class="inventory-more-item" aria-haspopup="dialog" data-more-close data-inventory-sheet-only>調整餘額</button><button type="button" id="inventory-coins-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="false" data-inventory-sheet-only><span>顯示各幣值</span><span class="inventory-switch" aria-hidden="true"></span></button><button type="button" id="inventory-weight-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="true"><span>顯示負重</span><span class="inventory-switch" aria-hidden="true"></span></button><div class="inventory-more-separator" role="separator"></div><button type="button" id="inventory-text-only" class="inventory-more-item inventory-more-switch" aria-pressed="false" data-more-close><span>純文字管理</span><span class="inventory-switch" aria-hidden="true"></span></button></div></div></div></div>
+         錢財列只在角色卡；選單裡標 data-inventory-sheet-only 的錢財項目在跑團模式隱藏。
+         選單的「魔法物品」代按下方隱藏的 #magic-item-acquire（角色欄位，預設關閉），只決定商店有沒有魔法物品按鈕（equipment-shop.js）。 -->
+    <div class="inventory-heading"><h3>攜帶物品</h3><div id="inventory-heading-sheet-mount" class="inventory-heading-mount"><div id="inventory-heading-tools" class="inventory-heading-tools"><button type="button" id="inventory-more" class="inventory-more" aria-expanded="false" aria-controls="inventory-more-panel" aria-label="更多物品欄選項" title="更多"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg><span class="inventory-more__dot" hidden></span></button><div id="inventory-more-panel" class="inventory-more-panel" hidden><button type="button" id="inventory-tidy" class="inventory-more-item" aria-haspopup="dialog" data-more-close hidden>整理成標籤</button><button type="button" id="inventory-arrange" class="inventory-more-item" aria-pressed="false" data-more-close>整理排列</button><button type="button" id="money-adjust-toggle" class="inventory-more-item" aria-haspopup="dialog" data-more-close data-inventory-sheet-only>調整餘額</button><button type="button" id="inventory-coins-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="false" data-inventory-sheet-only><span>顯示各幣值</span><span class="inventory-switch" aria-hidden="true"></span></button><button type="button" id="inventory-weight-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="true"><span>顯示負重</span><span class="inventory-switch" aria-hidden="true"></span></button><button type="button" id="inventory-magic-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="false" title="開啟後，商店會出現魔法物品按鈕"><span>魔法物品</span><span class="inventory-switch" aria-hidden="true"></span></button><div class="inventory-more-separator" role="separator"></div><button type="button" id="inventory-text-only" class="inventory-more-item inventory-more-switch" aria-pressed="false" data-more-close><span>純文字管理</span><span class="inventory-switch" aria-hidden="true"></span></button></div></div></div></div>
+    <label class="magic-item-acquire-field" hidden><span>魔法物品取得</span><input type="checkbox" id="magic-item-acquire" role="switch"></label>
     <div class="money-section" aria-label="錢財管理">
       <div class="money-overview">
         <h4 class="money-title sr-only">總財產</h4>
@@ -1313,7 +1320,7 @@
       <input type="hidden" id="money-log-data" value="[]">
       <input type="hidden" id="money-history-data" value="[]">
     </div>
-    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div id="inventory-weight" class="inventory-weight" aria-live="polite"></div><p id="inventory-over" class="inventory-over" role="status" hidden>負重超過攜帶上限 <button type="button" id="inventory-over-hide" class="inventory-over__hide">隱藏</button></p><p id="inventory-arrange-hint" class="inventory-arrange-hint" hidden><span>拖曳標籤調整順序，拖到同名標籤上可合併，或用方向鍵前後移動。</span><button type="button" id="inventory-arrange-done" class="inventory-arrange-done">完成</button></p><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的：可以從下方商店購買或免費取得，或建立自訂物品。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他物品或備註（自由文字）"></textarea><div id="inventory-actions" class="inventory-actions"><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>商店</span></button><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>自訂物品</span></button></div></div>
+    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div id="inventory-weight" class="inventory-weight" aria-live="polite"></div><p id="inventory-attunement" class="inventory-attunement" hidden></p><p id="inventory-over" class="inventory-over" role="status" hidden>負重超過攜帶上限 <button type="button" id="inventory-over-hide" class="inventory-over__hide">隱藏</button></p><p id="inventory-arrange-hint" class="inventory-arrange-hint" hidden><span>拖曳標籤調整順序，拖到同名標籤上可合併，或用方向鍵前後移動。</span><button type="button" id="inventory-arrange-done" class="inventory-arrange-done">完成</button></p><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的：可以從下方商店購買或免費取得，或建立自訂物品。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他物品或備註（自由文字）"></textarea><div id="inventory-actions" class="inventory-actions"><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>商店</span></button><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>自訂物品</span></button></div></div>
   </div>
 
   <div class="section">
@@ -1343,7 +1350,7 @@
     </div>
     <div class="spell-casting-field">
       <div class="stat-label">豁免難度</div>
-      <input type="number" id="spell-save-dc" inputmode="numeric" aria-label="豁免難度" min="0" max="20" placeholder="">
+      <input type="number" id="spell-save-dc" inputmode="numeric" aria-label="豁免難度" min="0" max="30" placeholder="">
     </div>
     <div class="spell-casting-field">
       <div class="stat-label">命中加值</div>
@@ -1452,9 +1459,9 @@
   </div>
 
   <script src="sheet-utils.js?v=20261024-index-split"></script>
-  <script src="feat-ui.js?v=20261105-feat-categories"></script>
+  <script src="feat-ui.js?v=20261111-magic-abilities"></script>
   <script src="spell-sources.js?v=20261109-item-actions"></script>
-  <script src="class-features-ui.js?v=20261109-two-handed-note"></script>
+  <script src="class-features-ui.js?v=20261111-magic-wear-held"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -1526,9 +1533,10 @@ function updateHPDisplay() {
   const maxHp = calculateCharacterMaxHp({
     className: classValue,
     level: document.getElementById("level").value || "1",
-    constitutionScore: document.getElementById("con").value || "10",
+    constitutionScore: getEffectiveAbilityValue("con") || "10",
     race: document.getElementById("race").value,
-    hasToughFeat: hasSelectedFeat("強韌體魄")
+    hasToughFeat: hasSelectedFeat("強韌體魄"),
+    magicHitPointsPerLevel: getActiveMagicEffects().hitPointsPerLevel
   });
   document.getElementById("hp-display").value = String(maxHp);
 }
@@ -1551,6 +1559,7 @@ function refreshAutomaticKeyStats() {
   updateAutomaticInitiative();
   updateSpeedDisplay();
   updatePassivePerceptionDisplay();
+  refreshMagicSpellCastingStats();
 }
 
 function syncAutomaticKeyStatsMode({ refresh = true } = {}) {
@@ -1673,7 +1682,7 @@ function bindCoreCharacterEvents() {
     scheduleStructuralSaveAllFields();
   });
   bindEventById("armor", "change", () => { updateACDisplay(); updateSpeedDisplay(); populateHandAttacks(); });
-  bindEventById("str", "input", populateHandAttacks);
+  bindEventById("str", "input", () => { updateSpeedDisplay(); populateHandAttacks(); });
   bindEventById("dex", "input", () => { updateACDisplay(); updateAutomaticInitiative(); populateHandAttacks(); });
   bindEventById("con", "input", updateACDisplay);
   bindEventById("wis", "input", updateACDisplay);
@@ -1807,8 +1816,9 @@ function updateSpeedDisplay() {
   if (!speedDisplay || !isAutomaticKeyStatsEnabled() || typeof window.calculateCharacterSpeed !== "function") return;
 
   const armorName = document.getElementById("armor")?.value || "";
-  const armor = armors.find(item => item.名稱 === armorName);
+  const armor = getArmorByName(armorName);
   const hasShield = isShieldItem(armorName) || isEffectiveEquippedShield();
+  const magic = getActiveMagicEffects();
   speedDisplay.value = window.calculateCharacterSpeed({
     baseSpeed: document.getElementById("speed-input")?.value,
     race: document.getElementById("race")?.value,
@@ -1817,9 +1827,21 @@ function updateSpeedDisplay() {
     level: document.getElementById("level")?.value,
     isWearingArmor: Boolean(armorName) && !isShieldItem(armorName),
     isWearingHeavyArmor: armor?.分類 === "重甲",
+    armorStrengthRequirement: armor?.力量需求,
+    ...getMagicSpeedOptions(magic),
+    strengthScore: getEffectiveAbilityValue("str", magic),
     hasShield,
     hasSpeedyFeat: hasSelectedFeat("迅捷步法")
   }) || "--";
+}
+
+// 魔法物品給 calculateCharacterSpeed 的選項：速度至少（跑跳之靴）、不因護甲力量需求降速（跑跳之靴；秘銀護甲沒有力量需求，效果相同）。
+// 角色卡速度欄與 PDF 速度欄共用（pdf-launcher.js 帶進匯出選項）。
+function getMagicSpeedOptions(magic = getActiveMagicEffects()) {
+  return {
+    minimumSpeed: magic.movement.minimum,
+    ignoreArmorStrength: magic.movement.ignoreArmorStrength.length > 0 || magic.armor.noStrengthRequirement
+  };
 }
 
 const SEARCH_EXPERT_SKILLS = new Set(["洞悉", "調查", "察覺"]);
@@ -2235,24 +2257,30 @@ function updateACDisplay() {
   const hasArmor = Boolean(armorName) && !isShieldItem(armorName);
   const hasArmorShield = isShieldItem(armorName);
   const className = document.getElementById("class")?.value;
-  const armor = hasArmor ? armors.find(item => item.名稱 === armorName) : null;
+  const armor = hasArmor ? getArmorByName(armorName) : null;
   const hasOffHandShield = isEffectiveEquippedShield();
   // 未受盾牌訓練仍算持盾（影響無甲防禦），但不獲得盾牌的 AC 加值。
   const hasShield = (hasOffHandShield || hasArmorShield)
     && !(hasOffHandShield && hasArmorShield)
     && isShieldProficient();
+  const magic = getActiveMagicEffects();
+  const magicAc = magic.ac;
   const armorClass = calculateArmorClass({
     armor,
     hasArmor,
     className,
     level: document.getElementById("level")?.value || "1",
-    dexterityScore: document.getElementById("dex")?.value || "10",
-    constitutionScore: document.getElementById("con")?.value || "10",
-    wisdomScore: document.getElementById("wis")?.value || "10",
-    charismaScore: document.getElementById("cha")?.value || "10",
+    dexterityScore: getEffectiveAbilityValue("dex") || "10",
+    constitutionScore: getEffectiveAbilityValue("con") || "10",
+    wisdomScore: getEffectiveAbilityValue("wis") || "10",
+    charismaScore: getEffectiveAbilityValue("cha") || "10",
     hasAnyShield: hasOffHandShield || hasArmorShield,
     hasShield,
-    hasDefenseFightingStyle: hasDefenseFightingStyleFeat()
+    hasDefenseFightingStyle: hasDefenseFightingStyleFeat(),
+    // 大法師法袍：沒穿護甲時基礎 AC 15＋敏捷，和無甲防禦取最高。
+    unarmoredBaseAc: magic.unarmoredAc,
+    // 魔法盾牌的加值和一般盾牌同一個條件（未受盾牌訓練時不算）。
+    magicBonus: (armor ? magicAc.armor : 0) + (hasShield ? magicAc.shield : 0) + magicAc.other
   });
 
   document.getElementById("ac-display").value = armorClass ?? "--";
@@ -3097,23 +3125,43 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
         }
       }
 
-      const mod = calculateModifier(input.valueAsNumber);
+      // 調整值用有效值；魔法物品改變屬性時，調整值旁加 ✦ 標記，點了（觸控也可）在規則說明浮層顯示「有效 21・巨人之力腰帶（山丘）」。
+      const effective = getEffectiveAbilityScore(input.id);
+      const mod = calculateModifier(effective.score ?? input.valueAsNumber);
       if (!mod) {
         modDisplay.textContent = "";
         return;
       }
       modDisplay.innerHTML = `<span class="modifier-main">${mod}</span>`;
+      if (effective.changed) modDisplay.appendChild(createAbilityEffectTip(input.id, effective));
+    }
+
+    const ABILITY_EFFECT_LABELS = { str: "力量", dex: "敏捷", con: "體質", int: "智力", wis: "感知", cha: "魅力" };
+    function createAbilityEffectTip(ability, effective) {
+      const label = ABILITY_EFFECT_LABELS[ability];
+      const text = `有效 ${effective.score}・${effective.sources.join("、")}`;
+      const tip = document.createElement("button");
+      tip.type = "button";
+      tip.className = "skill-tip ability-effect-tip";
+      tip.dataset.skill = label;
+      tip.dataset.tipText = text;
+      tip.textContent = "✦";
+      tip.setAttribute("aria-controls", "skillPopup");
+      tip.setAttribute("aria-label", `${label}${text}`);
+      return tip;
     }
 
     const abilities = ["str", "dex", "con", "int", "wis", "cha"];
+    const abilityDisplayUpdates = [];
     abilities.forEach(ability => {
       const input = document.getElementById(ability);
       const modDisplay = document.getElementById(`${ability}-mod`);
       const groupMod = document.querySelector(`.skill-group-mod[data-ability="${ability}"]`);
       const update = () => {
         updateAbilityScore(input, modDisplay);
-        if (groupMod) groupMod.textContent = calculateModifier(input.valueAsNumber);
+        if (groupMod) groupMod.textContent = calculateModifier(getEffectiveAbilityScore(ability).score ?? input.valueAsNumber);
       };
+      abilityDisplayUpdates.push(update);
       input.addEventListener("input", update);
       input.addEventListener("change", update);
 
@@ -3122,6 +3170,8 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
         input.dispatchEvent(new Event("input"));
       }
     });
+    // 只重畫屬性格（調整值與有效值那一行），不派送事件：載入存檔時物品的裝備位置最後才對應，用這個補畫。
+    window.refreshAbilityScoreDisplays = () => abilityDisplayUpdates.forEach(update => update());
   </script>
 
 <script>
@@ -3133,20 +3183,23 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   globalThis.shield = globalThis.shield || [];
 </script>
 <script src="equipment-data.js?v=20261109-item-actions" defer></script>
-<script src="search.js?v=20261108-css-split" defer></script>
-<script src="equipment-shop.js?v=20261109-item-actions" defer></script>
-<script src="inventory.js?v=20261109-item-actions" defer></script>
-<script src="inventory-ui.js?v=20261109-item-actions" defer></script>
+<script src="search.js?v=20261109-magic-version" defer></script>
+<script src="equipment-shop.js?v=20261111-magic-toggle" defer></script>
+<script src="inventory.js?v=20261112-magic-effects-8c" defer></script>
+<script src="inventory-ui.js?v=20261112-magic-effects-8c" defer></script>
+<script src="magic-item-shop.js?v=20261111-magic-toggle" defer></script>
 
 <script>
-function getModifier(statId) {
-  return calculateAbilityModifier(document.getElementById(statId).value || "10");
+// 屬性調整值用有效值（屬性欄的原值加上生效中的魔法物品，character-rules.js 的 getEffectiveAbilityValue）。
+// effects 可傳已算好的 getActiveMagicEffects()（荒野形態的跑團畫面傳只含護甲與盾牌的結果）。
+function getModifier(statId, effects) {
+  return calculateAbilityModifier(getEffectiveAbilityValue(statId, effects) || "10");
 }
 
-/** 依等級回傳熟練加值（先做完整 1~20 規則，未來你擴充等級也不用再改） */
-function getProficiencyBonus() {
+/** 依等級回傳熟練加值，加上魔法物品（艾恩石精進，getActiveMagicEffects().proficiencyBonus）；effects 同 getModifier。 */
+function getProficiencyBonus(effects = getActiveMagicEffects()) {
   const lvl = parseInt(document.getElementById("level")?.value || "1", 10);
-  return calculateProficiencyBonus(lvl);
+  return calculateProficiencyBonus(lvl) + (effects.proficiencyBonus || 0);
 }
 
 // 種族的勾選框資源（種族內容檔 kind: checkboxes，例如吐息元素）：container 為包住勾選框的元素，checkbox 為勾選框 ID 前綴。
@@ -3180,11 +3233,21 @@ function updateSpellCastingStats() {
     const mod = getModifier(ability);
     const pb = getProficiencyBonus();
 
+    // 魔法物品的加值只在自動計算開啟時算進去，關閉時比照 AC，玩家自己填的數字不動。
+    const magic = isAutomaticKeyStatsEnabled() ? getActiveMagicEffects() : { spellAttack: 0, spellSaveDc: 0 };
+
     adjustmentInput.value = formatSignedValue(mod);
-    saveDcInput.value = String(8 + pb + mod);
-    attackInput.value = formatSignedValue(mod + pb);
+    saveDcInput.value = String(8 + pb + mod + magic.spellSaveDc);
+    attackInput.value = formatSignedValue(mod + pb + magic.spellAttack);
   }
   if (typeof populateHandAttacks === "function") populateHandAttacks();
+}
+
+// 載入存檔與開啟自動計算時：有魔法加值才重算，沒有魔法物品的角色維持存檔裡的數字。
+function refreshMagicSpellCastingStats() {
+  if (!isAutomaticKeyStatsEnabled()) return;
+  const magic = getActiveMagicEffects();
+  if (magic.spellAttack || magic.spellSaveDc) updateSpellCastingStats();
 }
 
 function bindSpellCastingStatsEvents() {
@@ -3236,8 +3299,8 @@ function writeDerivedCheckValue(input, value) {
 }
 
 // 守護靈氣的豁免加值只在跑團模式顯示（失能時移除），角色卡保留一般數值。
-function getSaveTotal(ability, proficient) {
-  return getModifier(ability) + (proficient ? getProficiencyBonus() : 0);
+function getSaveTotal(ability, proficient, effects = getActiveMagicEffects()) {
+  return getModifier(ability, effects) + (proficient ? getProficiencyBonus(effects) : 0) + effects.saves;
 }
 
 function getNextSaveText(ability) {
@@ -3319,47 +3382,49 @@ function updatePassivePerceptionDisplay() {
   passivePerception.value = perceptionRaw ? String(10 + parseSignedValue(perceptionRaw)) : "";
 }
 
-function updateAutomaticInitiative() {
-  const dexRaw = String(document.getElementById("dex")?.value ?? "").trim();
-  const initiative = document.getElementById("initiative-input");
-  if (!initiative || !isAutomaticKeyStatsEnabled()) return;
-  if (!dexRaw) {
-    initiative.value = "";
-    return;
-  }
-  const dexScore = Number.parseInt(dexRaw, 10);
-  if (!Number.isFinite(dexScore)) {
-    initiative.value = "";
-    return;
-  }
+// 先攻的計算值；敏捷空白或無法判讀時為 null。effects 同 getModifier。
+// 魔法物品的所有屬性檢定加值（幸運石，effects.checks）也加在先攻（使用者決定）；角色卡、跑團與 PDF 都讀這個值。
+function getInitiativeTotal(effects = getActiveMagicEffects()) {
+  const dexScore = Number.parseInt(getEffectiveAbilityValue("dex", effects), 10);
+  if (!Number.isFinite(dexScore)) return null;
   const dexMod = calculateAbilityModifier(dexScore);
   const hasAlertFeat = hasSelectedFeat(ALERT_FEAT_NAME);
+  const proficiencyBonus = getProficiencyBonus(effects);
   const jackOfAllTradesBonus = getJackOfAllTradesBonus(
     document.getElementById("class")?.value,
     document.getElementById("level")?.value,
-    hasAlertFeat
+    hasAlertFeat,
+    proficiencyBonus
   );
-  initiative.value = formatSignedValue(dexMod + (hasAlertFeat ? getProficiencyBonus() : jackOfAllTradesBonus));
+  return dexMod + (hasAlertFeat ? proficiencyBonus : jackOfAllTradesBonus) + (effects.checks || 0);
 }
 
-function getSkillTotals() {
+function updateAutomaticInitiative() {
+  const initiative = document.getElementById("initiative-input");
+  if (!initiative || !isAutomaticKeyStatsEnabled()) return;
+  const total = getInitiativeTotal();
+  initiative.value = total === null ? "" : formatSignedValue(total);
+}
+
+// 技能檢定的計算值（Map：技能 → 數字）。effects 同 getModifier；魔法物品的技能加值（skills）與所有檢定加值（checks）也加在這裡。
+function getSkillTotals(effects = getActiveMagicEffects()) {
   const skillMap = CharacterSkillAbilities;
   const totals = new Map();
 
   const selectedClass = document.getElementById("class")?.value || "";
   const level = parseInt(document.getElementById("level")?.value || "1", 10);
-  const proficiencyBonus = getProficiencyBonus();
+  const proficiencyBonus = getProficiencyBonus(effects);
   // 選項的 grants.checkBonus（魔術使、巫祝）：這些技能檢定加上屬性調整值（至少 min）。
   const skillCheckBonuses = new Map();
   getActiveClassGrants().forEach(({ grants }) => {
     if (!grants.checkBonus) return;
-    const bonus = Math.max(grants.checkBonus.min, getModifier(grants.checkBonus.ability));
+    const bonus = Math.max(grants.checkBonus.min, getModifier(grants.checkBonus.ability, effects));
     grants.checkBonus.skills.forEach(skill => skillCheckBonuses.set(skill, (skillCheckBonuses.get(skill) || 0) + bonus));
   });
 
   for (const skill in skillMap) {
     const ab = skillMap[skill];
-    const mod = getModifier(ab);
+    const mod = getModifier(ab, effects);
     const profInput = document.getElementById("prof-" + skill);
     const expInput = document.getElementById("exp-" + skill);
     const input = document.getElementById("skill-" + skill);
@@ -3368,11 +3433,27 @@ function getSkillTotals() {
     const skillProficiencyBonus = expInput.checked ? proficiencyBonus * 2 : (profInput.checked ? proficiencyBonus : 0);
     const featureBonus = skillCheckBonuses.get(skill) || 0;
     const jackOfAllTradesBonus = getJackOfAllTradesBonus(
-      selectedClass, level, profInput.checked || expInput.checked
+      selectedClass, level, profInput.checked || expInput.checked, proficiencyBonus
     );
-    totals.set(skill, mod + skillProficiencyBonus + featureBonus + jackOfAllTradesBonus);
+    const magicBonus = (effects.skills?.[skill] || 0) + (effects.checks || 0);
+    totals.set(skill, mod + skillProficiencyBonus + featureBonus + jackOfAllTradesBonus + magicBonus);
   }
   return totals;
+}
+
+// 技能（skill-*）、豁免（save-*）與先攻（initiative-input）的計算值；不是這三種或屬性空白時為 null。
+// 跑團的荒野形態以 effects 傳只含穿戴中護甲與盾牌的結果，比較兩者就是其他魔法物品加上的部分（tabletop-mode.js）。
+function getDerivedCheckTotal(id, effects = getActiveMagicEffects()) {
+  if (/^save-(str|dex|con|int|wis|cha)$/.test(id)) {
+    const ability = id.slice(5);
+    return isAbilityScoreBlank(ability) ? null : getSaveTotal(ability, document.getElementById("prof-" + ability)?.checked === true, effects);
+  }
+  if (id.startsWith("skill-")) {
+    const skill = id.slice(6);
+    return Object.hasOwn(CharacterSkillAbilities, skill) && !isAbilityScoreBlank(CharacterSkillAbilities[skill]) ? getSkillTotals(effects).get(skill) ?? null : null;
+  }
+  if (id === "initiative-input") return getInitiativeTotal(effects);
+  return null;
 }
 
 function getNextSkillTexts() {
@@ -3482,7 +3563,7 @@ function finishDerivedChecksLoad(data) {
   syncAutomaticKeyStatsMode({ refresh: false });
 }
 </script>
-<script src="pdf-launcher.js?v=20261111-pdf-note"></script>
+<script src="pdf-launcher.js?v=20261112-merge-main-menu"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -3527,6 +3608,30 @@ function getMonkMartialArtsWeapon() {
     屬性4: null
   };
 }
+// 裝備欄位的值對應的基本款品名：魔法款（例如「長劍+2」）回基本款，其他名稱原樣回傳。可變形的物品（王者權杖）回目前形態的武器。
+// 手持的非武器魔法物品（魔杖等）沒有基本款，原樣回傳。
+function getEquipmentBaseName(name) {
+  const magic = window.MagicItemCatalog?.resolveEquipmentName(name);
+  if (!magic) return name;
+  return window.Inventory?.getMagicFormBase(magic.id) || magic.base || name;
+}
+
+// 裝備欄位的值是手持的非武器魔法物品（魔杖、權杖等，MagicItemCatalog.isHandHeld）時回傳目錄的那一筆 { name, id, selection, base: "" }，否則為 null。
+// 放在手上只佔用那隻手：不是武器（getWeaponByName() 查不到），沒有攻擊列，熟練、精通、武僧武器、雙持等判斷都不把它當武器。
+function getHeldMagicItem(name) {
+  const magic = name ? window.MagicItemCatalog?.resolveEquipmentName(name) : null;
+  return magic && !magic.base ? magic : null;
+}
+
+// 由裝備欄位的值查定義：魔法款是基本款的定義換上自己的名稱，多一個「基本款」，傷害、屬性、精通、AC、分類都繼承基本款。判斷規則時用 getEquipmentRuleName()。
+function withMagicEquipmentName(definition, name) {
+  return definition && definition.名稱 !== name ? { ...definition, 名稱: name, 基本款: definition.名稱 } : definition;
+}
+
+function getEquipmentRuleName(item) {
+  return item?.基本款 || item?.名稱;
+}
+
 function hasTwoHandedProperty(weapon) {
   return [weapon?.屬性1, weapon?.屬性2, weapon?.屬性3, weapon?.屬性4].some(p => p?.includes("雙手"));
 }
@@ -3550,33 +3655,60 @@ let pendingEquipmentValues = null;
 function filterEquipmentSectionsByInventory(sections, slot, keepValue) {
   const pactHand = slot === "mainHand" ? "main" : (slot === "offHand" ? "off" : "");
   if (pactHand && isPactWeaponListHand(pactHand)) return filterPactWeaponSections(sections, keepValue);
-  // 只以文字管理物品時列出全部裝備。
-  if (window.Inventory?.isTextOnly()) return sections;
+  // 只以文字管理物品時列出全部裝備；魔法款沒有對應的物品，目前的選擇保留。
+  if (window.Inventory?.isTextOnly()) return withKeptMagicOption(sections, keepValue, "");
   const counts = window.Inventory?.getEquippableCounts();
   if (!counts) return sections;
   const mainHand = document.getElementById("mainHand")?.value || "";
-  const owned = name => isShieldItem(name) ? counts.shields
+  const owned = name => isShieldItem(name) ? (name === "盾牌" ? counts.shields : counts.magicShields.get(name) || 0)
     : slot === "armor" ? counts.armors.get(name) || 0 : counts.weapons.get(name) || 0;
   // 主手的契約武器不從物品欄拿，副手同名只要 1 件。
   const needed = name => slot === "offHand" && !isShieldItem(name) && name === mainHand && !isPactWeaponListHand("main") ? 2 : 1;
-  return sections.map(section => ({
+  const notOwnedText = name => `${name}（${owned(name) ? `物品欄只有 ${owned(name)} 件` : "不在物品欄"}）`;
+  const magicEquipment = window.Inventory.getMagicEquipment(slot);
+  const keptMagic = keepValue ? window.MagicItemCatalog?.resolveEquipmentName(keepValue) : null;
+  // 手持的非武器魔法物品（魔杖等）排在最後一組，只有主手與副手；數量與保留規則和武器相同（下方的 owned、needed）。
+  const heldNames = pactHand ? magicEquipment.filter(entry => !entry.base).map(entry => entry.name) : [];
+  if (pactHand && getHeldMagicItem(keepValue) && !heldNames.includes(keepValue)) heldNames.push(keepValue);
+  return [...sections, { label: "手持魔法物品", items: heldNames.map(name => ({ 名稱: name })) }].map(section => ({
     ...section,
     items: section.items.flatMap((item) => {
       const name = item.名稱;
-      if (name === "武藝" || owned(name) >= needed(name)) return [item];
-      if (!keepValue || name !== keepValue) return [];
-      return [{ ...item, 選項文字: `${name}（${owned(name) ? `物品欄只有 ${owned(name)} 件` : "不在物品欄"}）` }];
+      // 魔法款是獨立的選項，緊接在同名基本款後面，value 是魔法款自己的名稱。
+      const magicNames = magicEquipment.filter(entry => entry.base === name).map(entry => entry.name);
+      if (keptMagic?.base === name && !magicNames.includes(keepValue)) magicNames.push(keepValue);
+      const magic = magicNames.flatMap((magicName) => {
+        const option = { ...item, 名稱: magicName, 基本款: name };
+        if (owned(magicName) >= needed(magicName)) return [option];
+        return magicName === keepValue ? [{ ...option, 選項文字: notOwnedText(magicName) }] : [];
+      });
+      if (name === "武藝" || owned(name) >= needed(name)) return [item, ...magic];
+      if (!keepValue || name !== keepValue) return magic;
+      return [{ ...item, 選項文字: notOwnedText(name) }, ...magic];
     })
   })).filter(section => section.items.length > 0);
+}
+
+// 清單沒有對應物品（只以文字管理、契約武器）時，目前選的魔法款仍留一個選項，不替玩家清掉；suffix 是標示文字。
+function withKeptMagicOption(sections, keepValue, suffix) {
+  const kept = keepValue ? window.MagicItemCatalog?.resolveEquipmentName(keepValue) : null;
+  if (!kept) return sections;
+  if (!kept.base) return [...sections, { label: "手持魔法物品", items: [{ 名稱: keepValue, 選項文字: `${keepValue}${suffix}` }] }];
+  return sections.map(section => ({
+    ...section,
+    items: section.items.flatMap(item => item.名稱 === kept.base
+      ? [item, { ...item, 名稱: keepValue, 基本款: kept.base, 選項文字: `${keepValue}${suffix}` }]
+      : [item])
+  }));
 }
 
 // 契約武器由玩家召喚：只留近戰武器（武藝跟著職業顯示）。目前選取的遠程武器或盾牌保留並標示，不替玩家清掉。
 function filterPactWeaponSections(sections, keepValue) {
   const isMelee = name => name === "武藝" || (Boolean(getWeaponByName(name)) && !isRangedWeapon(getWeaponByName(name)));
-  return sections.map(section => ({
+  return withKeptMagicOption(sections, keepValue, isMelee(keepValue) ? "（契約武器，沒有魔法加值）" : "（不是近戰武器）").map(section => ({
     ...section,
     items: section.items.flatMap(item => {
-      if (isMelee(item.名稱)) return [item];
+      if (item.基本款 || isMelee(item.名稱)) return [item];
       return keepValue && item.名稱 === keepValue ? [{ ...item, 選項文字: `${item.名稱}（不是近戰武器）` }] : [];
     })
   })).filter(section => section.items.length > 0);
@@ -3615,8 +3747,9 @@ function populateSelectWithSections(selectEl, sections, { slot = "", keepValue =
   });
 }
 
+// 要保留並標示的選項。載入期間只看存檔的值：下拉這時還是上一個角色的選擇，存檔沒有裝備時不能退回它。
 function getEquipmentKeepValue(select, slot) {
-  return pendingEquipmentValues?.[slot] || select?.value || "";
+  return pendingEquipmentValues ? pendingEquipmentValues[slot] || "" : select?.value || "";
 }
 
 function refreshArmorSelection() {
@@ -3667,7 +3800,7 @@ function getArmorSections(includeShield = false) {
 }
 
 function isShieldItem(name) {
-  return name === "盾牌";
+  return getEquipmentBaseName(name) === "盾牌";
 }
 
 function isOffHandAlternateMain() {
@@ -3675,12 +3808,23 @@ function isOffHandAlternateMain() {
 }
 
 function getWeaponByName(name) {
-  return getAllWeaponsWithoutShield().find(weapon => weapon.名稱 === name);
+  const base = getEquipmentBaseName(name);
+  return withMagicEquipmentName(getAllWeaponsWithoutShield().find(weapon => weapon.名稱 === base), name);
+}
+
+function getWeaponOrShieldByName(name) {
+  const base = getEquipmentBaseName(name);
+  return withMagicEquipmentName(getAllWeaponsWithShield().find(weapon => weapon.名稱 === base), name);
+}
+
+function getArmorByName(name) {
+  const base = getEquipmentBaseName(name);
+  return withMagicEquipmentName(armors.find(armor => armor.名稱 === base), name);
 }
 
 function isEffectiveShieldEquippedForState(state, options = {}) {
   const alternateMain = state?.offHandAsMain === true;
-  if (!alternateMain) return String(state?.offHand || "") === "盾牌";
+  if (!alternateMain) return isShieldItem(String(state?.offHand || ""));
   const proficient = typeof options.isShieldProficient === "function"
     ? options.isShieldProficient(state)
     : false;
@@ -3696,12 +3840,84 @@ function isMain2ShieldEligible() {
   if (!isOffHandAlternateMain() || !isShieldProficient()) return false;
   // 需要物品欄有盾牌；已勾選的舊資料保留，取消後要有盾牌才能再勾。
   const shieldOwned = !window.Inventory || window.Inventory.isTextOnly() || window.Inventory.getEquippableCounts().shields > 0
-    || document.getElementById("main2Shield")?.checked === true;
+    || window.Inventory.getEquippableCounts().magicShields.size > 0 || document.getElementById("main2Shield")?.checked === true;
   if (!shieldOwned) return false;
   return ["mainHand", "offHand"].every(id => {
     const name = document.getElementById(id)?.value || "";
     return !name || !hasTwoHandedProperty(getWeaponByName(name));
   });
+}
+
+// 主手 2 拿著的盾牌名稱（裝備摘要、荒野形態顯示用）。
+function getMain2ShieldLabel() {
+  const held = window.Inventory?.entries().find(entry => entry.slot === "shield");
+  return held ? window.Inventory.getEquipmentValue(held) || "盾牌" : "盾牌";
+}
+
+// 跑團模式的昏迷（tabletop-mode.js）：手上的東西掉落。清空主手、副手（主手 2），取消主手 2 的盾牌，物品回到物品欄；
+// 契約、橡棍等各手的勾選與主手 2 的盾牌下拉保留原值。回傳卸下前的選擇與掉落物品的名稱，手上沒東西時回傳 null。
+function dropHeldEquipment() {
+  const mainHand = document.getElementById("mainHand");
+  const offHand = document.getElementById("offHand");
+  const shieldToggle = document.getElementById("main2Shield");
+  // 載入存檔途中（生命值欄位還原成 0）不動裝備欄位，以存檔為準。
+  if (!mainHand || !offHand || characterStateLoadDepth) return null;
+  const saved = {
+    mainHand: mainHand.value,
+    offHand: offHand.disabled ? "" : offHand.value,
+    main2Shield: isOffHandAlternateMain() && shieldToggle?.checked === true,
+    main2ShieldItem: document.getElementById("main2ShieldItem")?.value || ""
+  };
+  if (!saved.mainHand && !saved.offHand && !saved.main2Shield) return null;
+  const labels = [saved.mainHand, saved.offHand, saved.main2Shield ? getMain2ShieldLabel() : ""].filter(Boolean);
+  if (saved.main2Shield) {
+    shieldToggle.checked = false;
+    shieldToggle.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  [mainHand, offHand].forEach((select) => {
+    if (select.disabled || !select.value) return;
+    select.value = "";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  return { saved, labels };
+}
+
+// 撿回 dropHeldEquipment() 卸下的物品：只填目前空著的欄位，物品欄已經沒有的（下拉沒有這個選項）跳過。
+// 回傳 { restored, missing }：撿回與沒撿回的物品名稱。
+function restoreHeldEquipment(saved = {}) {
+  const restored = [];
+  const missing = [];
+  [["mainHand", saved.mainHand], ["offHand", saved.offHand]].forEach(([id, value]) => {
+    const select = document.getElementById(id);
+    if (!value || !select) return;
+    if (select.disabled || select.value) {
+      missing.push(value);
+      return;
+    }
+    select.value = value;
+    if (select.value !== value) {
+      select.value = "";
+      missing.push(value);
+      return;
+    }
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    restored.push(value);
+  });
+  if (saved.main2Shield) {
+    const shieldToggle = document.getElementById("main2Shield");
+    const label = saved.main2ShieldItem || "盾牌";
+    syncMain2ShieldControl({ legalize: false });
+    if (shieldToggle && !shieldToggle.checked && !shieldToggle.disabled && isMain2ShieldEligible()) {
+      const shieldSelect = document.getElementById("main2ShieldItem");
+      if (shieldSelect && saved.main2ShieldItem) shieldSelect.dataset.choice = saved.main2ShieldItem;
+      shieldToggle.checked = true;
+      shieldToggle.dispatchEvent(new Event("change", { bubbles: true }));
+      restored.push(getMain2ShieldLabel() || label);
+    } else {
+      missing.push(label);
+    }
+  }
+  return { restored, missing };
 }
 
 function isEffectiveEquippedShield() {
@@ -3724,6 +3940,48 @@ function syncMain2ShieldControl({ legalize = !autosaveSuspended } = {}) {
   option.hidden = !eligible;
   checkbox.disabled = !eligible;
   if (legalize && !eligible) checkbox.checked = false;
+  syncMain2ShieldSelect(eligible && checkbox.checked);
+}
+
+// 物品欄的盾牌種類（裝備欄位的值，普通盾牌在最前面）。
+function getOwnedShieldNames() {
+  const counts = window.Inventory?.isTextOnly() ? null : window.Inventory?.getEquippableCounts();
+  if (!counts) return [];
+  return [...(counts.shields > 0 ? ["盾牌"] : []), ...counts.magicShields.keys()];
+}
+
+// 主手 2 的盾牌下拉：勾選且條件滿足、物品欄有兩種以上不同的盾牌才出現；只有一種時不出現，直接用那一面。
+// 選擇存在這個控制項（autosave、JSON、分享都帶），隱藏時保留原本的值。
+function syncMain2ShieldSelect(active) {
+  const select = document.getElementById("main2ShieldItem");
+  if (!select) return;
+  const choice = select.dataset.choice || "";
+  const names = active ? getOwnedShieldNames() : [];
+  select.hidden = names.length < 2;
+  if (select.hidden) {
+    select.replaceChildren(...(choice ? [new Option(choice, choice)] : []));
+    select.value = choice;
+    return;
+  }
+  select.replaceChildren(...names.map(name => new Option(name, name)));
+  const held = window.Inventory.entries().find(entry => entry.slot === "shield");
+  const heldName = held ? window.Inventory.getEquipmentValue(held) : "";
+  select.value = [choice, heldName].find(name => names.includes(name)) || names[0];
+}
+
+// 存檔的選項這時還沒建立，先記在控制項上，syncMain2ShieldSelect 建好選項時選回來；舊資料沒有這個欄位時清空。
+function restoreMain2ShieldChoice(value) {
+  const select = document.getElementById("main2ShieldItem");
+  if (!select) return;
+  select.dataset.choice = value;
+  select.replaceChildren(...(value ? [new Option(value, value)] : []));
+  select.value = value;
+}
+
+// 主手 2 目前要拿哪一面盾牌：下拉顯示時是下拉的值，否則由物品欄決定。
+function getMain2ShieldChoice() {
+  const select = document.getElementById("main2ShieldItem");
+  return select && !select.hidden ? select.value : true;
 }
 
 function updateOffHandRolePresentation() {
@@ -3741,7 +3999,7 @@ function updateOffHandRolePresentation() {
 }
 
 function updateOffHandOptions(mainHandValue) {
-  const mainWeapon = getAllWeaponsWithoutShield().find(w => w.名稱 === mainHandValue);
+  const mainWeapon = getWeaponByName(mainHandValue);
   const offHandSelect = document.getElementById("offHand");
   const offHandPopulateOptions = { slot: "offHand", keepValue: getEquipmentKeepValue(offHandSelect, "offHand") };
   if (isOffHandAlternateMain()) {
@@ -3792,7 +4050,7 @@ function isRangedWeapon(weapon) {
   return !!weapon && new Set([
     ...weapons_simple_ranged.map(w => w.名稱),
     ...weapons_martial_ranged.map(w => w.名稱),
-  ]).has(weapon.名稱);
+  ]).has(getEquipmentRuleName(weapon));
 }
 
 function weaponHasProp(weapon, keyword) {
@@ -3804,14 +4062,56 @@ function formatSigned(value) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
 
-function formatWeaponDamage(baseDamage, modifier) {
+// extraDamage：魔法武器的額外傷害骰 [{ dice, typeLabel }]。同類型的骰子併在武器骰後面（1d8+2d6+3揮砍），
+// 其他類型接在最後（1d8+3揮砍+1d6冷凍）；跑團擲骰時略過類型文字（tabletop-actions.js 的 getDamageRollExpression）。
+function formatWeaponDamage(baseDamage, modifier, extraDamage = []) {
   const normalizedDamage = String(baseDamage || "").trim();
   if (!normalizedDamage) return "";
 
   const [damageRoll, ...damageTypeParts] = normalizedDamage.split(/\s+/);
   const damageType = damageTypeParts.join("");
   const modifierText = Number.isFinite(modifier) && modifier !== 0 ? formatSigned(modifier) : "";
-  return `${damageRoll}${modifierText}${damageType}`;
+  const sameType = extraDamage.filter(extra => extra.typeLabel === damageType).map(extra => `+${extra.dice}`).join("");
+  const otherTypes = extraDamage.filter(extra => extra.typeLabel !== damageType).map(extra => `+${extra.dice}${extra.typeLabel}`).join("");
+  return `${damageRoll}${sameType}${modifierText}${damageType}${otherTypes}`;
+}
+
+// 魔法物品改變的武器資料（getActiveMagicEffects() 的 hands 其中一手）：傷害類型、靈巧、投擲射程，以及武藝的徒手打擊（惡魔護甲）。
+// 回傳換過的定義副本，傷害類型、屬性判斷與屬性列表都讀它；沒有要改的時回傳原物件。
+function withMagicWeaponEffects(weapon, magicHand) {
+  if (!weapon || !magicHand || getEquipmentRuleName(weapon) === "盾牌") return weapon;
+  const changes = {};
+  const [die, ...typeParts] = String(weapon.傷害 || "").split(/\s+/u);
+  if (magicHand.unarmed && getEquipmentRuleName(weapon) === "武藝") {
+    // 徒手打擊的傷害骰；武僧的武藝骰較大時用武藝骰。
+    changes.傷害 = `${getHighestDiceExpression([magicHand.unarmed.dice, die]) || die} ${getDamageTypeLabel(magicHand.unarmed.type)}`;
+  } else if (magicHand.damageType && typeParts.length) {
+    changes.傷害 = `${die} ${getDamageTypeLabel(magicHand.damageType)}`;
+  }
+  const properties = [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].filter(hasMeaningfulEquipmentValue).map(String);
+  const added = [
+    magicHand.finesse && !weaponHasProp(weapon, "靈巧") ? "靈巧" : "",
+    magicHand.thrown && !weaponHasProp(weapon, "投擲") ? `投擲 (射程 ${magicHand.thrown[0]}/${magicHand.thrown[1]})` : ""
+  ].filter(Boolean);
+  if (added.length) [...properties, ...added].slice(0, 4).forEach((property, index) => { changes[`屬性${index + 1}`] = property; });
+  return Object.keys(changes).length ? { ...weapon, ...changes } : weapon;
+}
+
+// 這一手的武器是否熟練：原本的武器熟練，或魔法武器的 proficiencyAs（熟練其中任一件武器就算，陽炎劍），
+// 或生效中魔法物品的 proficiencies（射手護腕的長弓、短弓，依基本款）。不改職業的武器熟練，所以精通選項不變。
+function isHandWeaponProficient(weapon, magicHand, effects = getActiveMagicEffects()) {
+  if (isWeaponProficient(weapon)) return true;
+  if (weapon && effects.weaponProficiencies.includes(getEquipmentRuleName(weapon))) return true;
+  return (magicHand?.proficiencyAs || []).some(name => isWeaponProficient(getWeaponByName(name)));
+}
+
+// 這一手的額外傷害骰，類型換成顯示文字；weapon 為武器目前的傷害類型（damageTypeLabel）。
+function getMagicExtraDamage(magicHand, damageTypeLabel) {
+  return (magicHand?.extraDamage || []).map(extra => ({
+    label: extra.label,
+    dice: extra.dice,
+    typeLabel: extra.type === "weapon" ? damageTypeLabel : getDamageTypeLabel(extra.type)
+  }));
 }
 
 function parseDiceExpression(raw) {
@@ -3870,7 +4170,7 @@ function hasPreparedSpell(spellId) {
 function getPreparedShillelaghEffect(weaponName, strengthModifier, damageType) {
   const spellcastingAbility = document.getElementById("spellcasting-ability")?.value || "";
   return getShillelaghWeaponEffect({
-    weaponName,
+    weaponName: getEquipmentBaseName(weaponName),
     isPrepared: true,
     level: document.getElementById("level")?.value || "1",
     strengthModifier,
@@ -3880,10 +4180,11 @@ function getPreparedShillelaghEffect(weaponName, strengthModifier, damageType) {
 }
 
 function isMonkWeapon(weapon) {
-  if (!weapon || weapon.名稱 === "盾牌") return false;
-  if (weapon.名稱 === "武藝") return true;
-  const isSimpleMelee = weapons_simple_melee.some(w => w.名稱 === weapon.名稱);
-  const isLightMartialMelee = weapons_martial_melee.some(w => w.名稱 === weapon.名稱) && weaponHasProp(weapon, "輕型");
+  const name = getEquipmentRuleName(weapon);
+  if (!weapon || name === "盾牌") return false;
+  if (name === "武藝") return true;
+  const isSimpleMelee = weapons_simple_melee.some(w => w.名稱 === name);
+  const isLightMartialMelee = weapons_martial_melee.some(w => w.名稱 === name) && weaponHasProp(weapon, "輕型");
   return isSimpleMelee || isLightMartialMelee;
 }
 
@@ -3896,18 +4197,19 @@ function isMonkMartialArtsActive(weaponName = "") {
   const offHandName = document.getElementById("offHand")?.value || "";
 
   const hasArmor = Boolean(armorName);
-  const hasShield = mainHandName === "盾牌" || isEffectiveEquippedShield();
+  const hasShield = isShieldItem(mainHandName) || isEffectiveEquippedShield();
   if (hasArmor || hasShield) return false;
 
   if (isOffHandAlternateMain()) {
-    const currentWeapon = getAllWeaponsWithShield().find(w => w.名稱 === weaponName);
-    return !weaponName || isMonkWeapon(currentWeapon);
+    const currentWeapon = getWeaponOrShieldByName(weaponName);
+    return !weaponName || Boolean(getHeldMagicItem(weaponName)) || isMonkWeapon(currentWeapon);
   }
 
-  const mainWeapon = getAllWeaponsWithShield().find(w => w.名稱 === mainHandName);
-  const offWeapon = getAllWeaponsWithShield().find(w => w.名稱 === offHandName);
-  const mainIsValid = !mainHandName || isMonkWeapon(mainWeapon);
-  const offIsValid = !offHandName || isMonkWeapon(offWeapon);
+  const mainWeapon = getWeaponOrShieldByName(mainHandName);
+  const offWeapon = getWeaponOrShieldByName(offHandName);
+  // 手持的非武器魔法物品不是武器，不影響武藝。
+  const mainIsValid = !mainHandName || Boolean(getHeldMagicItem(mainHandName)) || isMonkWeapon(mainWeapon);
+  const offIsValid = !offHandName || Boolean(getHeldMagicItem(offHandName)) || isMonkWeapon(offWeapon);
   return mainIsValid && offIsValid;
 }
 
@@ -3931,8 +4233,10 @@ function getArmorTrainingProficiencies() {
   return new Set(armor.map(id => ARMOR_TRAINING_LABELS[id]));
 }
 
+// 穿著的魔法護甲寫了 trained（精靈鏈甲）時，未受過該類別訓練也算受過訓練。
 function isArmorProficient(armor) {
-  return Boolean(armor?.分類) && getArmorTrainingProficiencies().has(armor.分類);
+  if (!armor?.分類) return false;
+  return getArmorTrainingProficiencies().has(armor.分類) || getActiveMagicEffects().armor.trained;
 }
 
 function isShieldProficient() {
@@ -3940,23 +4244,24 @@ function isShieldProficient() {
 }
 
 function isWeaponProficient(weapon) {
-  if (!weapon || weapon.名稱 === "盾牌") return false;
+  const weaponName = getEquipmentRuleName(weapon);
+  if (!weapon || weaponName === "盾牌") return false;
 
   const cls = document.getElementById("class")?.value || "";
   const isSimple = new Set([
     ...weapons_simple_melee.map(w => w.名稱),
     ...weapons_simple_ranged.map(w => w.名稱),
-  ]).has(weapon.名稱);
+  ]).has(weaponName);
   const isMartial = new Set([
     ...weapons_martial_melee.map(w => w.名稱),
     ...weapons_martial_ranged.map(w => w.名稱),
-  ]).has(weapon.名稱);
+  ]).has(weaponName);
 
   // 武器熟練讀職業內容檔的 proficiencies.weapons 與選項 grants（守護者、哨衛的軍用武器）；
   // 武僧的武藝不在內容檔的熟練欄位，由此處補上。契術師刃之魔契只熟練標記為契約武器的那一把（isPactWeaponHand）。
   const proficiencies = window.getClassProficiencies?.(cls)?.weapons;
   if (!proficiencies) return false;
-  if (cls === "monk" && weapon.名稱 === "武藝") return true;
+  if (cls === "monk" && weaponName === "武藝") return true;
   // 職業本身熟練全部武器類別（野蠻人、戰士等）時對任何武器都熟練。
   if (["simple", "martial"].every(category => (proficiencies.categories || []).includes(category))) return true;
   const categories = new Set([...(proficiencies.categories || []), ...getActiveClassGrants().flatMap(item => item.grants.weapons || [])]);
@@ -4016,8 +4321,9 @@ function normalizeLegacyPactWeaponDamage(data) {
 // 跑團模式另以持續效果（TabletopMode 的 shillelaghActive）決定是否生效，不看這個欄位的開關。
 const SHILLELAGH_HAND_TOGGLES = Object.freeze({ main: "mainHandShillelagh", off: "offHandShillelagh" });
 
+// 判斷規則用（橡棍術、武藝）：魔法款回基本款品名。
 function getHandWeaponName(hand) {
-  return document.getElementById(PACT_WEAPON_HANDS[hand]?.selectId)?.value || "";
+  return getEquipmentBaseName(document.getElementById(PACT_WEAPON_HANDS[hand]?.selectId)?.value || "");
 }
 
 // 指定一手時只看那一手是否拿著短棒或長棍；不指定時依 getShillelaghTargetHand 主手優先。
@@ -4252,12 +4558,13 @@ function updateWeaponMasteryBadges() {
   ].forEach(({ hand, selectId, attackNameId }) => {
     const badge = document.getElementById(`atk-${hand}-mastery`);
     if (!badge) return;
-    const weaponName = isWeaponAttackAutomationEnabled()
-      ? document.getElementById(selectId)?.value || ""
-      : document.getElementById(attackNameId)?.value.trim() || "";
-    const weapon = getAllWeaponsWithShield().find(item => item.名稱 === weaponName);
-    const mastery = canUseMastery && weapon?.名稱 !== "盾牌" && hasMeaningfulEquipmentValue(weapon?.精通)
-      && (!selectedMasteries.size || selectedMasteries.has(weapon.名稱))
+    // 看裝備下拉的武器，自動化開關不影響；只有關閉自動化且下拉空白（或雙手佔用）時才退回手打的攻擊名稱。
+    const select = document.getElementById(selectId);
+    const equipped = select && !select.disabled ? select.value : "";
+    const weaponName = equipped || (isWeaponAttackAutomationEnabled() ? "" : document.getElementById(attackNameId)?.value.trim() || "");
+    const weapon = getWeaponOrShieldByName(weaponName);
+    const mastery = canUseMastery && getEquipmentRuleName(weapon) !== "盾牌" && hasMeaningfulEquipmentValue(weapon?.精通)
+      && (!selectedMasteries.size || selectedMasteries.has(getEquipmentRuleName(weapon)))
       ? String(weapon.精通).trim()
       : "";
     badge.hidden = !mastery;
@@ -4280,7 +4587,7 @@ function getSummaryWeaponType(weapon) {
     ...getEquipmentList("weapons_simple_ranged").map(item => item.名稱),
     ...getEquipmentList("weapons_martial_ranged").map(item => item.名稱)
   ]);
-  return rangedWeaponNames.has(weapon?.名稱) ? "遠程" : "近戰";
+  return rangedWeaponNames.has(getEquipmentRuleName(weapon)) ? "遠程" : "近戰";
 }
 
 function hasMeaningfulEquipmentValue(value) {
@@ -4334,26 +4641,92 @@ function buildStealthPenaltyDetail(penalty) {
   return fragment;
 }
 
+// 魔法物品給的無條件優勢（getMagicItemAdvantages()）：跑團技能按鈕與先攻格的「優勢」小標籤，滑鼠提示與報讀寫出來源物品。
+// 只是顯示，擲骰不會自動擲兩次。角色卡技能頁改用 ✦（updateSkillEffectTips）。
+function createMagicAdvantageTag(sources) {
+  const tag = document.createElement("span");
+  tag.className = "magic-advantage-tag";
+  tag.textContent = "優勢";
+  tag.title = `優勢：${sources.join("、")}`;
+  const hidden = document.createElement("span");
+  hidden.className = "sr-only";
+  hidden.textContent = `（${sources.join("、")}）`;
+  tag.appendChild(hidden);
+  return tag;
+}
+
+// 角色卡技能頁的 ✦（和屬性格同一種 .skill-tip.ability-effect-tip，點了在規則說明浮層 #skillPopup 顯示內容）：
+// - 技能名稱旁：這個技能專屬的效果，無條件優勢「優勢・精靈之靴」與技能固定加值「+5・竊賊手套」，多個來源接在同一個浮層。
+// - 技能頁標題旁：影響全部技能的效果，「所有屬性檢定 +1・幸運石」「熟練加值 +1・艾恩石（精進）」。
+// 沒有物品影響的格子不加任何東西；內容沒變時不重建按鈕。
+function createSkillEffectTip(title, text) {
+  const tip = document.createElement("button");
+  tip.type = "button";
+  tip.className = "skill-tip ability-effect-tip skill-effect-tip";
+  tip.dataset.skill = title;
+  tip.dataset.tipText = text;
+  tip.textContent = "✦";
+  tip.setAttribute("aria-controls", "skillPopup");
+  tip.setAttribute("aria-label", `${title}：${text}`);
+  return tip;
+}
+
+function syncSkillEffectTip(container, title, text) {
+  if (!container) return;
+  const current = container.querySelector(":scope > .skill-effect-tip");
+  if ((current?.dataset.tipText || "") === text) return;
+  current?.remove();
+  if (text) container.appendChild(createSkillEffectTip(title, text));
+}
+
+function updateSkillEffectTips(magic = getActiveMagicEffects()) {
+  const advantages = getMagicItemAdvantages(magic);
+  document.querySelectorAll("#tab-skills .skill-cell").forEach((cell) => {
+    const skill = cell.querySelector(".skill-tip")?.dataset.skill || "";
+    const parts = [
+      ...(advantages[skill]?.length ? [`優勢・${advantages[skill].join("、")}`] : []),
+      ...magic.sources.filter(source => source.skills?.[skill]).map(source => `${formatSigned(source.skills[skill])}・${source.label}`)
+    ];
+    syncSkillEffectTip(cell.querySelector(".skill-name"), skill, parts.join("；"));
+  });
+  const overall = [
+    ...magic.sources.filter(source => source.checks).map(source => `所有屬性檢定 ${formatSigned(source.checks)}・${source.label}`),
+    ...magic.sources.filter(source => source.proficiencyBonus).map(source => `熟練加值 ${formatSigned(source.proficiencyBonus)}・${source.label}`)
+  ];
+  syncSkillEffectTip(document.querySelector("#skill-bonus-section .skill-section-heading h3"), "技能", overall.join("；"));
+}
+
 function updateEquipmentLoadoutSummary() {
   const content = document.getElementById("equipment-loadout-summary-content");
   if (!content) return;
   const mainName = document.getElementById("mainHand")?.value || "";
   const offName = document.getElementById("offHand")?.value || "";
   const armorName = document.getElementById("armor")?.value || "";
-  const mainWeapon = getAllWeaponsWithShield().find(item => item.名稱 === mainName);
-  const offWeapon = getAllWeaponsWithShield().find(item => item.名稱 === offName);
-  const armor = armors.find(item => item.名稱 === armorName);
+  const mainWeapon = getWeaponOrShieldByName(mainName);
+  const offWeapon = getWeaponOrShieldByName(offName);
+  const armor = getArmorByName(armorName);
   const canUseMastery = hasWeaponMasteryFeature();
+  const magic = getActiveMagicEffects();
+  const magicHandOf = hand => magic.hands[hand === "main" ? "mainHand" : "offHand"];
+  const handMagicDetail = (hand) => {
+    const { attack, damage } = magicHandOf(hand);
+    if (!attack && !damage) return "";
+    return attack === damage ? `魔法 ${formatSigned(attack)}` : `魔法 命中${formatSigned(attack)}、傷害${formatSigned(damage)}`;
+  };
+  const shieldDetails = () => ["AC+2 (裝備/卸除需 1 個動作)", ...(magic.ac.shield && isShieldProficient() ? [`魔法 AC${formatSigned(magic.ac.shield)}`] : [])];
 
   // 可改傷害類型時（契約武器、真力駐拳、角色卡勾選的橡棍術）傷害是按鈕，點了開啟選擇視窗。
+  // 魔法武器的額外傷害骰接在後面，例如「1d8 揮砍＋1d6 冷凍」。
+  const extraDamageText = (hand, typeLabel) => getMagicExtraDamage(magicHandOf(hand), typeLabel).map(extra => `＋${extra.dice} ${extra.typeLabel}`).join("");
   const weaponDamageDetail = (weapon, hand) => {
     const kind = getHandDamageTypeChoiceKind(hand);
     const handDie = getHandVersatileDie(weapon, hand) || weapon.傷害.split(/\s+/u)[0];
-    if (!kind) return `${handDie} ${getWeaponOwnDamageType(weapon)}`;
+    if (!kind) return `${handDie} ${getWeaponOwnDamageType(weapon)}${extraDamageText(hand, getWeaponOwnDamageType(weapon))}`;
     const die = kind === "shillelagh"
       ? getPreparedShillelaghEffect(weapon.名稱, 0)?.damageDie
       : handDie;
-    const text = `${die} ${getWeaponDamageTypeLabel(kind, getWeaponOwnDamageType(weapon))}`;
+    const typeLabel = getWeaponDamageTypeLabel(kind, getWeaponOwnDamageType(weapon));
+    const text = `${die} ${typeLabel}${extraDamageText(hand, typeLabel)}`;
     const button = document.createElement("button");
     button.type = "button";
     button.className = "weapon-damage-type-link";
@@ -4364,12 +4737,17 @@ function updateEquipmentLoadoutSummary() {
     button.addEventListener("click", () => openWeaponDamageTypeDialog(kind, button));
     return button;
   };
-  const weaponDetails = (weapon, hand) => {
+  const weaponDetails = (weapon, hand, name) => {
+    // 手持的非武器魔法物品：只寫類別（例如「魔杖」），加值列在下方「魔法物品」。
+    const held = getHeldMagicItem(name);
+    if (held) return [window.MagicItemCatalog.getCategories().find(category => category.id === window.MagicItemCatalog.get(held.id)?.category)?.label || "魔法物品"];
     if (!weapon) return [];
-    if (weapon.名稱 === "盾牌") return ["AC+2 (裝備/卸除需 1 個動作)"];
+    if (getEquipmentRuleName(weapon) === "盾牌") return shieldDetails();
+    weapon = withMagicWeaponEffects(weapon, magicHandOf(hand));
     const details = [
       getSummaryWeaponType(weapon),
       weaponDamageDetail(weapon, hand),
+      handMagicDetail(hand),
       ...getSummaryWeaponProperties(weapon).map(property => ({
         text: property,
         ruleKind: "property",
@@ -4384,27 +4762,38 @@ function updateEquipmentLoadoutSummary() {
         ruleName: String(weapon.精通).trim()
       });
     }
+    // 魔法武器的武器說明（hints 的 panel: weapon）。
+    details.push(...magicHandOf(hand).notes);
     return details;
   };
   const armorDetails = armor ? [
     `AC ${armor.AC}`,
-    hasMeaningfulEquipmentValue(armor.力量需求) ? `力量需求 ${String(armor.力量需求).replace(/^力量\s*/u, "")}` : "",
-    hasMeaningfulEquipmentValue(armor.隱匿懲罰) ? buildStealthPenaltyDetail(armor.隱匿懲罰) : ""
+    magic.ac.armor ? `魔法 AC${formatSigned(magic.ac.armor)}` : "",
+    // 秘銀護甲沒有力量需求，也不會讓隱匿有劣勢。
+    hasMeaningfulEquipmentValue(armor.力量需求) && !magic.armor.noStrengthRequirement ? `力量需求 ${String(armor.力量需求).replace(/^力量\s*/u, "")}` : "",
+    hasMeaningfulEquipmentValue(armor.隱匿懲罰) && !magic.armor.noStealthDisadvantage ? buildStealthPenaltyDetail(armor.隱匿懲罰) : ""
   ].filter(Boolean) : [];
   const weaponWarning = (weapon, hand) => {
     if (!weapon) return "";
-    if (weapon.名稱 === "盾牌") return isShieldProficient() ? "" : "盾牌未熟練";
-    return isWeaponProficient(weapon) || isPactWeaponHand(hand) ? "" : "武器未熟練";
+    if (getEquipmentRuleName(weapon) === "盾牌") return isShieldProficient() ? "" : "盾牌未熟練";
+    return isHandWeaponProficient(weapon, magicHandOf(hand)) || isPactWeaponHand(hand) ? "" : "武器未熟練";
   };
   const mainWeaponWarning = weaponWarning(mainWeapon, "main");
   const offWeaponWarning = weaponWarning(offWeapon, "off");
   const armorWarning = armor && !isArmorProficient(armor) ? "護甲未熟練" : "";
 
   const summaryRows = [
-    mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon, "main"), { warningKey: mainWeaponWarning }),
-    offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", offName, weaponDetails(offWeapon, "off"), { warningKey: offWeaponWarning }),
-    isOffHandAlternateMain() && isEffectiveEquippedShield() && buildEquipmentSummaryRow("盾牌", "盾牌", ["AC+2 (裝備/卸除需 1 個動作)"]),
-    armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warningKey: armorWarning })
+    mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon, "main", mainName), { warningKey: mainWeaponWarning }),
+    offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", offName, weaponDetails(offWeapon, "off", offName), { warningKey: offWeaponWarning }),
+    isOffHandAlternateMain() && isEffectiveEquippedShield() && buildEquipmentSummaryRow("盾牌", getMain2ShieldLabel(), shieldDetails()),
+    armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warningKey: armorWarning }),
+    magic.sources.length && buildEquipmentSummaryRow("魔法物品", "魔法物品", magic.sources.map(source => [
+      source.label, source.ac ? `AC${formatSigned(source.ac)}` : "", source.saves ? `豁免${formatSigned(source.saves)}` : "",
+      source.spellAttack ? `法術命中${formatSigned(source.spellAttack)}` : "", source.spellSaveDc ? `法術DC${formatSigned(source.spellSaveDc)}` : "",
+      ...Object.entries(source.skills || {}).map(([skill, bonus]) => `${skill}${formatSigned(bonus)}`),
+      source.checks ? `屬性檢定${formatSigned(source.checks)}` : "", source.proficiencyBonus ? `熟練加值${formatSigned(source.proficiencyBonus)}` : "",
+      source.hitPointsPerLevel ? `生命值上限每級${formatSigned(source.hitPointsPerLevel)}` : ""
+    ].filter(Boolean).join(" ")))
   ].filter(Boolean);
   // 摘要重建時保留傷害按鈕的焦點（選擇視窗關閉後回到同一手的按鈕）。
   const focusedHand = content.contains(document.activeElement) ? document.activeElement.dataset.weaponDamageTypeHand : "";
@@ -4412,6 +4801,7 @@ function updateEquipmentLoadoutSummary() {
   if (focusedHand) content.querySelector(`[data-weapon-damage-type-hand="${focusedHand}"]`)?.focus();
   const acValue = document.getElementById("equipment-current-ac-value");
   if (acValue) acValue.textContent = document.getElementById("ac-display")?.value?.trim() || "—";
+  updateSkillEffectTips(magic);
   updateWeaponMasteryBadges();
   window.ShareReadonly?.onEquipmentChanged();
 }
@@ -4419,28 +4809,37 @@ function updateEquipmentLoadoutSummary() {
 
 // 動作命中傷害
 // options.shillelaghHand：跑團模式依橡棍術持續效果指定生效的一手（null 為不生效）；沒給時依角色卡的「☐橡棍術」。
+// options.magicEffects：要用的魔法物品效果（荒野形態傳 TabletopMode.getMagicEffects()，依變身時每一格的選擇）；沒給時是目前全部生效的物品。
+// options.ignoreMagicEffects：完全不算魔法物品的武器效果（武器資料本身的比較用）。
 function calculateHandAttacks(options = {}) {
   const hasTwoWeaponFighting = hasTwoWeaponFightingStyleFeat();
   const hasArcheryFightingStyle = hasArcheryFightingStyleFeat();
   const shillelaghTargetHand = Object.hasOwn(options, "shillelaghHand") ? options.shillelaghHand : getSheetShillelaghHand();
   const offHandAsMain = isOffHandAlternateMain();
+  const magicEffects = options.magicEffects || getActiveMagicEffects();
+  const magicHands = magicEffects.hands;
   const hands = [
     { key: "main", selectId: "mainHand", prefix: "atk-main", usesMainHandRules: true },
     { key: "off", selectId: "offHand", prefix: "atk-off", usesMainHandRules: offHandAsMain }
   ];
   return hands.map(hand => {
     const weaponName = document.getElementById(hand.selectId).value;
-    const weapon = getAllWeaponsWithShield().find(w => w.名稱 === weaponName);
-    if (!weapon || weapon.名稱 === "盾牌") {
+    // 魔法加值跟著那一手的武器（荒野形態時那一手選了持用才有，見 options.magicEffects）。
+    const magicHand = options.ignoreMagicEffects ? null : magicHands[hand.selectId];
+    // 魔法武器改變的傷害類型、靈巧、投擲與徒手打擊直接換進武器資料，下面的判斷都讀換過的資料。
+    const weapon = withMagicWeaponEffects(getWeaponOrShieldByName(weaponName), magicHand);
+    // 手持的非武器魔法物品（魔杖等）沒有攻擊列。
+    if (getHeldMagicItem(weaponName)) return { ...hand, name: "", hit: "", damage: "", details: null };
+    if (!weapon || getEquipmentRuleName(weapon) === "盾牌") {
       return { ...hand, name: weaponName || "", hit: "", damage: "", details: null };
     }
     const strMod = options.strModifier ?? getModifier("str");
     const dexMod = options.dexModifier ?? getModifier("dex");
-    const isMonkMartialArts = weapon.名稱 === "武藝";
+    const isMonkMartialArts = getEquipmentRuleName(weapon) === "武藝";
     const cls = document.getElementById("class")?.value || "";
     const isRanged = isRangedWeapon(weapon);
     const isDexEligible = weaponHasProp(weapon, "靈巧");
-    const pb = getProficiencyBonus();
+    const pb = getProficiencyBonus(magicEffects);
     const pactWeapon = isPactWeaponHand(hand.key);
     const originalDamageType = getWeaponOwnDamageType(weapon);
     const damageTypeChoice = getHandDamageTypeChoiceKind(hand.key, { shillelaghHand: shillelaghTargetHand });
@@ -4448,7 +4847,7 @@ function calculateHandAttacks(options = {}) {
     const oneHandedDie = weapon.傷害.split(/\s+/u)[0];
     const versatileDie = getHandVersatileDie(weapon, hand.key);
     const weaponDamage = `${versatileDie || oneHandedDie} ${damageType}`;
-    const proficient = isMonkMartialArts || pactWeapon ? true : isWeaponProficient(weapon);
+    const proficient = isMonkMartialArts || pactWeapon ? true : isHandWeaponProficient(weapon, magicHand, magicEffects);
     const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive(weaponName) && isMonkWeapon(weapon);
     const shillelaghEffect = hand.key === shillelaghTargetHand
       ? getPreparedShillelaghEffect(weaponName, strMod, damageType)
@@ -4470,7 +4869,9 @@ function calculateHandAttacks(options = {}) {
     const usePactCharisma = pactWeapon && !shillelaghEffect && !useMonkProficientFormula && charismaMod > attackAbilityMod;
     if (usePactCharisma) attackAbilityMod = charismaMod;
 
-    let hitBonus = attackAbilityMod + (proficient ? pb : 0);
+    const magicAttack = magicHand?.attack || 0;
+    const magicDamage = magicHand?.damage || 0;
+    let hitBonus = attackAbilityMod + (proficient ? pb : 0) + magicAttack;
     // 箭術判斷放在命中計算最後：主手/副手只要是遠程武器都 +2
     if (hasArcheryFightingStyle && isRanged) {
       hitBonus += 2;
@@ -4482,10 +4883,13 @@ function calculateHandAttacks(options = {}) {
     // 投擲不是雙手近戰，傷害骰不採兩用；武僧仍比較武藝骰。
     let thrownDie = oneHandedDie;
     let usesVersatileDie = Boolean(versatileDie) && !shillelaghEffect;
+    // 額外傷害骰的「同武器類型」跟著這一手最後的傷害類型（橡棍術、契約武器等改過的類型）。
+    const extraDamage = getMagicExtraDamage(magicHand, shillelaghEffect?.damageType || damageType);
     if (shillelaghEffect) {
       damage = formatWeaponDamage(
         `${shillelaghEffect.damageDie} ${shillelaghEffect.damageType}`,
-        shouldApplyDamageMod ? attackAbilityMod : null
+        (shouldApplyDamageMod ? attackAbilityMod : 0) + magicDamage,
+        extraDamage
       );
     } else if (useMonkProficientFormula) {
       const martialArtsDie = getMonkMartialArtsDie();
@@ -4496,9 +4900,10 @@ function calculateHandAttacks(options = {}) {
       ]) || martialArtsDie;
       thrownDie = getHighestDiceExpression([martialArtsDie, getWeaponBaseDamageDie(weapon)]) || martialArtsDie;
       usesVersatileDie &&= selectedDie !== thrownDie;
-      damage = formatWeaponDamage(`${selectedDie} ${damageType}`, attackAbilityMod);
+      damage = formatWeaponDamage(`${selectedDie} ${damageType}`, attackAbilityMod + magicDamage, extraDamage);
     } else {
-      damage = formatWeaponDamage(weaponDamage, shouldApplyDamageMod ? attackAbilityMod : null);
+      // 副手不加屬性調整值時，魔法傷害加值仍要加，所以不併進 attackAbilityMod。
+      damage = formatWeaponDamage(weaponDamage, (shouldApplyDamageMod ? attackAbilityMod : 0) + magicDamage, extraDamage);
     }
     const abilityLabel = shillelaghEffect
       ? shillelaghEffect.abilityLabel
@@ -4519,6 +4924,13 @@ function calculateHandAttacks(options = {}) {
         proficient,
         proficiencyBonus: proficient ? pb : 0,
         archeryBonus: hasArcheryFightingStyle && isRanged ? 2 : 0,
+        magicLabel: magicHand?.label || "",
+        magicAttackBonus: magicAttack,
+        magicDamageBonus: magicDamage,
+        // 各魔法來源的命中、傷害加值 [{ label, attack, damage }]、額外傷害骰 [{ label, dice, typeLabel }]、武器說明。
+        magicSources: magicHand?.sources || [],
+        extraDamage,
+        magicNotes: magicHand?.notes || [],
         baseDamage: shillelaghEffect
           ? shillelaghEffect.damageDie
           : (useMonkProficientFormula ? damage.match(/^\d+d\d+/u)?.[0] || oneHandedDie : versatileDie || oneHandedDie),
@@ -4606,6 +5018,7 @@ function renderAttackCalculationPopup(details, calculationType) {
     if (details.proficient) rows.push(["熟練加值", formatSigned(details.proficiencyBonus)]);
     else rows.push(["武器熟練", "未熟練"]);
     if (details.archeryBonus) rows.push(["箭術戰鬥風格", "+2"]);
+    (details.magicSources || []).filter(source => source.attack).forEach(source => rows.push([source.label, formatSigned(source.attack)]));
   } else {
     rows.push([details.usesVersatileDie ? "武器傷害（兩用，雙手）" : "武器傷害", details.baseDamage]);
     if (details.thrownDie) rows.push(["投擲時武器傷害", details.thrownDie]);
@@ -4614,7 +5027,9 @@ function renderAttackCalculationPopup(details, calculationType) {
     } else if (details.omittedOffHandModifier) {
       rows.push([`${details.abilityLabel}調整值`, "副手傷害不加入"]);
     }
+    (details.magicSources || []).filter(source => source.damage).forEach(source => rows.push([source.label, formatSigned(source.damage)]));
     rows.push(["傷害類型", details.damageType]);
+    (details.extraDamage || []).forEach(extra => rows.push([`${extra.label}額外傷害`, `${extra.dice} ${extra.typeLabel}`]));
   }
   const result = calculationType === "hit" ? details.hit : details.damage;
   return `<div class="attack-calculation-title">${calculationType === "hit" ? "命中" : "傷害"}計算</div>
@@ -4728,7 +5143,7 @@ function updateArmorInfo() {
 }
 </script>
 <script src="sheet-spells.js?v=20261108-monster-srd"></script>
-<script src="rule-tips.js?v=20261108-monster-srd"></script>
+<script src="rule-tips.js?v=20261111-magic-abilities"></script>
 <script>
 const SPELL_QR_IMAGE_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwAQMAAAAEm3vRAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABD0lEQVRYhe2YMQ6DMAxFXTFk5EgcjR6NIzEyINLYDk6ahpSiiun/BeHH9GXHPxBB96v3UXN4GZayAlzHq7o3zp2nIRSfqQLcwKG26Qu5ragAf8FdeC4PMRX4X5j2+QY+g9N8k2uOP7Bh2xx8Kkor1lcN8Hmcy0/UErBJLQzTzI/JbXFTs7vAh1gVVwibOu6dmLUicIHlDGQv/UriJUuPRwK+iEUcEVmCg9XSuwR8iHsZa3bSTOVYs2QLGvgDJ3GEtixtNxXgCziPNXovoS4ff+AqzvJ0bNBOvwduYutA2yXyHQGfwjEMcpZ2FVOBr2GyWLMvaOADLEqd+h5rgKs4DrTXVvTy56C87AH/hqG79QLS1jgHWvai8gAAAABJRU5ErkJggg==";
 
@@ -4971,7 +5386,20 @@ function assertCharacterDataCount(value, maximum) {
 
 // 物品欄（inventory.js）的匯入預檢：版本 1、至多 300 筆，每筆只有約定欄位且型別正確；細部清理由 Inventory.restore() 負責。
 const INVENTORY_KEYS = new Set(["version", "textOnly", "items"]);
-const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses", "spellId"]);
+const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses", "magic", "attuned", "worn", "spellId", "charges", "ammo"]);
+// 魔法物品：{ id, <選項 id>: 字串或數字 }。
+function isValidInventoryMagic(magic) {
+  if (!magic || typeof magic !== "object" || Array.isArray(magic) || typeof magic.id !== "string" || !magic.id || magic.id.length > 64) return false;
+  const fields = Object.entries(magic);
+  return fields.length <= 16 && fields.every(([key, field]) => key.length <= 32
+    && ((typeof field === "string" && field.length <= 64) || (typeof field === "number" && Number.isFinite(field))));
+}
+// 魔法物品的剩餘次數：{ 池 id: 0～99 的整數 }，最多 16 個池。
+function isValidInventoryCharges(charges) {
+  if (!charges || typeof charges !== "object" || Array.isArray(charges)) return false;
+  const fields = Object.entries(charges);
+  return fields.length <= 16 && fields.every(([key, left]) => key.length <= 32 && Number.isInteger(left) && left >= 0 && left <= 99);
+}
 function isValidInventoryState(value) {
   if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1 || !Array.isArray(value.items)) return false;
   if (!Object.keys(value).every(key => INVENTORY_KEYS.has(key)) || (value.textOnly !== undefined && typeof value.textOnly !== "boolean")) return false;
@@ -4979,12 +5407,29 @@ function isValidInventoryState(value) {
   return value.items.every(entry => entry && typeof entry === "object" && !Array.isArray(entry)
     && Object.keys(entry).every(key => INVENTORY_ENTRY_KEYS.has(key))
     && ["uid", "itemId", "name", "in", "source", "spellId"].every(key => entry[key] === undefined || (typeof entry[key] === "string" && entry[key].length <= 64))
-    && Number.isInteger(entry.quantity) && entry.quantity >= 1 && entry.quantity <= 9999
+    // 彈藥是唯一可以 ×0 的物品（用完後保留）；彈藥種類與 Inventory 相同（商店「彈藥」群組）。
+    && Number.isInteger(entry.quantity) && entry.quantity <= 9999
+    && (entry.quantity >= 1 || (entry.quantity === 0 && Boolean(window.Inventory?.getAmmunitionType?.(entry.itemId))))
     && (entry.weight === undefined || (typeof entry.weight === "number" && Number.isFinite(entry.weight) && entry.weight >= 0 && entry.weight <= 9999))
     && (entry.container === undefined || typeof entry.container === "boolean")
     && (entry.uses === undefined || (Number.isInteger(entry.uses) && entry.uses >= 1 && entry.uses <= 9999))
     && (entry.desc === undefined || (typeof entry.desc === "string" && entry.desc.length <= 400))
-    && (typeof entry.itemId === "string" || typeof entry.name === "string"));
+    && (entry.magic === undefined || isValidInventoryMagic(entry.magic))
+    && (entry.attuned === undefined || typeof entry.attuned === "boolean")
+    && (entry.worn === undefined || typeof entry.worn === "boolean")
+    && (entry.ammo === undefined || typeof entry.ammo === "boolean")
+    && (entry.charges === undefined || (entry.magic !== undefined && isValidInventoryCharges(entry.charges)))
+    && (typeof entry.itemId === "string" || typeof entry.name === "string" || entry.magic !== undefined));
+}
+
+// 跑團狀態的昏迷掉落紀錄（tabletop-mode.js 的 droppedHands）：null，或只有這四個欄位的物件。
+function isValidDroppedHands(value) {
+  if (value === null) return true;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const text = key => value[key] === undefined || (typeof value[key] === "string" && value[key].length <= 100);
+  return Object.keys(value).every(key => ["mainHand", "offHand", "main2Shield", "main2ShieldItem"].includes(key))
+    && text("mainHand") && text("offHand") && text("main2ShieldItem")
+    && (value.main2Shield === undefined || typeof value.main2Shield === "boolean");
 }
 
 function validateCharacterState(data) {
@@ -5016,6 +5461,8 @@ function validateCharacterState(data) {
         if (depth === 0 && key === "__tabletopActionPreferences"
             && (!child || typeof child !== "object" || Array.isArray(child) || child.version !== 1)) throw new TypeError("跑團按鈕設定格式不正確");
         if (depth === 0 && key === "__inventory" && !isValidInventoryState(child)) throw new TypeError("物品欄格式不正確或物品過多");
+        if (depth === 0 && key === "magic-item-acquire" && typeof child !== "boolean") throw new TypeError("魔法物品開關格式不正確");
+        if (depth === 0 && key === "droppedHands" && !isValidDroppedHands(child)) throw new TypeError("昏迷掉落紀錄格式不正確");
         if (key === "sourceTag" && (typeof child !== "string" || child.length > 256)) throw new TypeError("法術來源標籤格式不正確");
         if (key === "entries" && Array.isArray(child)) {
           if (child.length > CHARACTER_DATA_LIMITS.entries) throw new RangeError("角色清單項目過多");
@@ -5091,6 +5538,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   "dnd.tabletopActionMode.v1",
   TABLETOP_AVATAR_STORAGE_KEY,
   "dnd.tabletopIntroSeen.v1",
+  "dnd.magicItemAcquireNoticeSeen.v1",
   FIELD_INFO_HINT_DISMISSED_KEY,
   "dnd.spellManagementBackup.v1",
   "dnd.spellManagementMemories.v1",
@@ -5503,7 +5951,7 @@ function restoreInventoryState(data) {
     mainHand: pactHand === "main" ? "" : pendingEquipmentValues.mainHand,
     offHand: pactHand === "off" ? "" : pendingEquipmentValues.offHand,
     armor: pendingEquipmentValues.armor,
-    shield: data.offHandAsMain === true && data.main2Shield === true
+    shield: data.offHandAsMain === true && data.main2Shield === true && (String(data.main2ShieldItem || "") || true)
   }, { reset: !hasInventory });
 }
 
@@ -5561,6 +6009,7 @@ function applyStateObjectNow(data) {
     if (offHandAsMain) offHandAsMain.checked = data.offHandAsMain === true;
     const main2Shield = document.getElementById("main2Shield");
     if (main2Shield) main2Shield.checked = false;
+    restoreMain2ShieldChoice(String(data.main2ShieldItem || ""));
 
     getDynamicAreaConfigs().forEach(area => {
       if (area.key === "feats-area") return;
@@ -5676,8 +6125,15 @@ function applyStateObjectNow(data) {
   syncMain2ShieldControl({ legalize: true });
   // 物品的裝備位置不進存檔：裝備欄位都還原後才重新對應（舊資料也從這裡把已裝備的物品拿出來）。
   window.InventoryUI?.syncEquippedSlots({ restoring: true });
+  window.refreshAbilityScoreDisplays?.();
+  refreshMagicSpellCastingStats();
+  // 有魔法物品的生命值上限加值（狂戰斧）才重算；沒有的角色維持存檔裡的數字。
+  if (getActiveMagicEffects().hitPointsPerLevel) updateHPDisplay();
+  // 有所有檢定加值（幸運石）時先攻也重算；沒有的角色維持存檔裡的數字。
+  if (getActiveMagicEffects().checks) updateAutomaticInitiative();
   updateACDisplay();
   updateSpeedDisplay();
+  syncProficiencyUseChecks();
   updateClassFeatureChoiceReminder();
   if (subclassReplaced) {
     window.AppDialog?.notify(`無法辨識存檔中的子職，已改為「${window.getSelectedSubclass?.(data.class)?.name || ""}」。`, { tone: "warning" });
@@ -6277,7 +6733,8 @@ function readNonNegativeInt(id) {
 // 可攜負重：力量值 ×15，種族內容檔有 carryMultiplier 時再乘上（例如歌利亞 ×2）。錢財區與物品欄負重共用。
 function getCarryCapacityPounds() {
   const carryMultiplier = 15 * (getRaceRules(document.getElementById("race")?.value || "")?.carryMultiplier || 1);
-  return readNonNegativeInt("str") * carryMultiplier;
+  const strength = Number.parseInt(getEffectiveAbilityValue("str") || "0", 10);
+  return (Number.isFinite(strength) ? Math.max(strength, 0) : 0) * carryMultiplier;
 }
 
 // 硬幣不分幣值，每 50 枚 1 磅（與錢財區「貨幣數量」相同的四種幣值）。
@@ -6676,7 +7133,12 @@ function setupMoneyTracker() {
     scheduleSaveAllFields();
     return true;
   };
-  window.MoneyTracker = Object.freeze({ readTotal, formatAmount, purchaseItems, receiveGold });
+  // 魔法物品商店在「只以文字管理物品」時：不扣款，名稱併入攜帶物品的「購買物品：」行。
+  const addGearText = (items) => {
+    mergePurchasedGear(items);
+    scheduleSaveAllFields();
+  };
+  window.MoneyTracker = Object.freeze({ readTotal, formatAmount, purchaseItems, receiveGold, addGearText });
 
   renderLogList();
   updateSummary();
@@ -6697,14 +7159,42 @@ window.addEventListener("DOMContentLoaded", async function() {
   refreshArmorSelection();
   let previousMainHand = mainHandSelect.value;
   let previousOffHand = offHandSelect.value;
+  let activeMagicEffectsKey = JSON.stringify(getActiveMagicEffects());
+  const readEffectiveAbilityScores = () => Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map(id => [id, getEffectiveAbilityValue(id)]));
+  let activeAbilityScores = readEffectiveAbilityScores();
   // 物品欄變動時重建裝備下拉（保留目前選取），並排入自動儲存。
-  document.addEventListener("inventory:change", () => {
+  document.addEventListener("inventory:change", (event) => {
     refreshWeaponSelections();
     refreshArmorSelection();
     previousMainHand = mainHandSelect.value;
     previousOffHand = offHandSelect.value;
     syncMain2ShieldControl({ legalize: false });
     scheduleSaveAllFields();
+    // 物品欄變動、同調切換、裝備變更只要改到魔法加值就重算；加值沒變時不動既有流程。切換形態時武器資料也會變。
+    const magicKey = JSON.stringify(getActiveMagicEffects());
+    // 穿上或脫下精靈之靴等不影響數字的物品也要更新技能頁的 ✦。
+    updateSkillEffectTips();
+    // 魔法物品改變屬性有效值時，比照玩家改屬性欄重算一次（調整值、技能、豁免、生命值、AC、攻擊、法術數值、跑團畫面等）。
+    // 屬性欄的原值不變，只派送 input 事件；載入存檔途中只重畫屬性格，其餘由載入流程最後統一計算。
+    const abilityScores = readEffectiveAbilityScores();
+    const changedAbilities = Object.keys(abilityScores).filter(id => abilityScores[id] !== activeAbilityScores[id]);
+    activeAbilityScores = abilityScores;
+    if (changedAbilities.length && characterStateLoadDepth) window.refreshAbilityScoreDisplays?.();
+    else changedAbilities.forEach(id => document.getElementById(id)?.dispatchEvent(new Event("input", { bubbles: true })));
+    if (magicKey === activeMagicEffectsKey && event.detail?.reason !== "form") return;
+    activeMagicEffectsKey = magicKey;
+    updateACDisplay();
+    // 生命值上限（狂戰斧）、速度（跑跳之靴、秘銀護甲）與熟練加值的次數（艾恩石精進）也跟著魔法物品變。
+    if (!characterStateLoadDepth) {
+      updateHPDisplay();
+      updateSpeedDisplay();
+      updateAutomaticInitiative();
+    }
+    syncProficiencyUseChecks();
+    // 載入存檔時由 applyStateObjectNow 最後算一次；這裡算會用到還沒還原完的欄位。
+    if (isAutomaticKeyStatsEnabled() && !characterStateLoadDepth) updateSpellCastingStats();
+    else populateHandAttacks();
+    refreshDerivedChecks();
   });
   // 裝備選擇改變時，物品跟著從物品欄拿出或放回；還原存檔時由 applyStateObjectNow 最後核對一次。
   const syncInventorySlots = () => {
@@ -6774,6 +7264,10 @@ window.addEventListener("DOMContentLoaded", async function() {
     refreshEquipmentEffects();
   });
   main2ShieldToggle?.addEventListener("change", refreshEquipmentEffects);
+  document.getElementById("main2ShieldItem")?.addEventListener("change", (event) => {
+    event.target.dataset.choice = event.target.value;
+    refreshEquipmentEffects();
+  });
   armorSelect?.addEventListener("change", syncInventorySlots);
   // 契約武器同時只有一把：勾選一手時取消另一手。
   Object.values(PACT_WEAPON_HANDS).forEach(config => {

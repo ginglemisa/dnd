@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: tome-of-leadership-and-influence
+name: 統御卷冊
+nameEn: "Tome of Leadership and Influence"
+source: srd
+category: wondrous
+group: book
+rarity: very-rare
+attunement: false
+text: |-
+  這本書包含影響與魅惑他人的指引，其文字充滿魔力。如果你在6天或更短的期間內花費48小時研讀書中內容並實踐其指引，你的魅力提高2點，最高為30。這本書隨後失去魔力，但會在一個世紀後重新獲得。

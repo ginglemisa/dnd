@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: winged-boots
+name: 飛翼之靴
+nameEn: "Winged Boots"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+use: worn
+pools:
+  - { id: charges, label: 充能, max: 4, recover: dawn, amount: 1d4 }
+actions:
+  - { id: fly, name: 飛行, type: magic, pool: charges, text: 獲得 30 呎飛行速度 1 小時；到期時仍在飛行就每輪下降 30 呎直到著地。 }
+text: |-
+  這雙靴子有4次充能，每天黎明恢復1d4次已消耗的充能。穿戴靴子時，你可以進行魔法動作，消耗1次充能，獲得30呎的飛行速度，持續1小時。若持續時間到期時你正在飛行，你以每輪30呎的速度下降，直到著地。

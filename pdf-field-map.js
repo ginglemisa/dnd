@@ -373,14 +373,14 @@
     return /^\+\d{2}$/.test(text) ? text.slice(1) : text;
   }
 
+  // 魔法物品的熟練加值（艾恩石精進）：buildPdfFieldPayload 執行期間由 options.magicProficiencyBonus 設定，結束時歸零。
+  let pdfMagicProficiencyBonus = 0;
+
   function getProficiencyBonusByLevel(level) {
     const lv = Number.parseInt(level, 10);
     if (!Number.isFinite(lv) || lv <= 0) return '';
-    if (lv >= 17) return '+6';
-    if (lv >= 13) return '+5';
-    if (lv >= 9) return '+4';
-    if (lv >= 5) return '+3';
-    return '+2';
+    const base = lv >= 17 ? 6 : lv >= 13 ? 5 : lv >= 9 ? 4 : lv >= 5 ? 3 : 2;
+    return `+${base + pdfMagicProficiencyBonus}`;
   }
 
   function getPdfProficiencyValueByLevel(level) {
@@ -459,7 +459,8 @@
       ...(globalScope.weapons_martial_ranged || [])
     ];
     const isTwoHandedWeapon = name => {
-      const weapon = weaponList.find(item => item?.名稱 === name);
+      const base = globalScope.getEquipmentBaseName?.(name) ?? name;
+      const weapon = weaponList.find(item => item?.名稱 === base);
       return [weapon?.屬性1, weapon?.屬性2, weapon?.屬性3, weapon?.屬性4]
         .some(property => String(property || '').includes('雙手'));
     };
@@ -469,7 +470,7 @@
         isTwoHandedWeapon
       });
     }
-    return state.offHandAsMain !== true && normalizeText(state.offHand) === '盾牌';
+    return state.offHandAsMain !== true && (globalScope.isShieldItem?.(normalizeText(state.offHand)) ?? normalizeText(state.offHand) === '盾牌');
   }
 
   function collectToolProficiencyNames(state) {
@@ -1165,6 +1166,8 @@ function isWeaponRowEmpty(payload, slot) {
     return normalizeText(options[globalScope.getRaceChoiceOptionKey(choiceId)] || state[choiceId]);
   }
 
+  // 專長能否生效（條件、重複取得、手動管理）只有角色卡的 hasSelectedFeat 判斷得出來，
+  // 由匯出流程以 options.hasSpeedyFeat 傳入，這裡不從存檔另推一套。
   function resolveSpeedForPdf(state, options = {}) {
     if (state['auto-calculate-key-stats-toggle'] === false) {
       return normalizeText(state['speed-display']);
@@ -1174,7 +1177,8 @@ function isWeaponRowEmpty(payload, slot) {
     }
     const armorName = normalizeText(state.armor);
     const armorList = typeof armors !== 'undefined' ? armors : (globalScope.armors || []);
-    const armor = armorList.find((item) => item.名稱 === armorName);
+    const armorBaseName = globalScope.getEquipmentBaseName?.(armorName) ?? armorName;
+    const armor = armorList.find((item) => item.名稱 === armorBaseName);
     const isShield = typeof globalScope.isShieldItem === 'function'
       ? globalScope.isShieldItem
       : () => false;
@@ -1186,11 +1190,27 @@ function isWeaponRowEmpty(payload, slot) {
       level: state.level,
       isWearingArmor: Boolean(armorName) && !isShield(armorName),
       isWearingHeavyArmor: armor?.分類 === '重甲',
-      hasShield: isShield(armorName) || hasEffectiveShieldForPdf(state)
+      armorStrengthRequirement: armor?.力量需求,
+      strengthScore: state.str,
+      hasShield: isShield(armorName) || hasEffectiveShieldForPdf(state),
+      hasSpeedyFeat: options.hasSpeedyFeat === true,
+      // 魔法物品的速度選項（速度至少、不因護甲力量需求降速），由匯出流程以 options.magicSpeedOptions 傳入。
+      ...(options.magicSpeedOptions || {})
     });
   }
 
-  function buildPdfFieldPayload(state, options = {}) {
+  function buildPdfFieldPayload(sourceState, options = {}) {
+    pdfMagicProficiencyBonus = Number(options.magicProficiencyBonus) || 0;
+    try {
+      return buildPdfFieldPayloadNow(sourceState, options);
+    } finally {
+      pdfMagicProficiencyBonus = 0;
+    }
+  }
+
+  function buildPdfFieldPayloadNow(sourceState, options = {}) {
+    // 屬性格與用到屬性的數字寫有效值：匯出流程以 options.abilityScores 傳入頁面算好的有效值（魔法物品），存檔本身仍是原值。
+    const state = options.abilityScores ? { ...sourceState, ...options.abilityScores } : sourceState;
     const payload = {};
     const classKey = normalizeText(state.class);
     const backgroundKey = normalizeText(state.background);

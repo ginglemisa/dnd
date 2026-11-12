@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: cape-of-the-mountebank
+name: 郎中披肩
+nameEn: "Cape of the Mountebank"
+source: srd
+category: wondrous
+group: wearable
+rarity: rare
+attunement: false
+use: worn
+pools:
+  - { id: dimension-door, label: 任意門, max: 1, recover: dawn }
+actions:
+  - { id: dimension-door, spell: dimension-door, pool: dimension-door, note: 離開的空間留下一團煙霧，到你下個回合結束前輕度遮蔽。 }
+text: |-
+  這件披肩隱約散發硫磺的氣味。穿戴時，你可以用它施放_任意門_，施放時間為魔法動作。此特性直到下次黎明前都無法再次使用。
+
+  當你用該法術傳送時，會留下一團煙霧。你離開的空間在你下個回合結束前，會因這團煙霧而處於輕度遮蔽。

@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: chime-of-opening
+name: 開門鐘琴
+nameEn: "Chime of Opening"
+source: srd
+category: wondrous
+group: tool
+rarity: rare
+attunement: false
+weight: 1
+pools:
+  - { id: uses, label: 使用次數, max: 10 }
+actions:
+  - { id: knock, spell: knock, pool: uses, when: owned, note: 鐘琴的鳴響取代敲擊聲，300 呎外都聽得見。 }
+text: |-
+  這根中空的金屬管長約1呎，重1磅。作為魔法動作，你可以敲擊鐘琴來施放_敲擊術_。該法術慣有的敲擊聲被鐘琴清亮的鳴響取代，在300呎外都聽得見。
+
+  鐘琴可以使用10次。第十次使用後，它會裂開而變得無用。

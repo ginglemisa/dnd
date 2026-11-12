@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: nine-lives-stealer
+name: 九轉奪命劍
+nameEn: "Nine Lives Stealer"
+source: srd
+category: weapon
+rarity: very-rare
+attunement: true
+base: { any: [ simple-weapon, martial-weapon ], label: 任意簡易或軍用武器 }
+effects: { attack: 2, damage: 2 }
+hints:
+  - panel: weapon
+    text: 擲出 20 時，生命值少於 100 的生物須通過 DC 15 體質豁免，否則死亡（構裝、不死生物自動成功；殺死時用掉 1 次充能）。
+pools:
+  - { id: charges, label: 充能, max: 9 }
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+2加值。
+
+  **_奪取生命。_** 這件武器有1d8 + 1次充能。當你用這件武器攻擊生命值少於100的生物，且攻擊檢定的d20擲出20時，該生物必須成功通過DC 15的體質豁免，否則會因劍從其身體中扯出生命力而當場死亡。構裝生物與不死生物自動通過該豁免。若該生物被殺死，武器失去1次充能。當武器沒有剩餘充能時，它就失去這項特性。

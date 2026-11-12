@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-spell-turning
+name: 法術反轉戒指
+nameEn: "Ring of Spell Turning"
+source: srd
+category: ring
+rarity: legendary
+attunement: true
+use: worn
+hints:
+  - panel: skills
+    text: 對法術的豁免有優勢。
+actions:
+  - { id: turn, name: 反彈法術, type: reaction, text: 你對只以你為目標、沒有效果區域的 7 環以下法術豁免成功時，把法術反彈回施法者，施法者用自己的法術豁免 DC 豁免。 }
+text: |-
+  穿戴這枚戒指時，你對法術的豁免具有優勢。如果你對一個7環或更低環的法術豁免成功，該法術對你不產生效果。如果該法術只以你為目標，且沒有創造效果區域，你可以進行反應動作將該法術反彈回施法者身上；施法者必須使用自己的法術豁免DC，對該法術進行一次豁免。

@@ -624,6 +624,22 @@ function verifyPdfSerifFontCoverage() {
 async function verifyPdf(page, fieldsOnly) {
   verifyPdfSerifFontCoverage();
   await page.addScriptTag({ url: "/pdf-field-map.js" });
+  // 屬性格寫匯出選項帶來的有效值（魔法物品），力量需求降速也用它；沒有帶時寫存檔的原值。
+  assert.deepEqual(await page.evaluate(() => {
+    const state = { class: "fighter", level: "1", str: "10", con: "12", armor: "鎖子甲", "speed-input": "30" };
+    const pick = payload => [payload.strMod1, payload.str1, payload.conMod1, payload.con1, payload.speed1];
+    return [pick(buildPdfFieldPayload(state)), pick(buildPdfFieldPayload(state, { abilityScores: { str: "19", con: "19" } }))];
+  }), [["10", "0", "12", "+1", "20"], ["19", "+4", "19", "+4", "30"]], "PDF ability boxes use the effective scores passed by the page");
+  // 魔法物品的熟練加值（艾恩石精進）與速度選項（跑跳之靴：速度至少 30、不因力量需求降速）由匯出選項帶入，和角色卡一致。
+  assert.deepEqual(await page.evaluate(() => {
+    const state = { class: "fighter", level: "5", str: "10", armor: "鎖子甲", "speed-input": "25" };
+    const pick = payload => [payload.proficiencyBonus1, payload.speed1];
+    return [
+      pick(buildPdfFieldPayload(state)),
+      pick(buildPdfFieldPayload(state, { magicProficiencyBonus: 1, magicSpeedOptions: { minimumSpeed: 30, ignoreArmorStrength: true } })),
+      pick(buildPdfFieldPayload(state))
+    ];
+  }), [["+3", "15"], ["+4", "30"], ["+3", "15"]], "PDF proficiency bonus and speed use the magic item options and reset afterwards");
   await page.evaluate(() => {
     for (const key of ["derived-feat-human-origin", "derived-feat-lessons-1", "derived-feat-lessons-2", "derived-feat-fighter-level-4", "derived-feat-warlock-level-8", "feat-0"]) {
       if (!buildPdfFieldPayload({ [key]: "強韌體魄" }).feats1.includes("HP上限+等級×2")) throw new Error(`PDF feat source: ${key}`);
@@ -4930,7 +4946,304 @@ async function verifyInventoryPersistence(browser, url) {
       await textShared.waitForFunction(() => window.SHARE_MODE === true);
       assert.deepEqual(await textSnapshot(textShared), [true, 0, "巨劍", "true", true], "share restores text mode");
     } finally { await textShared.close(); }
-    console.log("Inventory persistence: autosave, JSON export, share (including empty inventories and text mode), legacy seeding, missing equipped items, descriptions and safe custom names passed.");
+    // Magic items keep their id and options through autosave, JSON and share; old saves without magic are unaffected.
+    const magicState = { class: "fighter", level: "1", mainHand: "", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } },
+      { uid: "bag", quantity: 1, magic: { id: "bag-of-holding" } },
+      { uid: "lost", quantity: 2, magic: { id: "no-such-item", foo: "bar" } },
+      { uid: "potion", itemId: "治療藥水", quantity: 1 },
+      { uid: "scroll", itemId: "法術卷軸", name: "命令術法術卷軸", quantity: 1 }
+    ] } };
+    const magicSnapshot = target => target.evaluate(() => ({ state: Inventory.getState().items, text: Inventory.formatText() }));
+    const magicExpected = { state: magicState.__inventory.items, text: "長劍+2、次元袋、未知魔法物品 ×2、治療藥水、命令術法術卷軸" };
+    await page.evaluate(magicState => { applyStateObject(magicState); saveAllFields(); }, magicState);
+    assert.deepEqual(await magicSnapshot(page), magicExpected, "magic items load with the agreed shape");
+    await page.goto(url);
+    assert.deepEqual(await magicSnapshot(page), magicExpected, "autosave restores magic items");
+    assert.deepEqual(await page.evaluate(() => collectStateObject().__inventory.items), magicState.__inventory.items, "JSON export carries magic items");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await magicSnapshot(page), magicExpected, "JSON import restores magic items");
+    const magicHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const magicShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = magicHash;
+      await magicShared.goto(sharedUrl.href);
+      await magicShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await magicSnapshot(magicShared), magicExpected, "share restores magic items");
+      assert.equal(await magicShared.evaluate(() => { EquipmentShop.open(); return Boolean(document.querySelector(".equipment-shop__magic-toggle")); }), false, "share mode cannot switch to the magic shop");
+    } finally { await magicShared.close(); }
+    // 魔法物品取得開關：角色欄位，跟著 autosave、JSON、分享走；舊資料沒有這個欄位就是關閉；匯入預檢只收布林值；分享模式只顯示狀態。
+    const acquireSnapshot = target => target.evaluate(() => [document.getElementById("magic-item-acquire").checked,
+      document.getElementById("inventory-magic-toggle").getAttribute("aria-pressed")]);
+    await page.evaluate(() => dndStorage.setItem("dndchar_autosave_v1", JSON.stringify({ class: "fighter", level: "1" })));
+    await page.goto(url);
+    assert.deepEqual(await acquireSnapshot(page), [false, "false"], "old saves without the field keep the magic item switch off");
+    await page.evaluate(() => { applyStateObject({ class: "fighter", level: "1", "magic-item-acquire": true }); saveAllFields(); });
+    await page.goto(url);
+    assert.deepEqual(await acquireSnapshot(page), [true, "true"], "autosave keeps the magic item switch");
+    assert.equal(await page.evaluate(() => collectStateObject()["magic-item-acquire"]), true, "JSON export carries the magic item switch");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", "magic-item-acquire": false }); applyStateObject(data); });
+    assert.deepEqual(await acquireSnapshot(page), [true, "true"], "JSON import restores the magic item switch");
+    assert.deepEqual(await page.evaluate(() => ["yes", 1, null, {}].map((value) => {
+      try { validateCharacterState({ class: "fighter", "magic-item-acquire": value }); return "accepted"; } catch (error) { return error.message; }
+    })), Array(4).fill("魔法物品開關格式不正確"), "the import precheck only accepts a boolean switch");
+    const acquireHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const offHash = await page.evaluate(async () => {
+      const data = collectShareState();
+      const off = { ...data };
+      delete off["magic-item-acquire"];
+      return [Object.hasOwn(data, "magic-item-acquire"), await encodeStateToHash(off)];
+    });
+    assert.equal(offHash[0], true, "share carries the switch when it is on");
+    const acquireShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = acquireHash;
+      await acquireShared.goto(sharedUrl.href);
+      await acquireShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await acquireSnapshot(acquireShared), [true, "true"], "share restores the magic item switch");
+      await acquireShared.evaluate(() => { showTab("equipment"); document.getElementById("inventory-more").click(); document.getElementById("inventory-magic-toggle").click(); });
+      assert.deepEqual([...await acquireSnapshot(acquireShared), await acquireShared.evaluate(() => [document.getElementById("inventory-magic-toggle").getAttribute("aria-disabled"),
+        document.getElementById("magic-item-acquire").dataset.shareLocked, Array.from(document.querySelectorAll('[role="alertdialog"]')).some(dialog => dialog.textContent.includes("開啟魔法物品"))])],
+      [true, "true", ["true", "true", false]], "share mode shows the switch read-only");
+      sharedUrl.hash = offHash[1];
+      await acquireShared.goto(sharedUrl.href);
+      await acquireShared.reload();
+      await acquireShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await acquireSnapshot(acquireShared), [false, "false"], "a share link with the switch off stays off");
+    } finally { await acquireShared.close(); }
+    // 昏迷掉落紀錄（跑團狀態 droppedHands）：autosave、JSON、分享都帶；舊資料沒有就是空的；匯入預檢只收四個欄位的物件。
+    const dropped = { mainHand: "長劍", offHand: "盾牌", main2Shield: false, main2ShieldItem: "" };
+    const droppedState = { class: "fighter", level: "1", hp: "10", mainHand: "", offHand: "", droppedHands: dropped,
+      __inventory: { version: 1, items: [{ uid: "sword", itemId: "長劍", quantity: 1 }, { uid: "shield", itemId: "盾牌", quantity: 1 }] } };
+    const droppedSnapshot = target => target.evaluate(() => (TabletopMode.setMode("tabletop"), TabletopMode.setPanel("overview"), [TabletopMode.collectState().droppedHands || null,
+      document.getElementById("tabletop-dropped-hands").hidden, document.getElementById("tabletop-dropped-hands").textContent]));
+    const droppedExpected = [dropped, false, "昏迷時掉落：長劍、盾牌撿回不用了"];
+    await page.evaluate(() => dndStorage.setItem("dndchar_autosave_v1", JSON.stringify({ class: "fighter", level: "1" })));
+    await page.goto(url);
+    assert.equal(await page.evaluate(() => Object.hasOwn(TabletopMode.collectState(), "droppedHands")), false, "old saves have no drop record");
+    await page.evaluate((state) => { applyStateObject(state); saveAllFields(); }, droppedState);
+    await page.goto(url);
+    assert.deepEqual(await droppedSnapshot(page), droppedExpected, "autosave keeps the drop record");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", droppedHands: null }); applyStateObject(data); });
+    assert.deepEqual(await droppedSnapshot(page), droppedExpected, "JSON import restores the drop record");
+    assert.deepEqual(await page.evaluate(() => ["x", [], { mainHand: 1 }, { mainHand: "長".repeat(101) }, { main2Shield: "yes" }, { extra: "" }].map((value) => {
+      try { validateCharacterState({ class: "fighter", droppedHands: value }); return "accepted"; } catch (error) { return error.message; }
+    })), Array(6).fill("昏迷掉落紀錄格式不正確"), "the import precheck rejects malformed drop records");
+    assert.equal(await page.evaluate(() => { validateCharacterState({ class: "fighter", droppedHands: null }); return true; }), true);
+    const droppedHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const droppedShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = droppedHash;
+      await droppedShared.goto(sharedUrl.href);
+      await droppedShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await droppedSnapshot(droppedShared), droppedExpected, "share restores the drop record");
+    } finally { await droppedShared.close(); }
+    // 裝備欄位寫魔法款的名稱，經 autosave、JSON、分享都還原，普通與魔法同名時不互換；同調（attuned）與穿戴（worn）一起還原，普通物品的存檔不多欄位。
+    // 手持的魔杖放在副手，同樣以名稱還原。
+    const equippedState = { class: "fighter", level: "5", str: "16", dex: "14", mainHand: "長劍+2", offHand: "戰法魔杖+1", armor: "", __inventory: { version: 1, items: [
+      { uid: "plain", itemId: "長劍", quantity: 1 },
+      { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } },
+      { uid: "ring", quantity: 1, magic: { id: "ring-of-protection" }, attuned: true, worn: true },
+      { uid: "spare", quantity: 1, magic: { id: "ring-of-protection" } },
+      { uid: "wand", quantity: 1, magic: { id: "wand-of-the-war-mage-plus", bonus: 1 } }
+    ] } };
+    const equippedSnapshot = target => target.evaluate(() => {
+      const select = document.getElementById("mainHand");
+      return {
+        option: select.selectedOptions[0].textContent, off: document.getElementById("offHand").value, state: Inventory.getState().items,
+        slots: Inventory.entries().filter(entry => entry.slot).map(entry => entry.uid), hit: document.getElementById("atk-main-hit").value,
+        ac: document.getElementById("ac-display").value, equipped: [...document.querySelectorAll('[data-inventory-group="equipped"] .inventory-tag')].map(tag => tag.dataset.inventoryUid)
+      };
+    });
+    const equippedExpected = { option: "長劍+2", off: "戰法魔杖+1", state: equippedState.__inventory.items, slots: ["plus", "wand"], hit: "+8", ac: "13", equipped: ["plus", "wand", "ring"] };
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, equippedState);
+    assert.deepEqual(await equippedSnapshot(page), equippedExpected, "a magic item equipped next to its plain twin loads as itself");
+    await page.goto(url);
+    assert.deepEqual(await equippedSnapshot(page), equippedExpected, "autosave restores the equipped magic item and attunement");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await equippedSnapshot(page), equippedExpected, "JSON restores the equipped magic item and attunement");
+    const equippedHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const equippedShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = equippedHash;
+      await equippedShared.goto(sharedUrl.href);
+      await equippedShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await equippedSnapshot(equippedShared), equippedExpected, "share restores the equipped magic item and attunement");
+      await equippedShared.evaluate(() => InventoryUI.openItemDialog("ring"));
+      const sharedRing = equippedShared.locator('.app-dialog[data-variant="inventory-item"]');
+      await sharedRing.waitFor();
+      assert.equal(await sharedRing.getByRole("button", { name: /同調/u }).count(), 0, "share mode cannot toggle attunement");
+      assert.equal(await sharedRing.getByRole("button", { name: /穿上|卸下/u }).count(), 0, "share mode cannot wear or take off rings");
+      assert.match(await sharedRing.locator(".inventory-item-actions").innerText(), /穿戴中、同調中/u, "share mode shows the worn state");
+    } finally { await equippedShared.close(); }
+    // 第 8 步：裝備中的彈藥（ammo）存在那一筆上，留在箭袋裡也一樣；autosave、JSON、分享都還原，加值跟著長弓。分享模式只顯示狀態、不能換。
+    // 用完的彈藥保留 ×0（唯一可以數量 0 的物品），也一起還原。
+    const ammoState = { class: "fighter", level: "5", str: "16", dex: "14", mainHand: "長弓", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "bow", itemId: "長弓", quantity: 1 },
+      { uid: "quiver", itemId: "箭袋", quantity: 1 },
+      { uid: "plus", itemId: "箭矢", quantity: 12, in: "quiver", magic: { id: "ammunition-plus", bonus: 1 }, ammo: true },
+      { uid: "plain", itemId: "箭矢", quantity: 20, in: "quiver" },
+      { uid: "empty", itemId: "箭矢", quantity: 0, magic: { id: "ammunition-plus", bonus: 1 } }
+    ] } };
+    const ammoSnapshot = target => target.evaluate(() => ({ state: Inventory.getState().items, attack: [document.getElementById("atk-main-hit").value, document.getElementById("atk-main-dmg").value] }));
+    const ammoExpected = { state: ammoState.__inventory.items, attack: ["+6", "1d8+3穿刺"] };
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, ammoState);
+    assert.deepEqual(await ammoSnapshot(page), ammoExpected, "the equipped ammunition applies its bonus");
+    await page.goto(url);
+    assert.deepEqual(await ammoSnapshot(page), ammoExpected, "autosave restores the equipped ammunition");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await ammoSnapshot(page), ammoExpected, "JSON restores the equipped ammunition");
+    assert.deepEqual(await page.evaluate(() => [true, "yes", 1].map(ammo => {
+      try { validateCharacterState({ class: "fighter", __inventory: { version: 1, items: [{ uid: "a", itemId: "箭矢", quantity: 1, ammo }] } }); return "accepted"; } catch (error) { return "rejected"; }
+    })), ["accepted", "rejected", "rejected"], "the import precheck only accepts a boolean ammo field");
+    assert.deepEqual(await page.evaluate(() => [{ itemId: "箭矢" }, { itemId: "彈丸，投石索", ammo: true }, { itemId: "長劍" }, { name: "雜物" }].map(item => {
+      try { validateCharacterState({ class: "fighter", __inventory: { version: 1, items: [{ uid: "z", quantity: 0, ...item }] } }); return "accepted"; } catch (error) { return "rejected"; }
+    })), ["accepted", "accepted", "rejected", "rejected"], "the import precheck accepts a quantity of 0 only for ammunition");
+    const ammoHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const ammoShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = ammoHash;
+      await ammoShared.goto(sharedUrl.href);
+      await ammoShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await ammoSnapshot(ammoShared), ammoExpected, "share restores the equipped ammunition");
+      await ammoShared.evaluate(() => InventoryUI.openItemDialog("plus"));
+      const sharedAmmo = ammoShared.locator('.app-dialog[data-variant="inventory-item"]');
+      await sharedAmmo.waitFor();
+      assert.equal(await sharedAmmo.getByRole("button", { name: /裝備箭矢|卸下箭矢/u }).count(), 0, "share mode cannot change the equipped ammunition");
+      assert.match(await sharedAmmo.locator(".inventory-item-actions").innerText(), /裝備中。跑團模式擲短弓、長弓的命中時扣 1 枚。/u, "share mode shows the ammunition state");
+    } finally { await ammoShared.close(); }
+    // 第 9 步：魔法容器（次元袋、吞噬袋等）裡的物品存在原本的 in 欄位，autosave、JSON、分享都還原，異次元容器裡的物品不算重量。
+    // 舊存檔的這些袋子以前不是容器：一筆兩件的次元袋載入拆成兩筆。分享模式不計吞噬袋的時間。
+    const bagState = { class: "fighter", level: "5", mainHand: "", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "holding", quantity: 1, magic: { id: "bag-of-holding" } },
+      { uid: "rope", itemId: "繩索", quantity: 1, in: "holding" },
+      { uid: "devour", quantity: 1, magic: { id: "bag-of-devouring" } },
+      { uid: "torch", itemId: "火把", quantity: 2, in: "devour" }
+    ] } };
+    const bagSnapshot = target => target.evaluate(() => ({ state: Inventory.getState().items, weight: Inventory.getWeight().weight }));
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, bagState);
+    const bagExpected = { state: bagState.__inventory.items, weight: await page.evaluate(() => Inventory.getUnitWeight(Inventory.getEntry("holding")) + 2 * Inventory.getUnitWeight(Inventory.getEntry("torch"))) };
+    assert.deepEqual(await bagSnapshot(page), bagExpected, "items sit in the magic bags; the rope in the bag of holding weighs nothing");
+    await page.goto(url);
+    assert.deepEqual(await bagSnapshot(page), bagExpected, "autosave restores items in the magic bags");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await bagSnapshot(page), bagExpected, "JSON restores items in the magic bags");
+    assert.deepEqual(await page.evaluate(() => {
+      applyStateObject({ class: "fighter", level: "5", __inventory: { version: 1, items: [{ uid: "old", quantity: 2, magic: { id: "bag-of-holding" } }, { uid: "r", itemId: "繩索", quantity: 1 }] } });
+      return Inventory.getState().items.map(item => [item.magic?.id || item.itemId, item.quantity, item.uid === "old"]);
+    }), [["bag-of-holding", 1, true], ["bag-of-holding", 1, false], ["繩索", 1, false]], "an old save's stack of two bags of holding loads as two containers");
+    await page.evaluate(state => applyStateObject(state), bagState);
+    const bagHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const bagShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = bagHash;
+      await bagShared.goto(sharedUrl.href);
+      await bagShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await bagSnapshot(bagShared), bagExpected, "share restores items in the magic bags");
+      // 分享模式不計時：時鐘往後調一小時、回到頁面，吞噬袋的東西還在、沒有視窗。
+      assert.deepEqual(await bagShared.evaluate(() => {
+        const realNow = Date.now;
+        Date.now = () => realNow() + 3600 * 1000;
+        try { document.dispatchEvent(new Event("visibilitychange")); } finally { Date.now = realNow; }
+        return [Inventory.descendantsOf("devour").length, document.documentElement.classList.contains("app-dialog-open")];
+      }), [1, false], "share mode never times the devouring bag");
+    } finally { await bagShared.close(); }
+    // 次數池的剩餘次數（charges）存在那一筆物品上，autosave、JSON、分享都還原；舊資料沒有這個欄位就是滿的。
+    // 分享模式可以調整次數（和法術位一樣只在頁面記憶體），看的人的本機存檔不變。
+    const chargesState = { class: "fighter", level: "5", mainHand: "", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "wand", quantity: 1, magic: { id: "wand-of-fireballs" }, charges: { charges: 2 } },
+      { uid: "rod", itemId: "硬頭錘", quantity: 1, attuned: true, magic: { id: "rod-of-lordly-might" }, charges: { "drain-life": 0, terrify: 0 } },
+      { uid: "old", quantity: 1, magic: { id: "wand-of-web" } }
+    ] } };
+    const chargesSnapshot = target => target.evaluate(() => ["wand", "rod", "old"].map(uid => Inventory.getCharges(Inventory.getEntry(uid)).map(pool => `${pool.id}:${pool.left}/${pool.max}`).join()));
+    const chargesExpected = ["charges:2/7", "drain-life:0/1,paralyze:1/1,terrify:0/1", "charges:7/7"];
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, chargesState);
+    assert.deepEqual(await chargesSnapshot(page), chargesExpected, "charges load on their entries; an entry without charges is full");
+    await page.goto(url);
+    assert.deepEqual(await chargesSnapshot(page), chargesExpected, "autosave restores remaining charges");
+    assert.deepEqual(await page.evaluate(() => collectStateObject().__inventory.items.map(item => item.charges)), chargesState.__inventory.items.map(item => item.charges), "JSON export carries remaining charges");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await chargesSnapshot(page), chargesExpected, "JSON import restores remaining charges");
+    await page.evaluate(() => saveAllFields());
+    assert.equal(await page.evaluate(() => { try { validateCharacterState({ class: "fighter", __inventory: { version: 1, items: [{ quantity: 1, magic: { id: "wand-of-web" }, charges: { charges: -1 } }] } }); return "accepted"; } catch (error) { return "rejected"; } }), "rejected", "the import precheck rejects invalid charges");
+    const chargesHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const chargesShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = chargesHash;
+      await chargesShared.goto(sharedUrl.href);
+      await chargesShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await chargesSnapshot(chargesShared), chargesExpected, "share restores remaining charges");
+      await chargesShared.evaluate(() => InventoryUI.openItemDialog("wand"));
+      const sharedWand = chargesShared.locator('.app-dialog[data-variant="inventory-item"]');
+      await sharedWand.waitFor();
+      await sharedWand.getByRole("button", { name: "減少火球魔杖的充能剩餘次數" }).click();
+      assert.equal(await chargesShared.evaluate(() => Inventory.getEntry("wand").charges.charges), 1, "share mode can spend charges in page memory");
+    } finally { await chargesShared.close(); }
+    await page.goto(url);
+    assert.deepEqual(await chargesSnapshot(page), chargesExpected, "spending charges on a shared page does not touch the viewer's save");
+    // 屬性有效值不存檔：屬性欄存原值，autosave、JSON、分享還原後由物品重新算出。
+    const abilityState = { class: "fighter", level: "5", str: "16", dex: "14", con: "12", mainHand: "雷神之錘（戰錘）", offHand: "", armor: "", __inventory: { version: 1, items: [
+      { uid: "hammer", itemId: "戰錘", quantity: 1, attuned: true, magic: { id: "hammer-of-thunderbolts" } },
+      { uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-giant-strength", giant: "hill" } },
+      { uid: "amulet", quantity: 1, attuned: true, worn: true, magic: { id: "amulet-of-health" } }
+    ] } };
+    const abilitySnapshot = target => target.evaluate(() => ({
+      raw: [document.getElementById("str").value, document.getElementById("con").value, collectStateObject().str, collectStateObject().con],
+      shown: [document.querySelector("#str-mod .modifier-main").textContent, document.querySelector("#str-mod .ability-effect-tip").getAttribute("aria-label"), document.querySelector("#con-mod .modifier-main").textContent],
+      numbers: [document.getElementById("atk-main-hit").value, getCarryCapacityPounds()]
+    }));
+    const abilityExpected = {
+      raw: ["16", "12", "16", "12"],
+      shown: ["+7", "力量有效 25・巨人之力腰帶（山丘）、雷神之錘（戰錘）", "+4"],
+      numbers: ["+11", 375]
+    };
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, abilityState);
+    assert.deepEqual(await abilitySnapshot(page), abilityExpected, "magic items raise the effective scores while the fields keep the raw values");
+    await page.goto(url);
+    assert.deepEqual(await abilitySnapshot(page), abilityExpected, "autosave keeps raw scores and recomputes the effective ones");
+    await page.evaluate(() => { const data = collectStateObject(); validateCharacterState(data); applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); applyStateObject(data); });
+    assert.deepEqual(await abilitySnapshot(page), abilityExpected, "JSON keeps raw scores and recomputes the effective ones");
+    const abilityHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const abilityShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = abilityHash;
+      await abilityShared.goto(sharedUrl.href);
+      await abilityShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await abilitySnapshot(abilityShared), abilityExpected, "share keeps raw scores and recomputes the effective ones");
+      // 分享模式的同調視窗只列出目前同調的物品，不能更改。
+      await abilityShared.evaluate(() => { showTab("equipment"); document.getElementById("attunement-open").click(); });
+      const sharedAttune = abilityShared.locator('.app-dialog[data-variant="attunement"]');
+      await sharedAttune.waitFor();
+      assert.deepEqual([await sharedAttune.locator("select").count(), await sharedAttune.locator(".attunement-slot").allInnerTexts().then(rows => rows.map(row => row.replace(/\s+/gu, " ")))],
+        [0, ["第 1 格 雷神之錘（戰錘）", "第 2 格 巨人之力腰帶（山丘）", "第 3 格 健康護符"]], "share mode lists attuned items read-only");
+    } finally { await abilityShared.close(); }
+    // 舊資料的裝備欄位是普通品名：普通物品照舊，魔法款不被當成已裝備。
+    assert.deepEqual(await page.evaluate(() => {
+      applyStateObject({ class: "fighter", level: "1", mainHand: "長劍", __inventory: { version: 1, items: [{ uid: "own", itemId: "長劍", quantity: 1 }, { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } }] } });
+      return { option: document.getElementById("mainHand").selectedOptions[0].textContent, state: Inventory.getState().items };
+    }), { option: "長劍", state: [{ uid: "own", itemId: "長劍", quantity: 1 }, { uid: "plus", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } }] }, "saves naming the plain item always wield the plain item");
+    assert.deepEqual(await page.evaluate(() => [
+      { uid: "a", quantity: 1, magic: { id: "x" }, attuned: true },
+      { uid: "a", quantity: 1, magic: { id: "x" }, equippedAs: "mainHand" },
+      { uid: "a", quantity: 1, magic: { id: "x" }, attuned: "yes" },
+      { uid: "a", quantity: 1, magic: { id: "x" }, worn: true },
+      { uid: "a", quantity: 1, magic: { id: "x" }, worn: 1 }
+    ].map(entry => isValidInventoryState({ version: 1, items: [entry] }))), [true, false, false, true, false], "the import preflight checks the new fields");
+    assert.deepEqual(await page.evaluate(() => {
+      Inventory.restore({ version: 1, items: [
+        { uid: "a", itemId: "長劍", quantity: 1, equippedAs: "mainHand", attuned: true },
+        { uid: "b", quantity: 2, attuned: true, magic: { id: "ring-of-protection" } },
+        { uid: "c", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "weapon-plus", bonus: 1 } },
+        { uid: "d", itemId: "長劍", quantity: 1, worn: true },
+        { uid: "e", quantity: 2, worn: true, magic: { id: "ring-of-protection" } },
+        { uid: "f", quantity: 1, worn: true, magic: { id: "stone-of-good-luck" } },
+        { uid: "g", quantity: 1, worn: true, magic: { id: "unknown-item" } }
+      ] });
+      return Inventory.getState().items;
+    }), [{ uid: "a", itemId: "長劍", quantity: 1 }, { uid: "b", quantity: 2, magic: { id: "ring-of-protection" } }, { uid: "c", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } },
+      { uid: "d", itemId: "長劍", quantity: 1 }, { uid: "e", quantity: 2, magic: { id: "ring-of-protection" } }, { uid: "f", quantity: 1, magic: { id: "stone-of-good-luck" } }, { uid: "g", quantity: 1, worn: true, magic: { id: "unknown-item" } }],
+    "plain items, stacks and items that cannot be attuned or worn drop the new fields; unknown magic items keep them");
+    console.log("Inventory persistence: autosave, JSON export, share (including empty inventories and text mode), legacy seeding, missing equipped items, descriptions, safe custom names and magic items passed.");
   } finally { await page.close(); }
 }
 
@@ -4987,6 +5300,21 @@ async function verifyClassPicks(browser, url) {
     assert.equal(await badge(page, "短劍"), "", "an unchosen weapon hides the badge once masteries are chosen");
     await choose(page, "fighter-weapon-mastery-pick-3", "長弓");
     assert.ok(!(await issues(page)).some(message => message.includes("武器精通")), "the reminder clears when every mastery is chosen");
+
+    // 關閉武器攻擊自動化時，精通標籤仍看裝備下拉，條件相同；下拉空白才退回手打的攻擊名稱。
+    const manualBadge = (weapon, typed) => page.evaluate(([weapon, typed]) => {
+      const select = document.getElementById("mainHand");
+      select.value = weapon;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      document.getElementById("atk-main-name").value = typed;
+      updateWeaponMasteryBadges();
+      const element = document.getElementById("atk-main-mastery");
+      return element.hidden ? "" : element.textContent;
+    }, [weapon, typed]);
+    await page.evaluate(() => { const toggle = document.getElementById("weapon-attack-automation"); toggle.checked = false; toggle.dispatchEvent(new Event("change", { bubbles: true })); });
+    assert.deepEqual([await manualBadge("長劍", "短劍"), await manualBadge("短劍", "長劍"), await manualBadge("", "長劍"), await manualBadge("", "短劍")], ["削弱", "", "削弱", ""],
+      "with automation off the mastery badge follows the equipped weapon and falls back to the typed name only when nothing is equipped");
+    await page.evaluate(() => { const toggle = document.getElementById("weapon-attack-automation"); toggle.checked = true; toggle.dispatchEvent(new Event("change", { bubbles: true })); });
 
     // Level 4 opens the fourth select; going back hides it but keeps its value.
     await page.locator("#level").selectOption("4");

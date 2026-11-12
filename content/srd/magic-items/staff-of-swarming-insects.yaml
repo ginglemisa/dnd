@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: staff-of-swarming-insects
+name: 蟲群法杖
+nameEn: "Staff of Swarming Insects"
+source: srd
+category: staff
+rarity: rare
+attunement: "由吟遊詩人、牧師、德魯伊、術士、契術師或法師"
+base: { fixed: 長棍 }
+pools:
+  - { id: charges, label: 充能, max: 10, recover: dawn, amount: 1d6 + 4 }
+actions:
+  - { id: insect-cloud, name: 蟲雲, type: magic, pool: charges, text: 以你為起點的 30 呎發散區域充滿無害的飛行昆蟲 10 分鐘，對你以外的生物是重度遮蔽；強風會驅散蟲群。 }
+  - { id: giant-insect, spell: giant-insect, stats: yours, pool: charges, cost: 4 }
+  - { id: insect-plague, spell: insect-plague, stats: yours, pool: charges, cost: 5 }
+text: |-
+  這根法杖有10次充能。
+
+  _蟲雲。_ 手持法杖時，你可以進行魔法動作並消耗1次充能，使一群無害的飛行昆蟲充滿一個以你為起點的30呎發散區域。昆蟲停留10分鐘，使該區域對你以外的生物而言為重度遮蔽。強風（例如_造風術_所創造的風）會驅散蟲群並結束此效果。
+
+  _法術。_ 手持法杖時，你可以使用你的法術豁免DC與法術攻擊調整值，從法杖施放下表中的一個法術。表格列出施放各法術需要消耗的充能次數。
+
+  | 法術 | 充能消耗 |
+  | --- | --- |
+  | *巨蟲術* | 4 |
+  | *疫病蟲群* | 5 |
+
+  _恢復充能。_ 法杖每天黎明恢復1d6 + 4次已消耗的充能。若你消耗最後一次充能，擲1d20。擲出1時，一群昆蟲吞噬並摧毀法杖，然後散去。

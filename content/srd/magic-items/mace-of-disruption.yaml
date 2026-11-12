@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: mace-of-disruption
+name: 瓦解之錘
+nameEn: "Mace of Disruption"
+source: srd
+category: weapon
+rarity: rare
+attunement: true
+base: { fixed: 硬頭錘 }
+hints:
+  - panel: weapon
+    text: 命中邪魔或不死生物時額外造成 2d6 光耀傷害；之後生命值 25 以下須通過 DC 15 感知豁免，否則被摧毀（成功則恐慌）。手持時發光。
+text: |-
+  你用這件魔法武器命中邪魔或不死生物時，該生物額外受到2d6光耀傷害。若目標在承受此傷害後生命值為25點或更少，它必須成功通過DC 15的感知豁免，否則被摧毀。豁免成功時，該生物陷入恐慌狀態，持續到你的下個回合結束。
+
+  _光。_ 手持這件武器時，它在半徑20呎內散發明亮光照，並再向外20呎散發微光光照。

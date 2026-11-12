@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-swimming
+name: 游泳戒指
+nameEn: "Ring of Swimming"
+source: srd
+category: ring
+rarity: uncommon
+attunement: false
+use: worn
+effects: { movement: { swim: 40 } }
+text: |-
+  穿戴這枚戒指時，你擁有40呎的游泳速度。

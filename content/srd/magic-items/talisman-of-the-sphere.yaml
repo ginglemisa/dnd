@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: talisman-of-the-sphere
+name: 法球護符
+nameEn: "Talisman of the Sphere"
+source: srd
+category: wondrous
+group: wearable
+rarity: legendary
+attunement: true
+use: wornOrHeld
+hints:
+  - panel: skills
+    text: 為控制湮滅法球進行的智力（奧秘）檢定有優勢。
+actions:
+  - { id: move-sphere, name: 移動湮滅法球, type: magic, text: 回合開始時正在控制湮滅法球時，把它移動 10 呎＋智力調整值 ×10 呎，不必沿直線。控制法球的智力（奧秘）檢定有優勢。 }
+text: |-
+  手持或穿戴這個護符時，你為控制_湮滅法球_而進行的任何智力（奧秘）檢定都具有優勢。此外，當你在控制_湮滅法球_的狀態下開始你的回合時，你可以進行魔法動作，將其移動10呎，再加上等同於你智力調整值10倍的額外呎數。這個移動不必沿直線進行。

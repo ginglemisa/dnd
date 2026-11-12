@@ -679,7 +679,14 @@
   }
 
   // 詳情表格是說明原文的複本：品名連結改回純文字，並補上英文名稱。
+  // 一般商店也賣的魔法物品（治療藥水、法術卷軸）標題行之後顯示魔法物品的說明。
   function renderEquipmentDetailContent(content, entry) {
+    const magicItem = globalScope.MagicItemShop && globalScope.MagicItemCatalog?.getByEquipmentName(entry.name);
+    if (magicItem) {
+      content.innerHTML = renderEquipmentTextDetail({ ...entry, text: String(entry.text || "").split("\n")[0] });
+      globalScope.MagicItemShop.renderDetail(content, magicItem.id, { hideSitePrice: true });
+      return;
+    }
     content.innerHTML = entry.data ? renderEquipmentDataDetail(entry) : renderEquipmentTextDetail(entry);
     content.querySelectorAll(".equipment-detail-table .equipment-item-link").forEach(link => link.replaceWith(link.textContent));
     content.querySelectorAll(".equipment-detail-table tbody tr").forEach(row => {

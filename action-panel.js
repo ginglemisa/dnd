@@ -207,8 +207,9 @@
     return Number(document.getElementById("level")?.value) || 1;
   }
 
+  // 角色卡的熟練加值（含魔法物品，index.html 的 getProficiencyBonus）；沒有時依等級。
   function getProficiencyBonus() {
-    return globalScope.calculateProficiencyBonus?.(getCharacterLevel()) || 2;
+    return globalScope.getProficiencyBonus?.() ?? (globalScope.calculateProficiencyBonus?.(getCharacterLevel()) || 2);
   }
 
   function getSelectedFeatNames() {
@@ -232,8 +233,13 @@
     });
   }
 
+  // 屬性用有效值（含魔法物品，character-rules.js 的 getEffectiveAbilityValue）。
+  function readAbilityScore(abilityId) {
+    return String((window.getEffectiveAbilityValue?.(abilityId) ?? document.getElementById(abilityId)?.value) || "").trim();
+  }
+
   function getAbilityModifier(abilityId) {
-    const rawScore = String(document.getElementById(abilityId)?.value || "").trim();
+    const rawScore = readAbilityScore(abilityId);
     if (!/^[+-]?\d+$/u.test(rawScore)) return null;
     const score = Number(rawScore);
     return Number.isSafeInteger(score) ? Math.floor((score - 10) / 2) : null;
@@ -393,7 +399,8 @@
     return {
       level: getCharacterLevel(),
       levelBlank: !field("level"),
-      abilityScores: Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map(id => [id, field(id)]))
+      proficiencyBonus: getProficiencyBonus(),
+      abilityScores: Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map(id => [id, readAbilityScore(id)]))
     };
   }
 

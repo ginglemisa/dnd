@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: universal-solvent
+name: 萬溶劑
+nameEn: "Universal Solvent"
+source: srd
+category: wondrous
+group: consumable
+rarity: legendary
+attunement: false
+pools:
+  - { id: ounces, label: 溶劑（盎司）, max: 7 }
+actions:
+  - { id: pour, name: 倒出溶劑, type: action, pool: ounces, when: owned, text: 把 1 盎司以上的溶劑倒在伸手可及的表面，每盎司溶解最多 1 平方呎的黏著物（包括至尊膠）。 }
+text: |-
+  這個管子裝著散發強烈酒精氣味的乳白色液體。被發現時，管中含有1d6 + 1盎司。
+
+  你可以進行使用動作，將管中1盎司或更多的溶劑倒在伸手可及之處的一個表面上。每盎司會立即溶解它所接觸的最多1平方呎黏著物，包括_至尊膠_。

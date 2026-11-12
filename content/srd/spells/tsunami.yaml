@@ -20,6 +20,9 @@ srd:
     在水牆出現後，於你每個回合開始時，水牆連同其中的任何生物會朝遠離你的方向移動50呎。任何在水牆內、或在水牆移動時其空間被水牆進入的巨型或更小的生物，必須成功通過力量豁免，否則受到5d10鈍擊傷害。生物每輪只會受到一次此傷害。在該回合結束時，水牆的高度減少50呎，且水牆在之後各輪造成的傷害減少1d10。當水牆高度降至0呎時，法術結束。
 
     被困在水牆中的生物可以藉由游泳移動。然而，由於浪潮的力量，生物必須成功通過一次對抗你的法術豁免DC的力量（運動）檢定才能移動。若檢定失敗，它就無法移動。離開水牆的生物會落到地面上。
+  outcomes:
+    - { kind: damage, formula: 6d10, damageType: bludgeoning, autoOnCast: true, context: 水牆出現時的區域傷害擲一次；豁免依規則處理 }
+    - { kind: damage, formula: 5d10, damageType: bludgeoning, autoOnCast: false, context: 之後水牆移動時，每輪少 1d10 }
 en:
   body: |-
     A wall of water springs into existence at a point you choose within range. You can make the wall up to 300 feet long, 300 feet high, and 50 feet thick. The wall lasts for the duration.

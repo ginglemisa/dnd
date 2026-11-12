@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: carpet-of-flying
+name: 飛毯
+nameEn: "Carpet of Flying"
+source: srd
+category: wondrous
+group: tool
+rarity: very-rare
+attunement: false
+options:
+  - id: size
+    label: 尺寸
+    choices:
+      - { value: "3x5", label: "3呎 × 5呎" }
+      - { value: "4x6", label: "4呎 × 6呎" }
+      - { value: "5x7", label: "5呎 × 7呎" }
+      - { value: "6x9", label: "6呎 × 9呎" }
+actions:
+  - { id: fly, name: 飛毯飛行, type: magic, when: owned, text: 使用命令詞讓飛毯懸停並飛行，你在 30 呎內時它依你的指示移動；超過正常承載量時飛行速度減半（尺寸與速度見說明）。 }
+text: |-
+  你可以進行魔法動作並使用地毯的命令詞，讓這張地毯懸停並飛行。若你在地毯30呎內，它會依照你的指示移動。
+
+  _飛毯_有四種尺寸。DM選擇特定地毯的尺寸，或依下表擲骰隨機決定。地毯最多可承載表中所列重量的兩倍，但若承載超過正常承載量，其飛行速度會減半。
+
+  | 1d100 | 尺寸 | 承載量 | 飛行速度 |
+  | --- | --- | --- | --- |
+  | 01–20 | 3呎 × 5呎 | 200磅 | 80呎 |
+  | 21–55 | 4呎 × 6呎 | 400磅 | 60呎 |
+  | 56–80 | 5呎 × 7呎 | 600磅 | 40呎 |
+  | 81–00 | 6呎 × 9呎 | 800磅 | 30呎 |

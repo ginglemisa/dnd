@@ -1184,6 +1184,666 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "wizard", mainHand: "長劍", offHand: "盾牌", offHandAsMain: false, armor: "" }));
     assert.equal(await page.inputValue("#ac-display"), "10");
 
+    // 魔法物品的固定加值：只影響裝備的那一手，需同調的物品同調後才算；副手不加屬性調整值時魔法傷害加值仍要加。
+    const magicBase = { __spellManagement: { version: 2, manual: false, entries: [] }, __autoCalculatedChecks: true, class: "fighter", level: "5", str: "16", dex: "14", con: "12", int: "10", wis: "10", cha: "10",
+      mainHand: "", offHand: "", offHandAsMain: false, main2Shield: false, armor: "", shillelaghWeaponHand: "none", "prof-dex": false };
+    const magicNumbers = extra => page.evaluate(([base, extra]) => {
+      applyStateObject({ ...base, ...extra });
+      const value = id => document.getElementById(id).value;
+      return { main: [value("atk-main-hit"), value("atk-main-dmg")], off: [value("atk-off-hit"), value("atk-off-dmg")], ac: value("ac-display"), dexSave: value("save-dex") };
+    }, [magicBase, extra]);
+    const plus = (uid, itemId, bonus, extra = {}) => ({ uid, itemId, quantity: 1, magic: { id: "weapon-plus", bonus }, ...extra });
+    const inventoryOf = (...items) => ({ __inventory: { version: 1, items } });
+    assert.deepEqual(await magicNumbers({ mainHand: "長劍+2", offHand: "短劍", ...inventoryOf(plus("sword", "長劍", 2), { uid: "plain", itemId: "短劍", quantity: 1 }) }),
+      { main: ["+8", "1d8+5揮砍"], off: ["+6", "1d6穿刺"], ac: "12", dexSave: "+2" }, "weapon +N only changes its own hand");
+    assert.deepEqual((await magicNumbers({ mainHand: "長劍", offHand: "短劍+1", ...inventoryOf({ uid: "plain", itemId: "長劍", quantity: 1 }, plus("sword", "短劍", 1)) })).off,
+      ["+7", "1d6+1穿刺"], "the off hand keeps the magic damage bonus without the ability modifier");
+    assert.deepEqual((await magicNumbers({ class: "monk", dex: "16", str: "10", wis: "14", mainHand: "短棒+1", ...inventoryOf(plus("club", "短棒", 1)) })).main,
+      ["+7", "1d8+4鈍擊"], "Martial Arts adds the magic bonus");
+    assert.deepEqual((await magicNumbers({ mainHand: "陽炎劍", ...inventoryOf({ uid: "sun", itemId: "長劍", quantity: 1, magic: { id: "sun-blade" } }) })).main,
+      ["+6", "1d10+3揮砍"], "an item that needs attunement does nothing until attuned");
+    // 陽炎劍同調後還改成光耀傷害（第 2 步的詞彙：damageType）。
+    assert.deepEqual((await magicNumbers({ mainHand: "陽炎劍", ...inventoryOf({ uid: "sun", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "sun-blade" } }) })).main,
+      ["+8", "1d10+5光耀"], "attuned items apply");
+    const details = await page.evaluate(() => { const result = calculateHandAttacks()[0].details; return [result.magicLabel, result.magicAttackBonus, result.magicDamageBonus, renderAttackCalculationPopup(result, "hit").includes("陽炎劍")]; });
+    assert.deepEqual(details, ["陽炎劍", 2, 2, true], "attack details list the magic bonus");
+    assert.match(await page.locator("#equipment-loadout-summary-content").textContent(), /陽炎劍：.*魔法 \+2/u, "the loadout summary names the magic weapon and its bonus");
+    const armored = { armor: "鎖子甲+1", offHand: "盾牌+2" };
+    assert.equal((await magicNumbers({ ...armored, ...inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1, magic: { id: "armor-plus", bonus: 1 } }, { uid: "shield", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 2 } }) })).ac,
+      "21", "magic armor and shield add while worn (16+1+2+2)");
+    // 防禦者：裝備中且已同調才能把加值轉到 AC，攻擊與傷害減少、AC 增加相同數值；分配不存檔。
+    assert.deepEqual(await page.evaluate(([base]) => {
+      const defender = { uid: "def", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "defender" } };
+      const load = (extra, entry) => applyStateObject({ ...base, mainHand: "", ...extra, __inventory: { version: 1, items: [entry] } });
+      const numbers = () => [document.getElementById("atk-main-hit").value, document.getElementById("atk-main-dmg").value, document.getElementById("ac-display").value];
+      load({}, defender);
+      const inPack = [Inventory.getBonusTransfer("def"), Inventory.setBonusTransfer("def", 2)];
+      load({ mainHand: "防禦者（長劍）" }, { ...defender, attuned: false });
+      const unattuned = Inventory.getBonusTransfer("def");
+      load({ mainHand: "防禦者（長劍）" }, defender);
+      const start = [Inventory.getBonusTransfer("def"), numbers()];
+      Inventory.setBonusTransfer("def", 2);
+      const two = [Inventory.getBonusTransfer("def"), numbers()];
+      Inventory.setBonusTransfer("def", 9);
+      const clamped = [Inventory.getBonusTransfer("def").value, numbers()];
+      const saved = JSON.stringify(collectStateObject()).includes("bonusTransfer") || Object.keys(Inventory.getState().items[0]).sort().join();
+      applyStateObject(collectStateObject());
+      const reloaded = [Inventory.getBonusTransfer("def").value, numbers()];
+      return { inPack, unattuned, start, two, clamped, saved, reloaded };
+    }, [magicBase]), {
+      inPack: [null, false],
+      unattuned: null,
+      start: [{ value: 0, max: 3 }, ["+9", "1d10+6揮砍", "12"]],
+      two: [{ value: 2, max: 3 }, ["+7", "1d10+4揮砍", "14"]],
+      clamped: [3, ["+6", "1d10+3揮砍", "15"]],
+      saved: "attuned,itemId,magic,quantity,uid",
+      reloaded: [0, ["+9", "1d10+6揮砍", "12"]]
+    }, "the Defender moves its bonus to AC only while attuned and held, and the split is not saved");
+    // 王者權杖：形態存在這一筆的 magic.form，裝備欄位不變；傷害、屬性跟著新形態，火焰之刃沒有 +3。
+    assert.deepEqual(await page.evaluate(([base]) => {
+      const rod = { uid: "rod", itemId: "硬頭錘", quantity: 1, attuned: true, magic: { id: "rod-of-lordly-might" } };
+      applyStateObject({ ...base, mainHand: "王者權杖", __inventory: { version: 1, items: [rod] } });
+      const numbers = () => [document.getElementById("mainHand").value, document.getElementById("atk-main-name").value, document.getElementById("atk-main-hit").value, document.getElementById("atk-main-dmg").value];
+      const steps = { mace: numbers() };
+      for (const form of ["battleaxe", "spear", "flame-longsword", "flame-shortsword", "other"]) {
+        Inventory.setMagicForm("rod", form);
+        steps[form] = numbers();
+      }
+      Inventory.setMagicForm("rod", "flame-longsword");
+      const saved = Inventory.getState().items[0].magic;
+      const data = collectStateObject();
+      applyStateObject(data);
+      const reloaded = numbers();
+      Inventory.setMagicForm("rod", "mace");
+      return { steps, saved, field: data.mainHand, reloaded, back: Inventory.getState().items[0].magic, bad: Inventory.setMagicForm("rod", "nope") };
+    }, [magicBase]), {
+      steps: {
+        mace: ["王者權杖", "王者權杖", "+9", "1d6+6鈍擊"],
+        battleaxe: ["王者權杖", "王者權杖", "+9", "1d10+6揮砍"],
+        spear: ["王者權杖", "王者權杖", "+9", "1d8+6穿刺"],
+        "flame-longsword": ["王者權杖", "王者權杖", "+6", "1d10+3揮砍+2d6火焰"],
+        "flame-shortsword": ["王者權杖", "王者權杖", "+6", "1d6+3穿刺+2d6火焰"],
+        other: ["王者權杖", "王者權杖", "+9", "1d6+6鈍擊"]
+      },
+      saved: { id: "rod-of-lordly-might", form: "flame-longsword" },
+      field: "王者權杖",
+      reloaded: ["王者權杖", "王者權杖", "+6", "1d10+3揮砍+2d6火焰"],
+      back: { id: "rod-of-lordly-might" },
+      bad: false
+    }, "the Rod of Lordly Might changes weapon data with its form while the equipment field keeps its name");
+    // 第 2 步的詞彙：額外傷害骰（固定類型接在後面、同武器類型併進骰子）、傷害類型、靈巧、投擲、熟練、指定武器加值、徒手打擊；
+    // 都跟著那一手與同調，攻擊列、計算浮層、裝備摘要與跑團武器卡一致。
+    const frost = { uid: "frost", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "frost-brand" } };
+    assert.deepEqual(await magicNumbers({ mainHand: "霜銘（長劍）", ...inventoryOf(frost) }).then(result => result.main), ["+6", "1d10+3揮砍+1d6冷凍"], "Frost Brand adds cold damage after the weapon damage");
+    assert.deepEqual(await page.evaluate(() => {
+      const details = calculateHandAttacks()[0].details;
+      const summary = document.getElementById("equipment-loadout-summary-content").textContent;
+      return { popup: renderAttackCalculationPopup(details, "damage").includes("霜銘（長劍）額外傷害</span><strong>1d6 冷凍"), summary: [summary.includes("1d10 揮砍＋1d6 冷凍"), summary.includes("冰點以下的溫度中發光")] };
+    }), { popup: true, summary: [true, true] }, "the damage popup and the loadout summary list the extra die and the weapon note");
+    assert.deepEqual(await magicNumbers({ mainHand: "霜銘（長劍）", ...inventoryOf({ ...frost, attuned: false }) }).then(result => result.main), ["+6", "1d10+3揮砍"], "Frost Brand needs attunement");
+    assert.deepEqual(await magicNumbers({ mainHand: "長劍", offHand: "惡毒武器（短劍）", ...inventoryOf({ uid: "plain", itemId: "長劍", quantity: 1 }, { uid: "vicious", itemId: "短劍", quantity: 1, magic: { id: "vicious-weapon" } }) }),
+      { main: ["+6", "1d8+3揮砍"], off: ["+6", "1d6+2d6穿刺"], ac: "12", dexSave: "+2" }, "same-type extra dice join the weapon die, even in the off hand without the ability modifier");
+    // 陽炎劍：靈巧（敏捷較高時用敏捷）、熟練短劍也算熟練；武僧熟練短劍（輕型軍用）但不熟練長劍。
+    const sun = { uid: "sun", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "sun-blade" } };
+    assert.deepEqual(await magicNumbers({ class: "monk", str: "10", dex: "16", wis: "14", mainHand: "陽炎劍", ...inventoryOf(sun) }).then(result => result.main), ["+8", "1d10+5光耀"], "the Sun Blade is finesse and proficient through the shortsword");
+    assert.deepEqual(await page.evaluate(() => [calculateHandAttacks()[0].details.proficient, document.getElementById("equipment-loadout-summary-content").querySelectorAll(".equipment-proficiency-warning").length]), [true, 0], "no proficiency warning for the Sun Blade");
+    assert.deepEqual(await magicNumbers({ class: "monk", str: "10", dex: "16", wis: "14", mainHand: "陽炎劍", ...inventoryOf({ ...sun, attuned: false }) }).then(result => result.main), ["+0", "1d10揮砍"], "an unattuned Sun Blade is a plain longsword the monk is not trained with");
+    // 矮人飛錘、特技師長棍：投擲射程加進武器屬性；兩用武器雙手時列出投擲時的傷害骰。
+    await magicNumbers({ mainHand: "矮人飛錘", ...inventoryOf({ uid: "thrower", itemId: "戰錘", quantity: 1, attuned: true, magic: { id: "dwarven-thrower" } }) });
+    assert.deepEqual(await page.evaluate(() => {
+      const details = calculateHandAttacks()[0].details;
+      return [document.getElementById("equipment-loadout-summary-content").textContent.includes("投擲 (射程 20/60)"), details.thrownDie, document.getElementById("atk-main-dmg").value];
+    }), [true, "1d8", "1d10+6鈍擊"], "the Dwarven Thrower gains the thrown property");
+    // 射手護腕：穿著時長弓、短弓傷害 +2，其他武器不變。
+    const bracersOn = { uid: "archery", quantity: 1, attuned: true, worn: true, magic: { id: "bracers-of-archery" } };
+    assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf({ uid: "bow", itemId: "長弓", quantity: 1 }, bracersOn) }).then(result => result.main), ["+5", "1d8+4穿刺"], "Bracers of Archery add damage to longbows");
+    assert.deepEqual(await page.evaluate(() => renderAttackCalculationPopup(calculateHandAttacks()[0].details, "damage").includes("射手護腕")), true, "the damage popup names the bracers");
+    assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf({ uid: "bow", itemId: "長弓", quantity: 1 }, { ...bracersOn, worn: false }) }).then(result => result.main), ["+5", "1d8+2穿刺"], "bracers in the pack add nothing");
+    assert.deepEqual(await magicNumbers({ mainHand: "長劍", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, bracersOn) }).then(result => result.main), ["+6", "1d10+3揮砍"], "bracers leave other weapons alone");
+    // 第 8 步：裝備中的魔法彈藥加在拿著對應武器的那一手（長弓配箭矢）；沒裝備、種類不同或只是普通彈藥都不加。
+    const bow = { uid: "bow", itemId: "長弓", quantity: 1 };
+    const arrows = (extra = {}) => ({ uid: "arrows", itemId: "箭矢", quantity: 20, magic: { id: "ammunition-plus", bonus: 1 }, ...extra });
+    assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf(bow, arrows({ ammo: true })) }).then(result => result.main), ["+6", "1d8+3穿刺"], "equipped +1 arrows add to the longbow");
+    assert.deepEqual(await page.evaluate(() => [renderAttackCalculationPopup(calculateHandAttacks()[0].details, "hit").includes("箭矢+1"), document.getElementById("equipment-loadout-summary-content").textContent.includes("魔法 +1")]), [true, true], "the hit popup and the loadout summary name the ammunition");
+    assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf(bow, arrows()) }).then(result => result.main), ["+5", "1d8+2穿刺"], "arrows that are not equipped add nothing");
+    assert.deepEqual(await magicNumbers({ mainHand: "輕弩", ...inventoryOf({ uid: "xbow", itemId: "輕弩", quantity: 1 }, arrows({ ammo: true })) }).then(result => result.main), ["+5", "1d8+2穿刺"], "arrows do not fit a crossbow");
+    assert.deepEqual(await magicNumbers({ mainHand: "長劍", offHand: "手弩", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, { uid: "hxbow", itemId: "手弩", quantity: 1 }, { uid: "bolts", itemId: "弩矢", quantity: 10, magic: { id: "ammunition-plus", bonus: 3 }, ammo: true }) }),
+      { main: ["+6", "1d8+3揮砍"], off: ["+8", "1d6+3穿刺"], ac: "12", dexSave: "+2" }, "+3 bolts only boost the hand crossbow in the off hand");
+    // 惡魔護甲：武藝改為 1d8 揮砍（武藝骰較大時用武藝骰），命中與傷害 +1；沒穿就不算。
+    const demon = { uid: "demon", itemId: "皮甲", quantity: 1, attuned: true, magic: { id: "demon-armor" } };
+    const monk = { class: "monk", str: "10", dex: "16", wis: "14", mainHand: "武藝" };
+    assert.deepEqual(await magicNumbers({ ...monk, level: "1", armor: "惡魔護甲（皮甲）", ...inventoryOf(demon) }).then(result => result.main), ["+3", "1d8+1揮砍"], "Demon Armor turns unarmed strikes into 1d8 slashing with +1");
+    assert.deepEqual(await magicNumbers({ ...monk, level: "5", armor: "惡魔護甲（皮甲）", ...inventoryOf(demon) }).then(result => result.main), ["+4", "1d8+1揮砍"], "Demon Armor and a 1d8 Martial Arts die give 1d8");
+    // 網站等級上限 8，武藝骰最大 1d8；直接以較大的骰子確認取較大的那個。
+    assert.deepEqual(await page.evaluate(() => [
+      withMagicWeaponEffects({ 名稱: "武藝", 傷害: "1d10 鈍擊" }, { unarmed: { dice: "1d8", type: "slashing" } }).傷害,
+      withMagicWeaponEffects({ 名稱: "武藝", 傷害: "1d6 鈍擊" }, { unarmed: { dice: "1d8", type: "slashing" } }).傷害
+    ]), ["1d10 揮砍", "1d8 揮砍"], "a larger Martial Arts die wins");
+    assert.deepEqual(await magicNumbers({ ...monk, level: "1", ...inventoryOf(demon) }).then(result => result.main), ["+5", "1d6+3鈍擊"], "Demon Armor in the pack changes nothing");
+    // 跑團武器卡：額外傷害可以擲（略過類型文字），武器說明接在備註框；提示依同調與裝備位置出現在跑團總覽與技能頁籤。
+    await magicNumbers({ mainHand: "霜銘（長劍）", ...inventoryOf(frost) });
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); });
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-magic-note")?.textContent.includes("冰點以下"));
+    assert.equal(await page.evaluate(() => document.querySelector('#tabletop-panel-actions .tabletop-weapon-fields .tabletop-inline-roll[aria-label*="傷害"]')?.disabled === false || !DiceRoller.isEnabled()), true, "the damage with an extra die stays rollable");
+    // 第 8 步：跑團武器卡顯示裝備中的彈藥，按命中擲骰扣 1 枚。彈藥用到 0 時保留（×0）、仍是裝備中、加值不算，之後擲命中不扣並提示彈藥用完；
+    // 還有完全相同、還有彈藥的另一堆（同品名、同選項）時自動改裝那一堆，空的那堆放到身上。普通與魔法、+1 與 +2 不互換。沒裝備或種類不同時不扣、不顯示。
+    const diceWasOn = await page.evaluate(() => DiceRoller.isEnabled());
+    await page.evaluate(([base, extra]) => { applyStateObject({ ...base, ...extra }); DiceRoller.setEnabled(true); }, [magicBase, { mainHand: "長弓", ...inventoryOf(
+      { uid: "bow", itemId: "長弓", quantity: 1 },
+      { uid: "quiver", itemId: "箭袋", quantity: 1 },
+      { uid: "arrows", itemId: "箭矢", quantity: 2, in: "quiver", magic: { id: "ammunition-plus", bonus: 1 }, ammo: true },
+      { uid: "plain", itemId: "箭矢", quantity: 20 },
+      { uid: "plus2", itemId: "箭矢", quantity: 4, magic: { id: "ammunition-plus", bonus: 2 } },
+      { uid: "spare", itemId: "箭矢", quantity: 3, in: "quiver", magic: { id: "ammunition-plus", bonus: 1 } },
+      { uid: "bolts", itemId: "弩矢", quantity: 5 }) }]);
+    const ammoLine = () => page.evaluate(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent ?? null);
+    const bowHit = () => page.evaluate(() => document.querySelector('#tabletop-panel-actions [aria-label="擲主手 長弓命中"]').textContent);
+    const fireBow = () => page.evaluate(() => document.querySelector('#tabletop-panel-actions [aria-label="擲主手 長弓命中"]').click());
+    // AppDialog.notify() 在下一個 animation frame 才填入文字（和 validate-spell-search.js 的 lastToast 相同）：等最新那則有文字再讀，避免時序造成空字串。
+    const lastToast = () => page.waitForFunction(() => document.querySelector("#app-toast > .app-toast:last-child .app-toast__message")?.textContent, null, { timeout: 2000 })
+      .then(handle => handle.jsonValue());
+    const stacks = () => page.evaluate(() => Inventory.entries().map(entry => [entry.uid, entry.quantity, entry.in || "", Boolean(entry.ammo)]));
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢+1 剩 2");
+    assert.equal(await bowHit(), "+6", "the tabletop hit includes the arrow bonus");
+    await fireBow();
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢+1 剩 1");
+    assert.equal(await page.evaluate(() => Inventory.getEntry("arrows").quantity), 1, "a hit roll uses one arrow");
+    await fireBow();
+    await page.waitForFunction(() => Inventory.getEquippedAmmo()?.uid === "spare");
+    assert.match(await lastToast(), /箭矢\+1用完了，空的那堆放到身上；改用另一筆箭矢\+1（剩 3）。/u, "the last arrow switches to an identical stack with a notice");
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢+1 剩 3");
+    assert.deepEqual((await stacks()).filter(([uid]) => ["arrows", "spare"].includes(uid)), [["arrows", 0, "", false], ["spare", 3, "quiver", true]],
+      "the empty stack stays as ×0 on the body, the identical stack in the quiver is equipped where it is");
+    await page.evaluate(() => Inventory.update("spare", { quantity: 1 }));
+    await fireBow();
+    await page.waitForFunction(() => Inventory.getEntry("spare")?.quantity === 0);
+    assert.match(await lastToast(), /箭矢\+1用完了（×0，仍是裝備中）；之後擲命中不再扣彈藥。/u, "with no identical stack left the empty stack stays equipped");
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢+1 剩 0");
+    assert.deepEqual([await page.evaluate(() => Inventory.getEquippedAmmo()?.uid), await bowHit()], ["spare", "+5"], "plain and +2 arrows do not replace +1 arrows, and an empty stack gives no bonus");
+    await fireBow();
+    assert.match(await lastToast(), /彈藥用完：箭矢\+1剩 0，這次沒有扣。/u, "firing with no arrows says the ammunition is out");
+    assert.deepEqual(await stacks(), [["bow", 1, "", false], ["quiver", 1, "", false], ["arrows", 0, "", false], ["plain", 20, "", false], ["plus2", 4, "", false], ["spare", 0, "quiver", true], ["bolts", 5, "", false]],
+      "nothing is used once the equipped ammunition is empty, and empty stacks are kept");
+    // 跑團武器卡在 inventory:change 後的下一個 animation frame 才重畫（tabletop-actions.js 的 scheduleRender）：等彈藥行消失再讀，
+    // 2 秒內沒消失照樣失敗。
+    const ammoLineGone = () => page.waitForFunction(() => !document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo"), null, { timeout: 2000 });
+    await page.evaluate(() => Inventory.setAmmo("spare", false));
+    await ammoLineGone();
+    assert.deepEqual([await page.evaluate(() => Inventory.getEntry("spare")?.quantity), await ammoLine()], [0, null], "taking off empty ammunition keeps it");
+    await page.evaluate(() => Inventory.setAmmo("bolts", true));
+    await ammoLineGone();
+    await fireBow();
+    assert.deepEqual([await page.evaluate(() => Inventory.getEntry("bolts").quantity), await ammoLine()], [5, null], "bolts are not used by a longbow");
+    // 普通箭矢用完時同樣只換普通箭矢，不會換上魔法箭矢。
+    await page.evaluate(() => { Inventory.setAmmo("plain", true); Inventory.update("plain", { quantity: 1 }); });
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-actions .tabletop-weapon-ammo")?.textContent === "彈藥：箭矢 剩 1");
+    await fireBow();
+    await page.waitForFunction(() => Inventory.getEntry("plain")?.quantity === 0);
+    assert.deepEqual(await page.evaluate(() => [Inventory.getEquippedAmmo()?.uid, Inventory.getEntry("plus2").quantity]), ["plain", 4], "plain arrows are not replaced by magic arrows");
+    await page.evaluate(on => DiceRoller.setEnabled(on), diceWasOn);
+    const hints = extra => page.evaluate(([base, extra]) => {
+      applyStateObject({ ...base, ...extra });
+      return getActiveMagicEffects().hints.map(hint => `${hint.panel}|${hint.label}|${hint.detail}`);
+    }, [magicBase, extra]);
+    assert.deepEqual(await hints({ mainHand: "霜銘（長劍）", ...inventoryOf(frost) }), ["overview|霜銘（長劍）|火焰傷害抗性。"], "Frost Brand resists fire while held");
+    assert.deepEqual(await hints(inventoryOf(frost)), [], "Frost Brand in the pack gives no resistance");
+    assert.deepEqual(await hints(inventoryOf({ uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-dwarvenkind" } })), [
+      "overview|矮人腰帶|毒素傷害抗性；黑暗視覺 60 呎；懂矮人語。",
+      "skills|矮人腰帶|與矮人、灰矮人互動的魅力（遊說）檢定有優勢；避免或結束中毒狀態的豁免有優勢。"
+    ], "structured words make fixed sentences, skill hints go to the skills panel");
+    assert.deepEqual(await hints(inventoryOf({ uid: "ring", quantity: 1, worn: true, magic: { id: "ring-of-resistance", damageType: "thunder" } })), ["overview|抗性戒指（雷鳴）|雷鳴傷害抗性。"], "hints can come from the chosen option");
+    assert.deepEqual(await hints(inventoryOf({ uid: "axe", itemId: "戰斧", quantity: 1, attuned: true, magic: { id: "berserker-axe" } })).then(list => list.map(item => item.split("|")[0])), ["overview"], "a curse marked when: owned shows without holding the axe");
+    assert.deepEqual(await hints(inventoryOf({ uid: "boots", quantity: 1, magic: { id: "boots-of-elvenkind" } })), [], "boots in the pack give no advantage");
+    assert.deepEqual(await hints(inventoryOf({ uid: "boots", quantity: 1, worn: true, magic: { id: "boots-of-elvenkind" } })), ["overview|精靈之靴|隱匿檢定有優勢。腳步不會發出聲音。"], "worn boots give stealth advantage");
+    await page.evaluate(() => TabletopMode.setPanel("overview"));
+    await page.waitForFunction(() => document.getElementById("tabletop-overview-rule-summary").textContent.includes("精靈之靴：隱匿檢定有優勢"));
+    // 無條件優勢：跑團技能按鈕加「優勢」標籤（先攻格放在數值旁），報讀與滑鼠提示寫出來源；
+    // 角色卡技能頁不放標籤，改在技能名稱旁放 ✦（使用者決定），aria-label 與浮層寫「優勢・精靈之靴」。
+    await page.evaluate(() => TabletopMode.setPanel("skills"));
+    await page.waitForFunction(() => document.querySelector("#tabletop-skill-values .magic-advantage-tag"));
+    assert.deepEqual(await page.evaluate(() => {
+      const tagged = selector => [...document.querySelectorAll(selector)].filter(item => item.querySelector(".magic-advantage-tag"));
+      const tabletop = tagged("#tabletop-skill-values .tabletop-skill-value");
+      return {
+        tabletop: tabletop.map(item => [item.querySelector(".tabletop-skill-value__label").textContent, item.querySelector("button").getAttribute("aria-label").endsWith("；優勢（精靈之靴）")]),
+        sheetTags: document.querySelectorAll("#tab-skills .magic-advantage-tag").length,
+        sheet: [...document.querySelectorAll("#tab-skills .skill-effect-tip")].map(tip => [tip.closest(".skill-cell")?.querySelector(".skill-tip").textContent, tip.getAttribute("aria-label"), tip.textContent])
+      };
+    }), { tabletop: [["隱匿", true]], sheetTags: 0, sheet: [["隱匿", "隱匿：優勢・精靈之靴", "✦"]] }, "worn boots tag stealth in tabletop mode and mark it with ✦ on the sheet");
+    await hints(inventoryOf({ uid: "boots", quantity: 1, magic: { id: "boots-of-elvenkind" } }));
+    await page.waitForFunction(() => document.querySelectorAll("#tab-skills .skill-effect-tip, #tabletop-skill-values .magic-advantage-tag").length === 0);
+    await hints({ offHand: "警戒之盾", ...inventoryOf({ uid: "sentinel", itemId: "盾牌", quantity: 1, magic: { id: "sentinel-shield" } }) });
+    await page.evaluate(() => TabletopMode.setPanel("overview"));
+    await page.waitForFunction(() => document.querySelector("#tabletop-initiative .magic-advantage-tag"));
+    assert.deepEqual(await page.evaluate(() => [document.querySelector("#tabletop-initiative .magic-advantage-tag").title, document.querySelector("#tabletop-initiative button").getAttribute("aria-label").endsWith("；優勢（警戒之盾）"), document.querySelector('#tab-skills .skill-cell:has(#prof-察覺) .skill-effect-tip')?.dataset.tipText]),
+      ["優勢：警戒之盾", true, "優勢・警戒之盾"], "the Sentinel Shield tags initiative and perception");
+    await hints(inventoryOf({ uid: "boots", quantity: 1, worn: true, magic: { id: "boots-of-elvenkind" } }));
+    await hints(inventoryOf({ uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-dwarvenkind" } }));
+    await page.evaluate(() => TabletopMode.setPanel("skills"));
+    await page.waitForFunction(() => document.querySelector("#tabletop-panel-skills .tabletop-defense-summary__list")?.textContent.includes("矮人腰帶：與矮人、灰矮人互動"));
+    await page.evaluate(() => { TabletopMode.setPanel("overview"); TabletopMode.setMode("sheet"); });
+    // 屬性有效值的算法：原值 → 加值（各自夾上限、不會降低）→ 與設定值比（setBonus 加在 from 物品的設定值上）→ 取最高。
+    assert.deepEqual(await page.evaluate(() => {
+      const belt = { label: "腰帶", itemId: "belt-of-giant-strength", set: 21 };
+      const hammer = { label: "錘", itemId: "hammer-of-thunderbolts", setBonus: 4, max: 30, from: ["belt-of-giant-strength", "gauntlets-of-ogre-power"] };
+      const stone = label => ({ label, itemId: "ioun-stone", bonus: 2, max: 20 });
+      const pick = ({ value, sources, changed }) => [value, sources.join("、"), changed];
+      return [
+        pick(calculateEffectiveAbilityScore("15", [belt])),
+        pick(calculateEffectiveAbilityScore("20", [{ ...belt, set: 19 }])),
+        pick(calculateEffectiveAbilityScore("19", [stone("石")])),
+        pick(calculateEffectiveAbilityScore("20", [stone("石")])),
+        pick(calculateEffectiveAbilityScore("15", [stone("石一"), stone("石二")])),
+        pick(calculateEffectiveAbilityScore("18", [stone("石"), { ...belt, set: 19 }])),
+        pick(calculateEffectiveAbilityScore("15", [belt, hammer])),
+        pick(calculateEffectiveAbilityScore("15", [{ ...belt, set: 29 }, hammer])),
+        pick(calculateEffectiveAbilityScore("15", [hammer])),
+        pick(calculateEffectiveAbilityScore("", [belt]))
+      ];
+    }), [
+      ["21", "腰帶", true], ["20", "", false], ["20", "石", true], ["20", "", false], ["19", "石一、石二", true],
+      ["20", "石", true], ["25", "腰帶、錘", true], ["30", "腰帶、錘", true], ["15", "", false], ["", "", false]
+    ], "effective ability scores: set, capped bonuses that stack, set bonuses on another item, blank scores");
+    // 生效中的物品（已同調且穿戴／手持）改變調整值、技能、豁免、生命值、攻擊與負重；屬性欄與存檔仍是原值。
+    // 調整值旁的 ✦ 標記：aria-label 寫出有效值與物品，沒有物品影響時不出現。
+    const abilityNumbers = extra => page.evaluate(([base, extra]) => {
+      applyStateObject({ ...base, "prof-str": true, "prof-con": true, ...extra });
+      const value = id => document.getElementById(id).value;
+      return {
+        str: [value("str"), document.querySelector("#str-mod .modifier-main").textContent, document.querySelector("#str-mod .ability-effect-tip")?.getAttribute("aria-label") || ""],
+        con: [document.querySelector("#con-mod .modifier-main").textContent, value("hp-display"), value("save-con")],
+        checks: [value("skill-運動"), value("save-str"), value("atk-main-hit"), getCarryCapacityPounds()],
+        saved: collectStateObject().str
+      };
+    }, [magicBase, extra]);
+    const giantBelt = { uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-giant-strength", giant: "hill" } };
+    assert.deepEqual(await abilityNumbers({ mainHand: "長劍", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }) }), {
+      str: ["16", "+3", ""], con: ["+1", "39", "+4"], checks: ["+3", "+6", "+6", 240], saved: "16"
+    }, "without magic items the sheet uses the raw scores");
+    assert.deepEqual(await abilityNumbers({ mainHand: "長劍", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, giantBelt, { uid: "amulet", quantity: 1, attuned: true, worn: true, magic: { id: "amulet-of-health" } }) }), {
+      str: ["16", "+5", "力量有效 21・巨人之力腰帶（山丘）"], con: ["+4", "54", "+7"], checks: ["+5", "+8", "+8", 315], saved: "16"
+    }, "the Belt of Giant Strength and Amulet of Health set the effective scores while the fields keep the raw values");
+    const strengthOf = async extra => (await abilityNumbers(extra)).str.slice(1);
+    assert.deepEqual(await strengthOf(inventoryOf({ ...giantBelt, worn: false })), ["+3", ""], "a belt in the pack does nothing");
+    assert.deepEqual(await strengthOf(inventoryOf({ ...giantBelt, attuned: false })), ["+3", ""], "an unattuned belt does nothing");
+    const hammerOf = (extra = {}) => ({ uid: "hammer", itemId: "戰錘", quantity: 1, attuned: true, magic: { id: "hammer-of-thunderbolts" }, ...extra });
+    assert.deepEqual(await strengthOf({ mainHand: "雷神之錘（戰錘）", ...inventoryOf(hammerOf(), giantBelt) }), ["+7", "力量有效 25・巨人之力腰帶（山丘）、雷神之錘（戰錘）"], "the Hammer of Thunderbolts adds 4 to the belt");
+    // 雷神之錘與雷鳴巨棒的屬性效果寫 when: owned：同調就算，不用拿在手上。
+    assert.deepEqual(await strengthOf(inventoryOf(hammerOf(), giantBelt)), ["+7", "力量有效 25・巨人之力腰帶（山丘）、雷神之錘（戰錘）"], "the attuned hammer adds without being held");
+    assert.deepEqual(await strengthOf(inventoryOf(hammerOf({ attuned: false }), giantBelt)), ["+5", "力量有效 21・巨人之力腰帶（山丘）"], "an unattuned hammer adds nothing");
+    assert.deepEqual(await strengthOf(inventoryOf(hammerOf(), { ...giantBelt, worn: false })), ["+3", ""], "the belt still has to be worn for the hammer to add");
+    assert.deepEqual(await strengthOf({ mainHand: "雷神之錘（戰錘）", ...inventoryOf(hammerOf()) }), ["+3", ""], "the hammer alone sets nothing");
+    assert.deepEqual(await strengthOf({ mainHand: "雷鳴巨棒", ...inventoryOf({ uid: "club", itemId: "巨棒", quantity: 1, attuned: true, magic: { id: "thunderous-greatclub" } }) }), ["+5", "力量有效 20・雷鳴巨棒"], "the Thunderous Greatclub sets Strength 20 while held");
+    assert.deepEqual(await strengthOf(inventoryOf({ uid: "club", itemId: "巨棒", quantity: 1, attuned: true, magic: { id: "thunderous-greatclub" } })), ["+5", "力量有效 20・雷鳴巨棒"], "an attuned Thunderous Greatclub in the pack still sets Strength 20");
+    assert.deepEqual(await strengthOf(inventoryOf({ uid: "stone", quantity: 1, attuned: true, worn: true, magic: { id: "ioun-stone", kind: "strength" } }, { uid: "gauntlets", quantity: 1, attuned: true, worn: true, magic: { id: "gauntlets-of-ogre-power" } })),
+      ["+4", "力量有效 19・食人魔力量護手"], "the higher of a capped bonus (18) and a set value (19) wins");
+    assert.deepEqual((await abilityNumbers(inventoryOf({ uid: "dwarf", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-dwarvenkind" } }))).con.slice(0, 2), ["+2", "44"], "the Belt of Dwarvenkind adds 2 Constitution");
+    // 力量需求用有效力量：食人魔力量護手讓穿鎖子甲（力量 13）的角色不降速。
+    const speedWith = extra => page.evaluate(([base, extra]) => { applyStateObject({ ...base, str: "10", armor: "鎖子甲", ...extra }); return document.getElementById("speed-display").value; }, [magicBase, extra]);
+    const mail = { uid: "mail", itemId: "鎖子甲", quantity: 1 };
+    assert.deepEqual([await speedWith(inventoryOf(mail)), await speedWith(inventoryOf(mail, { uid: "gauntlets", quantity: 1, attuned: true, worn: true, magic: { id: "gauntlets-of-ogre-power" } }))], ["20", "30"], "the armor Strength requirement reads the effective Strength");
+    // 第 4 步：技能、檢定、熟練加值、生命值、AC、護甲與武器熟練、速度（內容檔 effects；不改玩家的欄位原值）。
+    const worn = (uid, id, extra = {}) => ({ uid, quantity: 1, worn: true, attuned: true, magic: { id, ...extra } });
+    const sheetNumbers = extra => page.evaluate(([base, extra]) => {
+      applyStateObject({ ...base, "speed-input": "30", ...extra });
+      const value = id => document.getElementById(id).value;
+      const summary = document.getElementById("equipment-loadout-summary-content").textContent;
+      return {
+        checks: [value("skill-巧手"), value("skill-運動"), value("save-dex"), value("save-str"), value("passive-perception"), value("initiative-input")],
+        attack: value("atk-main-hit"), hp: value("hp-display"), ac: value("ac-display"), speed: value("speed-display"),
+        warnings: ["未熟練", "力量需求", "懲罰"].filter(text => summary.includes(text))
+      };
+    }, [magicBase, extra]);
+    const plain = await sheetNumbers({ mainHand: "長劍", "prof-str": true, ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }) });
+    assert.deepEqual(plain.checks, ["+2", "+3", "+2", "+6", "10", "+2"], "baseline checks without magic items");
+    assert.deepEqual((await sheetNumbers({ ...inventoryOf(worn("gloves", "gloves-of-thievery")) })).checks[0], "+7", "Gloves of Thievery add 5 to Sleight of Hand while worn");
+    assert.deepEqual((await sheetNumbers({ ...inventoryOf({ ...worn("gloves", "gloves-of-thievery"), worn: false }) })).checks[0], "+2", "Gloves of Thievery in the pack add nothing");
+    // 幸運石：技能（含被動察覺）、豁免與先攻 +1（先攻是使用者決定），PDF 先攻欄同一個數字。
+    const luckstone = { uid: "luck", quantity: 1, attuned: true, magic: { id: "stone-of-good-luck" } };
+    assert.deepEqual((await sheetNumbers({ "prof-str": true, ...inventoryOf(luckstone) })).checks,
+      ["+3", "+4", "+3", "+7", "11", "+3"], "the Stone of Good Luck adds 1 to skills, passive Perception, saves and initiative");
+    assert.equal(await page.evaluate(() => buildPdfFieldPayload(collectStateObject()).initiative1), "+3", "the PDF initiative box includes the Stone of Good Luck");
+    assert.deepEqual((await sheetNumbers(inventoryOf({ ...luckstone, attuned: false }))).checks[5], "+2", "an unattuned Stone of Good Luck adds nothing to initiative");
+    // 艾恩石（精進）：熟練加值 +1，熟練的豁免與武器攻擊跟著變。
+    const masteryNumbers = await sheetNumbers({ mainHand: "長劍", "prof-str": true, ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, worn("stone", "ioun-stone", { kind: "mastery" })) });
+    assert.deepEqual([masteryNumbers.checks[3], masteryNumbers.attack, plain.attack, await page.evaluate(() => getProficiencyBonus())], ["+7", "+7", "+6", 4], "the Ioun Stone of Mastery raises the proficiency bonus by 1");
+    // 狂戰斧：同調就每級 +1 生命值上限（不用拿在手上）。
+    const axe = { uid: "axe", itemId: "戰斧", quantity: 1, attuned: true, magic: { id: "berserker-axe" } };
+    assert.deepEqual([(await sheetNumbers(inventoryOf(axe))).hp, (await sheetNumbers(inventoryOf({ ...axe, attuned: false }))).hp, plain.hp], ["44", "39", "39"], "the attuned Berserker Axe adds 1 hit point per level");
+    // 射手護腕：長弓、短弓熟練（法師）；精靈鏈甲：視為受過訓練；秘銀護甲：沒有力量需求與隱匿劣勢。
+    const bowWizard = extra => sheetNumbers({ class: "wizard", mainHand: "長弓", ...inventoryOf({ uid: "bow", itemId: "長弓", quantity: 1 }, ...extra) });
+    assert.deepEqual([(await bowWizard([])).attack, (await bowWizard([])).warnings, (await bowWizard([worn("bracers", "bracers-of-archery")])).attack, (await bowWizard([worn("bracers", "bracers-of-archery")])).warnings],
+      ["+2", ["未熟練"], "+5", []], "Bracers of Archery grant longbow proficiency");
+    const armorNamed = (id, base) => page.evaluate(([id, base]) => MagicItemCatalog.getDisplayName(id, { base }), [id, base]);
+    const elvenChain = await armorNamed("elven-chain", "鎖子甲");
+    const mithral = await armorNamed("mithral-armor", "鎖子甲");
+    assert.deepEqual((await sheetNumbers({ class: "wizard", armor: elvenChain, ...inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1, magic: { id: "elven-chain" } }) })).warnings, ["力量需求", "懲罰"], "Elven Chain counts as trained armor");
+    assert.deepEqual((await sheetNumbers({ class: "wizard", armor: "鎖子甲", ...inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1 }) })).warnings, ["未熟練", "力量需求", "懲罰"], "plain chain mail still warns a wizard");
+    const mithralSheet = await sheetNumbers({ str: "10", armor: mithral, ...inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1, magic: { id: "mithral-armor" } }) });
+    assert.deepEqual([mithralSheet.speed, mithralSheet.warnings], ["30", []], "Mithral Armor has no Strength requirement or stealth disadvantage");
+    // 大法師法袍：沒穿護甲時基礎 AC 15＋敏捷（可以用盾牌）；穿護甲時不算。
+    const archmagiRobe = worn("robe", "robe-of-the-archmagi");
+    assert.deepEqual([
+      (await sheetNumbers({ class: "wizard", ...inventoryOf(archmagiRobe) })).ac,
+      (await sheetNumbers({ class: "wizard", ...inventoryOf({ ...archmagiRobe, worn: false }) })).ac,
+      (await sheetNumbers({ class: "fighter", offHand: "盾牌", ...inventoryOf(archmagiRobe, { uid: "shield", itemId: "盾牌", quantity: 1 }) })).ac,
+      (await sheetNumbers({ class: "fighter", armor: "皮甲", ...inventoryOf(archmagiRobe, { uid: "leather", itemId: "皮甲", quantity: 1 }) })).ac
+    ], ["17", "12", "19", "13"], "the Robe of the Archmagi sets an unarmored base AC of 15 plus Dexterity");
+    // 跑跳之靴：速度至少 30，不因護甲力量需求降速。
+    const boots = worn("boots", "boots-of-striding-and-springing");
+    assert.deepEqual([
+      (await sheetNumbers({ "speed-input": "25", ...inventoryOf(boots) })).speed,
+      (await sheetNumbers({ "speed-input": "25", ...inventoryOf({ ...boots, worn: false }) })).speed,
+      (await sheetNumbers({ str: "10", armor: "鎖子甲", ...inventoryOf(boots, mail) })).speed,
+      (await sheetNumbers({ "speed-input": "35", ...inventoryOf(boots) })).speed
+    ], ["30", "25", "30", "35"], "Boots of Striding and Springing keep the speed at least 30 and ignore the armor Strength requirement");
+    // 裝備摘要的「魔法物品」列寫出加值來源。
+    await sheetNumbers(inventoryOf(worn("gloves", "gloves-of-thievery"), worn("stone", "ioun-stone", { kind: "mastery" }), axe));
+    assert.deepEqual(await page.evaluate(() => Array.from(document.querySelectorAll("#equipment-loadout-summary-content .equipment-summary-row"), row => row.textContent).filter(text => text.includes("巧手+5") || text.includes("熟練加值+1") || text.includes("生命值上限每級+1")).length > 0), true, "the summary lists the new magic bonuses");
+    // 技能頁的 ✦：技能專屬的效果（優勢、技能加值）在技能名稱旁，同一技能多個來源寫在同一個浮層；
+    // 所有檢定與熟練加值只在「技能」標題旁放一個；點了開規則說明浮層。沒有物品時都不出現。
+    const skillTips = extra => page.evaluate(([base, extra]) => {
+      applyStateObject({ ...base, ...extra });
+      return {
+        cells: [...document.querySelectorAll("#tab-skills .skill-cell .skill-effect-tip")].map(tip => [tip.dataset.skill, tip.dataset.tipText]),
+        heading: document.querySelector("#skill-bonus-section h3 .skill-effect-tip")?.dataset.tipText || ""
+      };
+    }, [magicBase, extra]);
+    assert.deepEqual(await skillTips(inventoryOf()), { cells: [], heading: "" }, "no ✦ on the skills page without magic items");
+    assert.deepEqual(await skillTips(inventoryOf({ ...worn("gloves", "gloves-of-thievery"), attuned: false }, worn("elven", "cloak-of-elvenkind"), { ...worn("boots", "boots-of-elvenkind"), attuned: false }, luckstone, worn("stone", "ioun-stone", { kind: "mastery" }))), {
+      cells: [["巧手", "+5・竊賊手套"], ["隱匿", "優勢・精靈斗篷、精靈之靴"]],
+      heading: "所有屬性檢定 +1・幸運石；熟練加值 +1・艾恩石（精進）"
+    }, "skill-specific effects mark that skill, effects on every skill mark the heading");
+    const tabBeforeSkills = await page.evaluate(() => document.querySelector(".tab-content:not([hidden])")?.id.replace(/^tab-/u, "") || "");
+    await page.evaluate(() => showTab("skills"));
+    await page.locator("#skill-bonus-section h3 .skill-effect-tip").click();
+    assert.deepEqual(await page.evaluate(() => [getComputedStyle(document.getElementById("skillPopup")).display, document.querySelector("#skillPopup .title").textContent, document.querySelector("#skillPopup .monster-detail-line").textContent.trim()]),
+      ["block", "技能", "所有屬性檢定 +1・幸運石；熟練加值 +1・艾恩石（精進）"], "the heading ✦ opens the rule popup");
+    await page.keyboard.press("Escape");
+    if (tabBeforeSkills) await page.evaluate(tab => showTab(tab), tabBeforeSkills);
+    // 自動計算關閉時，技能欄是玩家手填的數字，加上竊賊手套也不變。
+    assert.deepEqual(await page.evaluate(([base, inventory]) => {
+      applyStateObject({ ...base, "auto-calculate-key-stats-toggle": false, "skill-巧手": "+1" });
+      applyStateObject({ ...base, "auto-calculate-key-stats-toggle": false, "skill-巧手": "+1", ...inventory });
+      const manual = document.getElementById("skill-巧手").value;
+      // 還原成自動計算（不經開關的確認視窗）。
+      document.getElementById("auto-calculate-key-stats-toggle").checked = true;
+      writeDerivedChecks();
+      syncAutomaticKeyStatsMode();
+      return manual;
+    }, [magicBase, inventoryOf(worn("gloves", "gloves-of-thievery"))]), "+1", "manual skill values stay when automatic calculation is off");
+    // 自動計算關閉時，先攻欄是玩家手填的數字，加上幸運石也不變。
+    assert.deepEqual(await page.evaluate(([base, inventory]) => {
+      applyStateObject({ ...base, "auto-calculate-key-stats-toggle": false, "initiative-input": "+0" });
+      applyStateObject({ ...base, "auto-calculate-key-stats-toggle": false, "initiative-input": "+0", ...inventory });
+      const manual = document.getElementById("initiative-input").value;
+      document.getElementById("auto-calculate-key-stats-toggle").checked = true;
+      writeDerivedChecks();
+      syncAutomaticKeyStatsMode();
+      return manual;
+    }, [magicBase, inventoryOf(luckstone)]), "+0", "a manual initiative stays when automatic calculation is off");
+    // 跑團：速度格寫出游泳、攀爬、飛行（多來源取最大，等於速度的跟著目前速度），屬性檢定按鈕加上幸運石。
+    const tabletopSpeed = async extra => {
+      await page.evaluate(([base, extra]) => { applyStateObject({ ...base, "speed-input": "30", ...extra }); TabletopMode.setMode("tabletop"); TabletopMode.setPanel("overview"); }, [magicBase, extra]);
+      return page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => setTimeout(() => resolve(document.getElementById("tabletop-speed").textContent.trim()), 50))));
+    };
+    assert.equal(await tabletopSpeed(inventoryOf(worn("gloves", "gloves-of-swimming-and-climbing"), worn("manta", "cloak-of-the-manta-ray"), { uid: "ring", quantity: 1, worn: true, magic: { id: "ring-of-swimming" } })),
+      "30 呎，游泳 60、攀爬 30", "tabletop speed lists swim and climb speeds, the largest source wins");
+    assert.equal(await tabletopSpeed(inventoryOf(worn("ring", "ring-of-elemental-command", { element: "air" }))), "30 呎，飛行 30（懸停）", "the Ring of Air Elemental Command flies at the walking speed and hovers");
+    assert.equal(await tabletopSpeed(inventoryOf({ ...worn("gloves", "gloves-of-swimming-and-climbing"), worn: false })), "30 呎", "unworn items add no movement");
+    await tabletopSpeed(inventoryOf({ uid: "luck", quantity: 1, attuned: true, magic: { id: "stone-of-good-luck" } }));
+    await page.waitForFunction(() => document.querySelector("#tabletop-ability-modifiers .tabletop-ability-modifier__source")?.textContent === "(幸運石)");
+    assert.deepEqual(await page.evaluate(() => {
+      const strength = document.querySelector("#tabletop-ability-modifiers .tabletop-ability-modifier");
+      return [strength.querySelector(".tabletop-ability-modifier__value").textContent, document.querySelector("#str-mod .modifier-main").textContent];
+    }), ["+4", "+3"], "the tabletop ability check adds the Stone of Good Luck while the sheet modifier stays");
+    assert.deepEqual(await page.evaluate(() => {
+      const button = document.querySelector("#tabletop-initiative button");
+      return [button.textContent.trim(), document.getElementById("initiative-input").value];
+    }), ["+3", "+3"], "tabletop initiative uses the same number with the Stone of Good Luck");
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
+    // 第 5 步：魔法物品的能力依動作類型放在跑團的動作、附贈、反應頁；扣次數的按鈕在物品名稱後寫剩餘次數，不夠時變灰；
+    // 使用時扣那件物品的池（固定花費先確認，可變花費選次數）；沒拿在手上的魔杖沒有按鈕；可以在「管理」隱藏。
+    await page.evaluate(([base]) => {
+      // 同調最多 3 件（盾牌、靴子、排笛）；魔術袋不用同調，能力寫 when: owned，帶著就能用。
+      applyStateObject({ ...base, mainHand: "", offHand: "騎士之盾", __inventory: { version: 1, items: [
+        { uid: "bag", quantity: 1, magic: { id: "bag-of-tricks" }, charges: { tricks: 1 } },
+        { uid: "shield", itemId: "盾牌", quantity: 1, attuned: true, magic: { id: "shield-of-the-cavalier" }, charges: { "protective-field": 0 } },
+        { uid: "boots", quantity: 1, attuned: true, worn: true, magic: { id: "boots-of-speed" } },
+        { uid: "pipes", quantity: 1, attuned: true, magic: { id: "pipes-of-the-sewers" } },
+        { uid: "wand", quantity: 1, magic: { id: "wand-of-paralysis" } }
+      ] } });
+      TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions");
+    }, [magicBase]);
+    const itemButtons = mode => page.evaluate(async (mode) => {
+      document.getElementById(`tabletop-action-tab-${mode}`).click();
+      await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 30)));
+      return [...document.querySelectorAll(`#tabletop-action-panel-${mode} [data-action-option-key^="magic-item-"]`)]
+        .map(button => [button.dataset.actionOptionKey, button.textContent, button.classList.contains("is-depleted")]);
+    }, mode);
+    assert.deepEqual(await itemButtons("action"), [
+      ["magic-item-bag-of-tricks-pull", "拉出生物魔術袋1/3", false],
+      ["magic-item-shield-of-the-cavalier-bash", "強力盾擊騎士之盾", false]
+    ], "action page lists magic and attack actions of active items; the wand not in hand has no button");
+    assert.deepEqual(await itemButtons("bonus"), [
+      ["magic-item-boots-of-speed-click-heels", "敲擊靴跟速度之靴10/10", false],
+      ["magic-item-pipes-of-the-sewers-call-rats", "召來鼠群喚鼠排笛3/3", false]
+    ], "bonus page lists bonus actions with their remaining uses");
+    assert.deepEqual(await itemButtons("reaction"), [["magic-item-shield-of-the-cavalier-protective-field", "防護力場騎士之盾0/1", true]],
+      "a pool at 0 greys the button but keeps it");
+    await page.locator('[data-action-option-key="magic-item-shield-of-the-cavalier-protective-field"]').click();
+    assert.equal(await page.locator("#tabletop-action-panel-reaction .tabletop-action-resource-use").isDisabled(), true, "an empty pool cannot be used");
+    await page.locator("#tabletop-action-tab-action").click();
+    await page.locator('[data-action-option-key="magic-item-bag-of-tricks-pull"]').click();
+    assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /魔法動作：從袋中拉出[\s\S]*消耗 1 次毛茸茸的東西 · 剩餘 1\/3/u);
+    await page.locator("#tabletop-action-panel-action .tabletop-action-resource-use").click();
+    await page.getByRole("button", { name: "使用能力", exact: true }).last().click();
+    await page.waitForFunction(() => Inventory.getEntry("bag").charges?.tricks === 0);
+    await page.waitForFunction(() => document.querySelector('[data-action-option-key="magic-item-bag-of-tricks-pull"]')?.classList.contains("is-depleted"));
+    await page.locator("#tabletop-action-tab-bonus").click();
+    await page.locator('[data-action-option-key="magic-item-pipes-of-the-sewers-call-rats"]').click();
+    await page.locator("#tabletop-action-panel-bonus .tabletop-action-resource-use").click();
+    const costSelect = page.locator(".app-dialog select");
+    assert.deepEqual(await costSelect.locator("option").allTextContents(), ["1 次", "2 次", "3 次"], "variable costs offer every amount the pool can pay");
+    await costSelect.selectOption("2");
+    await page.getByRole("button", { name: "使用能力", exact: true }).last().click();
+    await page.waitForFunction(() => Inventory.getEntry("pipes").charges?.charges === 1);
+    await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:bonus:magic-item-boots-of-speed-click-heels", true));
+    assert.deepEqual((await itemButtons("bonus")).map(([key]) => key), ["magic-item-pipes-of-the-sewers-call-rats"], "item buttons can be hidden with the usual preference key");
+    await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:bonus:magic-item-boots-of-speed-click-heels", false));
+    // 第 5b 步：沒有次數池的物品也有按鈕（只有說明）；穿戴類要穿上，沒有 use 的寫 when: owned（帶著就算），手持類要拿在手上。
+    await page.evaluate(([base]) => {
+      applyStateObject({ ...base, mainHand: "", offHand: "", __inventory: { version: 1, items: [
+        { uid: "ring", quantity: 1, attuned: true, worn: true, magic: { id: "ring-of-invisibility" } },
+        { uid: "rod", quantity: 1, magic: { id: "immovable-rod" } },
+        { uid: "rope", quantity: 1, magic: { id: "rope-of-entanglement" } },
+        { uid: "spell-ring", quantity: 1, attuned: true, magic: { id: "ring-of-spell-turning" } }
+      ] } });
+      TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions");
+    }, [magicBase]);
+    assert.deepEqual([(await itemButtons("action")).map(([key, text]) => [key, text]), (await itemButtons("bonus")).map(([key, text]) => [key, text]), (await itemButtons("reaction")).map(([key]) => key)], [
+      [["magic-item-ring-of-invisibility-vanish", "隱形隱形戒指"], ["magic-item-immovable-rod-button", "按下按鈕不動權杖"]],
+      [["magic-item-ring-of-invisibility-appear", "重新現身隱形戒指"]],
+      []
+    ], "step 5b: description-only item buttons follow use (worn ring, carried rod); a rope not in hand and an unworn ring have none");
+    await page.locator("#tabletop-action-tab-action").click();
+    await page.locator('[data-action-option-key="magic-item-immovable-rod-button"]').click();
+    assert.equal(await page.locator("#tabletop-action-panel-action .tabletop-action-resource-use").count(), 0, "buttons without a pool only show their description");
+    // 第 6 步：從物品施放的法術（含念珠項鍊的附贈動作法術）不在動作／附贈／反應頁，而在法術頁的「物品」分組。
+    await page.evaluate(([base]) => {
+      applyStateObject({ ...base, mainHand: "威力法杖", offHand: "", __inventory: { version: 1, items: [
+        { uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id: "staff-of-power" } },
+        { uid: "beads", quantity: 1, attuned: true, worn: true, magic: { id: "necklace-of-prayer-beads" } }
+      ] } });
+      TabletopMode.setPanel("actions");
+    }, [magicBase]);
+    assert.deepEqual((await itemButtons("action")).map(([key]) => key), ["magic-item-staff-of-power-retributive-strike"], "item spells are not action buttons");
+    assert.deepEqual(await itemButtons("bonus"), [], "bonus-action item spells stay on the spell page");
+    assert.equal(await page.evaluate(() => TabletopSpells.getItemSpellEntries().length), 15, "the staff's 9 spells and the beads' 6 spells are item spells");
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
+    // 點 ✦ 在規則說明浮層顯示有效值與物品。
+    await abilityNumbers(inventoryOf(giantBelt));
+    const previousTab = await page.evaluate(() => document.querySelector(".tab-content:not([hidden])")?.id.replace(/^tab-/u, "") || "");
+    await page.evaluate(() => showTab("basic"));
+    await page.locator("#str-mod .ability-effect-tip").click();
+    assert.deepEqual(await page.evaluate(() => [getComputedStyle(document.getElementById("skillPopup")).display, document.querySelector("#skillPopup .title").textContent, document.querySelector("#skillPopup .content").textContent.replace(/\s+/gu, "")]),
+      ["block", "力量", "力量有效21・巨人之力腰帶（山丘）"], "the marker opens the rule popup with the effective score and its source");
+    await page.keyboard.press("Escape");
+    if (previousTab) await page.evaluate(tab => showTab(tab), previousTab);
+    // 屬性欄可以輸入到 30；購點與擲屬性的規則不變。
+    assert.deepEqual(await page.evaluate(() => {
+      const field = document.getElementById("str");
+      const type = value => { field.value = value; field.dispatchEvent(new Event("input", { bubbles: true })); return field.value; };
+      const result = [type("25"), document.querySelector("#str-mod .modifier-main").textContent, type("35")];
+      type("16");
+      return result;
+    }), ["25", "+7", "30"], "ability fields accept up to 30");
+    // 跑團模式的屬性調整值比照形態標記寫出物品名稱（在擲骰按鈕之外），數值不帶角色卡的 ✦。
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("overview"); });
+    await page.waitForFunction(() => document.querySelector("#tabletop-ability-modifiers .tabletop-ability-modifier__source")?.textContent === "(巨人之力腰帶（山丘）)");
+    assert.deepEqual(await page.evaluate(() => {
+      const marked = document.querySelector("#tabletop-ability-modifiers .tabletop-ability-modifier__source").closest(".tabletop-ability-modifier");
+      return [marked.querySelector(".tabletop-ability-modifier__value").textContent, document.querySelectorAll("#tabletop-ability-modifiers .tabletop-ability-modifier__source").length];
+    }), ["+5", 1], "tabletop shows the effective Strength modifier followed by the item name");
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
+    // 魔法款沿用基本款的規則：熟練、護甲訓練、力量需求、重甲、雙手與攻擊列名稱。
+    assert.deepEqual(await page.evaluate(([base]) => {
+      const held = (extra, ...items) => applyStateObject({ ...base, ...extra, __inventory: { version: 1, items } });
+      const sword = { uid: "sword", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 2 } };
+      const greatsword = { uid: "great", itemId: "巨劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } };
+      const mail = { uid: "mail", itemId: "鎖子甲", quantity: 1, magic: { id: "armor-plus", bonus: 1 } };
+      held({ class: "wizard", mainHand: "長劍+2" }, sword);
+      const wizard = [document.getElementById("atk-main-hit").value, document.getElementById("atk-main-name").value, document.getElementById("equipment-loadout-summary-content").textContent.includes("警告：未熟練")];
+      held({ class: "fighter", mainHand: "巨劍+1" }, greatsword);
+      const twoHanded = [document.getElementById("offHand").disabled, hasTwoHandedProperty(getWeaponByName("巨劍+1"))];
+      held({ class: "wizard", armor: "鎖子甲+1" }, mail);
+      const armor = [document.getElementById("equipment-loadout-summary-content").textContent.includes("警告：未熟練"), isArmorProficient(getArmorByName("鎖子甲+1"))];
+      held({ class: "fighter", armor: "鎖子甲+1" }, mail);
+      const armorSummary = document.getElementById("equipment-loadout-summary-content").textContent;
+      return { wizard, twoHanded, armor, heavy: armorSummary.includes("力量需求"), stealth: armorSummary.includes("懲罰") };
+    }, [magicBase]), {
+      wizard: ["+5", "長劍+2", true],
+      twoHanded: [true, true],
+      armor: [true, false],
+      heavy: true,
+      stealth: true
+    }, "magic equipment follows its base item for proficiency, armor training, armor details and two-handed rules, and the attack row shows its own name");
+    assert.equal((await magicNumbers(inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1, magic: { id: "armor-plus", bonus: 1 } }, { uid: "shield", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 2 } }))).ac,
+      "12", "carried armor and shields add nothing");
+    assert.equal((await magicNumbers({ class: "wizard", offHand: "盾牌+2", ...inventoryOf({ uid: "shield", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 2 } }) })).ac,
+      "12", "an untrained shield gives no magic bonus either");
+    // 穿戴類物品要穿上（worn）才算，需要同調的還要同調；帶在身上的（幸運石）持有就算。
+    const ringOn = { uid: "ring", quantity: 1, attuned: true, worn: true, magic: { id: "ring-of-protection" } };
+    assert.deepEqual(await magicNumbers(inventoryOf(ringOn, { uid: "cloak", quantity: 1, worn: true, magic: { id: "cloak-of-protection" } })).then(result => [result.ac, result.dexSave]), ["13", "+3"], "a worn attuned ring adds AC and saves; the worn unattuned cloak does not");
+    assert.deepEqual(await magicNumbers(inventoryOf({ ...ringOn, worn: false }, { uid: "cloak", quantity: 1, attuned: true, magic: { id: "cloak-of-protection" } })).then(result => [result.ac, result.dexSave]), ["12", "+2"], "attuned rings and cloaks in the pack add nothing");
+    assert.deepEqual(await magicNumbers(inventoryOf({ uid: "ring", quantity: 2, magic: { id: "ring-of-protection" } })).then(result => [result.ac, result.dexSave]), ["12", "+2"], "spare rings add nothing");
+    assert.deepEqual(await page.evaluate(() => {
+      const read = () => [document.getElementById("ac-display").value, document.getElementById("save-dex").value];
+      const refused = Inventory.setAttuned("ring", true);
+      const stack = read();
+      Inventory.setWorn("ring", true);
+      const split = Inventory.entries().map(entry => [entry.quantity, Boolean(entry.worn), Boolean(entry.attuned)]);
+      const wornUid = Inventory.entries().find(entry => entry.worn).uid;
+      const wornUnattuned = read();
+      Inventory.setAttuned(wornUid, true);
+      const both = read();
+      Inventory.setWorn(wornUid, false);
+      const removed = [read(), Boolean(Inventory.getEntry(wornUid).attuned)];
+      Inventory.setAttuned(wornUid, false);
+      Inventory.setAttuned(wornUid, true);
+      return { refused, stack, split, wornUnattuned, both, removed, autoWorn: Inventory.getEntry(wornUid).worn === true, again: read() };
+    }), {
+      refused: "stack",
+      stack: ["12", "+2"],
+      split: [[1, false, false], [1, true, false]],
+      wornUnattuned: ["12", "+2"],
+      both: ["13", "+3"],
+      removed: [["12", "+2"], true],
+      autoWorn: true,
+      again: ["13", "+3"]
+    }, "wearing splits one ring off a stack, attunement needs the ring worn, taking it off keeps attunement, and attuning puts it back on");
+    assert.equal((await magicNumbers(inventoryOf({ uid: "stone", quantity: 1, attuned: true, magic: { id: "stone-of-good-luck" } }))).dexSave, "+3", "a carried luckstone counts in the pack");
+    assert.deepEqual(await magicNumbers(inventoryOf({ uid: "blade", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "luck-blade" } })).then(result => [result.main[0], result.dexSave]), ["", "+3"], "luck blade saves do not need the blade in hand");
+    const bracers = { uid: "bracers", quantity: 1, attuned: true, worn: true, magic: { id: "bracers-of-defense" } };
+    assert.equal((await magicNumbers(inventoryOf(bracers))).ac, "14", "bracers apply unarmored");
+    assert.equal((await magicNumbers({ armor: "皮甲", ...inventoryOf(bracers, { uid: "leather", itemId: "皮甲", quantity: 1 }) })).ac, "13", "bracers stop with armor");
+    assert.equal((await magicNumbers({ offHand: "盾牌", ...inventoryOf(bracers, { uid: "plainshield", itemId: "盾牌", quantity: 1 }) })).ac, "14", "bracers stop with a shield");
+    const staff = { uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id: "staff-of-power" } };
+    assert.deepEqual(await magicNumbers({ class: "wizard", ...inventoryOf(staff) }).then(result => [result.ac, result.dexSave]), ["12", "+2"], "a held-only staff does nothing in the pack");
+    assert.deepEqual(await magicNumbers({ class: "wizard", mainHand: "威力法杖", ...inventoryOf(staff) }).then(result => [result.ac, result.dexSave]), ["14", "+4"], "held staff adds AC and saves");
+    await page.evaluate(() => Inventory.setAttuned("staff", false));
+    await page.waitForFunction(() => document.getElementById("ac-display").value === "12");
+    assert.equal(await page.inputValue("#save-dex"), "+2", "ending attunement recalculates");
+    await page.evaluate(() => {
+      document.getElementById("auto-calculate-key-stats-toggle").checked = false;
+      document.getElementById("ac-display").value = "30";
+      Inventory.setAttuned("staff", true);
+    });
+    assert.equal(await page.inputValue("#ac-display"), "30", "manual AC stays manual");
+    await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
+
+    // 施法數字（法師 5 級，智力 16：DC 14、命中 +6）：法杖與魔杖要拿在手上、法袍要穿上，需要同調的都要同調；跟著所選的施法屬性重算。
+    const caster = { ...magicBase, class: "wizard", level: "5", int: "16", cha: "12", "spellcasting-ability": "int", mainHand: "", offHand: "", armor: "", "spell-save-dc": "14", "spell-attack-bonus": "+6" };
+    const spellNumbers = extra => page.evaluate(([caster, extra]) => {
+      applyStateObject({ ...caster, ...extra });
+      return [document.getElementById("spell-save-dc").value, document.getElementById("spell-attack-bonus").value];
+    }, [caster, extra]);
+    const spellFields = () => page.evaluate(() => [document.getElementById("spell-save-dc").value, document.getElementById("spell-attack-bonus").value]);
+    const wand = { uid: "wand", quantity: 1, magic: { id: "wand-of-the-war-mage-plus", bonus: 2 } };
+    const robe = { uid: "robe", quantity: 1, attuned: true, worn: true, magic: { id: "robe-of-the-archmagi" } };
+    const heldWand = { mainHand: "戰法魔杖+2" };
+    const heldStaff = id => ({ uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id } });
+    assert.deepEqual(await spellNumbers({ ...heldWand, ...inventoryOf(wand) }), ["14", "+6"], "an unattuned wand adds nothing");
+    assert.deepEqual(await spellNumbers(inventoryOf({ ...wand, attuned: true })), ["14", "+6"], "an attuned wand in the pack adds nothing");
+    assert.deepEqual(await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }) }), ["14", "+8"], "an attuned wand in hand only raises spell attacks");
+    // 魔杖不是武器：沒有攻擊列、熟練警告或精通，裝備摘要寫類別；副手的魔杖佔用那隻手，兩用武器不用雙手骰。
+    assert.deepEqual(await page.evaluate(() => {
+      const value = id => document.getElementById(id).value;
+      const summary = document.getElementById("equipment-loadout-summary-content");
+      return { attack: [value("atk-main-name"), value("atk-main-hit"), value("atk-main-dmg")], warnings: summary.querySelectorAll(".equipment-proficiency-warning").length, row: summary.querySelector(".equipment-summary-row").textContent };
+    }), { attack: ["", "", ""], warnings: 0, row: "戰法魔杖+2：魔杖" }, "a wand in hand has no attack row and is not a weapon");
+    await spellNumbers({ class: "fighter", mainHand: "長劍", offHand: "戰法魔杖+2", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, { ...wand, attuned: true }) });
+    assert.deepEqual(await page.evaluate(() => ["atk-main-dmg", "atk-off-name", "atk-off-hit"].map(id => document.getElementById(id).value)),
+      ["1d8+3揮砍", "", ""], "a wand in the off hand occupies it without an attack row");
+    assert.deepEqual(await page.evaluate(() => {
+      applyStateObject({ class: "wizard", mainHand: "巨劍", offHand: "", __inventory: { version: 1, items: [{ uid: "great", itemId: "巨劍", quantity: 1 }, { uid: "wand", quantity: 1, attuned: true, magic: { id: "wand-of-the-war-mage-plus", bonus: 2 } }] } });
+      const offHand = document.getElementById("offHand");
+      return [offHand.disabled, [...offHand.options].some(option => option.value === "戰法魔杖+2"), [...document.getElementById("mainHand").options].some(option => option.value === "戰法魔杖+2")];
+    }), [true, false, true], "a two-handed weapon leaves no off hand for a wand");
+    await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }) });
+    await page.evaluate(value => { const select = document.getElementById("spellcasting-ability"); select.value = value; select.dispatchEvent(new Event("change", { bubbles: true })); }, "cha");
+    assert.deepEqual(await spellFields(), ["12", "+6"], "the bonus follows the selected spellcasting ability");
+    await page.evaluate(value => { const select = document.getElementById("spellcasting-ability"); select.value = value; select.dispatchEvent(new Event("change", { bubbles: true })); }, "int");
+    await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }) });
+    await page.evaluate(() => Inventory.setAttuned("wand", false));
+    await page.waitForFunction(() => document.getElementById("spell-attack-bonus").value === "+6");
+    await page.evaluate(() => Inventory.setAttuned("wand", true));
+    await page.waitForFunction(() => document.getElementById("spell-attack-bonus").value === "+8");
+    assert.deepEqual(await spellNumbers(inventoryOf(robe)), ["16", "+8"], "the worn robe raises both the save DC and spell attacks");
+    assert.deepEqual(await spellNumbers(inventoryOf({ ...robe, worn: false })), ["14", "+6"], "the robe does nothing until worn");
+    assert.deepEqual(await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }, robe) }), ["16", "+10"], "different items stack");
+    // 純善護符：穿戴或手持任一即可，兩者都沒有時不算。
+    const talisman = { uid: "talisman", quantity: 1, attuned: true, magic: { id: "talisman-of-pure-good" } };
+    assert.deepEqual([
+      (await spellNumbers(inventoryOf(talisman)))[1],
+      (await spellNumbers(inventoryOf({ ...talisman, worn: true })))[1],
+      (await spellNumbers({ offHand: "純善護符", ...inventoryOf(talisman) }))[1]
+    ], ["+6", "+8", "+8"], "a talisman counts worn or held");
+    for (const [name, id] of [["威力法杖", "staff-of-power"], ["叢林法杖", "staff-of-the-woodlands"], ["賢者法杖", "staff-of-the-magi"]]) {
+      assert.deepEqual(await spellNumbers(inventoryOf(heldStaff(id))), ["14", "+6"], `${name} does nothing in the pack`);
+      assert.deepEqual(await spellNumbers({ mainHand: name, ...inventoryOf(heldStaff(id)) }), ["14", "+8"], `${name} counts once held`);
+    }
+    assert.match(await page.locator("#equipment-loadout-summary-content").evaluate(element => element.textContent), /賢者法杖\s*法術命中\+2/u, "the loadout summary explains the bonus");
+    assert.deepEqual(await spellNumbers({ "spell-save-dc": "19", "spell-attack-bonus": "+9", ...inventoryOf({ uid: "plain", itemId: "長棍", quantity: 1 }) }), ["19", "+9"], "a character without magic bonuses keeps its saved numbers after a magic character");
+    await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }) });
+    await page.evaluate(() => {
+      document.getElementById("auto-calculate-key-stats-toggle").checked = false;
+      document.getElementById("spell-attack-bonus").value = "+30";
+      Inventory.setAttuned("wand", false);
+    });
+    assert.deepEqual(await spellFields(), ["14", "+30"], "manual spell numbers stay manual");
+    await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
+
     // 兩用武器：一般模式主手的另一手空著或武藝才算雙手；主手2模式只看有沒有持盾；一般副手欄不適用。
     const versatileBase = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "1", str: "16", dex: "10", armor: "",
       mainHand: "長劍", offHand: "", offHandAsMain: false, main2Shield: false, "weapon-attack-automation": true,
@@ -1320,6 +1980,8 @@ async function verifyEquipmentLoadout(browser, url) {
       class: "druid", level: "3", str: "10", dex: "10", wis: "16", "spellcasting-ability": "wis", mainHand: "長棍", offHand: "", offHandAsMain: false, armor: "",
       shillelaghWeaponHand: "none", shillelaghDamageType: "",
       __inventory: { version: 1, items: [{ uid: "quarterstaff", itemId: "長棍", quantity: 1 }, { uid: "longsword", itemId: "長劍", quantity: 1 }] } };
+    await page.evaluate(state => applyStateObject(state), { ...shillelaghState, mainHand: "長棍+1", shillelaghWeaponHand: "main", __inventory: { version: 1, items: [{ uid: "quarterstaff", itemId: "長棍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } }] } });
+    assert.deepEqual([await page.inputValue("#atk-main-hit"), await page.inputValue("#atk-main-dmg")], ["+6", "1d8+4力場"], "Shillelagh keeps the magic bonus");
     await page.evaluate(state => applyStateObject(state), shillelaghState);
     const shillelaghControls = () => page.evaluate(() => ["main", "off"].map(hand => !document.querySelector(`[data-shillelagh-hand="${hand}"]`).hidden));
     assert.deepEqual(await shillelaghControls(), [true, false], "only the hand holding a club or quarterstaff offers Shillelagh");
@@ -1384,10 +2046,11 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.click("#tabletop-condition-manage");
     await page.locator('input[data-condition-option="unconscious"]').check();
     await page.locator("#tabletop-condition-form").getByRole("button", { name: "套用", exact: true }).click();
-    await page.locator(".app-toast__message").filter({ hasText: /^你手上的東西因昏迷掉落，橡棍術結束。$/u }).first().waitFor();
+    await page.locator(".app-toast__message").filter({ hasText: /^你手上的東西因昏迷掉落：長棍，橡棍術結束。$/u }).first().waitFor();
     assert.equal(await page.evaluate(() => TabletopMode.getPersistentSpellEffects().find(effect => effect.spellId === "shillelagh").active), false, "falling unconscious ends Shillelagh");
-    await page.evaluate(() => TabletopMode.setPanel("actions"));
-    await tabletopDamageIs("1d8鈍擊");
+    // 昏迷時長棍掉落：主手清空、回到物品欄，記下原本的選擇讓醒來後撿回。
+    assert.equal(await page.inputValue("#mainHand"), "", "falling unconscious drops the quarterstaff");
+    assert.deepEqual(await page.evaluate(() => TabletopMode.collectState().droppedHands), { mainHand: "長棍", offHand: "", main2Shield: false, main2ShieldItem: "" });
     await page.evaluate(() => TabletopMode.setPanel("spells"));
     await castShillelagh();
     assert.match(await page.locator(".app-dialog .tabletop-cast-form__error").innerText(), /昏迷/u, "an unconscious character cannot cast Shillelagh");
@@ -1956,7 +2619,7 @@ async function verifyFeatEligibilityWarnings(browser, url) {
     await page.evaluate(() => {
       window.validatePdfCharacterName = async () => ({ fits: true });
       window.validatePdfEnglishName = async () => ({ fits: true });
-      window.exportCharacterPdfFromState = async state => { window.__featWarningPdfExport = state; };
+      window.exportCharacterPdfFromState = async (state, options) => { window.__featWarningPdfExport = state; window.__featWarningPdfOptions = options; };
     });
     await page.click("#utility-menu-toggle");
     await page.click("#export-pdf-btn");
@@ -1975,6 +2638,9 @@ async function verifyFeatEligibilityWarnings(browser, url) {
     await page.waitForFunction(() => !!window.__featWarningPdfExport);
     assert.equal(await page.evaluate(() => window.__featWarningPdfExport["speed-display"]), "30", "forced PDF uses gated numeric values");
     assert.equal(await page.evaluate(() => window.__featWarningPdfExport["derived-feat-fighter-level-4"]), "迅捷步法", "forced PDF preserves selected feat");
+    assert.equal(await page.evaluate(() => window.__featWarningPdfOptions.hasSpeedyFeat), false, "export flow passes the gated Speedy result");
+    await page.addScriptTag({ path: path.join(__dirname, "pdf-field-map.js") });
+    assert.equal(await page.evaluate(() => buildPdfFieldPayload(window.__featWarningPdfExport, window.__featWarningPdfOptions).speed1), "30", "PDF speed field excludes the ineligible feat");
     console.log("Feat eligibility: selection retention, theme warnings, numeric gating, manual override, JSON/share/autosave and advisory PDF export passed.");
   } finally { await context.close(); }
 }
@@ -2732,6 +3398,182 @@ async function verifyConditionEffects(browser, url) {
   }
 }
 
+// 死亡豁免：加上目前生效的魔法物品豁免加值（總值 10 以上成功，1、20 看原骰），癒合護符把原骰 9 以下改成 10。
+async function verifyDeathSaveMagicItems(browser, url) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => !!window.TabletopMode && !!window.DiceRoller && !!window.MagicItemCatalog);
+    await page.check("#legal-dismiss");
+    await page.click("#legal-close-btn");
+    const evaluate = (roll, options) => page.evaluate(([roll, options]) => {
+      const { outcome, successes, failures, restoredHp, die, total } = TabletopMode.logic.evaluateDeathSaveRoll(roll, options);
+      return { outcome, successes, failures, restoredHp, die, total };
+    }, [roll, options]);
+    // 不傳加值時與只看原骰相同。
+    assert.deepEqual(await page.evaluate(() => [9, 10, 1, 20].map(roll => TabletopMode.logic.evaluateDeathSaveRoll(roll).outcome)), ["failure", "success", "failure", "revive"]);
+    assert.equal((await evaluate(1)).failures, 2);
+    assert.deepEqual(await evaluate(8, { bonus: 2 }), { outcome: "success", successes: 1, failures: 0, restoredHp: 0, die: 8, total: 10 }, "a save bonus counts toward 10");
+    assert.deepEqual(await evaluate(7, { bonus: 2 }), { outcome: "failure", successes: 0, failures: 1, restoredHp: 0, die: 7, total: 9 });
+    assert.deepEqual(await evaluate(1, { bonus: 9 }), { outcome: "failure", successes: 0, failures: 2, restoredHp: 0, die: 1, total: 10 }, "a natural 1 stays two failures whatever the bonus");
+    assert.equal((await evaluate(20, { bonus: -3 })).outcome, "revive", "a natural 20 revives whatever the bonus");
+    assert.deepEqual(await evaluate(3, { minimum: 10 }), { outcome: "success", successes: 1, failures: 0, restoredHp: 0, die: 10, total: 10 }, "the periapt raises 9 or lower to 10");
+    assert.deepEqual(await evaluate(1, { minimum: 10, bonus: 2 }), { outcome: "success", successes: 1, failures: 0, restoredHp: 0, die: 10, total: 12 }, "the periapt also raises a natural 1");
+    assert.equal((await evaluate(15, { minimum: 10 })).die, 15);
+
+    const staff = { uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id: "staff-of-power" } };
+    const periapt = { uid: "periapt", itemId: "癒合護符", quantity: 1, attuned: true, worn: true, magic: { id: "periapt-of-wound-closure" } };
+    const setup = (items, extra = {}) => page.evaluate(([items, extra]) => {
+      applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "wizard", level: "5", str: "10", dex: "10", con: "10", int: "16", wis: "10", cha: "10",
+        hp: "0", mainHand: "", offHand: "", offHandAsMain: false, main2Shield: false, armor: "", __inventory: { version: 1, items }, ...extra });
+      TabletopMode.applyState({ activeConditions: ["unconscious", "prone", "incapacitated"] });
+      TabletopMode.setMode("tabletop");
+      TabletopMode.setPanel("overview");
+      DiceRoller.setEnabled(true);
+    }, [items, extra]);
+    const roll = page.locator("#tabletop-death-saves .tabletop-death-roll");
+    const help = () => page.locator("#tabletop-death-saves .tabletop-field-help").first().innerText();
+    await setup([]);
+    assert.equal(await roll.innerText(), "死亡豁免", "no bonus keeps the plain button");
+    assert.match(await help(), /^目前為昏迷；死亡豁免 10\+ 成功，1＝2 次失敗，20＝恢復 1 HP。$/u);
+    await setup([staff], { mainHand: "威力法杖" });
+    assert.equal(await roll.innerText(), "死亡豁免 +2", "the held staff adds its save bonus");
+    assert.match(await help(), /豁免加值 \+2（威力法杖）。$/u);
+    // 擲骰帶加值：原骰 8 +2 = 10 成功。
+    await page.evaluate(() => { window.__realRandom = crypto.getRandomValues; crypto.getRandomValues = values => { values[0] = 7; return values; }; });
+    await roll.click();
+    await page.evaluate(() => { crypto.getRandomValues = window.__realRandom; });
+    assert.equal((await page.evaluate(() => TabletopMode.collectState())).deathSaveSuccesses, 1, "8 +2 is a success");
+    await page.waitForFunction(() => document.getElementById("tabletop-live-status").textContent === "死亡豁免擲出 8 +2 = 10：成功，目前成功 1/3。");
+    // 癒合護符沒穿上不算；穿上後原骰 3 改為 10。
+    await setup([staff, { ...periapt, worn: false }], { mainHand: "威力法杖" });
+    assert.doesNotMatch(await help(), /癒合護符/u, "an unworn periapt does nothing");
+    await setup([staff, periapt], { mainHand: "威力法杖" });
+    assert.match(await help(), /豁免加值 \+2（威力法杖）；癒合護符：原骰 9 以下改為 10。$/u);
+    await page.evaluate(() => TabletopMode.applyState({ deathSaveSuccesses: 0, deathSaveFailures: 0 }));
+    await page.evaluate(() => { window.__realRandom = crypto.getRandomValues; crypto.getRandomValues = values => { values[0] = 2; return values; }; });
+    await roll.click();
+    await page.evaluate(() => { crypto.getRandomValues = window.__realRandom; });
+    await page.waitForFunction(() => document.getElementById("tabletop-live-status").textContent === "死亡豁免擲出 3（癒合護符改為 10）+2 = 12：成功，目前成功 1/3。");
+    assert.deepEqual(errors, [], "browser runtime errors");
+  } finally {
+    await context.close();
+  }
+}
+
+// 昏迷時手上的東西掉落：主手、副手（主手 2）與主手 2 的盾牌清空、回到物品欄；醒來後可撿回。
+async function verifyUnconsciousDropsHands(browser, url) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => !!window.TabletopMode && !!window.DiceRoller && !!window.MagicItemCatalog);
+    await page.check("#legal-dismiss");
+    await page.click("#legal-close-btn");
+    const staff = { uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id: "staff-of-power" } };
+    const shield = { uid: "shield", itemId: "盾牌", quantity: 1 };
+    const base = { __spellManagement: { version: 2, manual: false, entries: [] }, __autoCalculatedChecks: true, class: "wizard", level: "5", str: "10", dex: "10", con: "10", int: "16", wis: "10", cha: "10",
+      hp: "20", mainHand: "威力法杖", offHand: "盾牌", offHandAsMain: false, main2Shield: false, armor: "", __inventory: { version: 1, items: [staff, shield, { uid: "plain", itemId: "長棍", quantity: 1 }] } };
+    const load = state => page.evaluate((state) => {
+      applyStateObject(state);
+      TabletopMode.applyState({});
+      TabletopMode.setMode("tabletop");
+      TabletopMode.setPanel("overview");
+      DiceRoller.setEnabled(true);
+    }, state);
+    await load(base);
+    const hands = () => page.evaluate(() => ({
+      mainHand: document.getElementById("mainHand").value, offHand: document.getElementById("offHand").value,
+      main2Shield: document.getElementById("main2Shield").checked,
+      slots: Inventory.entries().filter(entry => entry.slot).map(entry => entry.slot).sort()
+    }));
+    const state = () => page.evaluate(() => TabletopMode.collectState());
+    const row = page.locator("#tabletop-dropped-hands");
+    const toast = pattern => page.locator(".app-toast__message").filter({ hasText: pattern }).first().waitFor();
+    const life = async (operation, amount) => {
+      await page.fill("#tabletop-life-amount", String(amount));
+      await page.locator(`#tabletop-life-form button[value="${operation}"]`).click();
+    };
+    assert.deepEqual(await hands(), { mainHand: "威力法杖", offHand: "盾牌", main2Shield: false, slots: ["mainHand", "offHand"] });
+    assert.equal(await row.isHidden(), true, "nothing dropped yet");
+    assert.equal(Object.hasOwn(await state(), "droppedHands"), false, "the saved state has no droppedHands until something drops");
+
+    // 受傷降到 0：昏迷、手上的東西掉落；手持才算的 +2 不再算進死亡豁免。
+    await life("damage", 30);
+    await toast(/^你手上的東西因昏迷掉落：威力法杖、盾牌。$/u);
+    assert.deepEqual(await hands(), { mainHand: "", offHand: "", main2Shield: false, slots: [] }, "the held items go back to the inventory");
+    assert.deepEqual((await state()).droppedHands, { mainHand: "威力法杖", offHand: "盾牌", main2Shield: false, main2ShieldItem: "" });
+    assert.equal(await page.locator("#tabletop-death-saves .tabletop-death-roll").innerText(), "死亡豁免", "the dropped staff no longer adds to death saves");
+    assert.equal(await row.innerText(), "昏迷時掉落：威力法杖、盾牌（醒來後可撿回）");
+    assert.equal(await row.locator("button").count(), 0, "no pick-up while unconscious");
+
+    // JSON、autosave 與分享帶著掉落紀錄（分享另在 validate-ui.js --data-only），載入時不再卸下、不改裝備欄。
+    // 自動計算開關不帶：applyStateObject 會派送 change，跳出「開啟自動計算」確認（與本測試無關）。
+    const saved = await page.evaluate(() => { const { "auto-calculate-key-stats-toggle": toggle, ...data } = collectStateObject(); return data; });
+    assert.deepEqual(saved.droppedHands, { mainHand: "威力法杖", offHand: "盾牌", main2Shield: false, main2ShieldItem: "" });
+    assert.deepEqual((await page.evaluate(() => collectShareState())).droppedHands, saved.droppedHands, "share links carry the drop record");
+    await page.evaluate(state => applyStateObject(state), { ...saved, mainHand: "威力法杖", offHand: "" });
+    assert.equal((await hands()).mainHand, "威力法杖", "loading an unconscious character keeps its saved equipment");
+    assert.deepEqual((await state()).droppedHands, saved.droppedHands, "loading keeps the drop record");
+    await page.evaluate(state => applyStateObject(state), saved);
+    assert.deepEqual(await hands(), { mainHand: "", offHand: "", main2Shield: false, slots: [] });
+
+    // 醒來後撿回。
+    await load(base);
+    await life("damage", 30);
+    await life("heal", 5);
+    assert.equal(await row.locator(".tabletop-dropped-hands__text").innerText(), "昏迷時掉落：威力法杖、盾牌");
+    await row.getByRole("button", { name: "撿回威力法杖、盾牌" }).click();
+    assert.deepEqual(await hands(), { mainHand: "威力法杖", offHand: "盾牌", main2Shield: false, slots: ["mainHand", "offHand"] }, "picking up re-equips both hands");
+    await page.waitForFunction(() => document.getElementById("tabletop-live-status").textContent === "已撿回威力法杖、盾牌。");
+    assert.equal(await row.isHidden(), true);
+    assert.equal(Object.hasOwn(await state(), "droppedHands"), false);
+
+    // 手動勾昏迷也會掉落；醒來後自己拿了別的東西，那隻手不覆蓋，只撿回空著的手；「不用了」清掉紀錄。
+    await page.click("#tabletop-condition-manage");
+    await page.locator('input[data-condition-option="unconscious"]').check();
+    await page.locator("#tabletop-condition-form").getByRole("button", { name: "套用", exact: true }).click();
+    assert.equal((await hands()).mainHand, "", "a manually added unconscious condition drops the items too");
+    await page.evaluate(() => TabletopMode.applyState({ ...TabletopMode.collectState(), activeConditions: [] }));
+    await page.evaluate(() => { const select = document.getElementById("mainHand"); select.value = "長棍"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+    await row.getByRole("button", { name: "撿回威力法杖、盾牌" }).click();
+    await toast(/^已撿回盾牌；威力法杖不在物品欄或那隻手已有東西，未裝備。$/u);
+    assert.deepEqual(await hands(), { mainHand: "長棍", offHand: "盾牌", main2Shield: false, slots: ["mainHand", "offHand"] });
+    await page.evaluate(() => TabletopMode.applyState({ droppedHands: { mainHand: "長棍", offHand: "", main2Shield: false, main2ShieldItem: "" } }));
+    await row.getByRole("button", { name: "不撿回昏迷時掉落的物品" }).click();
+    assert.equal(await row.isHidden(), true);
+    assert.equal(Object.hasOwn(await state(), "droppedHands"), false);
+
+    // 主手 2 與盾牌：三個都卸下，撿回時盾牌重新勾選。
+    const fighter = { ...base, class: "fighter", mainHand: "長劍", offHand: "短劍", offHandAsMain: true, main2Shield: true,
+      __inventory: { version: 1, items: [{ uid: "sword", itemId: "長劍", quantity: 1 }, { uid: "short", itemId: "短劍", quantity: 1 }, shield] } };
+    await load(fighter);
+    assert.deepEqual(await hands(), { mainHand: "長劍", offHand: "短劍", main2Shield: true, slots: ["mainHand", "offHand", "shield"] });
+    await life("damage", 99);
+    await toast(/^你手上的東西因昏迷掉落：長劍、短劍、盾牌。$/u);
+    assert.deepEqual(await hands(), { mainHand: "", offHand: "", main2Shield: false, slots: [] });
+    await life("heal", 5);
+    await row.getByRole("button", { name: "撿回長劍、短劍、盾牌" }).click();
+    assert.deepEqual(await hands(), { mainHand: "長劍", offHand: "短劍", main2Shield: true, slots: ["mainHand", "offHand", "shield"] });
+
+    // 手上沒東西時維持原本的提示。
+    await load({ ...base, mainHand: "", offHand: "" });
+    await life("damage", 30);
+    await toast(/^你手上的東西因昏迷掉落。$/u);
+    assert.equal(await row.isHidden(), true);
+    assert.deepEqual(errors, [], "browser runtime errors");
+  } finally {
+    await context.close();
+  }
+}
+
 async function verifyMergedActionUi(browser, url) {
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -3207,6 +4049,8 @@ async function main() {
     await verifyUiAndPersistence(page, url);
     await verifyClassTabletopUpdates(page);
     await verifyConditionEffects(browser, url);
+    await verifyDeathSaveMagicItems(browser, url);
+    await verifyUnconsciousDropsHands(browser, url);
     await verifyManualWeaponVisibility(page, url);
     await verifyEquipmentLoadout(browser, url);
     await verifyAutomaticFeatRows(browser, url);

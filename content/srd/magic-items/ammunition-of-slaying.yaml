@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ammunition-of-slaying
+name: 屠殺彈藥
+nameEn: "Ammunition of Slaying"
+source: srd
+category: weapon
+rarity: very-rare
+attunement: false
+base: { any: [ ammunition ], label: 任意彈藥 }
+options:
+  - id: creatureType
+    label: 生物類型
+    choices:
+      - { value: aberration, label: 異怪 }
+      - { value: beast, label: 野獸 }
+      - { value: celestial, label: 天界生物 }
+      - { value: construct, label: 構裝生物 }
+      - { value: dragon, label: 龍類 }
+      - { value: elemental, label: 元素生物 }
+      - { value: humanoid, label: 人型生物 }
+      - { value: fey, label: 精類 }
+      - { value: fiend, label: 邪魔 }
+      - { value: giant, label: 巨人 }
+      - { value: monstrosity, label: 怪獸 }
+      - { value: ooze, label: 軟泥怪 }
+      - { value: plant, label: 植物 }
+      - { value: undead, label: 不死生物 }
+consumable: true
+manualEffect: true
+text: |-
+  這種魔法彈藥專門用來屠殺特定類型的生物，該類型由DM選擇，或由DM在下表上擲骰隨機決定。若該類型的生物受到這種彈藥的傷害，該生物進行一次DC 17的體質豁免，失敗者額外受到6d10力場傷害，成功者額外傷害減半。
+
+  對生物造成其額外傷害後，這枚彈藥就變成非魔法的。
+
+  | 1d100 | 生物類型 | 1d100 | 生物類型 |
+  | --- | --- | --- | --- |
+  | 01–10 | 異怪 | 51–60 | 精類 |
+  | 11–15 | 野獸 | 61–70 | 邪魔 |
+  | 16–20 | 天界生物 | 71–75 | 巨人 |
+  | 21–25 | 構裝生物 | 76–80 | 怪獸 |
+  | 26–35 | 龍類 | 81–85 | 軟泥怪 |
+  | 36–45 | 元素生物 | 86–90 | 植物 |
+  | 46–50 | 人型生物 | 91–00 | 不死生物 |

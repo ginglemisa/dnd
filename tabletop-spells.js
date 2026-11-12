@@ -44,6 +44,94 @@
       }).concat(globalScope.Spellbook?.getRitualEntries() || []);
   }
 
+  // 從魔法物品施放的法術（內容檔 actions 的 spell；character-rules.js 的 getActiveMagicEffects().actions）：
+  // 生效中的物品（已同調、穿戴或手持，when: owned 持有就算）才列，不看職業法表。荒野形態期間不能施法（castItemSpell 擋下）。
+  function getItemSpellEntries() {
+    const effects = globalScope.TabletopMode?.getMagicEffects?.() || globalScope.getActiveMagicEffects?.();
+    return (effects?.actions || []).flatMap((item) => {
+      const spell = item.action.spell ? globalScope.SpellCatalog?.getItemSpell?.(item.action.spell) : null;
+      if (!spell) return [];
+      return [{
+        spellId: spell.spellId,
+        spell,
+        itemSpell: item,
+        source: item.label,
+        sourceLabel: item.label,
+        sourceKey: `magic-item:${item.itemId}:${item.action.id}`,
+        spellSource: "magic-item",
+        spellClass: ""
+      }];
+    });
+  }
+
+  // 花費：[最少, 最多]；沒寫是 1，沒有池是 0。
+  function getItemSpellCost(action) {
+    if (!action.pool) return [0, 0];
+    return Array.isArray(action.cost) ? action.cost : [action.cost || 1, action.cost || 1];
+  }
+
+  // 目前的剩餘次數（施法視窗開著時可能已在物品詳情改過）。
+  function readItemPool(uid, poolId) {
+    if (!poolId) return null;
+    const entry = globalScope.Inventory?.getEntry(uid);
+    return entry ? globalScope.Inventory.getCharges(entry).find(pool => pool.id === poolId) || null : null;
+  }
+
+  /**
+   * 物品法術目前能不能施放：
+   * - choices：付得起的花費與對應環階 [{ cost, level }]（cost 是範圍時每多 1 次 +1 環，maxLevel 為上限）；
+   * - numbers：物品固定的 { saveDc?, attackBonus? }（stats: yours 時為 null，用角色卡的數字）；numbersText 是顯示文字；
+   * - blocked：不能施放的原因（用你的 DC 但沒有施法屬性、次數不夠）。
+   */
+  function getItemSpellState(entry) {
+    const { action, uid } = entry.itemSpell;
+    const pool = readItemPool(uid, action.pool);
+    const alsoPool = readItemPool(uid, action.alsoPool);
+    const [minimum, maximum] = getItemSpellCost(action);
+    const baseLevel = action.level || entry.spell.level;
+    const maxLevel = action.maxLevel || 9;
+    const available = action.pool ? pool?.left ?? 0 : 0;
+    const choices = [];
+    for (let cost = minimum; cost <= maximum; cost += 1) {
+      if (action.pool && cost > available) break;
+      choices.push({ cost, level: entry.spell.level === 0 ? 0 : Math.min(maxLevel, baseLevel + cost - minimum) });
+    }
+    const yours = action.stats === "yours";
+    const numbers = !yours && (Number.isInteger(action.saveDc) || Number.isInteger(action.attackBonus))
+      ? { ...(Number.isInteger(action.saveDc) ? { saveDc: action.saveDc } : {}), ...(Number.isInteger(action.attackBonus) ? { attackBonus: action.attackBonus } : {}) }
+      : null;
+    const hasAbility = Boolean(getFieldValue("spellcasting-ability"));
+    let numbersText = numbers ? formatCastNumbers(numbers) : "";
+    if (yours && hasAbility) {
+      numbersText = [getFieldValue("spell-save-dc") ? `你的豁免 DC ${getFieldValue("spell-save-dc")}` : "",
+        getFieldValue("spell-attack-bonus") ? `攻擊 ${getFieldValue("spell-attack-bonus")}` : ""].filter(Boolean).join("・");
+    }
+    let blocked = "";
+    if (yours && !hasAbility) blocked = "這件物品使用你的法術豁免 DC 與攻擊，但你沒有施法屬性。";
+    else if (action.pool && !choices.length) blocked = `${pool?.label || "次數"}不夠（剩餘 ${available}/${pool?.max ?? 0}）。`;
+    else if (action.alsoPool && !(alsoPool?.left > 0)) blocked = `${alsoPool?.label || "次數"}已用完。`;
+    return { pool, alsoPool, minimum, maximum, choices, numbers, numbersText, blocked };
+  }
+
+  // 「消耗 1～3 次充能」「消耗 2 次充能」；沒有池時是空字串。
+  function getItemSpellCostText(entry, state) {
+    if (!state.pool) return "";
+    const range = state.minimum === state.maximum ? `${state.minimum}` : `${state.minimum}～${state.maximum}`;
+    return `消耗 ${range} 次${state.pool.label}${state.alsoPool ? `與 1 次${state.alsoPool.label}` : ""}`;
+  }
+
+  // 物品法術的說明：「消耗 1～3 次充能（剩餘 5/7）・豁免 DC 15。只能以你自己為目標。」；withItem 時前面加「火球魔杖：」。
+  function getItemSpellSummary(entry, { state = getItemSpellState(entry), withItem = true } = {}) {
+    const cost = getItemSpellCostText(entry, state);
+    const parts = [cost ? `${cost}（剩餘 ${state.pool.left}/${state.pool.max}）` : "隨意施放", state.numbersText].filter(Boolean);
+    return `${withItem ? `${entry.itemSpell.label}：` : ""}${parts.join("・")}。${entry.itemSpell.action.note || ""}`;
+  }
+
+  function requiresConcentration(entry, castResult = null) {
+    if (castResult?.noConcentration || entry.itemSpell?.action.concentration === false) return false;
+    return globalScope.SpellCatalog.isConcentration(entry.spell);
+  }
+
   function isSpellCurrentlySelected(spellId) {
     return getSelectedSpellEntries().some(entry => entry.spellId === spellId);
   }
@@ -133,7 +221,7 @@
     if (elements.spellSlotsSection) elements.spellSlotsSection.hidden = slotCount === 0;
   }
 
-  function renderSelectedSpells(entries) {
+  function renderSelectedSpells(entries, itemEntries = []) {
     if (!elements.selectedSpells) return;
     const focused = elements.selectedSpells.contains(document.activeElement) ? document.activeElement : null;
     const focusedUseId = focused?.dataset.spellUseId;
@@ -146,6 +234,7 @@
       label: "儀式",
       spells: entries.filter(entry => entry.spellSource === "wizard-spellbook")
     });
+    spellGroups.push({ label: "物品", spells: itemEntries });
     const groups = spellGroups.flatMap(({ label, spells }) => {
       if (!spells.length) return [];
       const section = createElement("section", "tabletop-spell-level");
@@ -167,7 +256,7 @@
         const timing = createElement("span", "tabletop-spell-button__timing");
         const timingLabels = entry.customSpell
           ? globalScope.TabletopCustomSpells.getTimingLabels(entry.customSpell)
-          : isWildCompanionEntry(entry)
+          : entry.itemSpell ? getItemSpellTimingLabels(entry) : isWildCompanionEntry(entry)
             ? WILD_COMPANION_TIMING_LABELS
             : getSpellTimingLabels(entry.spell);
         timingLabels.forEach(label => timing.appendChild(createElement("span", "", label)));
@@ -178,6 +267,12 @@
           : showSpellDetail(entry, button));
         const source = createElement("div", "tabletop-spell-card__source tabletop-source-tag");
         source.appendChild(createElement("span", "tabletop-spell-card__source-label", entry.source));
+        // 物品法術：物品名稱後接剩餘次數；不能施放（次數不夠、沒有施法屬性）時整張卡變灰，仍可點開看說明與原因。
+        if (entry.itemSpell) {
+          const state = getItemSpellState(entry);
+          if (state.pool) source.appendChild(createElement("span", "tabletop-spell-card__count", `${state.pool.left}/${state.pool.max}`));
+          if (state.blocked) card.classList.add("is-depleted");
+        }
         const useMirrors = entry.customSpell ? null : createSpellUseMirrors(entry);
         if (useMirrors) source.appendChild(useMirrors);
         card.append(button, source);
@@ -207,11 +302,24 @@
     return [...new Set(labels)];
   }
 
+  // 物品法術：castingTime 覆寫時只列那一種；儀式不列（從物品施放不是儀式）。
+  function getItemSpellTimingLabels(entry) {
+    const override = entry.itemSpell.action.castingTime;
+    const times = override ? [override] : entry.spell.castingTimes;
+    return [...new Set(times.map(time => (
+      typeof time === "string" ? SPELL_TIMING_LABELS[time] : time.minutes ? `${time.minutes}分鐘` : `${time.hours}小時`
+    )))];
+  }
+
   function createSpellDetailContent(spell, entry = null) {
     const content = createElement("div", "tabletop-spell-detail");
     if (globalScope.TabletopMode?.getDruidForm?.()) content.appendChild(createElement("p", "druid-resource-note", "荒野形態期間不能施法；既有專注與法術效果保留。"));
     content.appendChild(createElement("p", "tabletop-spell-detail__english", spell.nameEn));
-    if (entry?.sourceLabel) {
+    if (entry?.itemSpell) {
+      const state = getItemSpellState(entry);
+      content.appendChild(createElement("p", "tabletop-spell-detail__source", getItemSpellSummary(entry, { state })));
+      if (state.blocked) content.appendChild(createElement("p", "druid-resource-note", state.blocked));
+    } else if (entry?.sourceLabel) {
       content.appendChild(createElement("p", "tabletop-spell-detail__source", entry.sourceLabel));
     }
     content.appendChild(createSpellDescriptionView(spell, { wildCompanion: isWildCompanionEntry(entry) }));
@@ -225,6 +333,8 @@
   // 法術說明本文（含網站版／SRD 版切換與野獸資料）；法術詳情與行動頁的荒野夥伴共用。
   // wildCompanion：網站版改用荒野夥伴施放時的說明；SRD 版是法術原文的譯文，不變。
   function createSpellDescriptionView(spell, { wildCompanion = false } = {}) {
+    // 只有 SRD 版的法術（從魔法物品施放）沒有網站版說明。
+    if (spell.playable === false && typeof globalScope.createSpellVersionView === "function") return globalScope.createSpellVersionView(spell.spellId, null);
     const copy = createElement("div", "tabletop-spell-detail__copy");
     const description = String((wildCompanion && globalScope.SpellCatalog?.getWildCompanionText(spell))
       || globalScope.SpellCatalog?.getTabletopText(spell) || spell.desc || "");
@@ -326,8 +436,9 @@
     return Math.max(1, Number.parseInt(document.getElementById("level")?.value || "1", 10) || 1);
   }
 
+  // 屬性用有效值（含魔法物品，character-rules.js 的 getEffectiveAbilityValue）。
   function getAbilityModifier(abilityId) {
-    const score = Number.parseInt(document.getElementById(abilityId)?.value || "10", 10);
+    const score = Number.parseInt((globalScope.getEffectiveAbilityValue?.(abilityId) ?? document.getElementById(abilityId)?.value) || "10", 10);
     return Number.isFinite(score) ? Math.floor((score - 10) / 2) : 0;
   }
 
@@ -452,6 +563,12 @@
     return Number(level) === 0 ? "戲法" : `${Number(level)} 環`;
   }
 
+  // 「豁免 DC 15・攻擊 +5」（只列有的數字）。
+  function formatCastNumbers(numbers) {
+    return [Number.isInteger(numbers.saveDc) ? `豁免 DC ${numbers.saveDc}` : "",
+      Number.isInteger(numbers.attackBonus) ? `攻擊 ${numbers.attackBonus < 0 ? "" : "+"}${numbers.attackBonus}` : ""].filter(Boolean).join("・");
+  }
+
   function createSummaryRow(term, detail) {
     const row = createElement("div", "tabletop-cast-summary__row");
     row.append(createElement("dt", "", term), createElement("dd", "", detail));
@@ -459,14 +576,15 @@
   }
 
   // scroll（法術卷軸的 { saveDc, attackBonus }）時唯一的施法方式是卷軸：不耗法術位、不升環，確認後由呼叫端用掉卷軸。
-  async function requestCastConfiguration(entry, trigger, cantrip = false, scroll = null) {
+  // item（getItemSpellState() 的結果）時唯一的施法方式是物品：不耗法術位，花費是範圍時選這次花幾次（決定環階），確認時扣物品的次數池。
+  async function requestCastConfiguration(entry, trigger, cantrip = false, scroll = null, item = null) {
     const metadata = globalScope.SpellCatalog.getCastMetadata(entry.spellId);
     const selectableTypes = globalScope.SpellCatalog.getSelectableCastDamageTypes(entry.spellId);
     const canRestoreOtherCreatureHitPoints = globalScope.SpellCatalog.hasCastOutcomeTag(
       entry.spellId,
       "can-restore-other-creature-hit-points"
     );
-    const blessedHealerEligible = !scroll && canRestoreOtherCreatureHitPoints && Boolean(buildBlessedHealerRecovery({
+    const blessedHealerEligible = !scroll && !item && canRestoreOtherCreatureHitPoints && Boolean(buildBlessedHealerRecovery({
       className: document.getElementById("class")?.value || "",
       characterLevel: getCharacterLevel(),
       castMethod: "slot",
@@ -479,7 +597,17 @@
     const persistentEffect = globalScope.TabletopMode?.getPersistentSpellEffects?.().find(effect => effect.spellId === entry.spellId);
     let effectSelf = true;
     const scrollNumbers = scroll ? `豁免 DC ${scroll.saveDc}・攻擊 +${scroll.attackBonus}` : "";
-    let castOptions = cantrip
+    let itemCost = item?.choices[0]?.cost ?? 0;
+    const getItemChoice = () => item?.choices.find(choice => choice.cost === itemCost) || null;
+    const itemPoolText = pool => pool ? `剩餘 ${pool.left}/${pool.max}` : "";
+    let castOptions = item
+      ? Object.freeze({
+        methods: Object.freeze([Object.freeze({ id: "item", label: [entry.itemSpell.label, itemPoolText(item.pool)].filter(Boolean).join("，"), effectiveLevel: item.choices[0]?.level ?? entry.spell.level, resourceId: "", resourceLabel: entry.itemSpell.label })]),
+        slots: Object.freeze([]),
+        defaultMethod: "item",
+        defaultSlotLevel: 0
+      })
+      : cantrip
       ? null
       : scroll
         ? Object.freeze({
@@ -503,6 +631,7 @@
     const getSlot = () => castOptions?.slots.find(slot => slot.level === Number(slotLevel)) || null;
     const getEffectiveLevel = () => {
       if (cantrip) return 0;
+      if (item) return getItemChoice()?.level ?? entry.spell.level;
       if (methodId === "slot") return getSlot()?.level || entry.spell.level;
       return getMethod()?.effectiveLevel || entry.spell.level;
     };
@@ -543,6 +672,29 @@
         } else {
           content.appendChild(createElement("p", "tabletop-cast-form__single", `施法方式：${castOptions.methods[0].label}`));
         }
+      }
+
+      // 物品：花費是範圍時選這次花幾次（只列付得起的），環階跟著變。
+      if (item && item.choices.length > 1) {
+        const costField = createElement("label", "tabletop-cast-form__field");
+        costField.appendChild(createElement("span", "", `消耗${item.pool.label}`));
+        const select = document.createElement("select");
+        select.setAttribute("aria-label", `消耗${item.pool.label}`);
+        select.dataset.castItemCost = "true";
+        item.choices.forEach(choice => {
+          const option = document.createElement("option");
+          option.value = String(choice.cost);
+          option.textContent = entry.spell.level === 0 ? `${choice.cost} 次` : `${choice.cost} 次（${formatCastLevel(choice.level)}）`;
+          option.selected = choice.cost === itemCost;
+          select.appendChild(option);
+        });
+        select.addEventListener("change", () => {
+          clearError();
+          itemCost = Number(select.value);
+          updateSummary();
+        });
+        costField.appendChild(select);
+        content.appendChild(costField);
       }
 
       const slotField = createElement("label", "tabletop-cast-form__field");
@@ -667,14 +819,17 @@
       else if (methodId === "slot") resource = slot ? `${slot.level} 環法術位（剩餘 ${slot.available}）` : "沒有可用法術位";
       else if (methodId === "ritual") resource = `不消耗法術位；${metadata.ritualExtraTime}`;
       else if (methodId === "scroll") resource = "1 張卷軸（施法後消失）";
+      else if (methodId === "item") resource = item.pool
+        ? `${itemCost} 次${item.pool.label}${item.alsoPool ? `與 1 次${item.alsoPool.label}` : ""}（剩餘 ${item.pool.left}/${item.pool.max}）`
+        : "不消耗次數";
       const upcast = effectiveLevel > entry.spell.level
         ? metadata.hasUpcastEffect ? "有升環效果" : "無額外升環效果"
         : "基礎環位";
-      const concentration = globalScope.SpellCatalog.isConcentration(entry.spell)
+      const concentration = requiresConcentration(entry)
         ? currentId && currentId !== entry.spellId
           ? `會取代目前專注：${getConcentrationName(currentId)}`
           : currentId === entry.spellId ? "繼續專注於同一法術" : "施法成功後開始專注"
-        : "不需專注";
+        : entry.itemSpell?.action.concentration === false ? "不需專注（物品）" : "不需專注";
       const blessedHealer = blessedHealerEligible
         ? buildBlessedHealerRecovery({
             className: document.getElementById("class")?.value || "",
@@ -703,7 +858,9 @@
               ? "不套用（本次不是使用法術位施法）"
               : "不套用（本次沒有其他生物恢復生命值）"
         )] : []),
+        ...(item?.numbersText ? [createSummaryRow("豁免 DC／攻擊", item.numbersText)] : []),
         createSummaryRow("專注", concentration),
+        ...(entry.itemSpell?.action.note ? [createSummaryRow("備註", entry.itemSpell.action.note)] : []),
         ...(persistentEffect ? [createSummaryRow("持續效果", effectSelf
           ? persistentEffect.summary
           : "套用於其他生物；自身數值不變。")] : [])
@@ -716,7 +873,7 @@
       content,
       cancelLabel: "取消",
       confirmLabel: "施法",
-      initialFocus: Boolean(persistentEffect) || selectableTypes.length > 1
+      initialFocus: (item?.choices.length || 0) > 1 || Boolean(persistentEffect) || selectableTypes.length > 1
         || (blessedHealerEligible && castOptions?.methods.some(method => method.id === "slot"))
         || (!cantrip && ((castOptions?.methods.length || 0) > 1 || (castOptions?.slots.length || 0) > 1))
         ? "content"
@@ -754,6 +911,14 @@
           render();
           return false;
         }
+        if (item) return commitItemSpell(entry, getItemChoice(), {
+          effectSelf: Boolean(persistentEffect) && effectSelf,
+          damageType,
+          onError(message) {
+            errorMessage = message;
+            render();
+          }
+        });
         if (scroll) return Object.freeze({
           ok: true,
           method: "scroll",
@@ -792,6 +957,36 @@
     });
   }
 
+  // 確認施法時扣物品的次數池（alsoPool 另扣 1 次）；次數在視窗開著時被改到不夠時不扣、留在視窗。
+  function commitItemSpell(entry, choice, { effectSelf, damageType, onError }) {
+    const state = getItemSpellState(entry);
+    const current = choice && state.choices.find(item => item.cost === choice.cost);
+    if (state.blocked || !current) {
+      onError(state.blocked || "次數已變更或不足，未消耗任何次數。");
+      return false;
+    }
+    const { uid, action } = entry.itemSpell;
+    let resourceLabel = entry.itemSpell.label;
+    if (state.pool && current.cost) {
+      const left = globalScope.Inventory.setCharges(uid, state.pool.id, state.pool.left - current.cost);
+      resourceLabel += `，消耗 ${current.cost} 次${state.pool.label}（剩餘 ${left}/${state.pool.max}）`;
+    }
+    if (state.alsoPool) globalScope.Inventory.setCharges(uid, state.alsoPool.id, state.alsoPool.left - 1);
+    return Object.freeze({
+      ok: true,
+      method: "item",
+      effectiveLevel: current.level,
+      resourceId: "",
+      resourceLabel,
+      hasUpcastEffect: true,
+      effectSelf,
+      damageType,
+      restoresOtherCreatureHitPoints: false,
+      noConcentration: action.concentration === false,
+      ...(state.numbers ? { numbers: state.numbers } : {})
+    });
+  }
+
   function getStableSpellTrigger(entry, preferredTarget = null) {
     if (
       preferredTarget instanceof HTMLElement
@@ -807,7 +1002,10 @@
       )) || null;
   }
 
+  // castResult.scroll（法術卷軸）或 castResult.numbers（魔法物品固定的數字）：{ saveDc?, attackBonus? }，取代角色的法術攻擊並寫在擲骰說明。
   function buildRollEntries(entry, castResult) {
+    const numbers = castResult.scroll ? { ...castResult.scroll, label: "法術卷軸" }
+      : castResult.numbers ? { label: "物品", ...castResult.numbers } : null;
     const modifiers = getSpellOutcomeModifiers(entry, castResult);
     const spellcastingModifier = parseModifier(getFieldValue("spell-adjustment")) ?? 0;
     return globalScope.SpellCatalog.resolveCastOutcomes(entry.spellId, {
@@ -830,9 +1028,7 @@
       const modifierText = outcome.modifierLabels.length
         ? `；已套用：${outcome.modifierLabels.join("、")}`
         : "";
-      const scrollText = castResult.scroll
-        ? `；法術卷軸：豁免 DC ${castResult.scroll.saveDc}・攻擊 +${castResult.scroll.attackBonus}`
-        : "";
+      const scrollText = numbers ? `；${numbers.label}：${formatCastNumbers(numbers)}` : "";
       const result = Object.freeze({
         expression: outcome.expression,
         fixed: outcome.fixed,
@@ -840,7 +1036,7 @@
         detail: `${castResult.fiendishVigor ? "邪魔活力：2d4 視為 8；" : ""}${outcome.context || "依術文處理"}${modifierText}${scrollText}`
       });
       if (outcome.attack !== "spell") return [result];
-      const attackBonus = castResult.scroll ? castResult.scroll.attackBonus : parseModifier(getFieldValue("spell-attack-bonus"));
+      const attackBonus = Number.isInteger(numbers?.attackBonus) ? numbers.attackBonus : parseModifier(getFieldValue("spell-attack-bonus"));
       if (attackBonus === null) throw new Error("Missing spell attack bonus");
       return [Object.freeze({
         expression: `1d20${attackBonus < 0 ? "" : "+"}${attackBonus}`,
@@ -855,7 +1051,7 @@
       globalScope.TabletopMode?.setPersistentSpellEffect(entry.spellId, true);
     }
     const currentId = globalScope.TabletopMode?.getConcentrationSpellId?.() || "";
-    if (globalScope.SpellCatalog.isConcentration(entry.spell) && currentId !== entry.spellId) {
+    if (requiresConcentration(entry, castResult) && currentId !== entry.spellId) {
       const message = currentId
         ? `已將專注替換為${entry.spell.nameZh}。`
         : `開始專注於${entry.spell.nameZh}。`;
@@ -991,6 +1187,27 @@
     await completeCast(entry, castResult, trigger);
   }
 
+  // 從魔法物品施放：不耗法術位，確認後扣物品的次數池；擲骰開著時自動擲骰（物品固定的 DC／攻擊寫在擲骰說明）。
+  // afterCommit()：扣完次數、擲骰前呼叫（物品欄關閉物品視窗），回傳之後要還焦點的元素。
+  async function castItemSpell(entry, trigger = null, { afterCommit = null } = {}) {
+    if (globalScope.TabletopMode?.getDruidForm?.()) {
+      globalScope.AppDialog?.notify("荒野形態期間不能施法；未消耗次數。");
+      return false;
+    }
+    const state = getItemSpellState(entry);
+    if (state.blocked) {
+      globalScope.AppDialog?.notify(state.blocked, { tone: "warning" });
+      return false;
+    }
+    const castResult = await requestCastConfiguration(entry, trigger, false, null, state);
+    if (!castResult?.ok) {
+      restoreStableFocus(entry.spellId, trigger, entry.sourceKey);
+      return false;
+    }
+    await completeCast(entry, castResult, afterCommit?.() || trigger);
+    return true;
+  }
+
   // 物品欄的法術卷軸施法：資格由呼叫端檢查。commit() 在玩家確認後用掉卷軸，回傳之後要還焦點的元素；用不掉時回傳 null，不施法。
   async function castSpellScroll(spellId, { scroll, trigger = null, commit } = {}) {
     if (globalScope.TabletopMode?.getDruidForm?.()) {
@@ -1016,7 +1233,8 @@
     if (!entry && globalScope.TabletopCustomSpells?.getSpell(spellId)) {
       return globalScope.TabletopCustomSpells.showDetail({ spellId }, trigger, { castable: true });
     }
-    const spell = entry?.spell || globalScope.SpellCatalog?.getSpell(spellId);
+    // 用 ID 開啟時沒有施法按鈕；只有 SRD 版的法術（物品法術、藥水的法術效果）也能查看。
+    const spell = entry?.spell || globalScope.SpellCatalog?.getSpell(spellId) || globalScope.SpellCatalog?.getItemSpell?.(spellId);
     if (!spell || !globalScope.AppDialog) return;
     const currentId = globalScope.TabletopMode?.getConcentrationSpellId?.() || "";
     const actions = [{ label: "關閉", value: "close" }];
@@ -1025,7 +1243,8 @@
       value: "stop-concentration",
       intent: "secondary"
     });
-    if (entry && canCastSpellFromTabletop(spellId) && !globalScope.TabletopMode?.getDruidForm?.()) actions.push({
+    const castable = entry?.itemSpell ? !getItemSpellState(entry).blocked : entry && canCastSpellFromTabletop(spellId);
+    if (castable && !globalScope.TabletopMode?.getDruidForm?.()) actions.push({
       label: "施法",
       value: "cast",
       intent: "primary"
@@ -1044,7 +1263,7 @@
       restoreStableFocus(spellId, trigger, entry?.sourceKey || "");
       return;
     }
-    if (result === "cast") await castSpell(entry, trigger);
+    if (result === "cast") await (entry.itemSpell ? castItemSpell(entry, trigger) : castSpell(entry, trigger));
   }
 
   function getActiveConcentrationNote(spellId, spell) {
@@ -1192,7 +1411,7 @@
   }
 
   function getEmptyMessage(entries) {
-    if (entries.some(entry => entry.customSpell)) return null;
+    if (entries.some(entry => entry.customSpell || entry.itemSpell)) return null;
     const hasClass = Boolean(document.getElementById("class")?.value);
     const hasLevel = Boolean(document.getElementById("level")?.value);
     if (!hasClass || !hasLevel) return {
@@ -1225,13 +1444,14 @@
     const customTools = document.getElementById("tabletop-custom-spells-tools");
     if (customTools) customTools.hidden = globalScope.SHARE_MODE === true;
     const entries = getSelectedSpellEntries().concat(globalScope.TabletopCustomSpells?.getEntries() || []);
-    const emptyMessage = getEmptyMessage(entries);
+    const itemEntries = getItemSpellEntries();
+    const emptyMessage = getEmptyMessage(entries.concat(itemEntries));
     elements.empty.hidden = !emptyMessage;
     elements.content.hidden = false;
     if (emptyMessage) renderEmptyState(emptyMessage);
     renderCastingSummary();
     renderSpellSlots();
-    renderSelectedSpells(entries);
+    renderSelectedSpells(entries, itemEntries);
     renderConcentrationSummaries();
   }
 
@@ -1321,6 +1541,8 @@
     document.addEventListener("input", scheduleRender);
     document.addEventListener("change", scheduleRender);
     globalScope.addEventListener("tabletopstatechange", scheduleRender);
+    // 物品法術：同調、穿戴、手持與剩餘次數。
+    document.addEventListener("inventory:change", scheduleRender);
     globalScope.addEventListener("spellmanagementchange", scheduleRender);
     globalScope.addEventListener("tabletopactionpreferenceschange", scheduleRender);
     globalScope.addEventListener("dicerollmodechange", scheduleRender);
@@ -1347,10 +1569,14 @@
     isSpellCurrentlySelected,
     showSpellDetail,
     castSpellScroll,
+    castItemSpell,
+    getItemSpellEntries,
+    getItemSpellSummary,
     createSpellDescriptionView,
     refresh: scheduleRender,
     logic: Object.freeze({
       buildRollEntries,
+      getItemSpellState,
       buildLifeDiscipleModifier,
       buildBlessedHealerRecovery
     })

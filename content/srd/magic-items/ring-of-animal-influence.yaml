@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-animal-influence
+name: 支配動物戒指
+nameEn: "Ring of Animal Influence"
+source: srd
+category: ring
+rarity: rare
+attunement: false
+use: worn
+pools:
+  - { id: charges, label: 充能, max: 3, recover: dawn, amount: 1d3 }
+actions:
+  - { id: animal-friendship, spell: animal-friendship, pool: charges, saveDc: 13 }
+  - { id: fear, spell: fear, pool: charges, saveDc: 13, note: 只影響野獸。 }
+  - { id: speak-with-animals, spell: speak-with-animals, pool: charges }
+text: |-
+  這枚戒指有3次充能，每天黎明恢復1d3次已消耗的充能。穿戴這枚戒指時，你可以消耗1次充能，從戒指施放下列法術之一（豁免DC 13）：
+
+  - _化獸為友_
+  - _恐懼術_（僅影響野獸）
+  - _動物交談_

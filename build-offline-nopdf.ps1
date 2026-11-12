@@ -221,6 +221,9 @@ $html = $html.Replace('</head>', '<script src="spell-srd.generated.js" defer></s
 # Likewise the SRD monster stat blocks (the beast card's "SRD 版").
 $html = $html.Replace('</head>', '<script src="monster-srd.generated.js" defer></script></head>')
 
+# Likewise the magic item descriptions (MagicItemCatalog.getText).
+$html = $html.Replace('</head>', '<script src="magic-item-text.generated.js" defer></script></head>')
+
 # The offline bundle carries public class content only, even when a local build has a private content pack.
 $privateClassContentTag = '<script src="class-content.private.generated.js" defer></script>'
 if (-not $html.Contains($privateClassContentTag)) { throw "index.html is missing $privateClassContentTag" }

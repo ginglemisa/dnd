@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: ring-of-shooting-stars
+name: 流星戒指
+nameEn: "Ring of Shooting Stars"
+source: srd
+category: ring
+rarity: very-rare
+attunement: true
+use: worn
+pools:
+  - { id: charges, label: 充能, max: 6, recover: dawn, amount: 1d6 }
+actions:
+  - { id: ball-lightning, name: 閃電球, type: magic, pool: charges, cost: 2, text: 在 120 呎內創造最多四顆閃電球（需要專注，最長 1 分鐘），附贈動作各移動 30 呎；球體第一次來到你以外的生物 5 呎內時放出閃電，DC 15 敏捷豁免，傷害依球數（見說明），成功減半。 }
+  - { id: shooting-stars, name: 流星, type: magic, pool: charges, cost: [ 1, 3 ], text: 每消耗 1 次充能射出一顆光點到 60 呎內一點，以那點為起點的 15 呎立方體內每個生物 DC 15 敏捷豁免，失敗受到 5d4 光耀傷害，成功減半。 }
+  - { id: dancing-lights, spell: dancing-lights }
+  - { id: light, spell: light }
+  - { id: faerie-fire, spell: faerie-fire, pool: charges }
+text: |-
+  你可以從這枚戒指施放_舞光術_或_光亮術_。
+
+  這枚戒指有6次充能，每天黎明恢復1d6次已消耗的充能。你可以消耗它的充能來使用下列特性。
+
+  **_妖火。_** 你可以消耗1次充能，從戒指施放_妖火_。
+
+  **_閃電球。_** 你可以消耗2次充能，作為魔法動作創造最多四顆直徑3呎的閃電球。每顆球體出現在距離你自身120呎內、你看得見的一個未被佔據的空間。球體在你維持專注期間持續存在，最長1分鐘。每顆球體在半徑30呎內散發微光光照。
+
+  作為附贈動作，你可以移動每顆球體最多30呎，但離你自身不得超過120呎。球體第一次來到除你之外、未處於全掩蔽後方的生物5呎內時，球體會對該生物放出閃電並消失。該生物進行一次DC 15的敏捷豁免。豁免失敗時，該生物受到的閃電傷害依你創造的球體數量而定，如下表所示。豁免成功時，該生物受到一半傷害。
+
+  | 球體數量 | 閃電傷害 | 球體數量 | 閃電傷害 |
+  | --- | --- | --- | --- |
+  | 1 | 4d12 | 3 | 2d6 |
+  | 2 | 5d4 | 4 | 2d4 |
+
+  _流星。_ 你可以進行魔法動作，消耗1至3次充能。你每消耗1次充能，就從戒指朝你自身60呎內你看得見的一點射出一顆發光的光點。以該點為起點的15呎立方體內的每個生物都會被火花籠罩，並進行一次DC 15的敏捷豁免，豁免失敗者受到5d4光耀傷害，豁免成功者受到一半傷害。

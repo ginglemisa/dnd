@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: dust-of-dryness
+name: 乾燥粉
+nameEn: "Dust of Dryness"
+source: srd
+category: wondrous
+group: consumable
+rarity: uncommon
+attunement: false
+pools:
+  - { id: pinches, label: 粉末（撮）, max: 10 }
+actions:
+  - { id: dry, name: 撒粉末, type: action, pool: pinches, when: owned, text: 撒在水上，把最多邊長 15 呎的水變成彈珠大的小球；或撒在 5 呎內主要由水構成的元素生物身上，DC 13 體質豁免，失敗受到 10d6 黯蝕傷害，成功減半。 }
+text: |-
+  這個小包裡裝有1d6 + 4撮粉末。作為使用動作，你可以將一撮粉末撒在水上，把最多一個邊長15呎的水之立方體變成一顆彈珠大小的小球，小球會漂浮或停留在粉末撒下處附近。小球的重量可忽略不計。生物可以進行使用動作，將小球砸向堅硬的表面，使小球碎裂並釋放粉末所吸收的水。這樣做會摧毀小球並結束其魔法。
+
+  作為使用動作，你可以將一撮粉末撒在距離你5呎內、主要由水構成的元素生物（例如**水元素**）身上。受到一撮粉末接觸的該生物進行一次DC 13的體質豁免，失敗者受到10d6黯蝕傷害，成功者受到一半傷害。

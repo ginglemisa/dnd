@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potions-of-healing
+name: 治療藥水
+nameEn: "Potions of Healing"
+source: srd
+category: potion
+rarity: varies
+attunement: false
+options:
+  - id: potency
+    label: 等級
+    choices:
+      - { value: normal, label: 一般, rarity: common, heal: "2d4 + 2", omitInName: true }
+      - { value: greater, label: 高等, rarity: uncommon, heal: "4d4 + 4" }
+      - { value: superior, label: 強效, rarity: rare, heal: "8d4 + 8" }
+      - { value: supreme, label: 極效, rarity: very-rare, heal: "10d4 + 20" }
+consumable: true
+equipmentName: 治療藥水
+sitePrice: 50 金幣
+siteText: |-
+  重量：1/2 磅
+  這是一件魔法物品。你可以用附贈喝下藥水，或讓 5 呎內另一生物服用。飲用者恢復 2d4 + 2 生命值。
+text: |-
+  你喝下這瓶藥水時會恢復生命值。恢復的生命值多寡取決於藥水的稀有度，如下表所示。
+
+  不論效力強弱，這瓶藥水的紅色液體在搖晃時都會閃爍光芒。
+
+  | 藥水 | 恢復的生命值 | 稀有度 |
+  | --- | --- | --- |
+  | 治療藥水 | 2d4 + 2 | 常見 |
+  | 治療藥水（高等） | 4d4 + 4 | 非常見 |
+  | 治療藥水（強效） | 8d4 + 8 | 稀有 |
+  | 治療藥水（極效） | 10d4 + 20 | 極稀有 |

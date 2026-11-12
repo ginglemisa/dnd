@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: sword-of-sharpness
+name: 鋒銳之劍
+nameEn: "Sword of Sharpness"
+source: srd
+category: weapon
+rarity: very-rare
+attunement: true
+base: { from: [ 長柄刀, 巨劍, 長劍, 彎刀 ] }
+hints:
+  - panel: weapon
+    text: 攻擊物體命中時武器傷害骰取最大值；擲出 20 時額外 14 點揮砍傷害，目標獲得 1 級力竭。
+text: |-
+  當你以這件魔法武器攻擊一個物體並命中時，對目標的武器傷害骰取最大值。
+
+  當你以這件武器攻擊一個生物，且攻擊檢定的d20擲出20時，該目標額外受到14點揮砍傷害，並獲得1級力竭。

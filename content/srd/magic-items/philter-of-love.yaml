@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: philter-of-love
+name: 迷情媚藥
+nameEn: "Philter of Love"
+source: srd
+category: potion
+rarity: uncommon
+attunement: false
+consumable: true
+text: |-
+  喝下這份媚藥後的10分鐘內，你下次看見某個生物時，你會被該生物魅惑，並陷入魅惑狀態1小時。
+
+  這種玫瑰色的起泡液體中有一顆不易察覺的心形氣泡。

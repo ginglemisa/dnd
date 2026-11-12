@@ -81,10 +81,10 @@
     return Object.keys(FEAT_TYPE_LABELS);
   }
 
-  // 傷害類型（種族內容檔的 resistance 等）的顯示名稱。
+  // 傷害類型（種族內容檔的 resistance、魔法物品的額外傷害與抗性等）的顯示名稱，與 SpellCatalog.damageTypeLabels 相同。
   const DAMAGE_TYPE_LABELS = Object.freeze({
-    acid: "強酸", cold: "冷凍", fire: "火焰", lightning: "閃電", necrotic: "黯蝕", poison: "毒素",
-    psychic: "心靈", radiant: "光耀", force: "力場"
+    acid: "強酸", bludgeoning: "鈍擊", cold: "冷凍", fire: "火焰", force: "力場", lightning: "閃電", necrotic: "黯蝕",
+    piercing: "穿刺", poison: "毒素", psychic: "心靈", radiant: "光耀", slashing: "揮砍", thunder: "雷鳴"
   });
 
   /** 傷害類型 ID 的顯示名稱（例如 poison →「毒素」）；不認得時為空字串。建置產生種族表格文字時也讀這裡。 */
@@ -327,7 +327,8 @@
         if (context.levelBlank) state.blank = true;
         return level;
       }
-      if (name === "proficiencyBonus") return calculateProficiencyBonus(level);
+      // context.proficiencyBonus：角色卡算好的熟練加值（含魔法物品，index.html 的 getProficiencyBonus）；沒給時依等級。
+      if (name === "proficiencyBonus") return Number.isFinite(context.proficiencyBonus) ? context.proficiencyBonus : calculateProficiencyBonus(level);
       if (Object.hasOwn(ABILITY_MODIFIER_TOKENS, name)) {
         const raw = String(context.abilityScores?.[ABILITY_MODIFIER_TOKENS[name]] ?? "").trim();
         if (!/^[+-]?\d+$/u.test(raw)) {
@@ -442,6 +443,8 @@
     maxHp += (getRaceRules(options.race)?.hpPerLevel || 0) * normalizedLevel;
     if (hasClassFeature(className, "sorcerer-draconic-resilience", normalizedLevel, options.subclass)) maxHp += normalizedLevel;
     if (options.hasToughFeat) maxHp += normalizedLevel * 2;
+    // 魔法物品的每級生命值上限加值（狂戰斧，getActiveMagicEffects().hitPointsPerLevel）。
+    maxHp += (Number(options.magicHitPointsPerLevel) || 0) * normalizedLevel;
     return maxHp;
   }
 
@@ -480,10 +483,10 @@
     return 2;
   }
 
-  /** 萬事通只加在尚未套用熟練加值的能力檢定。 */
-  function getJackOfAllTradesBonus(className, level, hasProficiency = false) {
+  /** 萬事通只加在尚未套用熟練加值的能力檢定；proficiencyBonus 可傳角色卡算好的熟練加值（含魔法物品），沒給時依等級。 */
+  function getJackOfAllTradesBonus(className, level, hasProficiency = false, proficiencyBonus) {
     if (className !== "bard" || !(Number.parseInt(level, 10) >= 2) || hasProficiency) return 0;
-    return Math.floor(calculateProficiencyBonus(level) / 2);
+    return Math.floor((Number.isFinite(proficiencyBonus) ? proficiencyBonus : calculateProficiencyBonus(level)) / 2);
   }
 
   // 資源說明（resource.note）中的 {名稱} 換成目前數值。
@@ -510,7 +513,8 @@
     const race = String(options.race || "").trim();
     const level = Number.parseInt(options.level, 10);
     if (!Number.isInteger(level) || level < 1) return [];
-    const proficiency = calculateProficiencyBonus(level);
+    // options.proficiencyBonus：角色卡算好的熟練加值（含魔法物品）；沒給時依等級。
+    const proficiency = Number.isFinite(options.proficiencyBonus) ? options.proficiencyBonus : calculateProficiencyBonus(level);
     const resources = [];
     const recovery = (shortRest = null) => Object.freeze({ shortRest, longRest: "all" });
     const addUses = (key, label, maximum, recoveryNote, shortRest = null, restChoice = null) => resources.push({
@@ -547,7 +551,7 @@
     });
 
     // 職業資源：職業內容檔各能力（含子職）的 resource，達到能力等級才出現。
-    const valueContext = { level, abilityScores: { wis: options.wisdomScore ?? 10, cha: options.charismaScore ?? 10 } };
+    const valueContext = { level, proficiencyBonus: proficiency, abilityScores: { wis: options.wisdomScore ?? 10, cha: options.charismaScore ?? 10 } };
     for (const feature of getClassFeatureRules(className)) {
       const resource = feature.resource;
       if (!resource || level < feature.level) continue;
@@ -705,7 +709,299 @@
     return Math.max(1, calculateAbilityModifier(charismaScore));
   }
 
-  /** 計算 AC，包含無甲防禦、護甲、盾牌及防禦戰鬥風格。 */
+  // 目前是否穿甲、持盾（防禦護腕的「沒穿護甲且沒用盾牌」）；未受盾牌訓練也算持盾。
+  // handBases：主手、副手的基本款品名（魔法款回基本款，武僧的「武藝」原樣），給 effects.weapons 與 unarmedStrike 比對。
+  function readMagicEffectContext() {
+    const field = id => globalScope.document?.getElementById?.(id)?.value || "";
+    const armorName = field("armor");
+    const armorIsShield = globalScope.isShieldItem?.(armorName) === true;
+    const baseName = name => (name && globalScope.getEquipmentBaseName?.(name)) || name;
+    return {
+      wearingArmor: Boolean(armorName) && !armorIsShield,
+      usingShield: armorIsShield || globalScope.isEffectiveEquippedShield?.() === true,
+      handBases: { mainHand: baseName(field("mainHand")), offHand: baseName(field("offHand")) }
+    };
+  }
+
+  /**
+   * 荒野形態變身時的裝備格（跑團 combatState.druid.equipment 的 key），對應只寫在這裡：
+   * 護甲欄（魔法護甲，或放在護甲欄的盾牌）→ armor；主手（武器、法杖、手持物品）→ main；
+   * 副手與主手 2 的盾牌（盾牌、手持物品）→ off；其他穿戴或帶在身上的物品（戒指、斗篷、靴子、艾恩石、背包裡 when: owned 的效果）→ other。
+   */
+  function getWildShapeEquipmentGroup(entry) {
+    if (entry.slot === "armor") return "armor";
+    if (entry.slot === "mainHand") return "main";
+    if (entry.slot === "offHand" || entry.slot === "shield") return "off";
+    return "other";
+  }
+
+  // 武僧武藝的攻擊列名稱（index.html 的 getMonkMartialArtsWeapon）：魔法物品的 unarmedStrike 只加在這一手。
+  const UNARMED_ATTACK_NAME = "武藝";
+
+  function emptyMagicHand() {
+    return { attack: 0, damage: 0, label: "", sources: [], extraDamage: [], damageType: "", finesse: false, thrown: null, proficiencyAs: [], unarmed: null, notes: [] };
+  }
+
+  // 提示的固定說法（hints 的結構化詞）接上自由文字，例如「火焰傷害抗性；懂矮人語。」。
+  function formatMagicItemHint(hint) {
+    const labels = types => types.map(getDamageTypeLabel).join("、");
+    const parts = [
+      hint.resistances && `${labels(hint.resistances)}傷害抗性`,
+      hint.immunities && `免疫${labels(hint.immunities)}傷害`,
+      hint.darkvision && `黑暗視覺 ${hint.darkvision} 呎`,
+      hint.languages && `懂${hint.languages.join("、")}`,
+      hint.advantage && `${hint.advantage.map(target => target === "先攻" ? "先攻擲骰" : `${target}檢定`).join("、")}有優勢`
+    ].filter(Boolean);
+    return `${parts.length ? `${parts.join("；")}。` : ""}${hint.text || ""}`;
+  }
+
+  /**
+   * 目前生效的魔法物品固定加值，規則只在這裡：物品不需同調或已同調才算。
+   * - 沒有基本款的物品依使用方式（MagicItemCatalog.getUse()）：worn 要穿上（entry.worn）、held 要放在主手或副手、
+   *   wornOrHeld 穿上或放在手上都算、carried 持有就算。有基本款的武器、護甲、盾牌、法杖依下面的裝備位置規則。
+   * - hands.mainHand／offHand 的 attack、damage、label：裝備在那一手才算，只影響那一手。
+   * - ac.armor、ac.shield：魔法護甲穿著、魔法盾牌持用中才算（盾牌訓練等既有條件由呼叫端判斷）；ac.other 是戒指、斗篷等其他物品。
+   * - saves：有基本款的物品持有就算（吉兆之刃不必手持）。
+   * - condition held 要裝備在手上，unarmored 要沒穿護甲且沒用盾牌。
+   * - spellAttack、spellSaveDc：法術攻擊與法術豁免 DC 加值，條件同 saves。
+   * - deathSave：死亡豁免原骰的下限（癒合護符，effects.deathSaveMinimum）與來源物品名稱，條件同技能加值（裝備著才算）。
+   * - sources：不靠裝備位置的加值來源 [{ label, ac, saves, spellAttack, spellSaveDc }]，裝備摘要顯示用。
+   * - hands 的其他欄位（只影響那一手的武器）：sources [{ label, attack, damage }]（attack、damage 的各來源；label 是來源名稱接起來）、
+   *   extraDamage [{ dice, type, label }]（type 為傷害類型 ID 或 weapon）、damageType、finesse、thrown [一般, 遠]、proficiencyAs、
+   *   unarmed { dice, type, label }（這一手是武藝時的 unarmedStrike）、notes（武器說明的提示文字）。
+   *   weapons（射手護腕等）與 unarmedStrike 來自裝備著的物品，依那一手的基本款（context.handBases）套用。
+   * - abilities：屬性效果 { str: [{ label, itemId, set }｜{ label, itemId, bonus, max }｜{ label, itemId, setBonus, max, from }], … }，
+   *   物品生效（已同調；有基本款的要裝備著，沒有基本款的依使用方式；效果寫 when: owned 時持有就算）才列；有效值由 getEffectiveAbilityScore() 計算。
+   * - hints：提示 [{ uid, label, panel, detail, advantage }]，同一件物品在同一處合成一筆；panel 為 overview 或 skills。
+   *   有基本款的物品要裝備著（拿在手上或穿著），沒有基本款的依使用方式；hint.when 為 owned 時持有就算。
+   * - skills（技能 ID → 加值）、checks（所有屬性檢定）、proficiencyBonus、hitPointsPerLevel：條件同 saves 以外的一般效果
+   *   （hitPoints.when 為 owned 時持有就算）；來源也列在 sources（skills、checks、proficiencyBonus、hitPointsPerLevel 欄位）。
+   * - weaponProficiencies：effects.proficiencies 的武器品名（射手護腕）。unarmoredAc：沒穿護甲時的基礎 AC（取最高，0 為沒有）。
+   * - armor：穿著中的魔法護甲本身 { trained, noStrengthRequirement, noStealthDisadvantage }。
+   * - movement：{ swim, climb, fly: [{ value, label }]（value 為呎數或 "speed"）, hover: [物品名稱], minimum: 0, ignoreArmorStrength: [物品名稱] }。
+   * - actions：能力（跑團按鈕）[{ uid, itemId, label, action, pool, alsoPool? }]：action 是 YAML 的 actions 一筆，pool 是它扣的次數池（Inventory.getCharges() 的一筆，含 left）或 null，
+   *   alsoPool 是另外再扣 1 次的池；action.spell 是從物品施放的法術（跑團法術頁的「物品」分組，tabletop-spells.js 的 getItemSpellEntries）。
+   *   條件同提示（action.when 為 owned 時持有就算；action.option 要選了那個選項），同一種物品的同一個能力只列第一件。
+   * context 可傳 { wearingArmor, usingShield, handBases }，省略的欄位讀目前的裝備欄位。
+   * context.wildShape 為 { armor, main, off, other }（荒野形態的跑團畫面，變身時每一格是否選「穿戴」）：物品依所在的格子
+   * （getWildShapeEquipmentGroup）生效，那一格選穿戴時照平常規則算，融入或掉落時整件不算（含 when: owned 的效果）。
+   */
+  function getActiveMagicEffects(context = {}) {
+    context = { ...readMagicEffectContext(), ...context };
+    const result = {
+      hands: { mainHand: emptyMagicHand(), offHand: emptyMagicHand() },
+      ac: { armor: 0, shield: 0, other: 0 },
+      saves: 0,
+      spellAttack: 0,
+      spellSaveDc: 0,
+      sources: [],
+      abilities: {},
+      hints: [],
+      skills: {},
+      checks: 0,
+      proficiencyBonus: 0,
+      hitPointsPerLevel: 0,
+      weaponProficiencies: [],
+      unarmoredAc: 0,
+      armor: { trained: false, noStrengthRequirement: false, noStealthDisadvantage: false },
+      movement: { swim: [], climb: [], fly: [], hover: [], minimum: 0, ignoreArmorStrength: [] },
+      deathSave: { minimum: 0, sources: [] },
+      actions: []
+    };
+    const addHandBonus = (hand, label, attack, damage) => {
+      if (!attack && !damage) return;
+      hand.attack += attack || 0;
+      hand.damage += damage || 0;
+      hand.sources.push({ label, attack: attack || 0, damage: damage || 0 });
+      hand.label = hand.sources.map(source => source.label).join("、");
+    };
+    const handBases = context.handBases || {};
+    const catalog = globalScope.MagicItemCatalog;
+    const inventory = globalScope.Inventory;
+    if (!catalog || !inventory) return result;
+    inventory.entries().forEach((entry) => {
+      const rule = entry.magic ? catalog.get(entry.magic.id) : null;
+      if (!rule || (rule.attunement && !entry.attuned)) return;
+      const kind = inventory.getCatalogItem(entry.itemId)?.kind;
+      // 荒野形態：物品所在的那一格（護甲、主手、副手、其他）變身時選了穿戴才生效。
+      if (context.wildShape && context.wildShape[getWildShapeEquipmentGroup(entry)] !== true) return;
+      const use = catalog.getUse(rule.id);
+      const inHand = entry.slot === "mainHand" || entry.slot === "offHand";
+      const usable = !((use === "worn" && !entry.worn) || (use === "held" && !inHand) || (use === "wornOrHeld" && !entry.worn && !inHand));
+      // 有基本款的物品要裝備著（拿在手上或穿著）；沒有基本款的依使用方式。
+      const equipped = rule.base ? Boolean(entry.slot) : usable;
+      const selection = inventory.getMagicSelection(entry);
+      const label = inventory.getLabel(entry);
+      const hand = result.hands[entry.slot] || null;
+      catalog.getHints(rule.id, selection).forEach((hint) => {
+        if (hint.when !== "owned" && !equipped) return;
+        const panel = hint.panel || "overview";
+        const detail = formatMagicItemHint(hint);
+        if (panel === "weapon") {
+          if (hand) hand.notes.push(detail);
+          return;
+        }
+        const existing = result.hints.find(item => item.uid === entry.uid && item.panel === panel);
+        if (existing) {
+          existing.detail += detail;
+          existing.advantage.push(...(hint.advantage || []));
+        } else {
+          result.hints.push({ uid: entry.uid, label, panel, detail, advantage: [...(hint.advantage || [])] });
+        }
+      });
+      // 能力（跑團按鈕與物品法術）：生效條件同提示；寫了 option 的只在選了那個選項時才有；同一種物品同一個能力只列第一件。
+      catalog.getActions(rule.id).forEach((action) => {
+        if (action.when !== "owned" && !equipped) return;
+        if (Object.entries(action.option || {}).some(([optionId, value]) => selection[optionId] !== value)) return;
+        if (result.actions.some(item => item.itemId === rule.id && item.action.id === action.id)) return;
+        const charges = action.pool ? inventory.getCharges(entry) : [];
+        const pool = charges.find(item => item.id === action.pool) || null;
+        const alsoPool = action.alsoPool ? charges.find(item => item.id === action.alsoPool) || null : null;
+        result.actions.push({ uid: entry.uid, itemId: rule.id, label, action, pool, ...(alsoPool ? { alsoPool } : {}) });
+      });
+      const effects = catalog.getEffects(entry.magic.id, selection);
+      // 屬性效果寫 when: owned 時持有（需同調的已同調）就算，不看穿戴或手持（雷鳴巨棒、雷神之錘）。
+      Object.entries(effects.abilities || {}).forEach(([ability, { when, ...effect }]) => {
+        if (when === "owned" || equipped) (result.abilities[ability] ||= []).push({ ...effect, label, itemId: rule.id });
+      });
+      const hitPointsPerLevel = effects.hitPoints && (effects.hitPoints.when === "owned" || equipped) ? effects.hitPoints.perLevel : 0;
+      result.hitPointsPerLevel += hitPointsPerLevel;
+      if (!usable) {
+        if (hitPointsPerLevel) result.sources.push({ label, ac: 0, saves: 0, spellAttack: 0, spellSaveDc: 0, hitPointsPerLevel });
+        return;
+      }
+      // 防禦者：玩家把部分加值轉到 AC 時，攻擊與傷害減少、AC 增加相同數值（裝備在手上且已同調才有 getBonusTransfer）。
+      const transferred = hand ? inventory.getBonusTransfer?.(entry.uid)?.value || 0 : 0;
+      if (transferred) {
+        effects.attack -= transferred;
+        effects.damage -= transferred;
+      }
+      if (effects.condition === "held" && !hand) return;
+      if (effects.condition === "unarmored" && (context.wearingArmor || context.usingShield)) return;
+      // 裝備中的魔法彈藥：命中與傷害加值加到拿著「用這種彈藥的武器」的那一手（依兩手目前的基本款，例如箭矢對短弓、長弓）。
+      // ×0 的彈藥仍是裝備中，但沒有彈藥可射，加值不算。
+      if (entry.ammo && entry.quantity > 0) {
+        const ammunition = inventory.getAmmunitionType(entry.itemId);
+        Object.entries(result.hands).forEach(([slot, target]) => {
+          if (ammunition && inventory.getWeaponAmmunition(handBases[slot]) === ammunition) addHandBonus(target, label, effects.attack, effects.damage);
+        });
+      }
+      if (hand) {
+        addHandBonus(hand, label, effects.attack, effects.damage);
+        (effects.extraDamage || []).forEach(extra => hand.extraDamage.push({ ...extra, label }));
+        if (effects.damageType) hand.damageType = effects.damageType;
+        if (effects.finesse) hand.finesse = true;
+        if (effects.thrown) hand.thrown = [...effects.thrown];
+        hand.proficiencyAs.push(...(effects.proficiencyAs || []));
+      }
+      // 裝備著的物品對特定武器（射手護腕）與徒手打擊（惡魔護甲）的效果，依兩手目前的基本款套用。
+      if (equipped) {
+        Object.entries(result.hands).forEach(([slot, target]) => {
+          if (effects.weapons?.names.includes(handBases[slot])) addHandBonus(target, label, effects.weapons.attack, effects.weapons.damage);
+          if (effects.unarmedStrike && handBases[slot] === UNARMED_ATTACK_NAME) {
+            target.unarmed = { dice: effects.unarmedStrike.dice, type: effects.unarmedStrike.type, label };
+            addHandBonus(target, label, effects.unarmedStrike.attack, effects.unarmedStrike.damage);
+          }
+        });
+      }
+      const source = { label, ac: transferred, saves: effects.saves || 0, spellAttack: effects.spellAttack || 0, spellSaveDc: effects.spellSaveDc || 0, hitPointsPerLevel };
+      // 技能、檢定、熟練加值、移動與武器熟練：物品生效（裝備著，或沒有基本款的依使用方式）才算。
+      if (equipped) {
+        source.skills = { ...(effects.skills || {}) };
+        source.checks = effects.checks || 0;
+        source.proficiencyBonus = effects.proficiencyBonus || 0;
+        Object.entries(source.skills).forEach(([skill, bonus]) => { result.skills[skill] = (result.skills[skill] || 0) + bonus; });
+        result.checks += source.checks;
+        result.proficiencyBonus += source.proficiencyBonus;
+        result.weaponProficiencies.push(...(effects.proficiencies || []).filter(name => !result.weaponProficiencies.includes(name)));
+        if (effects.unarmoredAc) result.unarmoredAc = Math.max(result.unarmoredAc, effects.unarmoredAc);
+        if (effects.deathSaveMinimum) {
+          result.deathSave.minimum = Math.max(result.deathSave.minimum, effects.deathSaveMinimum);
+          result.deathSave.sources.push(label);
+        }
+        const movement = effects.movement || {};
+        ["swim", "climb", "fly"].forEach((mode) => { if (movement[mode]) result.movement[mode].push({ value: movement[mode], label }); });
+        if (movement.hover) result.movement.hover.push(label);
+        if (movement.minimum) result.movement.minimum = Math.max(result.movement.minimum, movement.minimum);
+        if (movement.ignoreArmorStrength) result.movement.ignoreArmorStrength.push(label);
+      }
+      // 護甲本身的規則（精靈鏈甲、秘銀護甲）：穿在護甲欄才算。
+      if (rule.category === "armor" && kind === "armor" && entry.slot === "armor") {
+        ["trained", "noStrengthRequirement", "noStealthDisadvantage"].forEach((key) => { if (effects[key]) result.armor[key] = true; });
+      }
+      result.ac.other += transferred;
+      if (effects.ac) {
+        if (rule.category !== "armor" && rule.category !== "weapon") {
+          result.ac.other += effects.ac;
+          source.ac += effects.ac;
+        } else if (kind === "armor" && entry.slot === "armor") result.ac.armor += effects.ac;
+        else if (kind === "shield" && (entry.slot === "offHand" || entry.slot === "shield")) result.ac.shield += effects.ac;
+      }
+      result.saves += source.saves;
+      result.spellAttack += source.spellAttack;
+      result.spellSaveDc += source.spellSaveDc;
+      if (source.ac || source.saves || source.spellAttack || source.spellSaveDc || source.hitPointsPerLevel || source.checks
+        || source.proficiencyBonus || Object.keys(source.skills || {}).length) result.sources.push(source);
+    });
+    return result;
+  }
+
+  /**
+   * 魔法物品給的無條件優勢（hints 的 advantage）：{ 技能 ID 或「先攻」: [來源物品名稱…] }，只列目前生效的。
+   * 角色卡技能格、跑團技能按鈕與先攻格的「優勢」標籤都讀這裡；effects 可傳已算好的 getActiveMagicEffects()。
+   */
+  function getMagicItemAdvantages(effects = getActiveMagicEffects()) {
+    const result = {};
+    (effects.hints || []).forEach(hint => hint.advantage.forEach((target) => {
+      result[target] ||= [];
+      if (!result[target].includes(hint.label)) result[target].push(hint.label);
+    }));
+    return result;
+  }
+
+  /**
+   * 屬性有效值（純計算）：rawText 是屬性欄的原值，contributions 是 getActiveMagicEffects().abilities 的其中一項。
+   * 順序：原值 → 加值依序加上（每筆夾在自己的上限，不會降低）→ 與設定值比（setBonus 加在 from 物品的設定值上，夾上限）→ 取最高。
+   * 回傳 { raw, base, score, value, sources, changed }：base 是原值數字、score 是有效值數字（原值不是整數時兩者為 null，物品不影響），
+   * value 是給計算用的文字（原值空白時為空字串）、sources 是決定有效值的物品名稱（原值最高時為空陣列）。
+   */
+  function calculateEffectiveAbilityScore(rawText, contributions = []) {
+    const raw = String(rawText ?? "").trim();
+    const base = /^[+-]?\d+$/.test(raw) ? Number(raw) : null;
+    if (base === null) return { raw, base: null, score: null, value: raw, sources: [], changed: false };
+    let score = base;
+    let sources = [];
+    contributions.filter(item => item.bonus).forEach((item) => {
+      const next = Math.min(score + item.bonus, item.max ?? Infinity);
+      if (next <= score) return;
+      score = next;
+      sources = [...sources, item.label];
+    });
+    contributions.filter(item => item.set).forEach((item) => {
+      const boosters = contributions.filter(other => other.setBonus && other.from.includes(item.itemId));
+      const boosted = boosters.reduce((value, other) => Math.min(value + other.setBonus, other.max), item.set);
+      if (boosted <= score) return;
+      score = boosted;
+      sources = [item.label, ...boosters.filter(() => boosted > item.set).map(other => other.label)];
+    });
+    return { raw, base, score, value: String(score), sources, changed: score !== base };
+  }
+
+  /** 目前屬性欄（#str 等）的有效值：原值加上目前生效的魔法物品（見 calculateEffectiveAbilityScore）；effects 可傳已算好的 getActiveMagicEffects()。 */
+  function getEffectiveAbilityScore(ability, effects = getActiveMagicEffects()) {
+    const field = globalScope.document?.getElementById?.(ability);
+    return calculateEffectiveAbilityScore(field ? field.value : "", effects.abilities?.[ability] || []);
+  }
+
+  /** 計算用的屬性值文字：原值空白時為空字串（呼叫端照舊補 10），其餘是有效值。 */
+  function getEffectiveAbilityValue(ability, effects) {
+    return getEffectiveAbilityScore(ability, effects).value;
+  }
+
+  /**
+   * 計算 AC，包含無甲防禦、護甲、盾牌、防禦戰鬥風格與魔法物品加值（magicBonus，由 getActiveMagicEffects() 算出、呼叫端決定哪些部分生效）。
+   * unarmoredBaseAc：魔法物品給的沒穿護甲時基礎 AC（大法師法袍 15，加敏捷調整值，可用盾牌），和無甲防禦等算法取最高。
+   */
   function calculateArmorClass(options = {}) {
     const className = String(options.className || "").trim();
     const level = Number.parseInt(options.level, 10) || 1;
@@ -725,7 +1021,10 @@
       armorClass = 10 + dexModifier + constitutionModifier;
     } else if (!armor) {
       armorClass = 10 + dexModifier;
-    } else {
+    }
+    const unarmoredBaseAc = Number(options.unarmoredBaseAc) || 0;
+    if (!armor && unarmoredBaseAc) armorClass = Math.max(armorClass, unarmoredBaseAc + dexModifier);
+    if (armor) {
       const armorBase = Number.parseInt(armor.AC, 10);
       if (!Number.isFinite(armorBase)) return null;
       if (armor.分類 === "重甲") armorClass = armorBase;
@@ -736,6 +1035,7 @@
 
     if (options.hasShield) armorClass += 2;
     if (armor && options.hasDefenseFightingStyle) armorClass += 1;
+    armorClass += Number(options.magicBonus) || 0;
     return armorClass;
   }
 
@@ -773,7 +1073,19 @@
   // 角色卡的基礎速度欄（speed-input）預設 30，適用速度 30 呎的種族；種族或所選血統的速度不是 30 時以內容檔為準。
   const DEFAULT_BASE_SPEED = 30;
 
-  /** 計算角色速度，包含種族（options.raceChoice 為所選血統）速度及武僧、野蠻人、遊俠的職業加值條件。 */
+  /** 護甲資料的「力量需求」（例如「力量 13」）轉成需求數值；「--」、「-」、空白等沒有數字的寫法回傳 0（沒有需求）。 */
+  function parseArmorStrengthRequirement(value) {
+    if (Number.isFinite(value)) return value > 0 ? value : 0;
+    const match = normalizeSignedValueText(value).match(/\d+/);
+    return match ? Number(match[0]) : 0;
+  }
+
+  /**
+   * 計算角色速度，包含種族（options.raceChoice 為所選血統）速度及武僧、野蠻人、遊俠的職業加值條件。
+   * 穿著護甲（options.isWearingArmor）且力量（options.strengthScore）低於護甲的力量需求
+   * （options.armorStrengthRequirement，可傳護甲資料的原始文字）時速度降低 10 呎；力量無法判讀時不扣。
+   * 魔法物品：options.ignoreArmorStrength 為 true 時不因力量需求降速（跑跳之靴），options.minimumSpeed 是速度至少的呎數（取較高）。
+   */
   function calculateCharacterSpeed(options = {}) {
     const baseSpeedValue = Number.parseFloat(options.baseSpeed);
     const race = String(options.race || "").trim();
@@ -802,7 +1114,11 @@
     if (monkBonusApplies) classSpeedBonus = getClassProgressionValue("monk", "unarmoredMovement", level) || 0;
     else if (barbarianBonusApplies || rangerBonusApplies) classSpeedBonus = 10;
     const featSpeedBonus = options.hasSpeedyFeat ? 10 : 0;
-    return String(baseSpeed + classSpeedBonus + featSpeedBonus);
+    const strengthRequirement = options.isWearingArmor ? parseArmorStrengthRequirement(options.armorStrengthRequirement) : 0;
+    const strengthScore = parseExactSignedValue(options.strengthScore);
+    const armorStrengthPenalty = !options.ignoreArmorStrength && strengthRequirement > 0 && strengthScore !== null && strengthScore < strengthRequirement ? 10 : 0;
+    const speed = Math.max(0, baseSpeed + classSpeedBonus + featSpeedBonus - armorStrengthPenalty);
+    return String(Math.max(speed, Number(options.minimumSpeed) || 0));
   }
 
   // 已知形態、最大 CR 與飛行以職業文本的 2／4／8 級野獸形態表為準；使用次數與時數取自德魯伊內容檔。
@@ -847,6 +1163,11 @@
     isDruidBeastAllowed,
     calculateWildShapeCheck,
     calculateArmorClass,
+    getActiveMagicEffects,
+    getMagicItemAdvantages,
+    calculateEffectiveAbilityScore,
+    getEffectiveAbilityScore,
+    getEffectiveAbilityValue,
     calculateCharacterMaxHp,
     calculateCharacterSpeed,
     calculateProficiencyBonus,

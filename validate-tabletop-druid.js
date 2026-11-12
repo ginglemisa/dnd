@@ -106,6 +106,284 @@ async function checkPersistentSpells(page) {
   console.log("Persistent spells: casting, targets, cancellation, stacking, themes, persistence, dismissal and beast stats passed.");
 }
 
+// 荒野形態：魔法物品跟著變身時每一格的選擇（使用者規則）。這裡「其他」格是預設的融入，所以戒指等其他物品（即使穿著、同調）
+// 的加值不算，只有選了穿著的護甲與盾牌照算；法師護甲與樹膚術照常。
+async function checkMagicItemsInWildShape(page) {
+  const results = await page.evaluate(() => {
+    TabletopMode.setMode("sheet");
+    TabletopMode.applyState({});
+    applyStateObject({ __autoCalculatedChecks: true, class: "druid", level: "8", str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40", armor: "皮甲+1", mainHand: "", offHand: "盾牌+2", offHandAsMain: false, "prof-wis": true,
+      __inventory: { version: 1, items: [
+        { uid: "hide", itemId: "皮甲", quantity: 1, magic: { id: "armor-plus", bonus: 1 } },
+        { uid: "shield", itemId: "盾牌", quantity: 1, magic: { id: "shield-plus", bonus: 2 } },
+        { uid: "ring", quantity: 1, attuned: true, worn: true, magic: { id: "ring-of-protection" } }
+      ] } });
+    TabletopMode.setMode("tabletop");
+    const c = () => TabletopMode.getDruidContext();
+    const run = (op, data) => TabletopMode.commitDruidOperation(op, data, c().token);
+    const equipment = (armor, off) => ({ armor, main: "merge", off, other: "merge" });
+    const value = id => TabletopMode.getDruidEffectiveValue(id, document.getElementById(id).value);
+    const output = { sheetAc: document.getElementById("ac-display").value, sheetWis: document.getElementById("save-wis").value, attacks: calculateHandAttacks({ ignoreMagicEffects: true })[1].hit };
+    output.known = run("known", { keys: ["wolf"] }).ok;
+    output.merged = [run("shape", { key: "wolf", equipment: equipment("merge", "merge") }).ok, value("ac-display"), value("save-wis")];
+    output.ended = run("end").ok;
+    TabletopMode.setBuiltInResourceSpent("druid-wild-shape", 0, 3);
+    output.worn = [run("shape", { key: "wolf", equipment: equipment("wear", "wear") }).ok, value("ac-display")];
+    run("end");
+    return output;
+  });
+  assert.deepEqual(results, { sheetAc: "19", sheetWis: "+8", attacks: "", known: true, merged: [true, "12", "+7"], ended: true, worn: [true, "18"] }, "with the other slot merged, wild shape keeps only the worn magic armor and shield");
+  assert.deepEqual(await page.evaluate(async () => {
+    TabletopMode.setMode("sheet");
+    applyStateObject({ __autoCalculatedChecks: true, class: "wizard", level: "5", str: "10", dex: "14", armor: "", mainHand: "", offHand: "",
+      __inventory: { version: 1, items: [{ uid: "ring", quantity: 1, attuned: true, worn: true, magic: { id: "ring-of-protection" } }] } });
+    TabletopMode.setMode("tabletop");
+    TabletopMode.setPanel("overview");
+    TabletopMode.setMageArmorActive(true);
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    const mage = document.getElementById("tabletop-ac").innerText;
+    TabletopMode.setMageArmorActive(false);
+    TabletopMode.setPersistentSpellEffect("barkskin", true);
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    return [mage, document.getElementById("tabletop-ac").innerText];
+  }), ["16 (法護)", "17 (樹膚)"], "persistent spells still work with a magic ring");
+}
+
+// 荒野形態：屬性、技能加值、檢定加值、熟練加值、豁免加值、提示與「優勢」標籤跟著變身時每一格的選擇。這裡只有副手選穿著、
+// 其他格是預設的融入，所以只算警戒之盾：心智屬性用原值，力敏體用野獸數值，速度格不加游泳戒指。角色卡的數字不變。
+async function checkMagicEffectsInWildShape(page) {
+  const read = () => page.evaluate(async () => {
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    const value = id => TabletopMode.getDruidEffectiveValue(id, id === "int-mod" ? document.querySelector("#int-mod .modifier-main").textContent : document.getElementById(id).value);
+    const tags = Array.from(document.querySelectorAll("#tabletop-skill-values .magic-advantage-tag"), tag => tag.title);
+    return {
+      checks: [value("int-mod"), value("skill-調查"), value("save-wis"), value("save-dex"), value("initiative-input")],
+      sources: Array.from(document.querySelectorAll("#tabletop-ability-modifiers .tabletop-ability-modifier__source"), item => item.textContent),
+      tags, initiative: document.querySelector("#tabletop-initiative .magic-advantage-tag")?.title || "",
+      hints: Array.from(document.querySelectorAll("#tabletop-overview-rule-summary .tabletop-defense-summary__item"), item => item.textContent).filter(text => /精靈之靴|警戒之盾|幸運石|游泳戒指/.test(text)).map(text => text.split("：")[0]),
+      speed: document.getElementById("tabletop-speed").innerText
+    };
+  });
+  await page.evaluate(() => {
+    TabletopMode.setMode("sheet");
+    TabletopMode.applyState({});
+    applyStateObject({ __autoCalculatedChecks: true, class: "druid", level: "8", str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40", armor: "", mainHand: "", offHand: "警戒之盾", offHandAsMain: false, "prof-wis": true, "speed-input": "30",
+      __inventory: { version: 1, items: [
+        { uid: "headband", quantity: 1, attuned: true, worn: true, magic: { id: "headband-of-intellect" } },
+        { uid: "luck", quantity: 1, attuned: true, magic: { id: "stone-of-good-luck" } },
+        { uid: "mastery", quantity: 1, attuned: true, worn: true, magic: { id: "ioun-stone", kind: "mastery" } },
+        { uid: "boots", quantity: 1, worn: true, magic: { id: "boots-of-elvenkind" } },
+        { uid: "ring", quantity: 1, worn: true, magic: { id: "ring-of-swimming" } },
+        { uid: "sentinel", itemId: "盾牌", quantity: 1, magic: { id: "sentinel-shield" } }
+      ] } });
+    TabletopMode.setMode("tabletop");
+    TabletopMode.setPanel("overview");
+  });
+  const sheet = await page.evaluate(() => ["int-mod", "skill-調查", "save-wis", "save-dex", "initiative-input"].map(id => id === "int-mod" ? document.querySelector("#int-mod .modifier-main").textContent : document.getElementById(id).value));
+  assert.deepEqual(sheet, ["+4", "+5", "+9", "+3", "+3"], "the sheet counts the headband, luckstone (initiative too) and Ioun Stone of Mastery");
+  const normal = await read();
+  assert.deepEqual([normal.checks, normal.sources.includes("(頭冠：智力頭帶)") || normal.sources.some(text => text.includes("智力頭帶")), normal.tags, normal.initiative, normal.hints, normal.speed],
+    [["+4", "+5", "+9", "+3", "+3"], true, ["優勢：精靈之靴", "優勢：警戒之盾"], "優勢：警戒之盾", ["精靈之靴", "警戒之盾"], "30 呎，游泳 40"], "outside wild shape every active item counts");
+  const shape = off => page.evaluate((off) => {
+    const c = () => TabletopMode.getDruidContext();
+    TabletopMode.commitDruidOperation("end", {}, c().token);
+    TabletopMode.setBuiltInResourceSpent("druid-wild-shape", 0, 3);
+    TabletopMode.commitDruidOperation("known", { keys: ["wolf"] }, c().token);
+    return TabletopMode.commitDruidOperation("shape", { key: "wolf", equipment: { armor: "merge", main: "merge", off, other: "merge" } }, c().token).ok;
+  }, off);
+  assert.equal(await shape("wear"), true);
+  const worn = await read();
+  // 狼：敏捷 15（+2）；智力、感知用角色原值（12、18），熟練加值 3；幸運石（含先攻）、艾恩石、頭帶不算。
+  assert.deepEqual(worn, {
+    checks: ["+1", "+1", "+7", "+2", "+2"], sources: [], tags: ["優勢：警戒之盾"], initiative: "優勢：警戒之盾", hints: ["警戒之盾"], speed: "步行 40 呎 (狼)"
+  }, "with only the shield worn, wild shape keeps the shield's hints and advantage and mental scores use the raw values");
+  assert.equal(await shape("merge"), true);
+  const merged = await read();
+  assert.deepEqual([merged.tags, merged.initiative, merged.hints], [[], "", []], "a merged shield's hints and advantage are hidden too");
+  await page.evaluate(() => { TabletopMode.commitDruidOperation("end", {}, TabletopMode.getDruidContext().token); TabletopMode.setMode("sheet"); });
+  assert.deepEqual(await page.evaluate(() => document.getElementById("skill-調查").value), "+5", "the sheet numbers are unchanged after wild shape");
+}
+
+// 荒野形態的魔法物品跟著變身時每一格的選擇（使用者規則，取代原本「只算穿戴中的護甲與盾牌」）：
+// 護甲欄→armor、主手→main、副手與主手 2→off、其他穿戴或帶在身上的物品→other；選穿著的那一格照平常規則生效。
+// 力敏體：設定值類物品和野獸數值取較高。預設全部融入時和原本一樣。
+async function checkWildShapeEquipmentChoices(page) {
+  await page.evaluate(() => {
+    TabletopMode.setMode("sheet");
+    TabletopMode.applyState({});
+    applyStateObject({ __autoCalculatedChecks: true, class: "druid", level: "8", str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40", armor: "", offHand: "", offHandAsMain: false, "prof-wis": true, "speed-input": "30",
+      mainHand: MagicItemCatalog.getDisplayName("staff-of-power", { base: "長棍" }),
+      __inventory: { version: 1, items: [
+        { uid: "ring", quantity: 1, attuned: true, worn: true, magic: { id: "ring-of-protection" } },
+        { uid: "boots", quantity: 1, worn: true, magic: { id: "boots-of-elvenkind" } },
+        { uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-giant-strength", giant: "hill" } },
+        { uid: "staff", itemId: "長棍", quantity: 1, attuned: true, magic: { id: "staff-of-power" } }
+      ] } });
+    TabletopMode.setMode("tabletop");
+    TabletopMode.setPanel("overview");
+  });
+  const shape = equipment => page.evaluate(async (equipment) => {
+    const c = () => TabletopMode.getDruidContext();
+    TabletopMode.commitDruidOperation("end", {}, c().token);
+    TabletopMode.setBuiltInResourceSpent("druid-wild-shape", 0, 3);
+    TabletopMode.commitDruidOperation("known", { keys: ["wolf"] }, c().token);
+    const ok = TabletopMode.commitDruidOperation("shape", { key: "wolf", equipment: { armor: "merge", main: "merge", off: "merge", other: "merge", ...equipment } }, c().token).ok;
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    const value = id => TabletopMode.getDruidEffectiveValue(id, document.getElementById(id).value);
+    const strength = document.querySelector("#tabletop-ability-modifiers .tabletop-ability-modifier");
+    return {
+      ok, ac: value("ac-display"), dexSave: value("save-dex"), str: value("str-mod"),
+      strSource: strength.querySelector(".tabletop-ability-modifier__source")?.textContent || "",
+      tags: Array.from(document.querySelectorAll("#tabletop-skill-values .magic-advantage-tag"), tag => tag.title)
+    };
+  }, equipment);
+  // 角色卡：戒指 +1、威力法杖（拿在主手）AC 與豁免 +2、腰帶力量 21。
+  assert.deepEqual(await page.evaluate(() => [document.getElementById("save-dex").value, document.querySelector("#str-mod .modifier-main").textContent]), ["+5", "+5"], "the sheet counts every active item");
+  // 狼：AC 12、力量 14、敏捷 15。
+  assert.deepEqual(await shape({}), { ok: true, ac: "12", dexSave: "+2", str: "+2", strSource: "", tags: [] }, "all slots merged: no magic item counts, as before");
+  assert.deepEqual(await shape({ other: "wear" }), { ok: true, ac: "13", dexSave: "+3", str: "+5", strSource: "(巨人之力腰帶（山丘）)", tags: ["優勢：精靈之靴"] },
+    "other worn: the ring adds AC and saves, the boots give stealth advantage, the belt's Strength 21 beats the wolf's 14");
+  assert.deepEqual(await shape({ main: "wear" }), { ok: true, ac: "14", dexSave: "+4", str: "+2", strSource: "", tags: [] }, "main hand worn: the Staff of Power adds AC and saves");
+  await page.evaluate(() => { TabletopMode.commitDruidOperation("end", {}, TabletopMode.getDruidContext().token); TabletopMode.setMode("sheet"); });
+}
+
+// 荒野形態的武器攻擊卡：主手選持用時列在野獸攻擊下方，用野獸的力量算，魔法武器的加值照算（變身選擇的新規則）；預設融入時沒有武器卡。
+async function checkWildShapeMagicWeaponCard(page) {
+  await page.evaluate(() => {
+    TabletopMode.setMode("sheet");
+    TabletopMode.applyState({});
+    applyStateObject({ __autoCalculatedChecks: true, class: "druid", level: "8", str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40", armor: "", offHand: "", offHandAsMain: false, mainHand: "長劍+1",
+      __inventory: { version: 1, items: [{ uid: "sword", itemId: "長劍", quantity: 1, magic: { id: "weapon-plus", bonus: 1 } }] } });
+    TabletopMode.setMode("tabletop");
+    TabletopMode.setPanel("actions");
+  });
+  const card = main => page.evaluate(async (main) => {
+    const c = () => TabletopMode.getDruidContext();
+    TabletopMode.commitDruidOperation("end", {}, c().token);
+    TabletopMode.setBuiltInResourceSpent("druid-wild-shape", 0, 3);
+    TabletopMode.commitDruidOperation("known", { keys: ["wolf"] }, c().token);
+    TabletopMode.commitDruidOperation("shape", { key: "wolf", equipment: { armor: "merge", main, off: "merge", other: "merge" } }, c().token);
+    for (let i = 0; i < 20 && !document.querySelector("#tabletop-weapon-summary .druid-beast-attacks"); i += 1) await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const section = document.querySelector('#tabletop-weapon-summary section[aria-label="主手武器攻擊"]');
+    return section ? section.innerText.replace(/\s+/gu, " ") : "";
+  }, main);
+  // 德魯伊不熟練長劍；狼的力量 14（+2）。副手空著，長劍是兩用武器，用雙手骰 1d10。
+  const worn = await card("wear");
+  assert.match(worn, /長劍\+1/u, "the held magic sword gets a weapon card in wild shape");
+  assert.match(worn, /命中 \+3/u, "the card adds the sword's +1 to the wolf's Strength modifier");
+  assert.match(worn, /1d10\+3揮砍/u, "the damage adds the sword's +1 to the wolf's Strength modifier");
+  assert.equal(await card("merge"), "", "a merged main hand has no weapon card");
+  await page.evaluate(() => { TabletopMode.commitDruidOperation("end", {}, TabletopMode.getDruidContext().token); TabletopMode.setMode("sheet"); });
+}
+
+// 魔法物品的跑團按鈕（第 5 步）也跟著變身時每一格的選擇：只有副手選穿著時只剩騎士之盾的按鈕（隱身斗篷在「其他」格，預設融入），併入時都沒有。
+async function checkMagicItemButtonsInWildShape(page) {
+  await page.evaluate(() => {
+    TabletopMode.setMode("sheet");
+    TabletopMode.applyState({});
+    applyStateObject({ class: "druid", level: "8", str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40", armor: "", mainHand: "", offHand: "騎士之盾", offHandAsMain: false,
+      __inventory: { version: 1, items: [
+        { uid: "cloak", quantity: 1, attuned: true, worn: true, magic: { id: "cloak-of-invisibility" } },
+        { uid: "shield", itemId: "盾牌", quantity: 1, attuned: true, magic: { id: "shield-of-the-cavalier" } }
+      ] } });
+    TabletopMode.setMode("tabletop");
+    TabletopMode.setPanel("actions");
+  });
+  const keys = () => page.evaluate(async () => {
+    const result = [];
+    for (const mode of ["action", "reaction"]) {
+      document.getElementById(`tabletop-action-tab-${mode}`).click();
+      await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 30)));
+      result.push(...[...document.querySelectorAll(`#tabletop-action-panel-${mode} [data-action-option-key^="magic-item-"]`)].map(button => button.dataset.actionOptionKey));
+    }
+    return result;
+  });
+  assert.deepEqual(await keys(), ["magic-item-cloak-of-invisibility-hood", "magic-item-shield-of-the-cavalier-bash", "magic-item-shield-of-the-cavalier-protective-field"], "outside wild shape every active item has its buttons");
+  const shape = off => page.evaluate((off) => {
+    const c = () => TabletopMode.getDruidContext();
+    TabletopMode.commitDruidOperation("end", {}, c().token);
+    TabletopMode.setBuiltInResourceSpent("druid-wild-shape", 0, 3);
+    TabletopMode.commitDruidOperation("known", { keys: ["wolf"] }, c().token);
+    return TabletopMode.commitDruidOperation("shape", { key: "wolf", equipment: { armor: "merge", main: "merge", off, other: "merge" } }, c().token).ok;
+  }, off);
+  assert.equal(await shape("wear"), true);
+  assert.deepEqual(await keys(), ["magic-item-shield-of-the-cavalier-bash", "magic-item-shield-of-the-cavalier-protective-field"], "wild shape keeps only the worn shield's buttons");
+  assert.equal(await shape("merge"), true);
+  assert.deepEqual(await keys(), [], "a merged shield's buttons are hidden too");
+  await page.evaluate(() => { TabletopMode.commitDruidOperation("end", {}, TabletopMode.getDruidContext().token); TabletopMode.setMode("sheet"); });
+}
+
+// 護甲的力量需求：力量低於需求時自動計算的速度 -10 呎；盾牌與無甲不扣，跑團與 PDF 用同一個速度，關閉自動計算時不動手填速度。
+async function checkArmorStrengthSpeed(page) {
+  await page.evaluate(() => {
+    TabletopMode.applyState({});
+    TabletopMode.setMode("sheet");
+    Inventory.add([{ itemId: "鎖子甲" }, { itemId: "條板甲" }, { itemId: "盾牌" }]);
+  });
+  await page.addScriptTag({ path: path.join(__dirname, "pdf-field-map.js") });
+  const speedFor = (armor, str, offHand = "") => page.evaluate(({ armor, str, offHand }) => {
+    for (const [id, value] of [["armor", armor], ["offHand", offHand]]) {
+      const select = document.getElementById(id);
+      select.value = value;
+      if (select.value !== value) throw new Error(`${id} option missing: ${value}`);
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    const strInput = document.getElementById("str");
+    strInput.value = str;
+    strInput.dispatchEvent(new Event("input", { bubbles: true }));
+    const sheet = document.getElementById("speed-display").value;
+    return { sheet, pdf: buildPdfFieldPayload(collectStateObject()).speed1 };
+  }, { armor, str, offHand });
+  for (const [armor, str, expected, message, offHand] of [
+    ["鎖子甲", "12", "20", "chain mail below STR 13 slows by 10"],
+    ["鎖子甲", "13", "30", "chain mail at STR 13 keeps speed"],
+    ["條板甲", "14", "20", "splint below STR 15 slows by 10"],
+    ["條板甲", "15", "30", "splint at STR 15 keeps speed"],
+    ["", "8", "30", "a shield is not armor", "盾牌"],
+    ["", "8", "30", "no armor keeps speed"]
+  ]) {
+    assert.deepEqual(await speedFor(armor, str, offHand), { sheet: expected, pdf: expected }, message);
+  }
+  // 只改力量也要重算：同一件鎖子甲從 13 降到 12。
+  await speedFor("鎖子甲", "13");
+  assert.equal((await speedFor("鎖子甲", "12")).sheet, "20", "STR input alone recalculates speed");
+  await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("overview"); });
+  assert.equal(await page.locator("#tabletop-speed").innerText(), "20 呎", "tabletop speed follows the sheet");
+  await page.evaluate(() => TabletopMode.setMode("sheet"));
+  // 迅捷步法：PDF 用匯出流程傳入的 hasSelectedFeat 結果，速度和角色卡一致（也和護甲降速一起算）。
+  await page.selectOption("#derived-feat-druid-level-4", "迅捷步法");
+  const speedyPdf = () => page.evaluate(() => ({
+    usable: hasSelectedFeat("迅捷步法"),
+    sheet: document.getElementById("speed-display").value,
+    pdf: buildPdfFieldPayload(collectStateObject(), { hasSpeedyFeat: hasSelectedFeat("迅捷步法") }).speed1
+  }));
+  await speedFor("", "8");
+  assert.deepEqual(await speedyPdf(), { usable: true, sheet: "40", pdf: "40" }, "PDF speed includes Speedy like the sheet");
+  await speedFor("鎖子甲", "12");
+  assert.deepEqual(await speedyPdf(), { usable: true, sheet: "30", pdf: "30" }, "Speedy and the armor penalty stack in both");
+  await page.selectOption("#derived-feat-druid-level-4", "");
+  await speedFor("", "8");
+  // 關閉自動計算：保留玩家手填的速度，PDF 也照填。
+  await page.evaluate(() => {
+    const toggle = document.getElementById("auto-calculate-key-stats-toggle");
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    document.getElementById("speed-display").value = "35";
+  });
+  assert.deepEqual(await speedFor("條板甲", "8"), { sheet: "35", pdf: "35" }, "manual speed is left alone");
+  await page.evaluate(() => {
+    document.getElementById("auto-calculate-key-stats-toggle").checked = true;
+    syncAutomaticKeyStatsMode();
+  });
+  assert.deepEqual(await speedFor("", "8"), { sheet: "30", pdf: "30" }, "automatic speed restored");
+  console.log("Armor strength requirement: speed penalty, shield/no armor, STR recalculation, tabletop, PDF and manual speed passed.");
+}
+
 async function main() {
   const root = __dirname;
   const server = http.createServer((req, res) => {
@@ -629,6 +907,12 @@ async function main() {
     await dialog.getByRole("button", { name: "取消", exact: true }).click();
     await setLevel("8");
     await checkPersistentSpells(page);
+    await checkArmorStrengthSpeed(page);
+    await checkMagicItemsInWildShape(page);
+    await checkMagicEffectsInWildShape(page);
+    await checkWildShapeEquipmentChoices(page);
+    await checkWildShapeMagicWeaponCard(page);
+    await checkMagicItemButtonsInWildShape(page);
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Druid status card, strips, known forms, shape cards, attack cards, recharge, resources, cancellation, alternate payment, autosave and responsive layout passed.");
   } finally {

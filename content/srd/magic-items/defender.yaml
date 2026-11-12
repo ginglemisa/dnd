@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: defender
+name: 防禦者
+nameEn: Defender
+source: srd
+category: weapon
+rarity: legendary
+attunement: true
+base: { any: [ melee-weapon ], label: 任意近戰武器 }
+effects: { attack: 3, damage: 3 }
+bonusTransfer: true
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+3加值。
+
+  你在每個自己的回合中第一次以此武器進行攻擊時，可以將武器的部分或全部加值轉移到你的護甲等級上。例如，你可以把攻擊檢定與傷害擲骰的加值降為+1，並獲得+2的護甲等級加值。調整後的加值持續到你下個回合開始為止，但你必須手持該武器，才能從它獲得AC加值。

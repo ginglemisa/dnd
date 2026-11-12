@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: adamantine-armor
+name: 精金護甲
+nameEn: "Adamantine Armor"
+source: srd
+category: armor
+rarity: uncommon
+attunement: false
+base: { any: [ medium-armor, heavy-armor ], except: [ 獸皮甲 ], label: "任意中甲或重甲，獸皮甲除外" }
+manualEffect: true
+text: |-
+  這套護甲以精金強化，精金是世上最堅硬的物質之一。當你穿戴著它時，任何對你的重擊都會變成普通命中。

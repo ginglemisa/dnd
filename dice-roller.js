@@ -1,5 +1,7 @@
 (function initDiceRoller() {
   const DICE_SIDES = Object.freeze([100, 20, 12, 10, 8, 6, 4]);
+  // 骰式另外認得 d3（魔法物品的恢復量 1d3 等）；骰子面板只有上面那幾種實體骰。
+  const EXPRESSION_SIDES = Object.freeze([...DICE_SIDES, 3]);
   const STORAGE_KEY = "dnd.diceSystemEnabled.v1";
   const HISTORY_STORAGE_KEY = "dnd.diceRollHistory.v1";
   const getDiceAsset = () => document.documentElement.dataset.uiTheme === "warm"
@@ -9,7 +11,7 @@
   const REDUCED_MOTION_ROLL_MS = 100;
   const LONG_PRESS_MS = 1300;
   const HISTORY_LIMIT = 66;
-  const DIE_EXPRESSION_SOURCE = String.raw`\d+\s*d\s*(?:100|20|12|10|8|6|4)`;
+  const DIE_EXPRESSION_SOURCE = String.raw`\d+\s*d\s*(?:100|20|12|10|8|6|4|3)(?!\d)`;
   const EXPRESSION_PATTERN = new RegExp(
     `${DIE_EXPRESSION_SOURCE}(?:\\s*[+-]\\s*(?:${DIE_EXPRESSION_SOURCE}|\\d+))*`,
     "i"
@@ -46,6 +48,8 @@
     let currentResults = [];
     let currentView = "results";
     let abilitySession = null;
+    // 帶動畫的擲骰（rollAnimated）進行中時，結束或被打斷要呼叫的收尾。
+    let animatedRollDone = null;
     const loadHistory = () => {
       try {
         const stored = JSON.parse(window.dndStorage?.getItem(HISTORY_STORAGE_KEY) || "[]");
@@ -55,7 +59,7 @@
           if (entry && typeof entry.legacyText === "string") return Object.freeze({ legacyText: entry.legacyText });
           if (!entry || typeof entry !== "object" || typeof entry.expression !== "string") return null;
           const values = Array.isArray(entry.values)
-            ? entry.values.filter(value => Number.isSafeInteger(value?.value) && DICE_SIDES.includes(value?.sides))
+            ? entry.values.filter(value => Number.isSafeInteger(value?.value) && EXPRESSION_SIDES.includes(value?.sides))
             : [];
           return Object.freeze({
             label: String(entry.label || "").trim(),
@@ -529,7 +533,7 @@
       const compactMatch = matchedExpression.replace(/\s+/g, "").toLowerCase();
       if (compactSource !== compactMatch) return null;
 
-      const termPattern = /([+-]?)\s*(?:(\d+)\s*d\s*(100|20|12|10|8|6|4)|(\d+))/gi;
+      const termPattern = /([+-]?)\s*(?:(\d+)\s*d\s*(100|20|12|10|8|6|4|3)(?!\d)|(\d+))/gi;
       const terms = [];
       let totalDice = 0;
       for (const match of matchedExpression.matchAll(termPattern)) {
@@ -537,7 +541,7 @@
         if (match[2] && match[3]) {
           const count = Number(match[2]);
           const sides = Number(match[3]);
-          if (!Number.isSafeInteger(count) || count < 1 || !DICE_SIDES.includes(sides)) return null;
+          if (!Number.isSafeInteger(count) || count < 1 || !EXPRESSION_SIDES.includes(sides)) return null;
           totalDice += count;
           if (totalDice > 100) return null;
           terms.push(Object.freeze({ type: "dice", sign, count, sides }));
@@ -814,6 +818,8 @@
       rollTimer = 0;
       isRolling = false;
       updateControls();
+      // 帶動畫的擲骰被打斷時照樣交回結果（結果在開始時就擲好了）。
+      animatedRollDone?.();
     };
 
     const clearAll = () => {
@@ -836,15 +842,8 @@
       updateControls();
     };
 
-    const roll = (note = "") => {
-      if (isRolling || getTotalDice() === 0) return;
-
-      const rollCounts = new Map(DICE_SIDES.map(sides => [sides, counts.get(sides) || 0]));
-      const results = DICE_SIDES.flatMap(sides => Array.from(
-        { length: rollCounts.get(sides) || 0 },
-        () => ({ sides, value: rollDie(sides) })
-      ));
-
+    // 擲骰中的畫面：骰子滾動動畫（減少動態效果時改成文字）。
+    const renderRollingStage = () => {
       isRolling = true;
       currentView = "results";
       stage.classList.remove("is-history");
@@ -867,6 +866,53 @@
         animation.setAttribute("aria-hidden", "true");
         stage.replaceChildren(animation);
       }
+    };
+
+    // 帶動畫的單次骰式擲骰（吞噬袋的掙脫檢定）：打開擲骰視窗播放擲骰動畫，結束後顯示結果並以 toast 提示，停留 holdMs 後關閉視窗。
+    // force 時擲骰功能關閉也播放；結果照常進擲骰紀錄。回傳 Promise：視窗關閉後 resolve 擲骰結果；骰式不合法或功能關閉（未 force）時為 null。
+    const rollAnimated = (expression, options = {}) => {
+      const parsed = parseExpression(expression);
+      if (!parsed || (!toggle.checked && options.force !== true)) return Promise.resolve(null);
+      resetAbilitySession();
+      cancelRoll();
+      const label = String(options.label || "擲骰").trim() || "擲骰";
+      const result = performExpressionRoll(parsed, { label, force: true, notify: false });
+      if (!result) return Promise.resolve(null);
+      openModal(options.trigger);
+      title.textContent = String(options.title || label);
+      renderRollingStage();
+      const holdMs = Number.isFinite(options.holdMs) && options.holdMs >= 0 ? options.holdMs : 1200;
+      return new Promise((resolve) => {
+        animatedRollDone = () => {
+          animatedRollDone = null;
+          window.clearTimeout(rollTimer);
+          rollTimer = 0;
+          isRolling = false;
+          updateControls();
+          closeModal();
+          resolve(result);
+        };
+        rollTimer = window.setTimeout(() => {
+          rollTimer = 0;
+          isRolling = false;
+          updateControls();
+          renderAutomatedRolls([{ entry: { label }, result }], { title: options.title || label });
+          notifyQuickRoll(`${label}：${result.equation}`);
+          rollTimer = window.setTimeout(() => animatedRollDone?.(), holdMs);
+        }, reduceMotion.matches ? REDUCED_MOTION_ROLL_MS : ROLL_ANIMATION_MS);
+      });
+    };
+
+    const roll = (note = "") => {
+      if (isRolling || getTotalDice() === 0) return;
+
+      const rollCounts = new Map(DICE_SIDES.map(sides => [sides, counts.get(sides) || 0]));
+      const results = DICE_SIDES.flatMap(sides => Array.from(
+        { length: rollCounts.get(sides) || 0 },
+        () => ({ sides, value: rollDie(sides) })
+      ));
+
+      renderRollingStage();
 
       rollTimer = window.setTimeout(() => {
         rollTimer = 0;
@@ -1014,6 +1060,7 @@
       rollExpression,
       rollExpressions,
       rollExpressionsInModal,
+      rollAnimated,
       rollAbilities
     });
 

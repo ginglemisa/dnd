@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: staff-of-power
+name: 威力法杖
+nameEn: "Staff of Power"
+source: srd
+category: staff
+rarity: very-rare
+attunement: "由術士、契術師或法師"
+base: { fixed: 長棍 }
+effects: { attack: 2, damage: 2, ac: 2, saves: 2, spellAttack: 2, condition: held }
+pools:
+  - { id: charges, label: 充能, max: 20, recover: dawn, amount: 2d8 + 4 }
+actions:
+  - { id: retributive-strike, name: 報復打擊, type: magic, text: 折斷法杖，以法杖為起點的 30 呎發散區域爆炸：你有 50% 機率前往隨機位面避開，否則受到剩餘充能 ×16 的力場傷害；其他生物 DC 17 敏捷豁免，失敗受到剩餘充能 ×4 的力場傷害，成功減半。法杖被摧毀。 }
+  - { id: cone-of-cold, spell: cone-of-cold, stats: yours, pool: charges, cost: 5 }
+  - { id: fireball, spell: fireball, stats: yours, level: 5, pool: charges, cost: 5 }
+  - { id: globe-of-invulnerability, spell: globe-of-invulnerability, stats: yours, pool: charges, cost: 6 }
+  - { id: hold-monster, spell: hold-monster, stats: yours, pool: charges, cost: 5 }
+  - { id: levitate, spell: levitate, stats: yours, pool: charges, cost: 2 }
+  - { id: lightning-bolt, spell: lightning-bolt, stats: yours, level: 5, pool: charges, cost: 5 }
+  - { id: magic-missile, spell: magic-missile, stats: yours, pool: charges }
+  - { id: ray-of-enfeeblement, spell: ray-of-enfeeblement, stats: yours, pool: charges }
+  - { id: wall-of-force, spell: wall-of-force, stats: yours, pool: charges, cost: 5 }
+text: |-
+  這根法杖有20次充能，可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+2加值。手持它時，你的AC、豁免與法術攻擊檢定獲得+2加值。
+
+  _法術。_ 手持法杖時，你可以使用你的法術豁免DC，從法杖施放下表中的一個法術。表格列出施放各法術需要消耗的充能次數。
+
+  | 法術 | 充能消耗 |
+  | --- | --- |
+  | *寒冰錐* | 5 |
+  | *火球術*（5環版本） | 5 |
+  | *法術無效結界* | 6 |
+  | *怪物定身術* | 5 |
+  | *浮空術* | 2 |
+  | *閃電束*（5環版本） | 5 |
+  | *魔法飛彈* | 1 |
+  | *衰弱射線* | 1 |
+  | *力場牆* | 5 |
+
+  _恢復充能。_ 法杖每天黎明恢復2d8 + 4次已消耗的充能。若你消耗最後一次充能，擲1d20。擲出1時，法杖保留其攻擊檢定與傷害擲骰的+2加值，但失去所有其他特性。擲出20時，法杖恢復1d8 + 2次充能。
+
+  _報復打擊。_ 你可以進行魔法動作，將法杖在膝蓋上或堅硬的表面上折斷。法杖被摧毀，並以爆炸的形式釋放其魔力，爆炸填滿一個以法杖自身為起點的30呎發散區域。你有50%的機率立即前往一個隨機的位面，避開爆炸。若你未能避開該效果，你受到等同於法杖內充能次數16倍的力場傷害。區域內每個其他生物進行一次DC 17的敏捷豁免。豁免失敗時，生物受到等同於法杖內充能次數4倍的力場傷害。豁免成功時，生物受到一半傷害。

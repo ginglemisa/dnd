@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: shield-of-missile-attraction
+name: 招矢之盾
+nameEn: "Shield of Missile Attraction"
+source: srd
+category: armor
+rarity: rare
+attunement: true
+base: { fixed: 盾牌 }
+hints:
+  - text: 遠程武器攻擊造成的傷害有抗性。
+  - when: owned
+    text: 詛咒：遠程武器攻擊以你 10 呎內的生物為目標時，改以你為目標；移除盾牌也不會結束。
+text: |-
+  手持這面盾牌時，你對遠程武器攻擊造成的傷害具有抗性。
+
+  _詛咒。_ 這面盾牌受到詛咒。與它同調會使你受到詛咒，直到你成為_移除詛咒_法術或類似魔法的目標為止。移除盾牌無法結束你身上的詛咒。每當遠程武器攻擊以你10呎內的生物為目標時，詛咒會使你改為成為目標。

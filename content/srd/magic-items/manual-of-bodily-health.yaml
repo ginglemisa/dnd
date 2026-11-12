@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: manual-of-bodily-health
+name: 強身手冊
+nameEn: "Manual of Bodily Health"
+source: srd
+category: wondrous
+group: book
+rarity: very-rare
+attunement: false
+text: |-
+  這本書含有健康與營養的建議，其文字充滿魔力。若你在6天或更短的期間內花48小時研讀書中內容並實踐其指引，你的體質增加2，最高為30。這本書隨後失去魔力，但在一個世紀後恢復。

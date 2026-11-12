@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: wand-of-binding
+name: 定身魔杖
+nameEn: "Wand of Binding"
+source: srd
+category: wand
+rarity: rare
+attunement: true
+use: held
+pools:
+  - { id: charges, label: 充能, max: 7, recover: dawn, amount: 1d6 + 1 }
+actions:
+  - { id: hold-monster, spell: hold-monster, saveDc: 17, pool: charges, cost: 5 }
+  - { id: hold-person, spell: hold-person, saveDc: 17, pool: charges, cost: 2 }
+text: |-
+  這根魔杖有7次充能。
+
+  _法術。_ 手持魔杖時，你可以從中施放下表中的一個法術（豁免DC 17）。表格列出施放各法術需要消耗的充能次數。
+
+  | 法術 | 充能消耗 |
+  | --- | --- |
+  | *怪物定身術* | 5 |
+  | *人類定身術* | 2 |
+
+  _恢復充能。_ 魔杖每天黎明恢復1d6 + 1次已消耗的充能。若你消耗魔杖的最後一次充能，擲1d20。擲出1時，魔杖化為灰燼並被摧毀。

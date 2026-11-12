@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-climbing
+name: 攀爬藥水
+nameEn: "Potion of Climbing"
+source: srd
+category: potion
+rarity: common
+attunement: false
+consumable: true
+text: |-
+  喝下這瓶藥水時，你獲得等同你速度的攀爬速度，持續1小時。在此期間，你進行攀爬的力量（運動）檢定具有優勢。
+
+  這瓶藥水分成棕色、銀色與灰色的層次，如同岩石的紋帶。搖晃瓶子也無法讓這些顏色混合。

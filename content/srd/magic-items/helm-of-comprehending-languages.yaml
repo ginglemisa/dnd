@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: helm-of-comprehending-languages
+name: 通曉語言頭盔
+nameEn: "Helm of Comprehending Languages"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: false
+use: worn
+actions:
+  - { id: comprehend-languages, spell: comprehend-languages }
+text: |-
+  穿戴這頂頭盔時，你可以從中施放_通曉語言_。

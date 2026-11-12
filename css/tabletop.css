@@ -2181,6 +2181,16 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .app-dialog__button--dange
   line-height: 1.3;
 }
 
+/* 物品法術：物品名稱後接剩餘次數；不能施放時整張卡變灰（仍可點開看原因）。 */
+.tabletop-spell-card__count {
+  font-variant-numeric: tabular-nums;
+}
+
+.tabletop-spell-card.is-depleted {
+  background: var(--disabled-bg);
+  color: var(--disabled-text);
+}
+
 .tabletop-spell-card__uses {
   position: relative;
   z-index: 1;

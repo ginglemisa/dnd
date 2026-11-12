@@ -1441,6 +1441,67 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-mastery-badg
   line-height: 1.55;
 }
 
+/* 「同調 N/3」靠標題列最右（外型與「準備法術」同一組規則，在 sheet-spells.css）；物品欄沒有需同調物品時 hidden。 */
+#attunement-open {
+  align-self: center;
+}
+
+#attunement-open[hidden] {
+  display: none;
+}
+
+/* 同調視窗：三格下拉、限定條件與生效條件的提示、數字變化。 */
+.attunement-slots {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.attunement-slot .inventory-field {
+  margin-bottom: 0;
+}
+
+.attunement-slot__select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.attunement-slot__note {
+  margin: 0.3rem 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+
+.attunement-slot {
+  padding-bottom: 0.5rem;
+}
+
+/* 分享模式只列出名稱。 */
+.attunement-slot--readonly {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  font-size: var(--fs-sm);
+}
+
+.attunement-slot__label {
+  color: var(--text-muted);
+}
+
+.attunement-slot__value {
+  font-weight: 750;
+}
+
+.attunement-changes {
+  margin: 0.5rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  color: var(--accent-strong);
+  font-size: var(--fs-sm);
+  font-weight: 750;
+  line-height: 1.5;
+}
+
 /* 選單對齊底部：標題列多出契約、橡棍術勾選框或換列時，三個選單仍在同一高度。 */
 #tab-equipment .equipment-loadout-field {
   display: grid;
@@ -1518,6 +1579,11 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-mastery-badg
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem 1.25rem;
+}
+
+.equipment-main2-shield-select {
+  width: 100%;
+  margin-top: 0.35rem;
 }
 
 .equipment-alternate-main-option input {
@@ -2464,6 +2530,15 @@ button.inventory-more-item:is(:hover, :focus-visible, :active) {
   transform: translateX(1.22rem);
 }
 
+/* 分享模式鎖住的開關（魔法物品）：只顯示狀態，外觀同鎖定的勾選框。 */
+button.inventory-more-item[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+button.inventory-more-item[aria-disabled="true"] .inventory-switch {
+  opacity: 0.55;
+}
+
 @media (prefers-reduced-motion: reduce) {
   button.inventory-more,
   .inventory-switch,
@@ -2483,6 +2558,25 @@ button.inventory-more-item:is(:hover, :focus-visible, :active) {
   font-size: var(--fs-sm);
   font-weight: 800;
   line-height: 1.45;
+}
+
+.inventory-attunement {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+}
+
+.inventory-attunement[hidden] {
+  display: none;
+}
+
+.inventory-attuned-badge[hidden] {
+  display: none;
+}
+
+.inventory-tag.is-attuned {
+  border-color: var(--accent-strong);
 }
 
 .inventory-weight[hidden] {
@@ -2631,6 +2725,13 @@ button.inventory-over__hide:is(:hover, :active) {
   border-style: dashed;
 }
 
+/* ×0 的彈藥（用完後保留）：整個標籤變灰。 */
+.inventory-tag.is-empty {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.inventory-attuned-badge,
 .inventory-tag__badge {
   color: var(--accent-strong);
   font-size: var(--fs-xs);
@@ -2886,7 +2987,7 @@ button.inventory-arrange-done {
   align-items: end;
 }
 
-.inventory-holding__row .inventory-stepper {
+.inventory-holding__row .inventory-stepper, .inventory-bonus-transfer .inventory-stepper {
   display: grid;
   grid-template-columns: 2.6rem minmax(0, 1fr) 2.6rem;
   width: 100%;
@@ -3009,6 +3110,24 @@ button.inventory-arrange-done {
   line-height: 1.5;
 }
 
+.inventory-form-select {
+  flex: 1 1 100%;
+  max-width: 100%;
+}
+
+/* 防禦者的加值分配：物品視窗與跑團武器卡共用。 */
+.inventory-bonus-transfer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inventory-bonus-transfer__label {
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+}
+
 /* 持有區的互動列（裝備、檢定、使用次數、飲用、投擲、卷軸）：按鈕在左欄，說明或標籤在右欄；第二顆按鈕放右欄、與左欄同寬。 */
 .inventory-item-actions {
   display: grid;
@@ -3049,6 +3168,29 @@ button.inventory-arrange-done {
   max-width: var(--inventory-holding-left);
 }
 
+/* 魔法物品的次數池：數字框在左欄、說明在右欄，恢復按鈕在說明下一行的右欄。 */
+.inventory-charge-row .inventory-stepper {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) 2.6rem;
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+}
+
+.inventory-charge-row .inventory-action-button {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: start;
+  width: auto;
+  max-width: 100%;
+}
+
+/* 兩顆按鈕（穿戴與同調）佔滿兩欄時，說明在按鈕下一行。 */
+.inventory-action-row--stacked .inventory-action-row__text {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
 .inventory-action-tag {
   grid-column: 2;
   grid-row: 1;
@@ -3082,7 +3224,8 @@ button.inventory-arrange-done {
   }
 
   .inventory-action-row__text,
-  .inventory-action-tag {
+  .inventory-action-tag,
+  .inventory-action-row--stacked .inventory-action-row__text {
     grid-column: 1;
     grid-row: auto;
   }
@@ -3094,6 +3237,12 @@ button.inventory-arrange-done {
   .inventory-action-button + .inventory-action-button {
     grid-column: 1;
     max-width: none;
+  }
+
+  .inventory-charge-row .inventory-stepper,
+  .inventory-charge-row .inventory-action-button {
+    grid-column: 1;
+    grid-row: auto;
   }
 }
 
@@ -3359,12 +3508,18 @@ button.inventory-arrange-done {
 /* Selected category, active filter and cart count share the primary action colour. */
 .equipment-shop .equipment-shop__category[aria-pressed="true"],
 .equipment-shop .equipment-shop__category-toggle.is-filtered,
+.equipment-shop__magic-toggle[aria-pressed="true"],
+.magic-item-segmented__button[aria-pressed="true"],
 .equipment-shop__badge {
   color: var(--on-accent);
 }
 
 :where(html:not([data-ui-theme="warm"])) .equipment-shop .equipment-shop__category[aria-pressed="true"],
 :where(html:not([data-ui-theme="warm"])) .equipment-shop .equipment-shop__category-toggle.is-filtered,
+:where(html:not([data-ui-theme="warm"])) .equipment-shop__magic-toggle[aria-pressed="true"],
+:where(html:not([data-ui-theme="warm"])) .equipment-shop__magic-toggle[aria-pressed="true"]:not(:disabled):hover,
+:where(html:not([data-ui-theme="warm"])) .magic-item-segmented__button[aria-pressed="true"],
+:where(html:not([data-ui-theme="warm"])) .magic-item-segmented__button[aria-pressed="true"]:not(:disabled):hover,
 :where(html:not([data-ui-theme="warm"])) .equipment-shop__badge {
   border-color: var(--accent-strong);
   background: var(--accent-strong);
@@ -3372,6 +3527,10 @@ button.inventory-arrange-done {
 
 :where(html[data-ui-theme="warm"]) .equipment-shop .equipment-shop__category[aria-pressed="true"],
 :where(html[data-ui-theme="warm"]) .equipment-shop .equipment-shop__category-toggle.is-filtered,
+:where(html[data-ui-theme="warm"]) .equipment-shop__magic-toggle[aria-pressed="true"],
+:where(html[data-ui-theme="warm"]) .equipment-shop__magic-toggle[aria-pressed="true"]:not(:disabled):hover,
+:where(html[data-ui-theme="warm"]) .magic-item-segmented__button[aria-pressed="true"],
+:where(html[data-ui-theme="warm"]) .magic-item-segmented__button[aria-pressed="true"]:not(:disabled):hover,
 :where(html[data-ui-theme="warm"]) .equipment-shop__badge {
   border-color: var(--border-strong);
   background: var(--action-fill);
@@ -3624,8 +3783,147 @@ button.inventory-arrange-done {
   font-weight: 700;
 }
 
-.app-dialog[data-variant="equipment-detail"] .app-dialog__surface {
+.app-dialog[data-variant="equipment-detail"] .app-dialog__surface,
+.app-dialog[data-variant="magic-item-grant"] .app-dialog__surface {
   width: min(100%, 40rem);
+}
+
+/* 魔法物品模式：沒有購物與結帳，整列可點，名稱靠左、稀有度與同調靠右。 */
+.app-dialog[data-variant="equipment-shop"][data-shop-mode="magic"] .app-dialog__actions {
+  display: none;
+}
+
+.equipment-shop__item--magic {
+  display: block;
+  padding: 0;
+}
+
+.magic-shop__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 2.75rem;
+  margin: 0;
+  padding: 0.3rem 0.25rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+.magic-shop__row:hover,
+.magic-shop__row:focus-visible {
+  background: var(--surface-soft);
+  box-shadow: none;
+  transform: none;
+  color: var(--accent-strong);
+}
+
+.magic-shop__name {
+  min-width: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.magic-shop__meta {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.15rem 0.5rem;
+  max-width: 55%;
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.magic-shop__attunement {
+  color: var(--accent-strong);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+}
+
+/* 取得視窗：說明自己捲動，選項固定在下方，長說明也不必捲到底才看到要選什麼。 */
+.app-dialog[data-variant="magic-item-grant"] .app-dialog__body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.app-dialog[data-variant="magic-item-grant"] .magic-item-detail {
+  flex: 0 1 auto;
+  min-height: 5rem;
+  padding: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.magic-item-fields {
+  flex: 0 0 auto;
+  max-height: 45vh;
+  max-height: 45dvh;
+  padding: 0.75rem 1rem 0;
+  border-top: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.magic-item-detail__subtitle,
+.app-dialog__body .magic-item-detail__subtitle {
+  margin: 0 0 0.6rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.magic-item-detail__manual,
+.app-dialog__body .magic-item-detail__manual {
+  margin: 0.25rem 0 0;
+  color: var(--warning);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.magic-item-detail__status,
+.app-dialog__body .magic-item-detail__status {
+  margin: 0 0 0.5rem;
+  color: var(--text-muted);
+}
+
+.magic-item-detail__retry {
+  width: auto;
+  min-height: 2.4rem;
+  margin: 0;
+  padding: 0.3rem 0.9rem;
+}
+
+.magic-item-field .inventory-field__label {
+  font-weight: 700;
+}
+
+.magic-item-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.magic-item-segmented__button {
+  flex: 1 1 auto;
+  width: auto;
+  min-height: 2.6rem;
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  font-size: var(--fs-sm);
+}
+
+.inventory-holding.has-detail > .magic-item-detail {
+  margin-bottom: 0.75rem;
 }
 
 .app-dialog__body .equipment-detail-dialog__meta {

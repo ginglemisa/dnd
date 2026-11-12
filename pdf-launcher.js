@@ -49,8 +49,8 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261110-feat-pdf-lines");
-      await loadScriptOnce("pdf-export.js?v=20261111-serif-big5");
+      await loadScriptOnce("pdf-field-map.js?v=20261111-magic-effects-4");
+      await loadScriptOnce("pdf-export.js?v=20261112-merge-main-menu");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -64,6 +64,20 @@ function getPdfRaceChoiceOptions(state) {
   return Object.fromEntries(Object.values(window.getAllRaceRules?.() || {}).flatMap(rules => rules.choice
     ? [[window.getRaceChoiceOptionKey(rules.choice.id), (state?.[rules.choice.id] || "").trim()]]
     : []));
+}
+
+// PDF 的屬性格寫有效值（屬性欄原值加上生效中的魔法物品）；存檔與 state 仍是原值，由匯出選項帶給 buildPdfFieldPayload。
+function getPdfAbilityScores() {
+  return Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].flatMap(id => typeof window.getEffectiveAbilityValue === "function" ? [[id, window.getEffectiveAbilityValue(id)]] : []));
+}
+
+// PDF 用到的魔法物品數值：熟練加值（艾恩石精進）與速度選項（跑跳之靴、秘銀護甲，index.html 的 getMagicSpeedOptions），
+// 和角色卡同一個來源；由匯出選項帶給 buildPdfFieldPayload。
+function getPdfMagicOptions() {
+  return {
+    magicProficiencyBonus: window.getActiveMagicEffects?.().proficiencyBonus || 0,
+    magicSpeedOptions: window.getMagicSpeedOptions?.() || {}
+  };
 }
 
 function buildPdfPrecheckMessages() {
@@ -283,7 +297,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       try {
         await ensurePdfExportReady();
         const {includeAvatar,...chosen}=result;
-        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:'',customSpells:window.TabletopCustomSpells?.getPdfSpells() || [],weaponDamageTypeNotes:window.getWeaponDamageTypePdfNotes?.() || {}};
+        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:'',customSpells:window.TabletopCustomSpells?.getPdfSpells() || [],weaponDamageTypeNotes:window.getWeaponDamageTypePdfNotes?.() || {},hasSpeedyFeat:window.hasSelectedFeat?.("迅捷步法") === true,abilityScores:getPdfAbilityScores(),...getPdfMagicOptions()};
         await window.preloadPdfExportAssets?.(exportOptions);
         render('progress',nameMeasurement?.shrinks
           ? `角色名稱將以 ${nameMeasurement.fontSize.toFixed(1)} pt 輸出，製作中…`
@@ -627,6 +641,9 @@ async function downloadQuickBuildCompactPdf() {
       includeSpellbook: true,
       customSpells: window.TabletopCustomSpells?.getPdfSpells() || [],
       weaponDamageTypeNotes: window.getWeaponDamageTypePdfNotes?.() || {},
+      hasSpeedyFeat: window.hasSelectedFeat?.("迅捷步法") === true,
+      abilityScores: getPdfAbilityScores(),
+      ...getPdfMagicOptions(),
       ...getPdfRaceChoiceOptions(state),
       outputMode: "compact",
       sheetTemplate: "official"

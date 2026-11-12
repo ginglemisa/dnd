@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: sun-blade
+name: 陽炎劍
+nameEn: "Sun Blade"
+source: srd
+category: weapon
+rarity: rare
+attunement: true
+base: { fixed: 長劍 }
+effects: { attack: 2, damage: 2, finesse: true, damageType: radiant, proficiencyAs: [ 長劍, 短劍 ] }
+hints:
+  - panel: weapon
+    text: 命中不死生物時額外造成 1d8 光耀傷害。
+actions:
+  - { id: blade, name: 劍刃出現／消失, type: bonus, text: 握住劍柄時讓光輝劍刃出現或消失。劍刃發出半徑 15 呎明亮光照、再向外 15 呎微光光照（陽光）。 }
+  - { id: sunlight, name: 調整光照, type: magic, text: 劍刃存在時，明亮光照與微光光照的半徑各增加或減少 5 呎（各 10～30 呎）。 }
+text: |-
+  這件物品看起來像是一個劍柄。
+
+  _光輝之刃。_ 握住劍柄時，你可以進行附贈動作，使一道純粹光輝的劍刃憑空出現，或使劍刃消失。劍刃存在期間，這件魔法武器的功能如同具有靈巧屬性的長劍。若你熟練長劍或短劍，你就熟練_陽炎劍_。
+
+  使用這件武器進行的攻擊檢定與傷害擲骰獲得+2加值，且它造成光耀傷害而非揮砍傷害。當你用它命中不死生物時，該目標額外受到1d8光耀傷害。
+
+  _陽光。_ 這把劍的發光劍刃在半徑15呎內散發明亮光照，並再向外15呎散發微光光照。這道光是陽光。劍刃存在期間，你可以進行魔法動作，使其明亮光照與微光光照的半徑各增加或減少5呎，最大各為30呎，最小各為10呎。

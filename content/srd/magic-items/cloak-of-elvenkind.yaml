@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: cloak-of-elvenkind
+name: 精靈斗篷
+nameEn: "Cloak of Elvenkind"
+source: srd
+category: wondrous
+group: wearable
+rarity: uncommon
+attunement: true
+use: worn
+hints:
+  - advantage: [ 隱匿 ]
+    text: 為察覺你而進行的感知（察覺）檢定有劣勢。
+text: |-
+  穿戴這件斗篷時，為察覺你而進行的感知（察覺）檢定具有劣勢，且你在敏捷（隱匿）檢定上具有優勢。

@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: staff-of-frost
+name: 冰霜法杖
+nameEn: "Staff of Frost"
+source: srd
+category: staff
+rarity: very-rare
+attunement: "由德魯伊、術士、契術師或法師"
+base: { fixed: 長棍 }
+hints:
+  - resistances: [ cold ]
+pools:
+  - { id: charges, label: 充能, max: 10, recover: dawn, amount: 1d6 + 4 }
+actions:
+  - { id: cone-of-cold, spell: cone-of-cold, stats: yours, pool: charges, cost: 5 }
+  - { id: fog-cloud, spell: fog-cloud, stats: yours, pool: charges }
+  - { id: ice-storm, spell: ice-storm, stats: yours, pool: charges, cost: 4 }
+  - { id: wall-of-ice, spell: wall-of-ice, stats: yours, pool: charges, cost: 4 }
+text: |-
+  手持這根法杖時，你對冷凍傷害具有抗性。
+
+  _法術。_ 法杖有10次充能。手持法杖時，你可以使用你的法術豁免DC，從法杖施放下表中的一個法術。表格列出施放各法術需要消耗的充能次數。
+
+  | 法術 | 充能消耗 | 法術 | 充能消耗 |
+  | --- | --- | --- | --- |
+  | *寒冰錐* | 5 | *冰風暴* | 4 |
+  | *雲霧術* | 1 | *冰牆術* | 4 |
+
+  _恢復充能。_ 法杖每天黎明恢復1d6 + 4次已消耗的充能。若你消耗最後一次充能，擲1d20。擲出1時，法杖化為水並被摧毀。

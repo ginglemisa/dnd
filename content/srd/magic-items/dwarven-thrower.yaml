@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: dwarven-thrower
+name: 矮人飛錘
+nameEn: "Dwarven Thrower"
+source: srd
+category: weapon
+rarity: very-rare
+attunement: 由矮人或已與矮人腰帶同調的生物
+base: { fixed: 戰錘 }
+effects: { attack: 3, damage: 3, thrown: [ 20, 60 ] }
+hints:
+  - panel: weapon
+    text: 遠程命中額外造成 1d8 力場傷害（巨人 2d8）；攻擊後飛回手中。
+text: |-
+  使用這件魔法武器進行的攻擊檢定與傷害擲骰獲得+3加值。它具有投擲屬性，一般射程為20呎，遠射程為60呎。當你以這件武器進行遠程攻擊並命中時，它額外造成1d8力場傷害；若目標是巨人，則額外造成2d8力場傷害。無論命中或未命中，武器隨即飛回你的手中。

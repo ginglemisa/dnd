@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: rod-of-rulership
+name: 支配權杖
+nameEn: "Rod of Rulership"
+source: srd
+category: rod
+rarity: rare
+attunement: true
+pools:
+  - { id: rulership, label: 要求服從, max: 1, recover: dawn }
+actions:
+  - { id: rulership, name: 要求服從, type: magic, pool: rulership, when: owned, text: 展示權杖，你 120 呎內你看得見、由你選擇的每個生物 DC 15 感知豁免，失敗則被魅惑 8 小時，把你視為信任的領袖；受到你或盟友傷害、或被命令違背本性時結束。 }
+text: |-
+  你可以進行魔法動作展示這根權杖，並對你自身120呎內你看得見、由你選擇的每個生物要求服從。每個目標必須成功通過DC 15的感知豁免，否則陷入魅惑狀態8小時。以此方式陷入魅惑時，該生物會將你視為它所信任的領袖。如果受到你或你的盟友傷害，或被命令去做違背其本性的事，目標就不再以此方式陷入魅惑。此特性使用後，直到下次黎明前都無法再次使用。

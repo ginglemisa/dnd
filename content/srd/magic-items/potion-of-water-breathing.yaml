@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: potion-of-water-breathing
+name: 水下呼吸藥水
+nameEn: "Potion of Water Breathing"
+source: srd
+category: potion
+rarity: uncommon
+attunement: false
+consumable: true
+text: |-
+  喝下這瓶藥水後，你可以在水下呼吸24小時。
+  這瓶藥水的混濁綠色液體帶有海洋的氣味，裡面漂浮著一顆水母狀的氣泡。

@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: staff-of-the-magi
+name: 賢者法杖
+nameEn: "Staff of the Magi"
+source: srd
+category: staff
+rarity: legendary
+attunement: "由術士、契術師或法師"
+base: { fixed: 長棍 }
+effects: { attack: 2, damage: 2, spellAttack: 2, condition: held }
+hints:
+  - panel: skills
+    text: 對法術的豁免有優勢。
+pools:
+  - { id: charges, label: 充能, max: 50, recover: dawn, amount: 4d6 + 2 }
+actions:
+  - { id: absorb, name: 法術吸收, type: reaction, text: 另一個生物施放只以你為目標的法術時，法杖吸收它、取消效果，並獲得等同法術環階的充能（請在物品詳情加上）；超過 50 次時法杖爆炸，如同報復打擊。 }
+  - { id: retributive-strike, name: 報復打擊, type: magic, text: 折斷法杖，以法杖為起點的 30 呎發散區域爆炸：你有 50% 機率前往隨機位面避開，否則受到剩餘充能 ×16 的力場傷害；其他生物 DC 17 敏捷豁免，失敗受到剩餘充能 ×6 的力場傷害，成功減半。法杖被摧毀。 }
+  - { id: arcane-lock, spell: arcane-lock, stats: yours }
+  - { id: conjure-elemental, spell: conjure-elemental, stats: yours, pool: charges, cost: 7 }
+  - { id: detect-magic, spell: detect-magic, stats: yours }
+  - { id: dispel-magic, spell: dispel-magic, stats: yours, pool: charges, cost: 3 }
+  - { id: enlarge-reduce, spell: enlarge-reduce, stats: yours }
+  - { id: fireball, spell: fireball, stats: yours, level: 7, pool: charges, cost: 7 }
+  - { id: flaming-sphere, spell: flaming-sphere, stats: yours, pool: charges, cost: 2 }
+  - { id: ice-storm, spell: ice-storm, stats: yours, pool: charges, cost: 4 }
+  - { id: invisibility, spell: invisibility, stats: yours, pool: charges, cost: 2 }
+  - { id: knock, spell: knock, stats: yours, pool: charges, cost: 2 }
+  - { id: light, spell: light, stats: yours }
+  - { id: lightning-bolt, spell: lightning-bolt, stats: yours, level: 7, pool: charges, cost: 7 }
+  - { id: passwall, spell: passwall, stats: yours, pool: charges, cost: 5 }
+  - { id: plane-shift, spell: plane-shift, stats: yours, pool: charges, cost: 7 }
+  - { id: protection-from-evil-and-good, spell: protection-from-evil-and-good, stats: yours }
+  - { id: telekinesis, spell: telekinesis, stats: yours, pool: charges, cost: 5 }
+  - { id: wall-of-fire, spell: wall-of-fire, stats: yours, pool: charges, cost: 4 }
+  - { id: web, spell: web, stats: yours, pool: charges, cost: 2 }
+text: |-
+  這根法杖有50次充能，可以當作魔法長棍揮舞，使用它進行的攻擊檢定與傷害擲骰獲得+2加值。你手持它時，法術攻擊檢定獲得+2加值。
+
+  _法術吸收。_ 手持法杖時，你對法術的豁免具有優勢。此外，當另一個生物施放僅以你為目標的法術時，你可以進行反應動作。若你這麼做，法杖會吸收該法術的魔力，取消其效果，並獲得等同於被吸收法術環階的充能次數。然而，若這麼做使法杖的充能總數超過50，法杖就會爆炸，如同你啟動了它的報復打擊（見下方）。
+
+  _法術。_ 手持法杖時，你可以使用你的法術豁免DC，從法杖施放下表中的一個法術。表格列出施放各法術需要消耗的充能次數。
+
+  | 法術 | 充能消耗 |
+  | --- | --- |
+  | *秘法鎖* | 0 |
+  | *元素召喚術* | 7 |
+  | *偵測魔法* | 0 |
+  | *解除魔法* | 3 |
+  | *變巨術/縮小術* | 0 |
+  | *火球術*（7環版本） | 7 |
+  | *熾焰法球* | 2 |
+  | *冰風暴* | 4 |
+  | *隱形術* | 2 |
+  | *敲擊術* | 2 |
+  | *光亮術* | 0 |
+  | *閃電束*（7環版本） | 7 |
+  | *穿牆術* | 5 |
+  | *異界傳送* | 7 |
+  | *防護善惡* | 0 |
+  | *心靈遙控* | 5 |
+  | *火牆術* | 4 |
+  | *蛛網術* | 2 |
+
+  _恢復充能。_ 法杖每天黎明恢復4d6 + 2次已消耗的充能。若你消耗最後一次充能，擲1d20。擲出20時，法杖恢復1d12 + 1次充能。
+
+  _報復打擊。_ 你可以進行魔法動作，將法杖在膝蓋上或堅硬的表面上折斷。法杖被摧毀，並以爆炸的形式釋放其魔力，爆炸填滿一個以法杖自身為起點的30呎發散區域。你有50%的機率立即前往一個隨機的位面，避開爆炸。若你未能避開該效果，你受到等同於法杖內充能次數16倍的力場傷害。區域內每個其他生物進行一次DC 17的敏捷豁免。豁免失敗時，生物受到等同於法杖內充能次數6倍的力場傷害。豁免成功時，生物受到一半傷害。

@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../schema/magic-item.schema.json
+id: staff-of-the-python
+name: 巨蟒法杖
+nameEn: "Staff of the Python"
+source: srd
+category: staff
+rarity: uncommon
+attunement: true
+base: { fixed: 長棍 }
+pools:
+  - { id: cooldown, label: 化為巨蟒, max: 1, recover: cooldown, cooldown: 1 小時 }
+actions:
+  - { id: snake, name: 化為巨蟒, type: magic, pool: cooldown, text: 投擲法杖到你 10 呎內未佔據的空間，變成受你控制的巨蟒（與你共用先攻、在你之後行動）。附贈動作讓牠變回法杖，之後 1 小時內不能再用；巨蟒降到 0 生命值時死亡，法杖被摧毀。 }
+  - { id: revert, name: 巨蟒變回法杖, type: bonus, text: 命令巨蟒在牠所在的空間變回法杖；在失去所有生命值之前變回時，牠的生命值全部恢復。 }
+text: |-
+  作為魔法動作，你可以投擲這根法杖，使其落在你10呎內一個未被佔據的空間，讓法杖在該空間變成一條**巨蟒**。這條蛇受你控制，與你共用先攻順位，並在你的回合之後立即進行它的回合。
+
+  在你的回合中，若蛇在你60呎內且你沒有陷入失能狀態，你可以用意念命令牠（不需動作）。你決定蛇在牠的回合採取什麼動作以及如何移動，或者你可以對牠下達一般性的命令，例如攻擊你的敵人或守衛某個地點。沒有你的命令時，蛇會自衛。
+
+  作為附贈動作，你可以命令蛇在牠目前所在的空間恢復成法杖形態，且你在1小時內無法再次使用法杖的特性。若蛇降至0點生命值，牠會死亡並恢復成法杖形態；法杖隨後碎裂並被摧毀。若蛇在失去所有生命值之前就恢復成法杖形態，牠會恢復所有生命值。
