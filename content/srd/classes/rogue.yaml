@@ -90,7 +90,7 @@ features:
       - mode: bonus
         key: dynamic-bonus-class-1vms7ce
     text: |
-      在你的回合中，可用**附贈**執行下列其中一項：衝刺、撤離、躲藏。
+      在你的回合中，可用**附贈**執行下列其中一項：疾走、撤離、躲藏。
   - id: rogue-subclass
     level: 3
     name: 盜賊子職

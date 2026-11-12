@@ -4,6 +4,8 @@
 // 不輸出 data-feature-id（職業頁找能力位置只看網站版）、表單控制項或 id。
 // Markdown 子集：段落（空行分隔；段落內換行保留為 <br>）、「- 」清單、「### 」「#### 」小標、GFM 表格、_斜體_、**粗體**。
 // 第一列就是 | --- | 分隔列的表格沒有表頭，輸出成核心特質那種兩欄表。行內寫法沿用法術 SRD 版（tools/spell-content/srd-text.js）。
+// 每行以「> 」開頭的區塊是側欄（原文框起來的補充，例如聖騎士「違背誓言」）：只有「>」的行分段，
+// 第一段可寫「> ### 標題」當側欄標題，其餘只能是段落與清單。
 "use strict";
 const { ContentError } = require("../content/errors");
 const { inline, escapeHtml } = require("../spell-content/srd-text");
@@ -59,9 +61,18 @@ function table(lines, where) {
 }
 
 // headings：允許的小標層級（overview 為 ### 與 ####；能力全文與子職說明不可有小標）。
-function blocks(text, where, { headings = [], tables = true } = {}) {
+function blocks(text, where, { headings = [], tables = true, sidebars = true } = {}) {
   return text.trim().split(/\n{2,}/).map(block => {
     const lines = block.split("\n");
+    if (lines.every(line => /^>( |$)/.test(line))) {
+      if (!sidebars) throw new ContentError(`${where}：側欄內不可再有側欄`);
+      const parts = lines.map(line => line.replace(/^> ?/, "")).join("\n").trim().split(/\n{2,}/);
+      const title = parts[0].match(/^### (.+)$/);
+      const content = (title ? parts.slice(1) : parts).join("\n\n");
+      if (!content.trim()) throw new ContentError(`${where}：側欄要有內文`);
+      return `<aside class="class-srd-sidebar">${title ? `<h4 class="class-srd-sidebar__title">${inline(title[1], where)}</h4>` : ""}`
+        + `${blocks(content, `${where}（側欄）`, { tables: false, sidebars: false })}</aside>`;
+    }
     const heading = block.match(/^(#{1,6}) (.+)$/);
     if (heading && lines.length === 1) {
       const level = heading[1].length;
@@ -73,7 +84,7 @@ function blocks(text, where, { headings = [], tables = true } = {}) {
       return table(lines, where);
     }
     if (lines.every(line => line.startsWith("- "))) return `<ul class="class-rule-list">${lines.map(line => `<li>${inline(line.slice(2), where)}</li>`).join("")}</ul>`;
-    if (lines.some(line => /^(#|\||- |• )/.test(line))) throw new ContentError(`${where}：小標、表格或清單須自成一段（前後空一行），清單用「- 」`);
+    if (lines.some(line => /^(#|\||- |• |>)/.test(line))) throw new ContentError(`${where}：小標、表格、清單或側欄須自成一段（前後空一行），清單用「- 」，側欄每行以「> 」開頭`);
     return `<p>${lines.map(line => inline(line, where)).join("<br>")}</p>`;
   }).join("");
 }

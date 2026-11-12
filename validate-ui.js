@@ -766,7 +766,7 @@ async function verifyPdf(page, fieldsOnly) {
       [{ class: "paladin", "paladin-fighting-style": true, "derived-feat-fighting-style-paladin": "防禦" }, ["等級 1：聖療、施法、武器精通", "等級 2：戰鬥風格／防禦", "等級 5：額外攻擊、忠誠坐騎"]],
       [{ class: "paladin", "paladin-blessed-warrior": true, __spellManagement: { version: 2, manual: false, entries: [],
         classFeatureCantrips: { "class-paladin-blessed-warrior-cantrip-1": "guidance", "class-paladin-blessed-warrior-cantrip-2": "sacred-flame" } } },
-        ["等級 2：受祝福的勇士", `選擇：${SpellCatalog.getSpell("guidance").nameZh}、${SpellCatalog.getSpell("sacred-flame").nameZh}`], ["等級 2：戰鬥風格"]],
+        ["等級 2：受祝福的勇者", `選擇：${SpellCatalog.getSpell("guidance").nameZh}、${SpellCatalog.getSpell("sacred-flame").nameZh}`], ["等級 2：戰鬥風格"]],
       [{ class: "ranger", "derived-feat-fighting-style-ranger": "防禦" }, ["等級 1：施法、宿敵、武器精通", "等級 2：戰鬥風格"]],
       [{ class: "ranger", "ranger-druidic-warrior": true }, ["等級 2：德魯伊教戰士"], ["等級 2：戰鬥風格"]],
       [{ class: "rogue", "language-extra-2": "common-sign" }, ["等級 1：專精、偷襲、武器精通", "盜賊黑話、通用手語", "等級 7：反射閃避、可靠才能"]],
@@ -2570,7 +2570,7 @@ async function verifyClassSrdVersion(browser, url) {
     await page.goto(url);
     await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
     await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
-    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard", "cleric", "druid", "fighter"], "only classes with SRD text get the switch");
+    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger"], "only classes with SRD text get the switch");
 
     // 沒有 SRD 譯文的職業：沒有開關，標題與版面不變。
     await set("class", "rogue");
@@ -2712,10 +2712,58 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 1, "fighter has the features table only");
     await showTab("class");
 
+    // 武僧：沒有法術列表；9 級以後與散打鬥士 11–17 級只在 SRD 版。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="monk"]').click();
+    assert.equal(await pressed("class"), "site", "changing to monk returns to 網站版");
+    await chooseSrd("class");
+    const monkHeadings = await srdHeadings();
+    for (const heading of ["2 級：聚氣凝神", "10 級：凝神入微", "20 級：身心合一", "武僧子職：散打鬥士", "17 級：震顫掌"]) {
+      assert(monkHeadings.includes(heading), `monk SRD 版 shows ${heading}`);
+    }
+    await showTab("creation");
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 1, "monk has the features table only");
+    await showTab("class");
+
+    // 聖騎士：半施法職業，法術位只到 5 環、法術列表五個環階；原文的側欄（違背誓言）是有外框的區塊，放在引導神力內文最後。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="paladin"]').click();
+    assert.equal(await pressed("class"), "site", "changing to paladin returns to 網站版");
+    await chooseSrd("class");
+    const paladinHeadings = await srdHeadings();
+    for (const heading of ["1 級：聖療", "9 級：聖威懾敵", "19 級：傳奇恩惠", "聖騎士子職：奉獻之誓", "20 級：聖潔光輪"]) {
+      assert(paladinHeadings.includes(heading), `paladin SRD 版 shows ${heading}`);
+    }
+    assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 1, "Oath of Devotion spells table");
+    const paladinSidebar = modal.locator("#classFeaturesSrd .class-srd-feature", { hasText: "3 級：引導神力" }).locator(".class-srd-sidebar");
+    assert.equal(await modal.locator("#classFeaturesSrd .class-srd-sidebar").count(), 1, "only Channel Divinity carries a sidebar");
+    assert.equal(await paladinSidebar.locator(".class-srd-sidebar__title").textContent(), "違背誓言");
+    assert.equal(await paladinSidebar.locator("p").count(), 3, "sidebar keeps its three paragraphs");
+    assert.equal(await paladinSidebar.evaluate(aside => aside === aside.parentElement.lastElementChild && getComputedStyle(aside).borderTopStyle === "solid"), true, "the sidebar is a bordered box at the end of the Channel Divinity text");
+    await showTab("creation");
+    const paladinCreation = await modal.locator("#classCreationSrd .class-srd-heading, #classCreationSrd .class-srd-subheading").allTextContents();
+    assert(paladinCreation.includes("聖騎士法術列表") && paladinCreation.includes("5 環聖騎士法術"), "paladin spell list follows the overview");
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 6, "paladin features table plus five spell tables");
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table").first().locator('thead th[colspan="5"]').textContent(), "——各環階法術位——");
+    await showTab("class");
+
+    // 遊俠：半施法職業；能力內文沒有表格，法術列表五個環階。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="ranger"]').click();
+    assert.equal(await pressed("class"), "site", "changing to ranger returns to 網站版");
+    await chooseSrd("class");
+    const rangerHeadings = await srdHeadings();
+    for (const heading of ["1 級：宿敵", "9 級：專精", "20 級：宿敵剋星", "遊俠子職：獵人", "15 級：卓越狩獵防禦"]) {
+      assert(rangerHeadings.includes(heading), `ranger SRD 版 shows ${heading}`);
+    }
+    assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 0, "ranger features carry no tables");
+    await showTab("creation");
+    const rangerCreation = await modal.locator("#classCreationSrd .class-srd-heading, #classCreationSrd .class-srd-subheading").allTextContents();
+    assert(rangerCreation.includes("遊俠法術列表") && rangerCreation.includes("5 環遊俠法術"), "ranger spell list follows the overview");
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 6, "ranger features table plus five spell tables");
+    await showTab("class");
+
     // 換職業回到網站版、沒有 SRD 的職業移除開關；重新開啟視窗也回到網站版。
     await chooseSrd("class");
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="monk"]').click();
-    assert.equal(await switches().count(), 0, "monk has no switch");
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="rogue"]').click();
+    assert.equal(await switches().count(), 0, "rogue has no switch after a class with SRD text");
     assert.equal(await modal.locator("#classFeatures").isVisible(), true);
     assert.equal(await modal.locator("#classFeaturesSrd").isVisible(), false);
     await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="barbarian"]').click();
@@ -2783,7 +2831,7 @@ async function verifyChoiceReminderHighlights(browser, url) {
       focused: "derived-feat-background-magic-initiate-cantrip-1", inView: true
     }, "Magic Initiate highlights its open spell selects, not the background's fixed list");
     await check("#paladin-blessed-warrior");
-    assert.deepEqual(await jump("受祝福的勇士"), {
+    assert.deepEqual(await jump("受祝福的勇者"), {
       highlighted: ["class-feature-linked-class-paladin-blessed-warrior-0", "class-feature-linked-class-paladin-blessed-warrior-1"],
       focused: "class-feature-linked-class-paladin-blessed-warrior-0", inView: true
     }, "Blessed Warrior highlights both cantrip selects");

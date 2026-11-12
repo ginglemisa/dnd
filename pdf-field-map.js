@@ -148,7 +148,7 @@
   // A selected option is appended to its heading as "／選項"; nextLine specs
   // print "選擇：選項" below instead. Unselected options leave the heading as is.
   // 一般選項與下拉選擇卡片的選擇由職業內容檔推得（getClassFeatureChoiceSpecs）；
-  // 下列是給予專長或戲法的選擇（戰鬥風格、受祝福的勇士、德魯伊教戰士），另讀角色的專長與戲法。
+  // 下列是給予專長或戲法的選擇（戰鬥風格、受祝福的勇者、德魯伊教戰士），另讀角色的專長與戲法。
   const CLASS_FEATURE_CHOICE_SPECS = Object.freeze({
     fighter: Object.freeze([
       Object.freeze({ heading: '等級 1：戰鬥風格', featStateKey: 'derived-feat-fighting-style-fighter' }),
@@ -201,7 +201,7 @@
     ))];
   }
 
-  // 改選自選戲法的選項（內容檔選項 grants.cantrips 數量 2 以上，例如受祝福的勇士）：選了就以該選項取代戰鬥風格標題。
+  // 改選自選戲法的選項（內容檔選項 grants.cantrips 數量 2 以上，例如受祝福的勇者）：選了就以該選項取代戰鬥風格標題。
   // 戲法欄位鍵與網站 getClassFeatureCantripChoices 相同：class-<選項 ID>-cantrip-<序號>。
   function getClassFeatureCantripSpec(classKey, featureId) {
     const feature = getClassRules(classKey)?.features.find((item) => item.id === featureId);

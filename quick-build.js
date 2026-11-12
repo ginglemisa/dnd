@@ -367,7 +367,7 @@
     druid: [{ id: "druid-druidic", text: () => "會說德魯伊的祕密語言「德魯伊語」，也能留下只有懂這種語言的人才會自動發現的暗號。" }],
     fighter: [{ id: "fighter-second-wind", text: ctx => `關鍵時刻恢復 1d10 + ${QUICK_BUILD_LEVEL} 生命值。\n可用 ${ctx.value("secondWindUses")} 次，短休恢復 1 次，長休後全部恢復。` }],
     monk: [
-      { id: "monk-martial-arts", text: ctx => `未穿護甲、未持盾時：可多打 1 次徒手攻擊，傷害可改用 1d${ctx.value("martialArtsDie")}，攻擊與傷害可用敏捷取代力量。\n只適用徒手或武僧武器。` },
+      { id: "monk-martial-arts", text: ctx => `未穿護甲、未持盾時：可多打 1 次徒手打擊，傷害可改用 1d${ctx.value("martialArtsDie")}，攻擊與傷害可用敏捷取代力量。\n只適用徒手或武僧武器。` },
       { id: "monk-unarmored-defense", text: () => "未穿護甲、未持盾時，AC = 10 + 敏捷調整值 + 感知調整值。" }
     ],
     paladin: [{ id: "paladin-lay-on-hands", text: () => `擁有 ${QUICK_BUILD_LEVEL * 5} 點治療能量，觸碰生物（可以是自己）分配點數回血；也可花 5 點改為移除中毒。\n長休後全部恢復。` }],
@@ -2378,7 +2378,7 @@
   function offHandDescription(mainHand, offHand) {
     if (!offHand) return weaponHasProperty(mainHand, "雙手") ? "空著（這把武器要雙手拿）" : "空著";
     if (offHand === "盾牌") return `盾牌（AC +${globalThis.shield?.[0]?.AC ?? 2}，更難被打中）`;
-    if (offHand === "武藝") return "武藝（徒手攻擊，不用拿武器。未穿護甲、未持盾才能用，攻擊後可用附贈動作再打一次）";
+    if (offHand === "武藝") return "武藝（徒手打擊，不用拿武器。未穿護甲、未持盾才能用，攻擊後可用附贈動作再打一次）";
     return weaponHasProperty(offHand, "輕型") ? `${offHand}（攻擊後可用附贈動作再砍一次，這次傷害不加屬性調整值）` : offHand;
   }
 

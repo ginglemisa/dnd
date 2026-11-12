@@ -87,7 +87,7 @@ function restoreSubclassSelection(data) {
 }
 
 // 勾選後額外學會 1 個戲法的選項（內容檔選項的 grants.cantrips，count 為 1，例如魔術使、巫祝）：選項下方出現戲法選單
-// 「選項 ID-cantrip」。學會 2 個戲法的選項（受祝福的勇士、德魯伊教戰士）另由職業能力戲法處理。
+// 「選項 ID-cantrip」。學會 2 個戲法的選項（受祝福的勇者、德魯伊教戰士）另由職業能力戲法處理。
 let missionCantripChoicesCache = null;
 function getMissionCantripChoices() {
   const source = typeof classRules === "undefined" ? null : classRules;
@@ -104,7 +104,7 @@ function getMissionCantripChoices() {
   return missionCantripChoicesCache.choices;
 }
 
-// 選項 grants.cantrips 數量 2 以上（受祝福的勇士、德魯伊教戰士）：勾選且達到能力等級後自選戲法，
+// 選項 grants.cantrips 數量 2 以上（受祝福的勇者、德魯伊教戰士）：勾選且達到能力等級後自選戲法，
 // 選擇存在 SpellManagement 的職業特性戲法，欄位鍵為 class-<選項 ID>-cantrip-<序號>。不帶職業時回傳全部。
 let classFeatureCantripChoicesCache = null;
 function getClassFeatureCantripChoices(className) {

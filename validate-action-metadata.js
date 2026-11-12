@@ -265,7 +265,7 @@ const personalizedClasses = {
     ["action",2,"等級 2：吐故納新","dynamic-action-monk-curated-uncanny-metabolism"],
     ["reaction",3,"等級 3：撥擋化勁","dynamic-reaction-monk-curated-deflect-attacks"],
     ["reaction",4,"等級 4：輕身墜","dynamic-reaction-monk-curated-slow-fall"],
-    ["action",5,"等級 5：震懾擊","dynamic-action-monk-curated-stunning-strike"],
+    ["action",5,"等級 5：震懾打擊","dynamic-action-monk-curated-stunning-strike"],
     ["action",5,"等級 5：額外攻擊","dynamic-action-monk-curated-extra-attack"],
     ["bonus",6,"等級 6：混元體（散打子職）","dynamic-bonus-monk-curated-wholeness-of-body"]
   ],

@@ -1113,7 +1113,7 @@ async function verifyPreparedRingRange(page) {
   console.log("Prepared ring range: automatic cantrip/slot rings, class-option cantrips, retained high rings, unrestricted manual rings, lookup-only SRD spells and SRD-only paladin lookup spells kept out of preparation passed.");
 }
 
-// 受祝福的勇士／德魯伊教戰士：勾選時例外開放牧師／德魯伊戲法；準備視窗、職業特性頁連結與放大鏡搜尋
+// 受祝福的勇者／德魯伊教戰士：勾選時例外開放牧師／德魯伊戲法；準備視窗、職業特性頁連結與放大鏡搜尋
 // 都寫入同一組選項戲法欄（名額 2），取消選項後例外消失。
 async function verifyClassOptionCantrips(page) {
   const dialog = pickerDialog(page), ringFilter = dialog.getByRole("combobox", { name: "篩選環階", exact: true });
