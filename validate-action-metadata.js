@@ -42,7 +42,7 @@ const baseline = {
       ["bonus",3,"等級 3：散打技巧","dynamic-bonus-class-1kcppo0"],
       ["reaction",3,"等級 3：撥擋化勁","dynamic-reaction-class-5l2yua"],
       ["reaction",4,"等級 4：輕身墜","dynamic-reaction-class-1l1lc9s"],
-      ["action",5,"等級 5：震懾擊","dynamic-action-class-1g9j8ui"],
+      ["action",5,"等級 5：震懾打擊","dynamic-action-class-1g9j8ui"],
       ["bonus",6,"等級 6：混元體","dynamic-bonus-class-3mzm48"],
     ],
     "paladin": [
