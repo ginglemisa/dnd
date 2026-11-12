@@ -2554,7 +2554,7 @@ async function verifyClassSrdVersion(browser, url) {
     await page.goto(url);
     await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
     await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
-    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard"], "only classes with SRD text get the switch");
+    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard", "cleric"], "only classes with SRD text get the switch");
 
     // 沒有 SRD 譯文的職業：沒有開關，標題與版面不變。
     await set("class", "rogue");
@@ -2655,6 +2655,20 @@ async function verifyClassSrdVersion(browser, url) {
     for (const heading of ["1 級：施法", "10 級：魔法奧祕", "20 級：創世之言", "吟遊詩人子職：逸聞學院", "14 級：無雙絕技"]) {
       assert(bardHeadings.includes(heading), `bard SRD 版 shows ${heading}`);
     }
+
+    // 牧師：換職業回到網站版；SRD 版有 20 級能力、生命領域與法術列表。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="cleric"]').click();
+    assert.equal(await pressed("class"), "site", "changing to cleric returns to 網站版");
+    await chooseSrd("class");
+    const clericHeadings = await srdHeadings();
+    for (const heading of ["1 級：神聖使命", "10 級：神聖介入", "20 級：高等神聖介入", "牧師子職：生命領域", "17 級：至高治療"]) {
+      assert(clericHeadings.includes(heading), `cleric SRD 版 shows ${heading}`);
+    }
+    await showTab("creation");
+    const clericCreation = await modal.locator("#classCreationSrd .class-srd-heading, #classCreationSrd .class-srd-subheading").allTextContents();
+    assert(clericCreation.includes("牧師法術列表") && clericCreation.includes("9 環牧師法術"), "cleric spell list follows the overview");
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 11, "cleric features table plus ten spell tables");
+    await showTab("class");
 
     // 換職業回到網站版、沒有 SRD 的職業移除開關；重新開啟視窗也回到網站版。
     await chooseSrd("class");
