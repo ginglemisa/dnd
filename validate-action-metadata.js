@@ -3598,7 +3598,7 @@ async function verifyMergedActionUi(browser, url) {
     }
     await page.locator("#tabletop-action-tab-action").click();
     assert.equal(await page.locator("#tabletop-action-panel-action .tabletop-action-context").innerText(), "點擊[基本動作]按鈕可展開／收合，角色能力的使用時機與次數限制請參照各項說明。");
-    const coverCopy = "半身遮蔽：AC 與敏捷豁免獲得 +2，例如躲在齊腰高的矮牆後，或有其他生物擋在前方。\n\n3／4遮蔽：AC 與敏捷豁免獲得 +5，例如躲在城牆射箭孔或粗大樹幹後方。\n\n完全遮蔽：視線完全看不到，通常無法被指定為目標。";
+    const coverCopy = "半掩蔽：AC 與敏捷豁免獲得 +2，例如躲在齊腰高的矮牆後，或有其他生物擋在前方。\n\n四分之三掩蔽：AC 與敏捷豁免獲得 +5，例如躲在城牆射箭孔或粗大樹幹後方。\n\n全掩蔽：視線完全看不到，通常無法被指定為目標。";
     const natural20Copy = "攻擊骰子出 20 必中，造成重擊。\n傷害骰擲兩次，固定加值只加一次。\n\n例如長劍一般傷害為 1d8＋3\n重擊傷害則是 2d8＋3\n額外傷害骰（如至聖斬）也會加倍";
     const hideCopy = "進行一次敏捷（隱匿）檢定，難度 15，嘗試避開其他生物的注意。";
     const assertRuleTag = async button => {
@@ -3643,7 +3643,7 @@ async function verifyMergedActionUi(browser, url) {
       }), true, "natural 20 remains within the viewport with a usable target");
       await page.locator("#tabletop-action-tab-movement").click();
       const cover = page.locator('#tabletop-action-panel-movement [data-action-option-key="cover"]');
-      assert.equal(await cover.locator("span").first().innerText(), "遮蔽");
+      assert.equal(await cover.locator("span").first().innerText(), "掩蔽");
       await assertRuleTag(cover);
       assert.deepEqual(await page.locator("#tabletop-action-panel-movement .tabletop-action-options button")
         .evaluateAll(buttons => buttons.slice(0, 2).map(button => button.dataset.actionOptionKey)), ["cover", "climbing"], "cover immediately precedes climbing");

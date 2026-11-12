@@ -2570,7 +2570,7 @@ async function verifyClassSrdVersion(browser, url) {
     await page.goto(url);
     await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
     await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
-    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard", "cleric", "druid"], "only classes with SRD text get the switch");
+    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard", "cleric", "druid", "fighter"], "only classes with SRD text get the switch");
 
     // 沒有 SRD 譯文的職業：沒有開關，標題與版面不變。
     await set("class", "rogue");
@@ -2700,10 +2700,22 @@ async function verifyClassSrdVersion(browser, url) {
     assert(druidCreation.includes("德魯伊法術列表") && druidCreation.includes("9 環德魯伊法術"), "druid spell list follows the overview");
     await showTab("class");
 
+    // 戰士：沒有法術列表；9 級以後與勇士 10–18 級只在 SRD 版。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="fighter"]').click();
+    assert.equal(await pressed("class"), "site", "changing to fighter returns to 網站版");
+    await chooseSrd("class");
+    const fighterHeadings = await srdHeadings();
+    for (const heading of ["2 級：動作如潮", "9 級：不屈", "20 級：三次額外攻擊", "戰士子職：勇士", "18 級：屹立不倒"]) {
+      assert(fighterHeadings.includes(heading), `fighter SRD 版 shows ${heading}`);
+    }
+    await showTab("creation");
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 1, "fighter has the features table only");
+    await showTab("class");
+
     // 換職業回到網站版、沒有 SRD 的職業移除開關；重新開啟視窗也回到網站版。
     await chooseSrd("class");
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="fighter"]').click();
-    assert.equal(await switches().count(), 0, "fighter has no switch");
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="monk"]').click();
+    assert.equal(await switches().count(), 0, "monk has no switch");
     assert.equal(await modal.locator("#classFeatures").isVisible(), true);
     assert.equal(await modal.locator("#classFeaturesSrd").isVisible(), false);
     await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="barbarian"]').click();

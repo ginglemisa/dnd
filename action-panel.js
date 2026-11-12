@@ -79,7 +79,7 @@
   ]);
 
   const TABLETOP_MOVEMENT_OPTIONS = Object.freeze([
-    { key: "cover", label: "遮蔽", buttonTag: "規則", description: "半身遮蔽：AC 與敏捷豁免獲得 +2，例如躲在齊腰高的矮牆後，或有其他生物擋在前方。\n\n3／4遮蔽：AC 與敏捷豁免獲得 +5，例如躲在城牆射箭孔或粗大樹幹後方。\n\n完全遮蔽：視線完全看不到，通常無法被指定為目標。" }
+    { key: "cover", label: "掩蔽", buttonTag: "規則", description: "半掩蔽：AC 與敏捷豁免獲得 +2，例如躲在齊腰高的矮牆後，或有其他生物擋在前方。\n\n四分之三掩蔽：AC 與敏捷豁免獲得 +5，例如躲在城牆射箭孔或粗大樹幹後方。\n\n全掩蔽：視線完全看不到，通常無法被指定為目標。" }
   ]);
 
   const MODE_META = Object.freeze({

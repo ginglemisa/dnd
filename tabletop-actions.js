@@ -515,7 +515,7 @@
   }
 
   function getWeaponRuleEntries() {
-    // 職業能力的武器提示（職業內容檔的 hint，例如精通重擊、真力駐拳）。
+    // 職業能力的武器提示（職業內容檔的 hint，例如強化重擊、真力駐拳）。
     const entries = (globalScope.TabletopMode?.getClassHintEntries?.("weapons") || []).map(entry => [entry.label, entry.detail]);
     const form = globalScope.TabletopMode?.getDruidForm?.();
     const equipment = globalScope.TabletopMode?.getDruidContext?.().druid.equipment;
