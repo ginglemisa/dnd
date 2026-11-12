@@ -2529,6 +2529,144 @@ async function verifyCharacterFeatures(browser, url) {
 }
 
 // Reminders whose fields are rebuilt in the abilities dialog, span several selects, or are a single select.
+// 職業頁「網站版｜SRD 版」：只有寫了 SRD 譯文的職業（野蠻人）在標題列右側顯示切換；SRD 版延遲載入，等級篩選與網站版相同。
+async function verifyClassSrdVersion(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
+  const modal = page.locator("#character-features-modal");
+  const panels = { creation: "#class-creation-panel", class: "#class-abilities-panel" };
+  const set = (id, value) => page.evaluate(([id, value]) => {
+    const select = document.getElementById(id);
+    select.value = value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }, [id, value]);
+  const srdHeadings = () => modal.locator("#classFeaturesSrd .class-feature-section > h3").allTextContents();
+  const levels = selector => page.evaluate(selector => [...new Set(Array.from(document.querySelectorAll(`${selector} section[data-feature-level]`),
+    section => Number(section.dataset.featureLevel)))].sort((a, b) => a - b), selector);
+  const switches = () => modal.locator('.character-feature-panel > [data-feature-title="class"] .class-version-switch');
+  const pressed = panel => modal.locator(`${panels[panel]} .class-version-switch [aria-pressed="true"]`).getAttribute("data-spell-version");
+  const showTab = tab => modal.locator(`[data-feature-tab="${tab}"]`).click();
+  const chooseSrd = async panel => {
+    await modal.locator(`${panels[panel]} .class-version-switch [data-spell-version="srd"]`).click();
+    await modal.locator(`${panel === "class" ? "#classFeaturesSrd" : "#classCreationSrd"} .spell-version__attribution`).waitFor();
+  };
+  try {
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"); } catch {} });
+    await page.goto(url);
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
+    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian"], "only classes with SRD text get the switch");
+
+    // 沒有 SRD 譯文的職業：沒有開關，標題與版面不變。
+    await set("class", "rogue");
+    await page.evaluate(() => openCharacterFeatures("class"));
+    assert.equal(await switches().count(), 0, "rogue has no version switch");
+    assert.equal(await modal.locator('#class-abilities-panel [data-feature-title="class"]').textContent(), "盜賊Rogue");
+    assert.equal(await modal.locator("#classFeaturesSrd").isVisible(), false);
+    await modal.locator(".app-dialog__close").click();
+
+    // 野蠻人：網站版內容維持原樣，SRD 譯文尚未載入。
+    await set("class", "barbarian");
+    await set("level", "");
+    const siteFeatures = await page.locator("#classFeatures").innerHTML();
+    const siteCreation = await page.locator("#classCreationInfo").innerHTML();
+    const state = await page.evaluate(() => collectStateObject());
+    assert.equal(await page.evaluate(() => typeof globalThis.classSrdText), "undefined", "SRD text loads lazily");
+    for (const width of [1280, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate(() => openCharacterFeatures("class"));
+      for (const tab of ["creation", "class"]) {
+        await showTab(tab);
+        assert.equal(await pressed(tab), "site", `${tab} tab opens on 網站版`);
+        // 開關在標題列最右側、標題下方分隔線之上，不壓到職業名稱。
+        const geometry = await modal.locator(`${panels[tab]} > [data-feature-title="class"]`).evaluate(title => {
+          const rect = title.getBoundingClientRect();
+          const tabs = title.querySelector(".class-version-switch").getBoundingClientRect();
+          const name = title.querySelector(".character-feature-title__name").getBoundingClientRect();
+          const style = getComputedStyle(title);
+          const rule = rect.bottom - parseFloat(style.borderBottomWidth) - parseFloat(style.paddingBottom);
+          return { right: Math.abs(tabs.right - rect.right) < 1.5, above: tabs.bottom <= rule + 0.5, inside: tabs.top >= rect.top - 0.5, clear: tabs.left >= name.right || tabs.top >= name.bottom };
+        });
+        assert.deepEqual(geometry, { right: true, above: true, inside: true, clear: true }, `${tab} switch sits right-aligned above the title rule at ${width}px`);
+      }
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `no page overflow at ${width}px`);
+      await modal.locator(".app-dialog__close").click();
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.evaluate(() => openCharacterFeatures("class"));
+
+    // SRD 版：未選等級時列出 1–20 級全部能力與子職全部內容；網站版隱藏但原樣保留。
+    await chooseSrd("class");
+    assert.equal(await modal.locator("#classFeatures").isVisible(), false, "SRD 版 replaces 網站版");
+    const allHeadings = await srdHeadings();
+    for (const heading of ["1 級：狂暴", "9 級：殘暴打擊", "20 級：原初勇者", "野蠻人子職：狂戰士道途", "3 級：狂怒", "14 級：懾人氣勢"]) {
+      assert(allHeadings.includes(heading), `SRD 版 without a level shows ${heading}`);
+    }
+    const allLevels = await levels("#classFeaturesSrd");
+    assert.equal(Math.max(...allLevels), 20);
+    assert.equal(allHeadings.indexOf("20 級：原初勇者") < allHeadings.indexOf("野蠻人子職：狂戰士道途"), true, "subclass follows the class features");
+    assert.equal(await modal.locator("#classFeaturesSrd [data-feature-id], #classFeaturesSrd [id], #classCreationSrd [id]").count(), 0, "SRD text carries no feature ids or controls");
+    await showTab("creation");
+    assert.equal(await pressed("creation"), "srd", "both tabs share the version");
+    assert.equal(await modal.locator("#classCreationInfo").isVisible(), false);
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table tbody tr").count(), 20, "SRD table lists 20 levels");
+    assert.match(await modal.locator("#classCreationSrd").innerText(), /野蠻人核心特質[\s\S]*每個野蠻人等級一顆 D12[\s\S]*作為兼職角色[\s\S]*譯自 SRD 5\.2\.1/);
+
+    // 有選等級：和網站版同一套篩選（只列到該等級；子職段落視為子職等級）。
+    for (const level of ["2", "5", "8"]) {
+      await set("level", level);
+      await modal.locator("#classFeaturesSrd .spell-version__attribution").waitFor({ state: "attached" });
+      // 同一個篩選：SRD 版與網站版都只留下該等級以內的段落（8 級屬性值提升在 SRD 寫在 4 級，所以只比對篩選結果）。
+      assert.deepEqual(await levels("#classFeaturesSrd"), allLevels.filter(value => value <= Number(level)), `SRD 版 keeps levels up to ${level}`);
+      assert.equal(Math.max(...await levels("#classFeatures")), Number(level), `網站版 keeps levels up to ${level}`);
+      assert.equal((await srdHeadings()).includes("野蠻人子職：狂戰士道途"), Number(level) >= 3, `subclass heading follows the subclass level at ${level}`);
+      assert.equal(await modal.locator("#classCreationSrd .class-feature-table tbody tr").count(), 20, "the table is not filtered, like 網站版");
+      assert.equal(await pressed("creation"), "srd", "changing level keeps the chosen version");
+    }
+
+    // 切回網站版：內容與存檔都沒變。
+    await set("level", "");
+    await modal.locator('#class-creation-panel .class-version-switch [data-spell-version="site"]').click();
+    assert.equal(await modal.locator("#classCreationInfo").isVisible(), true);
+    assert.equal(await modal.locator("#classCreationSrd").isVisible(), false);
+    await showTab("class");
+    assert.equal(await pressed("class"), "site");
+    assert.equal(await modal.locator("#classFeatures").isVisible(), true);
+    assert.equal(await page.locator("#classFeatures").innerHTML(), siteFeatures, "網站版 features are unchanged");
+    assert.equal(await page.locator("#classCreationInfo").innerHTML(), siteCreation, "網站版 creation info is unchanged");
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), state, "switching versions keeps character data");
+
+    // 換職業回到網站版、沒有 SRD 的職業移除開關；重新開啟視窗也回到網站版。
+    await chooseSrd("class");
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="fighter"]').click();
+    assert.equal(await switches().count(), 0, "fighter has no switch");
+    assert.equal(await modal.locator("#classFeatures").isVisible(), true);
+    assert.equal(await modal.locator("#classFeaturesSrd").isVisible(), false);
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="barbarian"]').click();
+    assert.equal(await pressed("class"), "site", "changing class returns to 網站版");
+    await chooseSrd("class");
+    await modal.locator(".app-dialog__close").click();
+    await page.evaluate(() => openCharacterFeatures("class"));
+    assert.equal(await pressed("class"), "site", "reopening returns to 網站版");
+    assert.equal(await modal.locator("#classFeatures").isVisible(), true);
+    await modal.locator(".app-dialog__close").click();
+
+    // 分享模式：開關可用，依分享的等級篩選，切換不改分享資料。
+    const hash = await page.evaluate(() => encodeStateToHash({ ...collectStateObject(), class: "barbarian", level: "4", __shareStateVersion: 1 }));
+    await page.goto("about:blank");
+    await page.goto(url + hash);
+    await page.waitForFunction(() => document.getElementById("auto-calculate-key-stats-toggle")?.dataset.shareLocked === "true");
+    await page.locator("#legal-ack-btn").click();
+    const shared = await page.evaluate(() => collectStateObject());
+    await page.evaluate(() => openCharacterFeatures("class"));
+    await chooseSrd("class");
+    assert.deepEqual(await levels("#classFeaturesSrd"), [1, 2, 3, 4], "share mode filters SRD 版 by the shared level");
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), shared, "share mode switching keeps the shared data");
+    console.log("Class SRD version: switch only for classes with SRD text, title placement on desktop/narrow, lazy load, unchanged 網站版, level/subclass filtering, reset on reopen/class change and share mode passed.");
+  } finally {
+    await page.close();
+  }
+}
+
 async function verifyChoiceReminderHighlights(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 375, height: 812 }, reducedMotion: "reduce" });
   await page.addInitScript(() => { try { localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"); } catch {} });
@@ -4970,6 +5108,11 @@ async function verifyClassPicks(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
   try {
     await open(page);
+    // 野蠻人的武器精通（picks 的 weapons: melee）只列近戰武器。
+    await page.evaluate(blank => applyStateObject({ ...blank, class: "barbarian", level: "1" }), blank);
+    const barbarianOptions = (await slots(page))[0].options;
+    assert.ok(["巨斧", "手斧", "短棒"].every(name => barbarianOptions.includes(name)), "barbarian can choose simple and martial melee weapons");
+    assert.ok(!["短弓", "輕弩", "長弓", "重弩"].some(name => barbarianOptions.includes(name)), "barbarian cannot choose ranged weapons for mastery");
     await page.evaluate(blank => applyStateObject({ ...blank, class: "fighter", level: "1" }), blank);
     let current = await slots(page);
     assert.deepEqual(current.map(slot => [slot.id, slot.hidden]), [
@@ -5858,6 +6001,7 @@ async function main() {
       await verifyFeatureChoiceDisclosures(browser, url);
       await verifyCustomBackground(browser, url);
       await verifyCharacterFeatures(browser, url);
+      await verifyClassSrdVersion(browser, url);
       await verifyChoiceReminderHighlights(browser, url);
       await verifyClassFeatureChoicePrompt(browser, url);
       await verifyClassFeatureSupplementalChoices(browser, url);

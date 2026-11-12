@@ -1611,7 +1611,7 @@ async function verifyQuickBuildGuidanceCopy(browser, url) {
   await page.route("**/quick-build.js?*", async route => {
     const response = await route.fetch();
     const source = (await response.text()).replace("  window.quickBuild = {", `
-      window.__quickBuildCopy = { ORIGIN_FEAT_BLURBS, FIGHTING_STYLE_INTROS, WEAPON_MASTERY_SUMMARIES, ALIGNMENT_DESCRIPTIONS, ALIGNMENT_OPTIONS, MAIN_HAND_NOTES, LEVEL_ONE_FEATURE_INTROS, RACE_SIZE_HEIGHTS, CLASS_ORDER, BACKGROUND_ORDER, CLASS_TYPE_COPY, CLASS_TYPE_OPTIONS, humanOriginFeatValues, fightingStyleFeatIds, weaponMasteryCatalog, classEquipmentDefinition, classFeatureSectionHtml, equipmentItemNames, equipmentLinks, mainHandNote, presetBackground };
+      window.__quickBuildCopy = { ORIGIN_FEAT_BLURBS, FIGHTING_STYLE_INTROS, WEAPON_MASTERY_SUMMARIES, ALIGNMENT_DESCRIPTIONS, ALIGNMENT_OPTIONS, MAIN_HAND_NOTES, LEVEL_ONE_FEATURE_INTROS, RACE_SIZE_HEIGHTS, CLASS_ORDER, BACKGROUND_ORDER, CLASS_TYPE_COPY, CLASS_TYPE_OPTIONS, humanOriginFeatValues, fightingStyleFeatIds, weaponMasteryCatalog, allWeaponMasteryOptionsForClass, classEquipmentDefinition, classFeatureSectionHtml, equipmentItemNames, equipmentLinks, mainHandNote, presetBackground };
       window.quickBuild = {`);
     await route.fulfill({ response, body: source });
   });
@@ -1641,6 +1641,10 @@ async function verifyQuickBuildGuidanceCopy(browser, url) {
       for (const id of copy.fightingStyleFeatIds()) if (!copy.FIGHTING_STYLE_INTROS[id]) found.push(`fighting style ${id}`);
       const { simple, martial } = copy.weaponMasteryCatalog();
       for (const { 精通: mastery } of [...simple, ...martial]) if (mastery && !copy.WEAPON_MASTERY_SUMMARIES[mastery]) found.push(`mastery ${mastery}`);
+      // 野蠻人的武器精通（picks 的 weapons: melee）只列近戰武器；戰士仍可選遠程武器。
+      const masteryNames = key => copy.allWeaponMasteryOptionsForClass(key).map(([name]) => name);
+      if (!masteryNames("barbarian").includes("巨斧") || ["短弓", "長弓"].some(name => masteryNames("barbarian").includes(name))) found.push("barbarian mastery options are not melee-only");
+      if (!masteryNames("fighter").includes("長弓")) found.push("fighter mastery options lost ranged weapons");
       for (const [value] of copy.ALIGNMENT_OPTIONS) if (!copy.ALIGNMENT_DESCRIPTIONS[value]) found.push(`alignment ${value}`);
       for (const key of Object.keys(copy.CLASS_TYPE_OPTIONS)) if (!copy.CLASS_TYPE_COPY[key]) found.push(`class type copy ${key}`);
       const detailTargets = html => {

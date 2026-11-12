@@ -230,6 +230,16 @@
           }
         }
       }
+    },
+    "srd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overview", "features"],
+      "description": "SRD 5.2.1 繁中直譯：職業頁的「SRD 版」（唯讀，頁尾註明譯自 SRD 5.2.1）。有這個區塊的職業，職業頁標題列才顯示「網站版｜SRD 版」切換。只限公開內容包。",
+      "properties": {
+        "overview": { "$ref": "feature.schema.json#/definitions/srdText", "description": "「職業」頁籤的 SRD 版：核心特質表、成為某職業、職業特性前言與特性表（不依等級篩選，同網站版的創角資訊與特性表）。" },
+        "features": { "$ref": "feature.schema.json#/definitions/srdFeatures", "description": "「特性」頁籤的 SRD 版：1–20 級職業能力。" }
+      }
     }
   },
   "definitions": {

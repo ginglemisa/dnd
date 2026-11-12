@@ -1,5 +1,5 @@
 // npm run build：讀取 content/ 的怪物、法術、職業、專長、背景與種族內容檔，做格式與跨檔檢查、持久化 ID 基準檔比對，
-// 再由公開內容包產生網站讀取的 monster-content.generated.js、spell-content.generated.js、spell-srd.generated.js、class-content.generated.js、feat-content.generated.js、
+// 再由公開內容包產生網站讀取的 monster-content.generated.js、spell-content.generated.js、spell-srd.generated.js、class-content.generated.js、class-srd.generated.js、feat-content.generated.js、
 // background-content.generated.js 與 race-content.generated.js（不提交進 repo）。
 // 本機有私人內容包（content/private）時另寫進 class-content.private.generated.js（同樣不提交），否則該檔為空檔。
 // npm run build -- --stamp-version：上線建置用，一併把 index.html 的快取版本改成各產生檔的雜湊；私人資料檔一律為空檔。

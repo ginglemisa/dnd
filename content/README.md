@@ -175,6 +175,7 @@ summary: 你的敏捷豁免有優勢。
 | `kind` | `weaponMastery`（武器精通）、`expertise`（技能專精）、`skill`（技能熟練）、`language`（語言）、`spellbookSpell`（免費加入法術書的法術）。 |
 | `count` | 要選幾個：數字，或特性表欄位名稱（例如 `weaponMastery`，數量隨等級增加）。 |
 | `from` | 可選範圍：`proficient`（已熟練的武器或技能；武器精通、專精用）、`class`（職業初始技能清單）、`any`（全部；語言為一般與稀有語言），或列出技能名稱（專精時再限縮於已熟練的技能，例如法師的學者）。 |
+| `weapons` | 武器精通：限定武器類型，`melee` 只能選近戰武器（例如野蠻人）。 |
 | `exclude` | 語言：不能選的語言（語言選單的 value）。 |
 | `fields` | 語言：沿用既有存檔欄位 ID（例如 `language-extra-2`），數量須等於 `count`。 |
 | `changeOn` | 可改選的時機（`longRest`、`levelUp`），說明用。 |
@@ -216,6 +217,58 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 | `actions` | 否 | 跑團按鈕，說明為此小節。附錄沒有等級，按鈕須寫 `level`；按鈕文字預設為小節名稱。 |
 
 超魔法的小節照舊版換行排列（跑團的瞬發法術說明依此分段），其他附錄的小節之間與小節內不換行。
+
+## SRD 版
+
+職業頁可另放 SRD 5.2.1 的繁中直譯，做法比照法術與怪物的 `srd` 區塊：寫在職業檔與子職檔各自的 `srd`，職業頁標題列右側出現「網站版｜SRD 版」切換（唯讀，頁尾註明譯自 SRD 5.2.1）。沒有 `srd` 的職業不顯示切換。目前只有野蠻人與狂戰士道途。
+
+```yaml
+# 職業檔
+srd:
+  overview: |
+    **野蠻人核心特質**
+
+    | --- | --- |
+    | 關鍵屬性 | 力量 |
+    ……
+
+    ### 成為野蠻人……
+
+    #### 作為 1 級角色
+
+    - 獲得「野蠻人核心特質」表中的所有特質。
+    ……
+  features:
+    - level: 1
+      name: 狂暴
+      text: |
+        你能讓一股名為「狂暴」的原初力量灌注全身，……
+
+# 子職檔
+srd:
+  title: 野蠻人子職：狂戰士道途
+  intro: |
+    _化狂暴為暴烈怒火_
+
+    走上狂戰士道途的野蠻人，……
+  features:
+    - level: 3
+      name: 狂怒
+      text: |
+        ……
+```
+
+| 欄位 | 說明 |
+| --- | --- |
+| `srd.overview` | 「職業」頁籤的 SRD 版：核心特質表、成為某職業、職業特性前言與特性表。可用 `### `、`#### ` 小標。和網站版的創角資訊、特性表一樣不依等級篩選。 |
+| `srd.features` | 「特性」頁籤的 SRD 版，每項 `level`（1–20，可超過 `maxLevel`）、`name`（顯示為「N 級：名稱」）、`text`，依等級排列。 |
+| 子職 `srd.title`、`srd.intro` | 子職標題與說明（不可有小標或表格），接在職業能力之後。 |
+| 子職 `srd.features` | 子職能力，等級不低於職業的 `subclassLevel`。所屬職業須有 `srd`。 |
+
+- 寫法是 SRD 直譯用的 Markdown 子集，同法術的 `srd.body`：段落（空行分隔）、「- 」清單、`_斜體_`、`**粗體**`、GFM 表格；第一列直接寫 `| --- | --- |` 分隔列的表格沒有表頭（核心特質表）。不可寫 HTML、提示框 `[[…]]` 或數值標記 `{…|…}`；能力的 `text` 不可有小標。
+- 只供顯示：網站程式不從譯文讀取規則，譯文段落不帶 `data-feature-id`（職業頁找能力位置仍看網站版）。機制、選項與跑團文字一律寫在網站版欄位。
+- 職業頁依等級篩選的規則與網站版相同（同一個函式）：有選等級時只列到該等級、未選等級時列出全部；子職段落只顯示目前選擇的子職。
+- 只限公開內容包（私人內容包寫 `srd` 時建置失敗）。`npm run build` 產生根目錄的 `class-srd.generated.js`（職業 ID → HTML），網站第一次切到「SRD 版」時才載入，離線版內嵌；`class-content.generated.js` 的 `classSrdClasses` 列出有 SRD 版的職業。
 
 ## 特殊機制
 
@@ -674,9 +727,9 @@ en:
 | 指令 | 用途 |
 | --- | --- |
 | `npm run dev` | 開本機預覽，存檔後自動重新建置，重新整理瀏覽器即可看到；畫面網址會顯示在終端機 |
-| `npm run build` | 檢查全部內容檔並產生 `monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`class-content.private.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
+| `npm run build` | 檢查全部內容檔並產生 `monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`class-srd.generated.js`、`class-content.private.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
 | `npm run build -- --public-only` | 同上，但私人資料檔為空檔（只看公開內容） |
 | `npm run build -- --update-id-baseline` | 確定是刻意新增 ID 時更新各基準檔（見「不可改名的 ID」） |
 | `node tools/spell-reference/validate.js` | 檢查法術的 SRD 譯文（見 [tools/spell-reference/README.md](../tools/spell-reference/README.md)） |
 
-改完內容檔只要提交內容檔本身。`monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。這些檔案只含公開內容包；私人內容只寫進 `class-content.private.generated.js`（同樣不提交），上線建置與離線角色卡的這個檔一律是空檔。
+改完內容檔只要提交內容檔本身。`monster-content.generated.js`、`monster-srd.generated.js`、`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`class-srd.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。這些檔案只含公開內容包；私人內容只寫進 `class-content.private.generated.js`（同樣不提交），上線建置與離線角色卡的這個檔一律是空檔。

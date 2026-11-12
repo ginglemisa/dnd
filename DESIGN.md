@@ -146,6 +146,11 @@
 - 內容本身就是選項的視窗寫法（`renderContent(body, dialog)` 以 `dialog.close(value)` 結束），以分享角色卡為例，見 [BEHAVIOR.md：分享角色卡](BEHAVIOR.md#分享角色卡)。
 - 從視窗內開啟另一個視窗時（例如準備法術視窗開啟「職業特性表」），背景視窗暫用 `--z-character-features`，讓後開的角色能力視窗在上方，並保留技能／野獸及法術詳情浮層；關閉後恢復原層級，背景視窗的草稿與篩選不變。
 
+### 網站版｜SRD 版
+
+- 法術詳情、野獸資料卡與職業頁共用同一套文字頁籤（`.spell-version__tabs`，樣式在 `tabletop.css`，外觀參照擲骰視窗的「總和｜紀錄」），SRD 版頁尾以 `.spell-version__attribution` 註明「譯自 SRD 5.2.1（CC BY 4.0）」。
+- 職業頁的開關放在「職業」「特性」頁籤標題列（職業圖示＋中文名＋英文名）的最右側、標題下方分隔線之上；窄螢幕放不下時自成一行，仍靠右。沒有 SRD 譯文的職業不顯示，標題列版面不變。SRD 版沿用網站版職業頁的表格、清單與能力段落樣式。
+
 ### Toast
 
 - `--z-toast` 高於網站視窗與導覽層級，位置在畫面下方。一般擲骰結果 toast 顯示 3.6 秒。背景 inert 鎖定一律排除 `#app-toast`，導覽的 capture handler 也放行 toast。
