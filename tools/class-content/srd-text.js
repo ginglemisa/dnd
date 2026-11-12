@@ -11,17 +11,51 @@ const { inline, escapeHtml } = require("../spell-content/srd-text");
 const cells = line => line.replace(/^\|/, "").replace(/\|$/, "").split("|").map(cell => cell.trim());
 const isSeparator = line => cells(line).every(cell => /^-{3,}$/.test(cell));
 
+// 多列表頭（分隔列之前有兩列以上，例如施法職業特性表的「各環階法術位」）：表頭儲存格可留空，
+// 空格若在上一列只佔這一欄的儲存格正下方，併入上方儲存格（跨列）；否則併入同列左邊的儲存格（跨欄）；
+// 都不符合（例如第一列開頭）時輸出空白表頭格。
+function headerRows(rows, where) {
+  const owner = rows.map(() => []);
+  const html = rows.map((row, r) => {
+    const out = [];
+    row.forEach((text, c) => {
+      const above = r > 0 ? owner[r - 1][c] : null;
+      const left = c > 0 ? owner[r][c - 1] : null;
+      if (text) {
+        owner[r][c] = { text, row: r, colspan: 1, rowspan: 1 };
+        out.push(owner[r][c]);
+      } else if (above && above.text && above.colspan === 1) {
+        above.rowspan++;
+        owner[r][c] = above;
+      } else if (left && left.row === r && left.text) {
+        left.colspan++;
+        owner[r][c] = left;
+      } else {
+        owner[r][c] = { text: "", row: r, colspan: 1, rowspan: 1 };
+        out.push(owner[r][c]);
+      }
+    });
+    return out;
+  });
+  return html.map(row => `<tr>${row.map(cell => {
+    const span = `${cell.colspan > 1 ? ` colspan="${cell.colspan}"` : ""}${cell.rowspan > 1 ? ` rowspan="${cell.rowspan}"` : ""}`;
+    return `<th${span}>${cell.text ? inline(cell.text, where) : ""}</th>`;
+  }).join("")}</tr>`).join("");
+}
+
 function table(lines, where) {
-  const headerless = isSeparator(lines[0]);
-  if (!headerless && (lines.length < 3 || !isSeparator(lines[1]))) throw new ContentError(`${where}：表格第二行應為 | --- | 分隔列（沒有表頭的表格第一行寫分隔列）`);
-  const separator = cells(headerless ? lines[0] : lines[1]);
-  const rows = lines.slice(headerless ? 1 : 2).map(cells);
-  if (!rows.length || rows.some(row => row.length !== separator.length) || rows.flat().some(cell => !cell)) throw new ContentError(`${where}：表格各列欄數須相同且儲存格不可空白`);
+  const separatorIndex = lines.findIndex(isSeparator);
+  const headerless = separatorIndex === 0;
+  if (separatorIndex < 0 || lines.length < separatorIndex + 2) throw new ContentError(`${where}：表格要有 | --- | 分隔列與內容列（沒有表頭的表格第一行寫分隔列）`);
+  const separator = cells(lines[separatorIndex]);
+  const rows = lines.slice(separatorIndex + 1).map(cells);
+  if (rows.some(row => row.length !== separator.length) || rows.flat().some(cell => !cell)) throw new ContentError(`${where}：表格各列欄數須相同且儲存格不可空白`);
   const body = `<tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${inline(cell, where)}</td>`).join("")}</tr>`).join("")}</tbody>`;
   if (headerless) return `<table class="class-core-profile-table class-srd-profile-table">${body}</table>`;
-  const head = cells(lines[0]);
-  if (head.length !== separator.length) throw new ContentError(`${where}：表頭與分隔列欄數不同`);
-  return `<div class="class-feature-table-wrap"><table class="class-feature-table class-srd-table"><thead><tr>${head.map(cell => `<th>${inline(cell, where)}</th>`).join("")}</tr></thead>${body}</table></div>`;
+  const head = lines.slice(0, separatorIndex).map(cells);
+  if (head.some(row => row.length !== separator.length)) throw new ContentError(`${where}：表頭與分隔列欄數不同`);
+  if (head.length === 1 && head[0].some(cell => !cell)) throw new ContentError(`${where}：單列表頭的儲存格不可空白`);
+  return `<div class="class-feature-table-wrap"><table class="class-feature-table class-srd-table"><thead>${headerRows(head, where)}</thead>${body}</table></div>`;
 }
 
 // headings：允許的小標層級（overview 為 ### 與 ####；能力全文與子職說明不可有小標）。

@@ -2554,7 +2554,7 @@ async function verifyClassSrdVersion(browser, url) {
     await page.goto(url);
     await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
     await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
-    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian"], "only classes with SRD text get the switch");
+    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard"], "only classes with SRD text get the switch");
 
     // 沒有 SRD 譯文的職業：沒有開關，標題與版面不變。
     await set("class", "rogue");
@@ -2634,6 +2634,27 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await page.locator("#classFeatures").innerHTML(), siteFeatures, "網站版 features are unchanged");
     assert.equal(await page.locator("#classCreationInfo").innerHTML(), siteCreation, "網站版 creation info is unchanged");
     assert.deepEqual(await page.evaluate(() => collectStateObject()), state, "switching versions keeps character data");
+
+    // 施法職業（吟遊詩人）：特性表的「各環階法術位」是兩列表頭（跨欄＋跨列），法術列表以文字表格接在「職業」頁籤尾端。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="bard"]').click();
+    await showTab("creation");
+    await chooseSrd("creation");
+    const bardTable = modal.locator("#classCreationSrd .class-feature-table").first();
+    assert.equal(await bardTable.locator("thead tr").count(), 2, "spell slot header uses two rows");
+    assert.equal(await bardTable.locator('thead th[colspan="9"]').textContent(), "——各環階法術位——");
+    assert.equal(await bardTable.locator('thead th[rowspan="2"]').count(), 6, "the first six headers span both rows");
+    assert.deepEqual(await bardTable.locator("thead tr:nth-child(2) th").allTextContents(), ["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
+    assert.equal(await bardTable.locator("thead tr:nth-child(2) th:nth-child(3)").evaluate(th => getComputedStyle(th).textAlign), "center", "slot numbers stay centred");
+    assert.equal(await bardTable.locator("tbody tr").count(), 20);
+    assert.equal(await bardTable.locator("tbody tr").first().locator("td").count(), 15, "the empty trailing source column is dropped");
+    const creationHeadings = await modal.locator("#classCreationSrd .class-srd-heading, #classCreationSrd .class-srd-subheading").allTextContents();
+    assert(creationHeadings.includes("吟遊詩人法術列表") && creationHeadings.includes("9 環吟遊詩人法術"), "spell list follows the overview");
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 11, "features table plus ten spell tables");
+    await showTab("class");
+    const bardHeadings = await srdHeadings();
+    for (const heading of ["1 級：施法", "10 級：魔法奧祕", "20 級：創世之言", "吟遊詩人子職：逸聞學院", "14 級：無雙絕技"]) {
+      assert(bardHeadings.includes(heading), `bard SRD 版 shows ${heading}`);
+    }
 
     // 換職業回到網站版、沒有 SRD 的職業移除開關；重新開啟視窗也回到網站版。
     await chooseSrd("class");

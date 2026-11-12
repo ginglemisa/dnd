@@ -564,6 +564,11 @@
   font-size: var(--fs-md);
 }
 
+/* 多列表頭（施法職業的「各環階法術位」）：第二列的法術環階數字置中，不套用第三欄靠左的規則。 */
+.class-srd-output .class-srd-table thead tr + tr th {
+  text-align: center;
+}
+
 .class-srd-output .class-srd-creation > p {
   margin: 0.48rem 0;
   line-height: 1.62;
