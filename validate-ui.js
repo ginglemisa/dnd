@@ -2570,7 +2570,7 @@ async function verifyClassSrdVersion(browser, url) {
     await page.goto(url);
     await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
     await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
-    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard", "cleric"], "only classes with SRD text get the switch");
+    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard", "cleric", "druid"], "only classes with SRD text get the switch");
 
     // 沒有 SRD 譯文的職業：沒有開關，標題與版面不變。
     await set("class", "rogue");
@@ -2684,6 +2684,20 @@ async function verifyClassSrdVersion(browser, url) {
     const clericCreation = await modal.locator("#classCreationSrd .class-srd-heading, #classCreationSrd .class-srd-subheading").allTextContents();
     assert(clericCreation.includes("牧師法術列表") && clericCreation.includes("9 環牧師法術"), "cleric spell list follows the overview");
     assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 11, "cleric features table plus ten spell tables");
+    await showTab("class");
+
+    // 德魯伊：能力內文的表格（野獸形態、四種地貌法術、自然守護）照常顯示。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="druid"]').click();
+    assert.equal(await pressed("class"), "site", "changing to druid returns to 網站版");
+    await chooseSrd("class");
+    const druidHeadings = await srdHeadings();
+    for (const heading of ["2 級：荒野形態", "18 級：獸形施法", "20 級：大德魯伊", "德魯伊子職：大地結社", "14 級：自然聖域"]) {
+      assert(druidHeadings.includes(heading), `druid SRD 版 shows ${heading}`);
+    }
+    assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 6, "beast shapes, four land tables and Nature's Ward");
+    await showTab("creation");
+    const druidCreation = await modal.locator("#classCreationSrd .class-srd-heading, #classCreationSrd .class-srd-subheading").allTextContents();
+    assert(druidCreation.includes("德魯伊法術列表") && druidCreation.includes("9 環德魯伊法術"), "druid spell list follows the overview");
     await showTab("class");
 
     // 換職業回到網站版、沒有 SRD 的職業移除開關；重新開啟視窗也回到網站版。
