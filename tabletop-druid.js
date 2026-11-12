@@ -147,7 +147,7 @@
   }
 
   function diceOffNote() {
-    return el("p", "擲骰功能未開啟，按鈕無法點擊；可在右上選單開啟「開啟擲骰功能」。", "druid-dice-note");
+    return el("p", "擲骰功能未開啟，按鈕無法點擊；可在右上選單開啟「擲骰功能」。", "druid-dice-note");
   }
 
   // ---- 資源頁 ----

@@ -785,6 +785,81 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 .sheet-download__link--dndbeyond { left: 37.5%; top: 92.6%; width: 20%; height: 3.9%; }
 .sheet-download__link--wotc { left: 71.2%; top: 92.6%; width: 9.5%; height: 3.9%; }
 
+/* 冒險者聯盟規則（al-rules.js）：短說明、兩個外部連結與版權聲明。 */
+.app-dialog[data-variant="al-rules"] .app-dialog__surface {
+  width: min(100%, 34rem);
+}
+
+.al-rules-content {
+  min-width: 0;
+  color: var(--text-body);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.app-dialog__body .al-rules-content p {
+  margin: 0 0 0.6rem;
+  white-space: normal;
+}
+
+.al-rules-content h3 {
+  margin: 1rem 0 0.35rem;
+  color: var(--text);
+  font-size: var(--fs-base);
+}
+
+.al-rules-content ul {
+  margin: 0 0 0.6rem;
+  padding-inline-start: 1.3em;
+}
+
+.al-rules-content li + li {
+  margin-top: 0.3rem;
+}
+
+.al-rules-content strong {
+  color: var(--text);
+}
+
+.al-rules-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.al-rules-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--control-bg);
+  color: var(--text);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.al-rules-link:hover {
+  background: var(--control-hover-bg);
+}
+
+.al-rules-link:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.app-dialog__body .al-rules-notice {
+  margin: 1rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+
 .app-dialog[data-variant="number"] .app-dialog__surface {
   width: min(100%, 24rem);
 }

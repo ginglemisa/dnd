@@ -48,7 +48,7 @@
           if (error) { script.remove(); reject(error); }
           else resolve();
         };
-        script.src = "legal-about.js?v=20261109-font-label";
+        script.src = "legal-about.js?v=20261111-serif-big5";
         script.onload = () => finish(window.LegalAbout ? null : new Error("About module unavailable"));
         script.onerror = () => finish(new Error("About module failed to load"));
         timer = setTimeout(() => finish(new Error("About module timed out")), 15000);

@@ -50,7 +50,7 @@ async function ensurePdfExportReady() {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
       await loadScriptOnce("pdf-field-map.js?v=20261111-magic-effects-4");
-      await loadScriptOnce("pdf-export.js?v=20261111-magic-effects-4");
+      await loadScriptOnce("pdf-export.js?v=20261112-merge-main-menu");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -530,14 +530,14 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         } else {
           options.append(
             createOption('editable','可編輯表單版','約 6 MB','使用 Noto Sans TC；保留文字輸入區，下載後仍可填寫或修改，檔案較大。'),
-            createOption('compact','美觀易讀版','輸出約 1 MB','使用思源宋體，文字固定、下載後無法編輯。','首次輸出需額外載入約 26 MB 字型資源。')
+            createOption('compact','美觀易讀版','輸出約 1 MB','使用思源宋體，文字固定、下載後無法編輯。')
           );
         }
         const note=document.createElement('p'); note.className='pdf-export-format-note';
         const blankSheetUrl=result.sheetTemplate==='official'
           ? 'https://drive.google.com/file/d/1g_t-5WBbZPvCWXFo4gM0s6ZoDQR7Djf1/view?usp=sharing'
           : 'https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view';
-        note.append(result.sheetTemplate==='official' ? '想下載可填寫的空白官方角色卡 PDF？請 ' : '想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:blankSheetUrl,target:'_blank',rel:'noopener noreferrer',textContent:'點此下載',onclick:()=>window.twAnalytics?.track?.('blank_character_sheet_download')}));
+        note.append(result.sheetTemplate==='official' ? '想下載可填寫的空白官方角色卡 PDF？請 ' : '想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:blankSheetUrl,target:'_blank',rel:'noopener noreferrer',textContent:'點此下載',onclick:()=>{window.twAnalytics?.track?.('blank_character_sheet_download');}}));
         d.append(wait,options,note);
         if(formatError){
           const back=document.createElement('button');back.type='button';back.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--secondary';back.textContent='返回修改名稱';back.onclick=()=>{formatError='';idx=steps.indexOf('name');render();};a.append(back);a.hidden=false;back.focus();
@@ -553,7 +553,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     render();
 
     // Modal 先顯示，再於背景準備可編輯版共用的 PDF 範本與 Noto Sans TC。
-    // 美觀易讀版的 Source Han Serif 仍會等到使用者選擇該格式後才下載。
+    // 美觀易讀版的宋體仍會等到使用者選擇該格式後才下載。
     ensurePdfExportReady()
       .then(() => window.preloadPdfExportAssets?.({ outputMode: 'editable' }))
       .catch((error) => {

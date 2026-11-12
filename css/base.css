@@ -494,39 +494,50 @@ html[data-theme="dark"] .utility-menu {
   pointer-events: auto;
 }
 
+/* 選單各區一律兩欄；分享模式隱藏的按鈕不佔格，其餘依序補上。 */
 .utility-menu__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.55rem;
-}
-
-.utility-menu__row {
-  display: grid;
-  gap: 0.55rem;
-  min-width: 0;
-}
-
-.utility-menu__row--icon,
-.utility-menu__row--footer {
-  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
 }
 
 .utility-menu__settings {
   display: grid;
-  gap: 0.18rem;
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
+/* 四個開關分左右兩欄；中間的直線上接分隔線、下接主題列的上框線（各隔 0.65rem）。 */
 .utility-menu__settings-row {
+  position: relative;
   display: grid;
-  gap: 0.12rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 1rem;
+  row-gap: 0.12rem;
 }
 
-.utility-menu__settings-divider {
-  display: none;
+.utility-menu__settings-row::before {
+  content: "";
+  position: absolute;
+  top: -0.65rem;
+  bottom: -0.65rem;
+  left: 50%;
+  width: 1px;
+  background: var(--border);
+  transform: translateX(-50%);
+}
+
+/* 寬度不到 360px 時兩欄放不下開關與文字，改回單欄、照原本順序排列。 */
+@media (max-width: 359.98px) {
+  .utility-menu__settings-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .utility-menu__settings-row::before {
+    content: none;
+  }
 }
 
 .utility-menu__settings-row .utility-menu__setting {
@@ -574,59 +585,86 @@ html[data-theme="dark"] .utility-menu {
   cursor: pointer;
 }
 
-.utility-menu__setting input {
+.utility-menu__setting input,
+.utility-menu__segment input {
   position: absolute;
   width: 1px;
   height: 1px;
   opacity: 0;
 }
 
-.utility-menu__settings-row .utility-menu__theme-setting {
-  gap: 0.5rem;
-  cursor: default;
-}
-
-#theme-toggle-label {
-  flex: 1 1 auto;
-  margin: 0;
-  font-size: inherit;
-  cursor: pointer;
-}
-
-.utility-menu__theme-setting #color-mode-toggle {
-  display: grid;
-  place-items: center;
-  flex: 0 0 44px;
-  width: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--control-bg);
-  box-shadow: none;
-  font-size: 1.35rem;
-  cursor: pointer;
-}
-
-.utility-menu__theme-setting #color-mode-toggle:hover {
-  background: var(--control-hover-bg);
-}
-
-.utility-menu__theme-setting #color-mode-toggle:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.utility-menu__theme-switch {
+/* 主題：通欄一列，左邊標題、右邊「經典｜暖紙」分段按鈕（原生單選鈕，方向鍵切換）。 */
+.utility-menu__theme-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  flex: 0 0 2.5rem;
-  width: 2.5rem;
-  min-height: 44px;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+}
+
+.utility-menu__theme-title {
+  color: var(--text-body);
+  font-size: var(--fs-base);
+  font-weight: 700;
+}
+
+.utility-menu__segmented {
+  display: grid;
+  flex: 1 1 10rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 14rem;
+  padding: 0.18rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.utility-menu__segment {
+  position: relative;
+  display: flex;
   margin: 0;
   cursor: pointer;
+}
+
+.utility-menu__segment span {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0 0.5rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-body);
+  font-size: var(--fs-base);
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.utility-menu__segment:hover input:not(:checked) + span {
+  background: var(--control-hover-bg);
+  color: var(--text);
+}
+
+.utility-menu__segment input:checked + span {
+  background: var(--action-fill);
+  color: var(--on-accent);
+}
+
+:where(html:not([data-ui-theme="warm"])) .utility-menu__segment input:checked + span {
+  background: var(--accent);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .utility-menu__segment input:checked + span {
+  background: var(--action-fill);
+}
+
+.utility-menu__segment input:focus-visible + span {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 1px;
 }
 
 html[data-ui-theme="warm"] .legal-modal-logo-classic,
@@ -686,17 +724,62 @@ html:not([data-ui-theme="warm"]) .legal-modal-logo-warm {
   outline-offset: 2px;
 }
 
-.utility-menu__mode-row {
-  align-items: stretch;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.utility-menu__mode-button {
+.utility-menu__grid .utility-menu__button {
   display: flex;
   align-items: center;
-  gap: 0;
   justify-content: center;
+  gap: 0.35rem;
+  padding-inline: 0.4rem;
   text-align: center;
+  /* 窄螢幕放不下時換行，不縮小字級。 */
+  white-space: normal;
+}
+
+.utility-menu__button-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: currentColor;
+}
+
+.utility-menu__nowrap {
+  white-space: nowrap;
+}
+
+/* 兩欄按鈕不到 360px 寬時放不下圖示加文字，圖示只是裝飾，先拿掉圖示，仍不夠才換行。 */
+@media (max-width: 359.98px) {
+  .utility-menu__button-icon {
+    display: none;
+  }
+}
+
+/* 選單內只有選得到的元件吸收點擊；手機開啟時以遮罩蓋住頁面（見下方窄螢幕規則）。 */
+@media (max-width: 479.98px) {
+  .utility-menu,
+  html[data-view-mode="tabletop"] .utility-menu {
+    right: calc(max(0.5rem, env(safe-area-inset-right, 0px)) - var(--utility-menu-shell-right, 0px));
+    left: calc(max(0.5rem, env(safe-area-inset-left, 0px)) - var(--utility-menu-shell-left, 0px));
+    width: auto;
+  }
+
+  /* 導覽列在頁首的堆疊層裡，遮罩也放在頁首：頁首整層提到骰子與捲動按鈕之上，
+     導覽列（含選單）再高於遮罩。點遮罩由 pointerdown 關閉選單。 */
+  body.utility-menu-open .site-header {
+    z-index: 1300;
+  }
+
+  body.utility-menu-open .site-header::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1290;
+    background: var(--overlay);
+  }
+
+  .tabs-shell.utility-menu-open {
+    z-index: 1300;
+  }
 }
 
 /* Independent adventure journal; colors follow the existing Quick Build tokens. */
@@ -1028,26 +1111,6 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .adventure-journal .journa
   background: var(--surface-soft);
 }
 
-.utility-menu__qr-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  min-height: 44px;
-  padding: 0;
-  align-self: center;
-  justify-self: end;
-}
-
-.utility-menu__qr-icon {
-  display: block;
-  width: 24px;
-  height: 24px;
-  fill: currentColor;
-}
-
 .utility-menu__button--primary,
 .utility-menu__button--primary:hover {
   border-color: var(--accent-strong);
@@ -1068,34 +1131,30 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .adventure-journal .journa
   border: 2px solid var(--ink);
 }
 
-:where(html:not([data-ui-theme="warm"])) .utility-menu__button--danger,
-:where(html:not([data-ui-theme="warm"])) .utility-menu__button--danger:hover {
-  border-color: #e7aaaa;
-  background: linear-gradient(180deg, var(--surface-strong) 0%, #fff2f2 100%);
-  color: #9b2929;
-}
-
-:where(html[data-ui-theme="warm"]) .utility-menu__button--danger,
-:where(html[data-ui-theme="warm"]) .utility-menu__button--danger:hover {
-  border-color: var(--danger-border);
-  background: var(--danger-soft);
+/* 清除紀錄：最底部單獨一列的危險文字按鈕，不做成一般按鈕，避免和其他功能並排誤按。 */
+.utility-menu__clear-button,
+.utility-menu__clear-button:hover {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
   color: var(--danger);
+  font-size: var(--fs-base);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  transform: none;
+  translate: none;
 }
 
-html[data-theme="dark"] .utility-menu__button--danger,
-html[data-theme="dark"] .utility-menu__button--danger:hover {
-  border-color: var(--danger-border);
-  color: var(--danger);
-}
-
-html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .utility-menu__button--danger,
-html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .utility-menu__button--danger:hover {
-  background: linear-gradient(180deg, var(--surface-strong) 0%, var(--danger-soft) 100%);
-}
-
-html:where([data-ui-theme="warm"])[data-theme="dark"] .utility-menu__button--danger,
-html:where([data-ui-theme="warm"])[data-theme="dark"] .utility-menu__button--danger:hover {
-  background: var(--danger-soft);
+@media (hover: hover) and (pointer: fine) {
+  .utility-menu__clear-button:not(:disabled):hover {
+    border-color: var(--danger-border);
+    background: var(--danger-soft);
+  }
 }
 
 .tabs-shell.utility-menu-open .spell-toolbar,

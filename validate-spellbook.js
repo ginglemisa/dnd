@@ -6,6 +6,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const http = require("node:http");
 const { chromium } = require("playwright");
+const { missingPrivateAssets, privateAssetsSkipped, MISSING_HELP } = require("./tools/copy-private-assets");
 const MEMORY_KEY = "dnd.spellManagementMemories.v1";
 const NOTICE_KEY = "dnd.spellManagementClassNoticeDisabled.v1";
 const player = (spellId, spellClass, level) => ({ spellId, spellClass, ...(level === undefined ? {} : { level }) });
@@ -2119,7 +2120,14 @@ async function verifyPdfSpellbookOptions(page) {
   }
   // The official sheet offers the device's avatar only when one is saved,
   // unchecked by default, and links its own blank sheet.
-  const avatar = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = canvas.height = 4; return canvas.toDataURL("image/png"); });
+  // The dialog only checks (HEAD) that the official files exist and the export is stubbed, so without
+  // the private repo (npm test -- --no-private-assets) the files are answered as present.
+  if (privateAssetsSkipped()) {
+    await page.route(/\/(5e_char_sheet_of\.pdf|fonts\/AdobeFanHeitiStd-Bold\.otf)(\?|$)/, route => route.fulfill({ status: 200, body: "" }));
+  } else {
+    assert.deepEqual(missingPrivateAssets(), [], MISSING_HELP);
+  }
+  const avatar =await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = canvas.height = 4; return canvas.toDataURL("image/png"); });
   for (const savedAvatar of [false, true]) {
     await page.evaluate(([savedAvatar, avatar]) => {
       if (savedAvatar) window.dndStorage.setItem("dnd.tabletopAvatar.v1", avatar); else window.dndStorage.removeItem("dnd.tabletopAvatar.v1");
@@ -2140,6 +2148,15 @@ async function verifyPdfSpellbookOptions(page) {
     await officialModal.locator('#pdf-export-character-name').press('Enter');
     assert.deepEqual(await officialModal.locator('.pdf-export-format-option__heading strong').allInnerTexts(), ["可編輯版", "不可編輯版"]);
     assert.equal(await officialModal.locator('.pdf-export-format-note a').getAttribute('href'), "https://drive.google.com/file/d/1g_t-5WBbZPvCWXFo4gM0s6ZoDQR7Djf1/view?usp=sharing");
+    // Analytics is off here, so track() returns false; the click handler must not pass that on and cancel the link.
+    assert.equal(await officialModal.locator('.pdf-export-format-note a').evaluate(link => {
+      let prevented = null;
+      const record = event => { prevented = event.defaultPrevented; event.preventDefault(); };
+      window.addEventListener("click", record);
+      link.click();
+      window.removeEventListener("click", record);
+      return prevented;
+    }), false, "the blank sheet link opens even when analytics is off");
     await officialModal.locator('.pdf-export-format-option').filter({ has: page.getByText("不可編輯版", { exact: true }) }).click();
     await page.evaluate(() => __pdfTestDone);
     assert.deepEqual(await page.evaluate(() => ({ mode: __pdfTestOptions.outputMode, sheet: __pdfTestOptions.sheetTemplate,

@@ -41,7 +41,7 @@ twD20 是 Reggie Tsai 製作的手機角卡網站，協助新手快速建立 1�
 
 使用素材：
 
-- [Noto Sans TC](https://fonts.google.com/noto/specimen/Noto+Sans+TC)、[Source Han Serif](https://github.com/adobe-fonts/source-han-serif)
+- [Noto Sans TC](https://fonts.google.com/noto/specimen/Noto+Sans+TC)、[Source Han Serif](https://github.com/adobe-fonts/source-han-serif)（美觀易讀版 PDF 用的是它的 Big5 子集，依 OFL 改名為 twD20 Serif TC，產生方式見 [tools/pdf-font](tools/pdf-font/README.md)）
 - [SRD 中文角色紙](https://tinyurl.com/srd5etw)，排版：[赤赤@AkaA](https://x.com/AkaAAkaAka)；[無表格 PDF／原 PNG](https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing)
 - [pdf-lib](https://github.com/Hopding/pdf-lib)、[fontkit](https://github.com/Hopding/fontkit)
 - [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator)（Kazuhiko Arase，MIT；`qrcode-generator.js` 保留原檔）；QR Code 是 DENSO WAVE 的註冊商標
@@ -64,3 +64,5 @@ This work includes material from the System Reference Document 5.2.1 (“SRD 5.2
 Email：[tsai.reggie428@gmail.com](mailto:tsai.reggie428@gmail.com) · 巴哈姆特站內信：`reggietsai`
 
 歡迎回報問題、提出修改建議、fork 或分享本站。
+
+fork 後執行測試：官方角色卡的範本與字型不公開，請用 `npm test -- --no-private-assets`，只略過需要這兩個檔案的檢查，其他測試照常執行。

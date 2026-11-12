@@ -38,7 +38,7 @@
       <ul>
         <li>角色卡排版作者：<a href="https://x.com/AkaAAkaAka" target="_blank" rel="noopener">赤赤@AkaA</a></li>
         <li><a href="https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing" target="_blank" rel="noopener">無表格 PDF／原 PNG 檔下載</a></li>
-        <li>PDF 使用字型：<a href="https://fonts.google.com/download?family=Noto%20Sans%20TC" target="_blank" rel="noopener">Noto Sans TC</a>、<a href="https://github.com/adobe-fonts/source-han-serif/tree/release/OTF/TraditionalChinese" target="_blank" rel="noopener">思源宋體</a></li>
+        <li>PDF 使用字型：<a href="https://fonts.google.com/download?family=Noto%20Sans%20TC" target="_blank" rel="noopener">Noto Sans TC</a>、<a href="https://github.com/adobe-fonts/source-han-serif/tree/release/OTF/TraditionalChinese" target="_blank" rel="noopener">思源宋體</a>（只取 Big5 字集，依 OFL 改名為 twD20 Serif TC）</li>
       </ul>
       <p>歡迎下載、填寫、列印與分享角色紙。</p>
       <p>請尊重創作者，保留作者署名與原始排版，勿擅自刪除或修改。</p>
