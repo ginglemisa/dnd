@@ -524,6 +524,56 @@
   text-transform: uppercase;
 }
 
+/* 職業頁「網站版｜SRD 版」（class-features-ui.js，只有內容檔有 srd 區塊的職業）：開關在標題列右側、標題下方分隔線之上，
+   外觀沿用法術詳情的文字頁籤（.spell-version__tabs，tabletop.css）；放不下時自成一行，仍靠右。 */
+.character-feature-title > .class-version-switch {
+  margin: 0 0 0 auto;
+  align-self: center;
+}
+
+/* SRD 版顯示時隱藏網站版的輸出區（只限仍在頁籤內時；補齊職業選項視窗借走 #classFeatures 時照常顯示）。 */
+.character-feature-panel[data-content-version="srd"] > .output:not(.class-srd-output) {
+  display: none;
+}
+
+.class-srd-output {
+  white-space: normal;
+}
+
+.class-srd-output[hidden] {
+  display: none;
+}
+
+#character-features .class-srd-output .class-srd-content > .class-feature-section:first-child {
+  padding-top: 0.25rem;
+  border-top: 0;
+}
+
+/* 子職段落（例如「野蠻人子職：狂戰士道途」）與職業能力之間用較明顯的分隔。 */
+#character-features .class-srd-output .class-srd-subclass {
+  border-top: 2px solid var(--border-strong);
+}
+
+.class-srd-output .class-srd-heading {
+  margin: 1.2rem 0 0.5rem;
+  font-size: var(--fs-lg);
+}
+
+.class-srd-output .class-srd-subheading {
+  margin: 0.8rem 0 0.35rem;
+  font-size: var(--fs-md);
+}
+
+/* 多列表頭（施法職業的「各環階法術位」）：第二列的法術環階數字置中，不套用第三欄靠左的規則。 */
+.class-srd-output .class-srd-table thead tr + tr th {
+  text-align: center;
+}
+
+.class-srd-output .class-srd-creation > p {
+  margin: 0.48rem 0;
+  line-height: 1.62;
+}
+
 .character-features > .character-feature-panel {
   margin: 0;
   padding: 0;

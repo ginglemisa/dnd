@@ -16,6 +16,17 @@
       "minItems": 1,
       "items": { "$ref": "feature.schema.json#/definitions/feature" },
       "description": "子職能力，依等級排列。"
+    },
+    "srd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "intro", "features"],
+      "description": "SRD 5.2.1 繁中直譯：職業頁「特性」頁籤 SRD 版的子職段落，接在職業能力之後。所屬職業須有 srd 區塊；只限公開內容包。",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "description": "子職標題，例如「野蠻人子職：狂戰士道途」。" },
+        "intro": { "$ref": "feature.schema.json#/definitions/srdText", "description": "標題下的子職說明（不可有小標或表格）。" },
+        "features": { "$ref": "feature.schema.json#/definitions/srdFeatures", "description": "子職能力（等級不低於職業的 subclassLevel）。" }
+      }
     }
   }
 }
