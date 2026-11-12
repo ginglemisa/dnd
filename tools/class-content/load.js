@@ -153,6 +153,7 @@ function checkPicks(classDef, feature, where, errors, claimField) {
     if ((pick.school || pick.maxLevel) && pick.kind !== "spellbookSpell") errors.push(`${where}：${label}的 school／maxLevel 只用於 spellbookSpell`);
     if (pick.kind === "spellbookSpell" && !(pick.school && pick.maxLevel)) errors.push(`${where}：${label}須寫 school 與 maxLevel`);
     if (pick.exclude && pick.kind !== "language") errors.push(`${where}：${label}的 exclude 只用於語言`);
+    if (pick.weapons && pick.kind !== "weaponMastery") errors.push(`${where}：${label}的 weapons 只用於武器精通`);
     if (pick.kind === "language" && !pick.fields) errors.push(`${where}：${label}須寫 fields（語言的存檔欄位）`);
     if (pick.fields && pick.kind !== "language") errors.push(`${where}：${label}的 fields 只用於語言`);
     if (pick.fields && pick.fields.length !== pickSlotCount(classDef, pick)) errors.push(`${where}：${label}的 fields 數量須等於 count`);
@@ -191,6 +192,21 @@ function checkEquipment(classDef, errors) {
   });
 }
 
+// SRD 版（srd 區塊，只供職業頁顯示）：只限公開內容包；能力依等級排列；
+// 子職的 srd 須所屬職業也有 srd，能力等級不低於 subclassLevel。Markdown 格式在產生 HTML 時檢查（srd-text.js）。
+function checkSrd(classDef, errors) {
+  for (const owner of [classDef, ...classDef.subclasses].filter(item => item.srd)) {
+    if (owner.pack !== "srd") errors.push(`${owner.file}：srd 區塊只限公開內容包（content/srd）`);
+    const levels = owner.srd.features.map(feature => feature.level);
+    if (levels.some((level, index) => index && level < levels[index - 1])) errors.push(`${owner.file}：srd.features 須依等級排列`);
+  }
+  for (const subclass of classDef.subclasses.filter(item => item.srd)) {
+    if (!classDef.srd) errors.push(`${subclass.file}：所屬職業 ${classDef.id} 沒有 srd 區塊，子職不可單獨寫 srd`);
+    subclass.srd.features.filter(feature => feature.level < classDef.subclassLevel)
+      .forEach(feature => errors.push(`${subclass.file}：srd 能力「${feature.name}」的等級低於 subclassLevel ${classDef.subclassLevel}`));
+  }
+}
+
 function checkClass(classDef, errors) {
   const featureIds = new Map();
   const persistedIds = new Map();
@@ -213,6 +229,7 @@ function checkClass(classDef, errors) {
   }
   checkProficiencies(classDef, errors, id => claim(persistedIds, id, classDef.file, "工具欄位 ID"));
   checkEquipment(classDef, errors);
+  checkSrd(classDef, errors);
   // 依等級的文字值（values 的 byLevel）只能用在文字的 {名稱|…}，不可用於公式、次數。
   const textValues = new Set(Object.entries(classDef.values || {}).filter(([, value]) => value.byLevel || value.fromTable).map(([name]) => name));
   const allFeatures = [classDef, ...classDef.subclasses].flatMap(owner => owner.features);

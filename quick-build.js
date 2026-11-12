@@ -1358,10 +1358,14 @@
     const { simple, martial } = weaponMasteryCatalog();
     const hasProperty = weapon => (proficiencies.martialWithProperty || [])
       .some(property => [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(value => value?.includes(property)));
+    // picks 的 weapons: melee（例如野蠻人）只列近戰武器。
+    const meleeOnly = (window.getClassPicks?.(key, 1, { kind: "weaponMastery" }) || []).some(({ pick }) => pick.weapons === "melee");
+    const list = name => (Array.isArray(globalThis[name]) ? globalThis[name] : []);
+    const meleeNames = new Set([...list("weapons_simple_melee"), ...list("weapons_martial_melee")].map(weapon => weapon.名稱));
     return [
       ...(categories.includes("simple") ? simple : []),
       ...martial.filter(weapon => categories.includes("martial") || hasProperty(weapon))
-    ].map(weapon => [weapon.名稱, weapon.精通]);
+    ].filter(weapon => !meleeOnly || meleeNames.has(weapon.名稱)).map(weapon => [weapon.名稱, weapon.精通]);
   }
 
   function levelOneSpellOptions(classId, level) { return SpellCatalog.getSpells(classId, level); }

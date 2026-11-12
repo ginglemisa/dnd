@@ -109,7 +109,7 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261111-menu-layout">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261112-skill-effect-tips">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261112-magic-effects-8b">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261112-merge-class-srd">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261112-merge-main-menu">
   <link rel="stylesheet" href="css/utility.css?v=20261111-menu-layout">
   <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
@@ -150,7 +150,7 @@
   <script src="tabletop-spells.js?v=20261111-magic-effects-6" defer></script>
   <script src="legal-modal.js?v=20261111-serif-big5" defer></script>
   <script src="onboarding-tour.js?v=20261109-merge-main" defer></script>
-  <script src="quick-build.js?v=20261111-review-dedupe" defer></script>
+  <script src="quick-build.js?v=20261112-merge-class-srd" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
   <script src="spell-management.js?v=20261107-share-readonly" defer></script>
   <script src="share-readonly.js?v=20261107-share-menu" defer></script>
@@ -943,10 +943,12 @@
 <div class="section character-feature-panel" id="class-creation-panel" role="tabpanel" aria-labelledby="character-features-tab-creation" data-feature-panel="creation" hidden inert>
   <h3 class="character-feature-title" data-feature-title="class" hidden></h3>
   <div class="output" id="classCreationInfo">請先選擇職業</div>
+  <div class="output class-srd-output" id="classCreationSrd" hidden></div>
 </div>
 <div class="section character-feature-panel" id="class-abilities-panel" role="tabpanel" aria-labelledby="character-features-tab-class" data-feature-panel="class">
   <h3 class="character-feature-title" data-feature-title="class" hidden></h3>
   <div class="output" id="classFeatures">請先選擇職業</div>
+  <div class="output class-srd-output" id="classFeaturesSrd" hidden></div>
 </div>
 <div class="section is-hidden character-feature-panel" id="metamagic-options-section" role="tabpanel" aria-labelledby="character-features-tab-metamagic" data-feature-panel="metamagic" hidden inert>
   <div id="metamagic-summary" class="selection-summary">尚未勾選超魔法</div>
@@ -1461,7 +1463,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261111-magic-abilities"></script>
   <script src="spell-sources.js?v=20261109-item-actions"></script>
-  <script src="class-features-ui.js?v=20261111-magic-wear-held"></script>
+  <script src="class-features-ui.js?v=20261112-merge-class-srd"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({

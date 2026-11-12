@@ -220,6 +220,8 @@ $html = $html.Replace('</head>', '<script src="legal-about.js" defer></script></
 $html = $html.Replace('</head>', '<script src="spell-srd.generated.js" defer></script></head>')
 # Likewise the SRD monster stat blocks (the beast card's "SRD 版").
 $html = $html.Replace('</head>', '<script src="monster-srd.generated.js" defer></script></head>')
+# Likewise the SRD class text (the class page's "SRD 版").
+$html = $html.Replace('</head>', '<script src="class-srd.generated.js" defer></script></head>')
 
 # Likewise the magic item descriptions (MagicItemCatalog.getText).
 $html = $html.Replace('</head>', '<script src="magic-item-text.generated.js" defer></script></head>')

@@ -1,7 +1,8 @@
 // 網站讀取的職業資料：npm run build 由公開內容包產生根目錄的 class-content.generated.js，
 // 並另產生 class-content.private.generated.js（本機有私人內容包時為含私人內容的職業資料，否則為空檔）。
 // 兩者都是衍生產物，不提交進 repo（.gitignore）：本機預覽、回歸腳本與離線建置前先 npm run build；上線時由 GitHub Actions 產生。
-// 私人內容包不寫進 class-content.generated.js。index.html 載入此檔的快取版本（?v=）是檔案內容的雜湊，
+// 職業頁「SRD 版」的 HTML 另寫進 class-srd.generated.js（只含公開內容包，網頁版在第一次切到 SRD 版時才載入；離線版內嵌）。
+// 私人內容包不寫進 class-content.generated.js 與 class-srd.generated.js。index.html 載入此檔的快取版本（?v=）是檔案內容的雜湊，
 // 只在上線建置（npm run build -- --stamp-version）時改寫，本機建置不動 index.html。
 "use strict";
 const fs = require("fs");
@@ -10,13 +11,16 @@ const vm = require("vm");
 const { ROOT } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { template, writeIfChanged, contentVersion, stampScriptVersion } = require("../content/output");
-const { renderClass } = require("./render");
+const { renderClass, orderedSubclasses } = require("./render");
+const { renderClassSrd } = require("./srd-text");
 const { classRules } = require("./rules-data");
 
 const OUTPUT_NAME = "class-content.generated.js";
 const OUTPUT_FILE = path.join(ROOT, OUTPUT_NAME);
 const PRIVATE_OUTPUT_NAME = "class-content.private.generated.js";
 const PRIVATE_OUTPUT_FILE = path.join(ROOT, PRIVATE_OUTPUT_NAME);
+const SRD_OUTPUT_NAME = "class-srd.generated.js";
+const SRD_OUTPUT_FILE = path.join(ROOT, SRD_OUTPUT_NAME);
 const INDEX_FILE = path.join(ROOT, "index.html");
 
 const textMap = (map, indent) => {
@@ -50,14 +54,32 @@ function verifySource(name, source, { rendered, rules }, prelude = "") {
   }
 }
 
+// 職業頁 SRD 版：職業 ID → HTML（與 classFeatures 相同的頁籤標記；子職段落帶 data-subclass）。只有寫了 srd 區塊的職業。
+function renderSrdData(classes) {
+  const ids = [...classes.keys()].sort().filter(id => classes.get(id).srd);
+  const html = Object.fromEntries(ids.map(id => [id, renderClassSrd(classes.get(id), orderedSubclasses(classes.get(id)))]));
+  const source = `// ${SRD_OUTPUT_NAME}：由 npm run build 從 content/srd 職業與子職內容檔的 srd 區塊產生，請勿手動修改。
+// 職業頁的「SRD 版」（SRD 5.2.1 繁中直譯，CC BY 4.0）：職業 ID → HTML，只供顯示。網頁版在第一次切到 SRD 版時才載入。
+globalThis.classSrdText = ${textMap(html, "")};
+`;
+  const context = {};
+  vm.runInNewContext(source, context);
+  if (JSON.stringify(context.classSrdText) !== JSON.stringify(sortKeys(html))) throw new ContentError(`${SRD_OUTPUT_NAME}：產生結果與資料不同（樣板字串跳脫有誤）`);
+  return { source, ids };
+}
+
+// 回傳 class-content.generated.js 與 class-srd.generated.js 的原始碼。
 function renderSiteData(classes) {
   const entries = renderEntries(classes, [...classes.keys()].sort());
+  const srd = renderSrdData(classes);
+  const srdFile = `${SRD_OUTPUT_NAME}?v=${contentVersion(srd.source)}`;
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd 的職業內容檔產生，請勿手動修改。
 // classFeatures：各職業的職業頁 HTML（data-class-feature-panel="creation" 為創角頁籤，"class" 為各等級能力；
 // 子職能力帶 data-subclass，網站只顯示目前選擇的子職）。
 // classTabletopText：段落 ID → 跑團版 HTML（action-panel.js 讀取，data-tabletop-value 由網站換成目前數值）。
 // tabletop 是每個段落的跑團動作說明，summaries 是跑團總覽與 tabletop 不同時的版本。
 // classRules：各職業的機制資料（內容檔去掉說明文字），character-rules.js 等以此計算資源、法術位、數值、選項與動作。
+// classSrdFile：職業頁 SRD 版產物（${SRD_OUTPUT_NAME}）的網址與快取版本；classSrdClasses：有 SRD 版的職業（職業頁才顯示切換）。
 const classFeatures = {
 ${entries.features}
 };
@@ -69,9 +91,16 @@ ${entries.text}
 const classRules = {
 ${entries.rulesSource}
 };
+
+const classSrdFile = ${JSON.stringify(srdFile)};
+const classSrdClasses = ${JSON.stringify(srd.ids)};
 `;
   verifySource(OUTPUT_NAME, source, entries);
-  return source;
+  const context = {};
+  vm.runInNewContext(`${source}
+this.result = { classSrdFile, classSrdClasses };`, context);
+  if (JSON.stringify(context.result) !== JSON.stringify({ classSrdFile: srdFile, classSrdClasses: srd.ids })) throw new ContentError(`${OUTPUT_NAME}：SRD 版資訊輸出有誤`);
+  return { source, srdSource: srd.source };
 }
 
 // 私人資料檔：網站在公開資料之後載入，以含私人內容的完整資料取代用到私人內容包的職業（例如加上私人子職）。
@@ -105,15 +134,16 @@ ${entries.rulesSource}
   return source;
 }
 
-// 寫入產生檔：publicClasses 為公開內容包，privateClasses 為含私人內容包的全部內容（null 時私人資料檔為空檔）；
+// 寫入產生檔：publicClasses 為公開內容包（職業資料與 SRD 版），privateClasses 為含私人內容包的全部內容（null 時私人資料檔為空檔）；
 // stampIndex 為 true 時一併更新 index.html 的快取版本。內容沒變時不改檔案。回傳有變更的檔名。
 function writeSiteData(publicClasses, { privateClasses = null, stampIndex = false } = {}) {
-  const source = renderSiteData(publicClasses);
+  const { source, srdSource } = renderSiteData(publicClasses);
   const changed = [];
   const html = fs.readFileSync(INDEX_FILE, "utf8");
   const updated = stampScriptVersion(html, OUTPUT_NAME, contentVersion(source));
   if (!html.includes(`<script src="${PRIVATE_OUTPUT_NAME}" defer></script>`)) throw new ContentError(`index.html 應有 <script src="${PRIVATE_OUTPUT_NAME}" defer></script> 標籤`);
   writeIfChanged(OUTPUT_FILE, source, changed);
+  writeIfChanged(SRD_OUTPUT_FILE, srdSource, changed);
   writeIfChanged(PRIVATE_OUTPUT_FILE, privateClasses ? renderPrivateData(privateClasses) : PRIVATE_STUB, changed);
   if (stampIndex && updated !== html) {
     fs.writeFileSync(INDEX_FILE, updated);

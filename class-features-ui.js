@@ -155,9 +155,15 @@ function getWeaponMasteryWeapon(name) {
 function renderClassPickChoices() {
   // 武器與熟練判斷在 index.html 後段的 script 定義；早於它們的呼叫先略過，之後的重繪會補上。
   if (typeof getAllWeapons !== "function" || typeof isWeaponProficient !== "function") return;
-  const weapons = getAllWeapons().filter(weapon => weapon.名稱 !== "武藝" && hasMeaningfulEquipmentValue(weapon.精通) && isWeaponProficient(weapon));
+  const allWeapons = getAllWeapons().filter(weapon => weapon.名稱 !== "武藝" && hasMeaningfulEquipmentValue(weapon.精通) && isWeaponProficient(weapon));
+  // picks 的 weapons: melee（例如野蠻人）只列近戰武器。
+  const className = document.getElementById("class")?.value || "";
+  const meleeOnly = new Set((window.getClassPicks?.(className, 20, { kind: "weaponMastery" }) || [])
+    .filter(({ pick }) => pick.weapons === "melee").map(({ feature }) => feature.id));
+  const meleeNames = new Set([...(globalThis.weapons_simple_melee || []), ...(globalThis.weapons_martial_melee || [])].map(weapon => weapon.名稱));
   getWeaponMasteryPickControls().forEach(select => {
     const current = select.value;
+    const weapons = meleeOnly.has(select.dataset.classPick) ? allWeapons.filter(weapon => meleeNames.has(weapon.名稱)) : allWeapons;
     select.replaceChildren(new Option("-- 請選擇武器 --", ""), ...weapons.map(weapon => new Option(`${weapon.名稱}（${weapon.精通}）`, weapon.名稱)));
     if (weapons.some(weapon => weapon.名稱 === current)) select.value = current;
     if (select.dataset.classPickBound === "true") return;
@@ -1070,6 +1076,8 @@ function syncCharacterFeatureTitles() {
       ? `${field === "class" ? buildCharacterFeatureIcon(value, "character-feature-title__icon") : ""}<span class="character-feature-title__name">${escapeHtml(name)}</span>${subtitle}`
       : "";
   });
+  // 重畫標題會清掉職業頁的「網站版｜SRD 版」開關，畫完再補上。
+  syncClassContentVersion();
 }
 
 function renderCharacterFeaturePicker() {
@@ -1189,6 +1197,8 @@ function openCharacterFeatures(tab = "class", trigger, options = {}) {
   const tabs = document.querySelector(".character-features-tabs");
   const nav = tabs?.closest(".character-features-nav");
   if (!content || !mount || !nav || !window.AppDialog) return false;
+  // 職業頁每次開啟都先顯示網站版（同法術與野獸詳情的版本切換）。
+  setClassContentVersion("site");
   syncManualFeatGuidance();
   syncCharacterFeatureTabs();
   selectCharacterFeatureTab(tab);
@@ -1545,6 +1555,129 @@ function renderClassFeaturePanels(html, output, creationOutput) {
   creationOutput.replaceChildren(creation || document.createTextNode("無資料"));
 }
 
+// 職業頁「網站版｜SRD 版」切換：只有內容檔寫了 srd 區塊的職業（classSrdClasses）才在「職業」「特性」頁籤的標題列右側顯示開關，
+// 兩個開關共用同一個狀態，外觀與文字沿用法術詳情的切換（.spell-version__tabs）。SRD 版只供顯示（class-srd.generated.js 的 HTML），
+// 以和網站版相同的 getClassFeatureHtmlBeforeLevel 依目前等級與子職篩選：未選等級時列出全部（SRD 為 1–20 級），
+// 「職業」頁籤的核心特質與特性表同網站版不篩選。每次開啟角色能力視窗或換職業都回到網站版；換等級、子職時保留目前版本並重新篩選。
+// 版本只留在當頁記憶體，不寫進存檔或本機偏好。SRD 版 HTML 在第一次切到 SRD 版時才載入，離線版已內嵌。
+const CLASS_CONTENT_VERSION_PANELS = Object.freeze([
+  Object.freeze({ panel: "creation", srdId: "classCreationSrd" }),
+  Object.freeze({ panel: "class", srdId: "classFeaturesSrd" })
+]);
+let classContentVersion = "site";
+let classContentVersionClass = "";
+let classSrdRenderToken = 0;
+let classSrdPromise = null;
+
+function hasClassSrdText(className) {
+  return typeof classSrdClasses !== "undefined" && Array.isArray(classSrdClasses) && classSrdClasses.includes(className);
+}
+
+function loadClassSrdData() {
+  if (globalThis.classSrdText) return Promise.resolve(globalThis.classSrdText);
+  classSrdPromise ||= new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = typeof classSrdFile === "string" ? classSrdFile : "class-srd.generated.js";
+    script.onload = () => globalThis.classSrdText ? resolve(globalThis.classSrdText) : reject(new Error("SRD 版資料格式不符"));
+    script.onerror = () => {
+      script.remove();
+      reject(new Error("SRD 版資料載入失敗"));
+    };
+    document.head.appendChild(script);
+  }).catch(error => {
+    classSrdPromise = null;
+    throw error;
+  });
+  return classSrdPromise;
+}
+
+function createClassContentVersionSwitch() {
+  const tabs = document.createElement("span");
+  tabs.className = "spell-version__tabs class-version-switch";
+  tabs.setAttribute("role", "group");
+  tabs.setAttribute("aria-label", "職業說明版本");
+  const buttons = [["site", "網站版"], ["srd", "SRD 版"]].map(([version, label]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "spell-version__tab";
+    button.dataset.spellVersion = version;
+    button.textContent = label;
+    button.addEventListener("click", () => setClassContentVersion(version));
+    return button;
+  });
+  const separator = document.createElement("span");
+  separator.setAttribute("aria-hidden", "true");
+  separator.textContent = "｜";
+  tabs.append(buttons[0], separator, buttons[1]);
+  return tabs;
+}
+
+// 依目前職業補上或移除開關、同步按鈕狀態與兩個頁籤的顯示。換了職業（或該職業沒有 SRD 版）時回到網站版。
+function syncClassContentVersion() {
+  const className = document.getElementById("class")?.value || "";
+  const available = hasClassSrdText(className);
+  if (!available || className !== classContentVersionClass) classContentVersion = "site";
+  classContentVersionClass = className;
+  document.querySelectorAll('.character-feature-panel > [data-feature-title="class"]').forEach(title => {
+    let tabs = title.querySelector(".class-version-switch");
+    if (!available || title.hidden) {
+      tabs?.remove();
+      return;
+    }
+    if (!tabs) {
+      tabs = createClassContentVersionSwitch();
+      title.appendChild(tabs);
+    }
+    tabs.querySelectorAll("[data-spell-version]").forEach(button => {
+      const active = button.dataset.spellVersion === classContentVersion;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+  });
+  CLASS_CONTENT_VERSION_PANELS.forEach(({ panel, srdId }) => {
+    const panelElement = document.querySelector(`.character-feature-panel[data-feature-panel="${panel}"]`);
+    const srd = document.getElementById(srdId);
+    if (!panelElement || !srd) return;
+    if (classContentVersion === "srd") panelElement.dataset.contentVersion = "srd";
+    else delete panelElement.dataset.contentVersion;
+    srd.hidden = classContentVersion !== "srd";
+  });
+}
+
+function setClassContentVersion(version) {
+  const className = document.getElementById("class")?.value || "";
+  classContentVersion = version === "srd" && hasClassSrdText(className) ? "srd" : "site";
+  classContentVersionClass = className;
+  syncClassContentVersion();
+  void renderClassSrdView();
+}
+
+// SRD 版內容：載入（第一次）後依目前等級與子職篩選，分別放進「職業」「特性」頁籤。網站版時不重畫。
+async function renderClassSrdView() {
+  const token = ++classSrdRenderToken;
+  if (classContentVersion !== "srd") return;
+  const className = classContentVersionClass;
+  const containers = CLASS_CONTENT_VERSION_PANELS.map(({ panel, srdId }) => ({ panel, element: document.getElementById(srdId) })).filter(({ element }) => element);
+  const note = text => Object.assign(document.createElement("p"), { className: "spell-note-muted", textContent: text });
+  if (!globalThis.classSrdText) containers.forEach(({ element }) => element.replaceChildren(note("SRD 版載入中…")));
+  const data = await loadClassSrdData().catch(() => null);
+  if (token !== classSrdRenderToken || classContentVersion !== "srd") return;
+  const raw = data && Object.hasOwn(data, className) ? data[className] : "";
+  if (!raw) {
+    containers.forEach(({ element }) => element.replaceChildren(note("SRD 版載入失敗，請檢查網路連線後再切換一次。")));
+    return;
+  }
+  const level = document.getElementById("level")?.value || "";
+  const template = document.createElement("template");
+  template.innerHTML = getClassFeatureHtmlBeforeLevel(raw, level && !isNaN(level) ? parseInt(level) + 1 : Infinity, window.getSelectedSubclassId?.(className) || "");
+  containers.forEach(({ panel, element }) => {
+    const content = template.content.querySelector(`[data-class-feature-panel="${panel}"]`);
+    element.replaceChildren(content || document.createTextNode("無資料"), Object.assign(document.createElement("p"), {
+      className: "spell-version__attribution", textContent: "譯自 SRD 5.2.1（CC BY 4.0）"
+    }));
+  });
+}
+
 // 職業能力頁籤：只列到目前等級與目前子職（data-subclass 為子職 ID，特性表的「子職特性」另有 data-subclass-except）；
 // 做成選擇卡片的附錄（超魔法、魔能祈喚，data-class-appendix）另在專屬區塊顯示。
 function getClassFeatureHtmlBeforeLevel(raw, nextLevel, subclassId) {
@@ -1587,6 +1720,7 @@ function updateClassFeature() {
     syncCharacterFeatureTabs();
     updateClassFeatureChoiceReminder();
     syncClassOptionOwner();
+    syncClassContentVersion();
     return;
   }
 
@@ -1627,6 +1761,9 @@ function updateClassFeature() {
   updateClassFeatureChoiceReminder();
   // 職業詳情現在屬於這組職業與等級；下一次切換由此擷取記憶。
   syncClassOptionOwner();
+  // SRD 版跟著目前等級與子職重新篩選（換職業時回到網站版）。
+  syncClassContentVersion();
+  void renderClassSrdView();
 }
 
 
