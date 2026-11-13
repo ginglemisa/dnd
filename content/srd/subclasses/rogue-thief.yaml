@@ -14,11 +14,14 @@ features:
     text: |
       你可用**附贈**執行下列其中一項：
 
-      - **巧手：**進行敏捷（[[巧手]]）檢定來開鎖、解除陷阱或扒竊。
-      - **使用物品：**執行使用動作，或用魔法動作啟動需要該動作的魔法物品。
+      - **巧手：**進行敏捷（[[巧手]]）檢定來扒竊，或用盜賊工具開鎖、解除陷阱。
+      - **使用物品：**執行使用物件動作，或用魔法動作啟動需要該動作的魔法物品。
   - id: rogue-second-story-work
     level: 3
     name: 高來高去
+    actions:
+      - mode: movement
+        key: dynamic-movement-rogue-curated-second-story-work
     text: |
       你受過訓練，能進入特別難以抵達的地方。
 

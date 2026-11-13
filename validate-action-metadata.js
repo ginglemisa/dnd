@@ -278,6 +278,7 @@ const personalizedClasses = {
   rogue: [
     ["action",1,"等級 1：偷襲","dynamic-action-rogue-curated-sneak-attack"],
     ["bonus",3,"等級 3：快手（妙手子職）","dynamic-bonus-rogue-curated-fast-hands"],
+    ["movement",3,"等級 3：高來高去（妙手子職）","dynamic-movement-rogue-curated-second-story-work"],
     ["bonus",3,"等級 3：手穩就準","dynamic-bonus-rogue-curated-steady-aim"],
     ["bonus",2,"等級 2：靈巧動作","dynamic-bonus-class-1vms7ce"],
     ["reaction",5,"等級 5：直覺閃避","dynamic-reaction-class-5f9k5x"]

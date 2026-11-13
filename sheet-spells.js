@@ -127,7 +127,7 @@ function getSpellPrepareWarning(spellId, primaryClassId) {
   return {
     title: classMismatch ? "職業不符" : "等級不足",
     message: [
-      classMismatch ? `「${spellName}」不在${primaryLabel}的職業法術清單中。` : `「${spellName}」是${getSpellLevelLabel(spell.level === 0 ? "cantrips" : spell.level)}。`,
+      classMismatch ? `「${spellName}」不在${primaryLabel}的職業法術列表中。` : `「${spellName}」是${getSpellLevelLabel(spell.level === 0 ? "cantrips" : spell.level)}。`,
       classMismatch ? "自動管理僅使用角色職業的法表；其他來源法術請在對應角色能力中選擇，或啟用手動法術管理。" : `目前角色等級為 ${characterLevel}，尚未達到此環階的要求。`,
       `可用來源與等級要求：\n${requirements.join("\n")}`
     ].join("\n\n")
