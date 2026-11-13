@@ -588,7 +588,7 @@ async function main() {
     const shapeDescription = page.locator("#tabletop-action-panel-bonus .tabletop-action-description");
     assert.equal(await shapeDescription.locator("ul").count(), 2, "shape rules have two real bullet lists");
     assert.equal(await shapeDescription.locator("li").count(), 9, "four Wild Shape usage rules and five transformation rules");
-    assert.doesNotMatch(await shapeDescription.innerText(), /最大挑戰等級|推薦：|查看其他動物/);
+    assert.doesNotMatch(await shapeDescription.innerText(), /最大挑戰等級|建議選擇：|查看其他動物/);
     if (process.env.DND_SCREENSHOT_DIR) {
       await shapeDescription.scrollIntoViewIfNeeded();
       await page.screenshot({ path: path.join(process.env.DND_SCREENSHOT_DIR, "druid-shape-description.png") });

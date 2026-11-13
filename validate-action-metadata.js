@@ -411,7 +411,7 @@ async function verifyCoverage(page) {
       const wildShape = classOption("bonus", "荒野形態").description;
       check(wildShape.includes(`使用次數：${uses} 次`) && wildShape.includes(`（目前 ${hours} 小時）`) && wildShape.includes(`（目前 ${level} 點）`), "Wild Shape shows current uses, duration and temporary HP");
       check(["提前結束", "短休後恢復 1 次", "變形規則", "遊戲數據", "熟練項", "施法限制", "裝備互動"].every(text => wildShape.includes(text)), "Wild Shape retains ending, recovery and transformation rules");
-      check(!/最大挑戰等級|推薦：|查看其他動物|見下方/.test(wildShape), "Wild Shape hides form tables and known-form lists");
+      check(!/最大挑戰等級|建議選擇：|查看其他動物|見下方/.test(wildShape), "Wild Shape hides form tables and known-form lists");
     }
     setClass("monk", 6);
     for (const score of ["16", "8", ""]) {

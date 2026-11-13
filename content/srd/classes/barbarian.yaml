@@ -83,7 +83,7 @@ features:
     text: |
       你沒穿護甲時，AC = 10 + 敏捷調整值 + 體質調整值。
 
-      - **盾牌：**使用此特性時仍可持盾。
+      - **盾牌：**使用這項特性時仍可持盾。
   - id: barbarian-weapon-mastery
     level: 1
     name: 武器精通

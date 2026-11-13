@@ -2776,7 +2776,7 @@
         return `<option value="${escapeHtml(name)}"${current === name ? " selected" : ""}${peerDuplicate ? " disabled" : ""}>${escapeHtml(skillOptionLabel(name))}${peerDuplicate ? "（本頁已選）" : ""}</option>`;
       }).join("")}</select>${skillDescriptionButton(current)}</div></div>`;
     };
-    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：專精</h3><section class="quick-build-choice-panel"><p class="quick-build-option-note">從你已熟練的技能中選 ${requiredCount} 項，擲骰時的額外加分加倍（+${quickBuildProficiencyBonus()} 變成 +${quickBuildProficiencyBonus() * 2}）。${draft.choices.class === "rogue" ? "\n推薦：巧手、隱匿。清單裡找不到的技能，代表你還沒熟練，可以回步驟 3 調整。" : ""}</p><div class="quick-build-spell-fields">${Array.from({ length: requiredCount }, (_, index) => select(index)).join("")}</div></section>`;
+    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：專精</h3><section class="quick-build-choice-panel"><p class="quick-build-option-note">從你已熟練的技能中選 ${requiredCount} 項，擲骰時的額外加分加倍（+${quickBuildProficiencyBonus()} 變成 +${quickBuildProficiencyBonus() * 2}）。${draft.choices.class === "rogue" ? "\n建議選擇：巧手、隱匿。清單裡找不到的技能，代表你還沒熟練，可以回步驟 3 調整。" : ""}</p><div class="quick-build-spell-fields">${Array.from({ length: requiredCount }, (_, index) => select(index)).join("")}</div></section>`;
     body.querySelectorAll("[data-level-one-expertise]").forEach(selectEl => selectEl.addEventListener("change", () => updateLevelOneField(next => { next.expertise = [...body.querySelectorAll("[data-level-one-expertise]")].map(item => item.value || ""); })));
   }
 

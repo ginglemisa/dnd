@@ -43,7 +43,7 @@ features:
       - { kind: expertise, count: 2, from: proficient }
     text: |
       選擇 2 項**已熟練**的技能，獲得專精。\
-      推薦：[[巧手]]、[[隱匿]]。
+      建議選擇：[[巧手]]、[[隱匿]]。
   - id: rogue-sneak-attack
     level: 1
     name: 偷襲
