@@ -255,12 +255,16 @@
       recoveryNote || "與角色卡數值頁同步。",
       [canonical]
     );
-    const help = createElement("button", "tabletop-resource-help skill-tip", "?");
+    // 「英雄激勵」文字和後面的圓框 i 是同一顆按鈕，點文字也能開規則說明。
+    const help = createElement("button", "tabletop-resource-help skill-tip");
     help.type = "button";
     help.dataset.skill = "英雄激勵";
     help.setAttribute("aria-label", "英雄激勵規則說明");
     help.setAttribute("aria-controls", "skillPopup");
-    row.querySelector('input[type="checkbox"]')?.before(help);
+    const icon = createElement("span", "info-icon", "i");
+    icon.setAttribute("aria-hidden", "true");
+    row.querySelector(".proficiency-use-checks__label")?.replaceWith(help);
+    help.append(createElement("span", "proficiency-use-checks__label", "英雄激勵"), icon);
     const wrapper = createElement("div", "tabletop-resource-row tabletop-rest-row");
     const copy = createElement("div", "tabletop-resource-row__copy");
     const heading = createElement("div", "tabletop-rest-heading");

@@ -229,6 +229,35 @@ label {
   opacity: 1;
 }
 
+/* 「點開看說明」的圓框 i：全站共用，顏色與大小跟著所在的文字（見 DESIGN.md「說明圖示」）。 */
+.info-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.25em;
+  height: 1.25em;
+  margin-left: 0.16em;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+  font-family: Arial, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  font-size: 1.1em;
+  font-weight: 700;
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1;
+  vertical-align: 0.02em;
+}
+
+/* 句子中間提到這個圖示時：和內文同字級，左右留一樣的間距。 */
+.info-icon--inline {
+  margin-left: 0.12em;
+  margin-right: 0.12em;
+  font-size: 1em;
+  vertical-align: 0;
+}
+
 /* ===== Navigation ===== */
 .tabs-shell {
   position: fixed;

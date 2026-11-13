@@ -73,8 +73,6 @@
 
 .field-info-hint[hidden] { display: none; }
 
-.field-info-hint .character-features-info-icon { font-size: inherit; }
-
 button.field-info-hint__dismiss {
   display: inline;
   width: auto;

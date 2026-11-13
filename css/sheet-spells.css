@@ -1844,16 +1844,9 @@ button.spell-picked-jump:active {
   outline-offset: 2px;
 }
 
-.spell-primer__info {
-  display: grid;
-  place-items: center;
-  width: 1.15rem;
-  height: 1.15rem;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.7rem;
-  font-weight: 900;
+/* 圖示與文字的間距由按鈕的 gap 決定。 */
+.spell-primer .info-icon {
+  margin-left: 0;
 }
 
 .spell-primer:active {

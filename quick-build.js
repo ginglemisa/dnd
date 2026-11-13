@@ -87,13 +87,13 @@
   }
 
   // 規則說明的提示入口：內容在 rule-tips.js 的 skills_example_uses；鍵盤操作由 ensureWizard 統一處理。
-  function infoTip(key, label = key) {
-    const name = String(label).replace(/\s*ℹ️$/u, "");
-    return `<span class="skill-tip" data-skill="${escapeHtml(key)}" role="button" tabindex="0" aria-label="${escapeHtml(`${name}：開啟說明`)}">${escapeHtml(label)}</span>`;
+  function infoTip(key, label = key, iconHtml = "") {
+    return `<span class="skill-tip" data-skill="${escapeHtml(key)}" role="button" tabindex="0" aria-label="${escapeHtml(`${label}：開啟說明`)}">${escapeHtml(label)}${iconHtml}</span>`;
   }
 
+  // 「這是什麼？」的說明連結：問句後面接全站共用的圓框 i（.info-icon）。
   function conceptHelp(key) {
-    return `<p class="quick-build-equipment-help">${infoTip(key)}</p>`;
+    return `<p class="quick-build-equipment-help">${infoTip(key, key, '<span class="info-icon" aria-hidden="true">i</span>')}</p>`;
   }
 
   // 物品與工具的「查看」：點擊由 ensureWizard 統一接到 search.js 的裝備詳情。
@@ -1818,7 +1818,7 @@
   function renderBackgroundCards(body) {
     const wizardIntro = draft.choices.background ? "" : `<p class="quick-build-lead">${activeSteps(draft).length - 1} 步建立你的新角色。<br>進度自動保存，隨時可以離開；按下最後的「匯入」，創角才會完成。</p>`;
     const featDetail = draft.choices.background ? `<div class="quick-build-card-detail"><button type="button" class="quick-build-spell-view" data-background-feat-view>查看起源專長</button></div>` : "";
-    body.innerHTML = `${wizardIntro}<h3>選擇背景</h3><p class="quick-build-lead">背景是角色在成為冒險者之前的身分，例如侍僧、士兵或賢者。</p><p class="quick-build-equipment-help">${infoTip("卡片上的項目是什麼？ ℹ️")}</p><div class="quick-build-background-grid">${BACKGROUND_ORDER.map(key => {
+    body.innerHTML = `${wizardIntro}<h3>選擇背景</h3><p class="quick-build-lead">背景是角色在成為冒險者之前的身分，例如侍僧、士兵或賢者。</p>${conceptHelp("卡片上的項目是什麼？")}<div class="quick-build-background-grid">${BACKGROUND_ORDER.map(key => {
       const { rules, text } = presetBackground(key);
       const tool = text.toolGroup || rules.tool.fixed;
       const sourceLabel = window.getContentSourceLabel(window.getBackgroundSource(key));
@@ -1834,7 +1834,7 @@
     const key = draft.choices.background;
     const text = presetBackground(key)?.text || {};
     const gold = presetBackground(key)?.rules.equipment.B.gold;
-    body.innerHTML = `<h3>${backgroundName(key)}：背景裝備</h3><p class="quick-build-lead">背景會附一套初始裝備，新手建議直接拿。</p><section class="quick-build-choice-panel"><strong>背景初始裝備</strong>${optionNote(EQUIPMENT_LIST_NOTE)}<div class="quick-build-equipment-list">${equipmentLinks(String(text.equipmentA || "").split("、"))}</div><div class="quick-build-choice-actions quick-build-equipment-actions"><button type="button" data-wealth="default">取得初始裝備</button><button type="button" data-wealth="gold">改拿 ${gold} 金幣，自己買</button></div></section>${conceptHelp("為什麼初始裝備要選兩次？ ℹ️")}`;
+    body.innerHTML = `<h3>${backgroundName(key)}：背景裝備</h3><p class="quick-build-lead">背景會附一套初始裝備，新手建議直接拿。</p><section class="quick-build-choice-panel"><strong>背景初始裝備</strong>${optionNote(EQUIPMENT_LIST_NOTE)}<div class="quick-build-equipment-list">${equipmentLinks(String(text.equipmentA || "").split("、"))}</div><div class="quick-build-choice-actions quick-build-equipment-actions"><button type="button" data-wealth="default">取得初始裝備</button><button type="button" data-wealth="gold">改拿 ${gold} 金幣，自己買</button></div></section>${conceptHelp("為什麼初始裝備要選兩次？")}`;
     body.querySelectorAll("[data-wealth]").forEach(button => button.addEventListener("click", () => chooseBackgroundWealth(button.dataset.wealth)));
   }
 
@@ -2146,7 +2146,7 @@
       const canIncreaseBase = baseValue < 15 && spent - POINT_BUY_COSTS[baseValue] + nextBaseCost <= 27;
       const canIncreaseBonus = bonusEnabled && bonusValue < 2 && bonusTotal < 3;
       return `<div class="quick-build-ability-row${bonusEnabled ? "" : " is-bonus-locked"}"><div class="quick-build-ability-name"><strong>${infoTip(ABILITY_LABELS[ability])}</strong><small>${ability.toUpperCase()}</small></div><div class="quick-build-ability-control"><button type="button" class="quick-build-ability-step" data-class-ability-base="${ability}" data-ability-adjustment="-1" aria-label="降低${ABILITY_LABELS[ability]}基礎值"${baseValue > 8 ? "" : " disabled"}>▼</button><span class="quick-build-ability-value">${baseValue}</span><button type="button" class="quick-build-ability-step" data-class-ability-base="${ability}" data-ability-adjustment="1" aria-label="提高${ABILITY_LABELS[ability]}基礎值"${canIncreaseBase ? "" : " disabled"}>▲</button></div><div class="quick-build-ability-control"><button type="button" class="quick-build-ability-step" data-class-ability-bonus="${ability}" data-ability-adjustment="-1" aria-label="降低${ABILITY_LABELS[ability]}背景加值"${bonusEnabled && bonusValue > 0 ? "" : " disabled"}>▼</button><span class="quick-build-ability-value is-bonus">${bonusEnabled ? `+${bonusValue}` : "—"}</span><button type="button" class="quick-build-ability-step" data-class-ability-bonus="${ability}" data-ability-adjustment="1" aria-label="提高${ABILITY_LABELS[ability]}背景加值"${canIncreaseBonus ? "" : " disabled"}>▲</button></div><div class="quick-build-ability-total"><strong>${abilityTotal(draft, ability)}</strong><small>${signedModifierText(abilityTotal(draft, ability))}</small></div></div>`;
-    }).join("")}</section>${optionNote("你有 27 點可分配到六項屬性。\n每項從 8 開始，最高 15；點數需全部用完才能下一步。")}${conceptHelp("屬性怎麼調整？ ℹ️")}${spent !== 27 ? `<div class="quick-build-warning">還有 ${27 - spent} 點沒分配，全部用完才能下一步。</div>` : ""}${bonusTotal !== 3 ? `<div class="quick-build-warning">背景加值還有 ${3 - bonusTotal} 點沒分配，分完才能下一步。</div>` : ""}`;
+    }).join("")}</section>${optionNote("你有 27 點可分配到六項屬性。\n每項從 8 開始，最高 15；點數需全部用完才能下一步。")}${conceptHelp("屬性怎麼調整？")}${spent !== 27 ? `<div class="quick-build-warning">還有 ${27 - spent} 點沒分配，全部用完才能下一步。</div>` : ""}${bonusTotal !== 3 ? `<div class="quick-build-warning">背景加值還有 ${3 - bonusTotal} 點沒分配，分完才能下一步。</div>` : ""}`;
     body.querySelectorAll("[data-class-ability-base],[data-class-ability-bonus]").forEach(button => button.addEventListener("click", updateClassAbility));
   }
 
@@ -2161,10 +2161,10 @@
     const label = escapeHtml(castingSource.label);
     if (fixed) {
       const total = abilityTotal(draft, fixed);
-      body.innerHTML = `<h3>${label}：施法屬性</h3><div class="quick-build-fixed-list">${label}固定用${ABILITY_LABELS[fixed]}施法（目前 ${total}，調整值 ${signedModifierText(total)}）。</div>${conceptHelp("什麼是施法屬性？ ℹ️")}`;
+      body.innerHTML = `<h3>${label}：施法屬性</h3><div class="quick-build-fixed-list">${label}固定用${ABILITY_LABELS[fixed]}施法（目前 ${total}，調整值 ${signedModifierText(total)}）。</div>${conceptHelp("什麼是施法屬性？")}`;
       return;
     }
-    body.innerHTML = `<h3>${label}：選擇施法屬性</h3><p class="quick-build-lead">${label}的法術強弱取決於這項屬性。已幫你選好目前最高的一項，也可以自己改。</p><section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-class-spellcasting">施法屬性</label><select id="quick-build-class-spellcasting" data-class-spellcasting>${["int", "wis", "cha"].map(ability => `<option value="${ability}"${ability === selected ? " selected" : ""}>${ABILITY_LABELS[ability]} ${abilityTotal(draft, ability)}（${signedModifierText(abilityTotal(draft, ability))}）</option>`).join("")}</select></div></section>${conceptHelp("什麼是施法屬性？ ℹ️")}`;
+    body.innerHTML = `<h3>${label}：選擇施法屬性</h3><p class="quick-build-lead">${label}的法術強弱取決於這項屬性。已幫你選好目前最高的一項，也可以自己改。</p><section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-class-spellcasting">施法屬性</label><select id="quick-build-class-spellcasting" data-class-spellcasting>${["int", "wis", "cha"].map(ability => `<option value="${ability}"${ability === selected ? " selected" : ""}>${ABILITY_LABELS[ability]} ${abilityTotal(draft, ability)}（${signedModifierText(abilityTotal(draft, ability))}）</option>`).join("")}</select></div></section>${conceptHelp("什麼是施法屬性？")}`;
     body.querySelector("[data-class-spellcasting]")?.addEventListener("change", updateClassSpellcasting);
   }
 
@@ -2759,7 +2759,7 @@
     };
     const prefilled = selected.some(Boolean) && (LEVEL_ONE_DEFINITIONS[key].defaultWeaponMasteries || LEVEL_ONE_DEFINITIONS[key].prefillMasteryFromDefaultWeapon);
     const prefillNote = !prefilled ? "" : draft.choices.classEquipmentMethod === "gold" ? "已先填好新手推薦，可直接用或自行更換；空格再自己選。" : "已先填入初始裝備的武器，可直接用，也能改。";
-    body.innerHTML = `<h3>${CLASS_LABELS[key]}：選 ${count} 種精通武器</h3><p class="quick-build-lead">用這些武器攻擊時，多一種戰術效果。選你實際會用的武器，長休後可改選。${prefillNote}</p><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${Array.from({ length: count }, (_, index) => select(index)).join("")}</div></section>${conceptHelp("什麼是武器精通？ ℹ️")}`;
+    body.innerHTML = `<h3>${CLASS_LABELS[key]}：選 ${count} 種精通武器</h3><p class="quick-build-lead">用這些武器攻擊時，多一種戰術效果。選你實際會用的武器，長休後可改選。${prefillNote}</p><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${Array.from({ length: count }, (_, index) => select(index)).join("")}</div></section>${conceptHelp("什麼是武器精通？")}`;
     body.querySelectorAll("[data-level-one-mastery]").forEach(selectEl => selectEl.addEventListener("change", () => updateLevelOneField(next => { next.weaponMasteries = [...body.querySelectorAll("[data-level-one-mastery]")].map(item => item.value || ""); })));
   }
 
