@@ -773,7 +773,7 @@ async function verifyPdf(page, fieldsOnly) {
       [{ class: "rogue" }, ["盜賊黑話"]],
       [{ class: "sorcerer", "sorcerer-elemental-affinity-damage-type": "acid" }, ["等級 2：魔力泉湧、超魔法", "等級 6：元素親和（龍族）／強酸"]],
       [{ class: "warlock", "eldritch-invocation-10-1": true, "eldritch-invocation-10-2": true, "eldritch-invocation-10-3": true, "eldritch-invocation-0-1": true },
-        ["等級 1：魔能祈喚、契約魔法", "魔能祈喚：刃之魔契,原初之一教習×3"]],
+        ["等級 1：魔能祈喚、契約魔法", "魔能祈喚：刃之魔契,遠古者的教誨×3"]],
       [{ class: "wizard" }, ["等級 1：施法、儀式精通"]]
     ]) {
       const lines = classFeatureLines(state);
@@ -2323,7 +2323,8 @@ async function verifyCharacterFeatures(browser, url) {
     assert.equal(await page.locator("#class").inputValue(), "rogue");
     await pickerOptions("class").filter({ hasText: "法" }).click();
     assert.equal(await page.locator("#class").inputValue(), "wizard", "picker changes the class selector");
-    assert.equal(await modal.locator('#class-creation-panel [data-feature-title="class"]').textContent(), "法師Wizard", "table panel title follows the picked class");
+    // 法師有 SRD 版後，標題列尾端多了「網站版｜SRD 版」開關：只比對職業名稱的兩個部分。
+    assert.deepEqual(await modal.locator('#class-creation-panel [data-feature-title="class"] :is(.character-feature-title__name, .character-feature-title__en)').allTextContents(), ["法師", "Wizard"], "table panel title follows the picked class");
     assert.equal(await picker.locator('[data-feature-picker="class"] [aria-pressed="true"]').getAttribute("aria-label"), "法師");
     assert.equal((await modal.locator("#classCreationInfo").textContent()).includes("法師"), true, "open table follows the picked class");
     await pickerOptions("class").filter({ hasText: "盜" }).click();
@@ -2406,7 +2407,7 @@ async function verifyCharacterFeatures(browser, url) {
     await modal.getByRole("tab", { name: "魔祈", exact: true }).click();
     const invocation = name => modal.locator(`input[data-invocation-name="${name}"]`).first();
     assert.equal(await invocation("魔能意志").isEnabled(), true, "level 1 invocation remains selectable");
-    for (const name of ["邪魔活力", "千面之臉", "幻象迷蹤", "超凡跳躍", "魔鬼視界", "原初之一教習", "苦痛魔爆", "魔能長槍", "斥力魔爆"]) {
+    for (const name of ["邪魔活力", "千面之臉", "幻象迷蹤", "超凡跳躍", "魔鬼視界", "遠古者的教誨", "苦痛魔爆", "魔能長槍", "斥力魔爆"]) {
       assert.equal(await invocation(name).isDisabled(), true, `${name} is unavailable before level 2`);
     }
     for (const name of ["星移步法", "萬形之主", "融身入影", "深海饋贈", "共視感官", "魔能斬擊", "饑渴魔刃", "鏈主賦能"]) {
@@ -2549,7 +2550,7 @@ async function verifyCharacterFeatures(browser, url) {
 async function verifyClassSrdVersion(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
   const modal = page.locator("#character-features-modal");
-  const panels = { creation: "#class-creation-panel", class: "#class-abilities-panel", metamagic: "#metamagic-options-section" };
+  const panels = { creation: "#class-creation-panel", class: "#class-abilities-panel", metamagic: "#metamagic-options-section", invocations: "#eldritch-invocations-section" };
   const set = (id, value) => page.evaluate(([id, value]) => {
     const select = document.getElementById(id);
     select.value = value;
@@ -2570,15 +2571,21 @@ async function verifyClassSrdVersion(browser, url) {
     await page.goto(url);
     await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
     await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
-    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger", "rogue", "sorcerer"], "only classes with SRD text get the switch");
+    const srdClassList = await page.evaluate(() => [...classSrdClasses]);
+    assert.deepEqual(srdClassList, ["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"], "all twelve classes carry SRD text");
+    // 十二個職業都有 SRD 版，「沒有 SRD 譯文的職業」用測試頁面上的清單模擬：暫時把法師從 classSrdClasses 拿掉
+    // （只改這一頁的記憶體，不改網站程式），測完放回去。
+    const setSrdClasses = list => page.evaluate(list => { classSrdClasses.splice(0, classSrdClasses.length, ...list); }, list);
 
     // 沒有 SRD 譯文的職業：沒有開關，標題與版面不變。
+    await setSrdClasses(srdClassList.filter(id => id !== "wizard"));
     await set("class", "wizard");
     await page.evaluate(() => openCharacterFeatures("class"));
     assert.equal(await switches().count(), 0, "wizard has no version switch");
     assert.equal(await modal.locator('#class-abilities-panel [data-feature-title="class"]').textContent(), "法師Wizard");
     assert.equal(await modal.locator("#classFeaturesSrd").isVisible(), false);
     await modal.locator(".app-dialog__close").click();
+    await setSrdClasses(srdClassList);
 
     // 野蠻人：網站版內容維持原樣，SRD 譯文尚未載入。
     await set("class", "barbarian");
@@ -2614,12 +2621,12 @@ async function verifyClassSrdVersion(browser, url) {
     await chooseSrd("class");
     assert.equal(await modal.locator("#classFeatures").isVisible(), false, "SRD 版 replaces 網站版");
     const allHeadings = await srdHeadings();
-    for (const heading of ["1 級：狂暴", "9 級：殘暴打擊", "20 級：原初勇者", "野蠻人子職：狂戰士道途", "3 級：狂怒", "14 級：懾人氣勢"]) {
+    for (const heading of ["1 級：狂暴 Rage", "9 級：殘暴打擊 Brutal Strike", "20 級：原初勇者 Primal Champion", "野蠻人子職：狂戰士道途 Path of the Berserker", "3 級：狂怒 Frenzy", "14 級：懾人氣勢 Intimidating Presence"]) {
       assert(allHeadings.includes(heading), `SRD 版 without a level shows ${heading}`);
     }
     const allLevels = await levels("#classFeaturesSrd");
     assert.equal(Math.max(...allLevels), 20);
-    assert.equal(allHeadings.indexOf("20 級：原初勇者") < allHeadings.indexOf("野蠻人子職：狂戰士道途"), true, "subclass follows the class features");
+    assert.equal(allHeadings.indexOf("20 級：原初勇者 Primal Champion") < allHeadings.indexOf("野蠻人子職：狂戰士道途 Path of the Berserker"), true, "subclass follows the class features");
     assert.equal(await modal.locator("#classFeaturesSrd [data-feature-id], #classFeaturesSrd [id], #classCreationSrd [id]").count(), 0, "SRD text carries no feature ids or controls");
     await showTab("creation");
     assert.equal(await pressed("creation"), "srd", "both tabs share the version");
@@ -2634,7 +2641,7 @@ async function verifyClassSrdVersion(browser, url) {
       // 同一個篩選：SRD 版與網站版都只留下該等級以內的段落（8 級屬性值提升在 SRD 寫在 4 級，所以只比對篩選結果）。
       assert.deepEqual(await levels("#classFeaturesSrd"), allLevels.filter(value => value <= Number(level)), `SRD 版 keeps levels up to ${level}`);
       assert.equal(Math.max(...await levels("#classFeatures")), Number(level), `網站版 keeps levels up to ${level}`);
-      assert.equal((await srdHeadings()).includes("野蠻人子職：狂戰士道途"), Number(level) >= 3, `subclass heading follows the subclass level at ${level}`);
+      assert.equal((await srdHeadings()).includes("野蠻人子職：狂戰士道途 Path of the Berserker"), Number(level) >= 3, `subclass heading follows the subclass level at ${level}`);
       assert.equal(await modal.locator("#classCreationSrd .class-feature-table tbody tr").count(), 20, "the table is not filtered, like 網站版");
       assert.equal(await pressed("creation"), "srd", "changing level keeps the chosen version");
     }
@@ -2668,7 +2675,7 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 11, "features table plus ten spell tables");
     await showTab("class");
     const bardHeadings = await srdHeadings();
-    for (const heading of ["1 級：施法", "10 級：魔法奧祕", "20 級：創世之言", "吟遊詩人子職：逸聞學院", "14 級：無雙絕技"]) {
+    for (const heading of ["1 級：施法 Spellcasting", "10 級：魔法奧祕 Magical Secrets", "20 級：創世之言 Words of Creation", "吟遊詩人子職：逸聞學院 College of Lore", "14 級：無雙絕技 Peerless Skill"]) {
       assert(bardHeadings.includes(heading), `bard SRD 版 shows ${heading}`);
     }
 
@@ -2677,7 +2684,7 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await pressed("class"), "site", "changing to cleric returns to 網站版");
     await chooseSrd("class");
     const clericHeadings = await srdHeadings();
-    for (const heading of ["1 級：神聖使命", "10 級：神聖介入", "20 級：高等神聖介入", "牧師子職：生命領域", "17 級：至高治療"]) {
+    for (const heading of ["1 級：神聖使命 Divine Order", "10 級：神聖干預 Divine Intervention", "20 級：高等神聖干預 Greater Divine Intervention", "牧師子職：生命領域 Life Domain", "17 級：至高治療 Supreme Healing"]) {
       assert(clericHeadings.includes(heading), `cleric SRD 版 shows ${heading}`);
     }
     await showTab("creation");
@@ -2691,7 +2698,7 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await pressed("class"), "site", "changing to druid returns to 網站版");
     await chooseSrd("class");
     const druidHeadings = await srdHeadings();
-    for (const heading of ["2 級：荒野形態", "18 級：獸形施法", "20 級：大德魯伊", "德魯伊子職：大地結社", "14 級：自然聖域"]) {
+    for (const heading of ["2 級：荒野形態 Wild Shape", "18 級：獸形施法 Beast Spells", "20 級：大德魯伊 Archdruid", "德魯伊子職：大地結社 Circle of the Land", "14 級：自然聖域 Nature's Sanctuary"]) {
       assert(druidHeadings.includes(heading), `druid SRD 版 shows ${heading}`);
     }
     assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 6, "beast shapes, four land tables and Nature's Ward");
@@ -2705,7 +2712,7 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await pressed("class"), "site", "changing to fighter returns to 網站版");
     await chooseSrd("class");
     const fighterHeadings = await srdHeadings();
-    for (const heading of ["2 級：動作如潮", "9 級：不屈", "20 級：三次額外攻擊", "戰士子職：勇士", "18 級：屹立不倒"]) {
+    for (const heading of ["2 級：動作如潮 Action Surge", "9 級：不屈 Indomitable", "20 級：三次額外攻擊 Three Extra Attacks", "戰士子職：勇士 Champion", "18 級：屹立不倒 Survivor"]) {
       assert(fighterHeadings.includes(heading), `fighter SRD 版 shows ${heading}`);
     }
     await showTab("creation");
@@ -2717,7 +2724,7 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await pressed("class"), "site", "changing to monk returns to 網站版");
     await chooseSrd("class");
     const monkHeadings = await srdHeadings();
-    for (const heading of ["2 級：聚氣凝神", "10 級：凝神入微", "20 級：身心合一", "武僧子職：散打鬥士", "17 級：震顫掌"]) {
+    for (const heading of ["2 級：聚氣凝神 Monk's Focus", "10 級：凝神入微 Heightened Focus", "20 級：身心合一 Body and Mind", "武僧子職：散打鬥士 Warrior of the Open Hand", "17 級：震顫掌 Quivering Palm"]) {
       assert(monkHeadings.includes(heading), `monk SRD 版 shows ${heading}`);
     }
     await showTab("creation");
@@ -2729,13 +2736,13 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await pressed("class"), "site", "changing to paladin returns to 網站版");
     await chooseSrd("class");
     const paladinHeadings = await srdHeadings();
-    for (const heading of ["1 級：聖療", "9 級：聖威懾敵", "19 級：傳奇恩惠", "聖騎士子職：奉獻之誓", "20 級：聖潔光輪"]) {
+    for (const heading of ["1 級：聖療 Lay On Hands", "9 級：聖威懾敵 Abjure Foes", "19 級：傳奇恩惠 Epic Boon", "聖騎士子職：奉獻之誓 Oath of Devotion", "20 級：聖潔光輪 Holy Nimbus"]) {
       assert(paladinHeadings.includes(heading), `paladin SRD 版 shows ${heading}`);
     }
     assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 1, "Oath of Devotion spells table");
-    const paladinSidebar = modal.locator("#classFeaturesSrd .class-srd-feature", { hasText: "3 級：引導神力" }).locator(".class-srd-sidebar");
+    const paladinSidebar = modal.locator("#classFeaturesSrd .class-srd-feature", { hasText: "3 級：引導神力 Channel Divinity" }).locator(".class-srd-sidebar");
     assert.equal(await modal.locator("#classFeaturesSrd .class-srd-sidebar").count(), 1, "only Channel Divinity carries a sidebar");
-    assert.equal(await paladinSidebar.locator(".class-srd-sidebar__title").textContent(), "違背誓言");
+    assert.equal(await paladinSidebar.locator(".class-srd-sidebar__title").textContent(), "違背誓言 Breaking Your Oath");
     assert.equal(await paladinSidebar.locator("p").count(), 3, "sidebar keeps its three paragraphs");
     assert.equal(await paladinSidebar.evaluate(aside => aside === aside.parentElement.lastElementChild && getComputedStyle(aside).borderTopStyle === "solid"), true, "the sidebar is a bordered box at the end of the Channel Divinity text");
     await showTab("creation");
@@ -2750,7 +2757,7 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await pressed("class"), "site", "changing to ranger returns to 網站版");
     await chooseSrd("class");
     const rangerHeadings = await srdHeadings();
-    for (const heading of ["1 級：宿敵", "9 級：專精", "20 級：宿敵剋星", "遊俠子職：獵人", "15 級：卓越狩獵防禦"]) {
+    for (const heading of ["1 級：宿敵 Favored Enemy", "9 級：專精 Expertise", "20 級：宿敵剋星 Foe Slayer", "遊俠子職：獵人 Hunter", "15 級：卓越狩獵防禦 Superior Hunter's Defense"]) {
       assert(rangerHeadings.includes(heading), `ranger SRD 版 shows ${heading}`);
     }
     assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 0, "ranger features carry no tables");
@@ -2765,10 +2772,10 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await pressed("class"), "site", "changing to rogue returns to 網站版");
     await chooseSrd("class");
     const rogueHeadings = await srdHeadings();
-    for (const heading of ["1 級：偷襲", "5 級：靈巧打擊", "11 級：強化靈巧打擊", "20 級：逢凶化吉", "盜賊子職：妙手", "3 級：高來高去", "17 級：眼明手快"]) {
+    for (const heading of ["1 級：偷襲 Sneak Attack", "5 級：靈巧打擊 Cunning Strike", "11 級：強化靈巧打擊 Improved Cunning Strike", "20 級：逢凶化吉 Stroke of Luck", "盜賊子職：妙手 Thief", "3 級：高來高去 Second-Story Work", "17 級：眼明手快 Thief's Reflexes"]) {
       assert(rogueHeadings.includes(heading), `rogue SRD 版 shows ${heading}`);
     }
-    assert.equal(rogueHeadings.filter(heading => heading.endsWith("：專精")).length, 1, "rogue Expertise stays one level 1 feature, as in the source");
+    assert.equal(rogueHeadings.filter(heading => heading.endsWith("：專精 Expertise")).length, 1, "rogue Expertise stays one level 1 feature, as in the source");
     assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 0, "rogue features carry no tables");
     await showTab("creation");
     assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 1, "rogue has the features table only");
@@ -2781,11 +2788,11 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await pressed("class"), "site", "changing to sorcerer returns to 網站版");
     await chooseSrd("class");
     const sorcererHeadings = await srdHeadings();
-    for (const heading of ["1 級：天生術法", "2 級：魔力泉湧", "7 級：術法化身", "20 級：奧術昇華", "術士子職：龍族術法", "3 級：龍族法術", "18 級：與龍同行"]) {
+    for (const heading of ["1 級：天生術法 Innate Sorcery", "2 級：魔力泉湧 Font of Magic", "7 級：術法化身 Sorcery Incarnate", "20 級：奧術昇華 Arcane Apotheosis", "術士子職：龍族術法 Draconic Sorcery", "3 級：龍族法術 Draconic Spells", "18 級：與龍同行 Dragon Companion"]) {
       assert(sorcererHeadings.includes(heading), `sorcerer SRD 版 shows ${heading}`);
     }
     assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 2, "Creating Spell Slots and Draconic Spells tables");
-    assert.equal(await modal.locator("#classFeaturesSrd .class-srd-feature", { hasText: "1 級：天生術法" }).locator(".class-rule-list li").count(), 2, "Innate Sorcery keeps its two-item list");
+    assert.equal(await modal.locator("#classFeaturesSrd .class-srd-feature", { hasText: "1 級：天生術法 Innate Sorcery" }).locator(".class-rule-list li").count(), 2, "Innate Sorcery keeps its two-item list");
     assert.equal(await modal.locator("#classFeaturesSrd .class-srd-heading, #classFeaturesSrd .class-srd-subheading").count(), 0, "feature text carries no subheadings");
     await showTab("creation");
     const sorcererCreation = await modal.locator("#classCreationSrd .class-srd-heading, #classCreationSrd .class-srd-subheading").allTextContents();
@@ -2805,7 +2812,7 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await modal.locator("#metamagic-summary").isVisible(), false, "SRD 版 hides the selection summary");
     assert.equal(await modal.locator("#metamagic-options-disclosure").isVisible(), false, "SRD 版 hides the choice cards");
     assert.deepEqual(await modal.locator("#metamagicSrd .class-srd-heading, #metamagicSrd .class-srd-subheading").allTextContents(),
-      ["超魔法選項", "謹慎法術", "遠程法術", "強效法術", "延效法術", "升階法術", "瞬發法術", "追蹤法術", "精妙法術", "轉化法術", "孿生法術"]);
+      ["超魔法選項", "謹慎法術 Careful Spell", "遠程法術 Distant Spell", "強效法術 Empowered Spell", "延效法術 Extended Spell", "升階法術 Heightened Spell", "瞬發法術 Quickened Spell", "追蹤法術 Seeking Spell", "精妙法術 Subtle Spell", "轉化法術 Transmuted Spell", "孿生法術 Twinned Spell"]);
     assert.match(await modal.locator("#metamagicSrd").innerText(), /消耗：1 點術法點[\s\S]*豁免自動成功，而且如果它原本[\s\S]*譯自 SRD 5\.2\.1/, "the sentence split across two source lines is one line again");
     assert.equal(await modal.locator("#metamagicSrd [id], #metamagicSrd input, #metamagicSrd [data-feature-id]").count(), 0, "appendix SRD text carries no ids or controls");
     assert.equal(await pressed("class"), "srd", "all class tabs share the version");
@@ -2814,12 +2821,90 @@ async function verifyClassSrdVersion(browser, url) {
     assert.deepEqual(await page.evaluate(() => collectStateObject()), metamagicState, "switching the appendix version keeps character data");
     await showTab("class");
 
-    // 換職業回到網站版、沒有 SRD 的職業移除開關；重新開啟視窗也回到網站版。
+    // 契術師：等級表只有一列表頭（魔能祈喚、法術位、法術位環階）；能力內文只有「邪魔法術」一張表；
+    // 原文寫在能力之後的「魔能祈喚選項」是「魔祈」頁籤的 SRD 版（內容檔的 srd.appendix），含網站版沒有的 9 級以上祈喚。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="warlock"]').click();
+    assert.equal(await pressed("class"), "site", "changing to warlock returns to 網站版");
     await chooseSrd("class");
+    const warlockHeadings = await srdHeadings();
+    for (const heading of ["1 級：魔能祈喚 Eldritch Invocations", "1 級：契約魔法 Pact Magic", "2 級：秘法回流 Magical Cunning", "9 級：直謁宗主 Contact Patron", "11 級：幽玄秘傳 Mystic Arcanum", "20 級：魔能大成 Eldritch Master", "契術師子職：邪魔宗主 Fiend Patron", "3 級：邪魔法術 Fiend Spells", "10 級：邪魔淬體 Fiendish Resilience", "14 級：打入地獄 Hurl Through Hell"]) {
+      assert(warlockHeadings.includes(heading), `warlock SRD 版 shows ${heading}`);
+    }
+    assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 1, "Fiend Spells table");
+    assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table tbody tr").count(), 4, "Fiend Spells go up to level 9 in the source");
+    assert.equal(await modal.locator("#classFeaturesSrd .class-srd-heading, #classFeaturesSrd .class-srd-subheading").count(), 0, "feature text carries no subheadings");
+    await showTab("creation");
+    const warlockCreation = await modal.locator("#classCreationSrd .class-srd-heading, #classCreationSrd .class-srd-subheading").allTextContents();
+    assert(warlockCreation.includes("契術師法術列表") && warlockCreation.includes("9 環契術師法術"), "warlock spell list follows the overview");
+    assert.equal(warlockCreation.includes("魔能祈喚選項"), false, "Eldritch Invocation Options live in the 魔祈 tab, not the overview");
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 11, "warlock features table plus ten spell tables");
+    const warlockTable = modal.locator("#classCreationSrd .class-feature-table").first();
+    assert.equal(await warlockTable.locator("thead tr").count(), 1, "Pact Magic uses a single header row");
+    assert.deepEqual(await warlockTable.locator("thead th").allTextContents(), ["等級", "熟練加值", "職業特性", "魔能祈喚", "戲法", "準備法術", "法術位", "法術位環階"]);
+    assert.equal(await warlockTable.locator("tbody tr").count(), 20);
+    assert.match(await warlockTable.locator("tbody tr").nth(10).innerText(), /幽玄秘傳（6 環法術）/);
+    // 「魔祈」頁籤（附錄）：同一個開關與版本；SRD 版只顯示譯文，勾選卡片留在網站版，切回去勾選與存檔都不變。
+    await modal.locator('#class-creation-panel .class-version-switch [data-spell-version="site"]').click();
+    await showTab("invocations");
+    assert.equal(await pressed("invocations"), "site", "the 魔祈 tab shares the version state");
+    assert.equal(await modal.locator("#invocation-options-disclosure").isVisible(), true);
+    assert.equal(await modal.locator("#invocationsSrd").isVisible(), false);
+    const invocationState = await page.evaluate(() => collectStateObject());
+    await modal.locator('#eldritch-invocations-section .class-version-switch [data-spell-version="srd"]').click();
+    await modal.locator("#invocationsSrd .spell-version__attribution").waitFor();
+    assert.equal(await modal.locator("#warlock-invocation-summary").isVisible(), false, "SRD 版 hides the selection summary");
+    assert.equal(await modal.locator("#invocation-options-disclosure").isVisible(), false, "SRD 版 hides the choice cards");
+    assert.deepEqual(await modal.locator("#invocationsSrd .class-srd-heading, #invocationsSrd .class-srd-subheading").allTextContents(),
+      ["魔能祈喚選項", "苦痛魔爆 Agonizing Blast", "幽影護甲 Armor of Shadows", "星移步法 Ascendant Step", "魔鬼視界 Devil's Sight", "饕餮魔刃 Devouring Blade", "魔能意志 Eldritch Mind", "魔能斬擊 Eldritch Smite", "魔能長槍 Eldritch Spear", "邪魔活力 Fiendish Vigor", "共視感官 Gaze of Two Minds", "深海饋贈 Gift of the Depths", "庇佑饋贈 Gift of the Protectors", "鏈主賦能 Investment of the Chain Master", "遠古者的教誨 Lessons of the First Ones",
+        "啜飲生機 Lifedrinker", "千面之臉 Mask of Many Faces", "萬形之主 Master of Myriad Forms", "幻象迷蹤 Misty Visions", "融身入影 One with Shadows", "超凡跳躍 Otherworldly Leap", "刃之魔契 Pact of the Blade", "鏈之魔契 Pact of the Chain", "書之魔契 Pact of the Tome", "斥力魔爆 Repelling Blast", "饑渴魔刃 Thirsting Blade", "神遊遠域 Visions of Distant Realms", "墳墓低語 Whispers of the Grave", "洞幽燭微 Witch Sight"]);
+    assert.match(await modal.locator("#invocationsSrd").innerText(), /先決條件：5 級以上契術師、「刃之魔契」祈喚[\s\S]*對目標額外造成 1d8 力場傷害，這個法術位每一環階再加 1d8[\s\S]*譯自 SRD 5\.2\.1/, "the sentence split across two source lines is one line again");
+    assert.equal(await modal.locator("#invocationsSrd [id], #invocationsSrd input, #invocationsSrd [data-feature-id]").count(), 0, "appendix SRD text carries no ids or controls");
+    assert.equal(await pressed("class"), "srd", "all class tabs share the version");
+    await modal.locator('#eldritch-invocations-section .class-version-switch [data-spell-version="site"]').click();
+    assert.equal(await modal.locator("#invocation-options-disclosure").isVisible(), true);
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), invocationState, "switching the appendix version keeps character data");
+    await showTab("class");
+
+    // 法師：全施法職業；能力內文沒有表格，原文的側欄（擴充與替換法術書，粗體標題）放在 3 級法師子職內文最後；
+    // 法術列表 2 環補上原文漏列的魅影之力，克敵機先的特殊欄是 M。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="wizard"]').click();
+    assert.equal(await pressed("class"), "site", "changing to wizard returns to 網站版");
+    await chooseSrd("class");
+    const wizardHeadings = await srdHeadings();
+    for (const heading of ["1 級：施法 Spellcasting", "1 級：儀式精通 Ritual Adept", "1 級：奧術回想 Arcane Recovery", "5 級：記憶法術 Memorize Spell", "18 級：爐火純青 Spell Mastery", "19 級：傳奇恩惠 Epic Boon", "20 級：成名法術 Signature Spells", "法師子職：塑能師 Evoker", "3 級：強力戲法 Potent Cantrip", "10 級：強效塑能 Empowered Evocation", "14 級：雷霆萬鈞 Overchannel"]) {
+      assert(wizardHeadings.includes(heading), `wizard SRD 版 shows ${heading}`);
+    }
+    assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 0, "wizard features carry no tables");
+    const wizardSidebar = modal.locator("#classFeaturesSrd .class-srd-feature", { hasText: "3 級：法師子職 Wizard Subclass" }).locator(".class-srd-sidebar");
+    assert.equal(await modal.locator("#classFeaturesSrd .class-srd-sidebar").count(), 1, "only the Wizard Subclass feature carries a sidebar");
+    assert.equal(await wizardSidebar.locator(".class-srd-sidebar__title").textContent(), "擴充與替換法術書 Expanding and Replacing a Spellbook");
+    assert.equal(await wizardSidebar.locator("p").count(), 4, "sidebar keeps its four paragraphs");
+    assert.match(await wizardSidebar.innerText(), /抄錄入冊 Copying a Spell into the Book。[\s\S]*2 小時與 50 GP[\s\S]*抄錄副本 Copying the Book。[\s\S]*1 小時與 10 GP[\s\S]*備用的法術書/);
+    assert.equal(await wizardSidebar.evaluate(aside => aside === aside.parentElement.lastElementChild && getComputedStyle(aside).borderTopStyle === "solid"), true, "the sidebar is a bordered box at the end of the Wizard Subclass text");
+    await showTab("creation");
+    const wizardCreation = await modal.locator("#classCreationSrd .class-srd-heading, #classCreationSrd .class-srd-subheading").allTextContents();
+    assert(wizardCreation.includes("法師法術列表") && wizardCreation.includes("9 環法師法術"), "wizard spell list follows the overview");
+    const wizardTables = modal.locator("#classCreationSrd .class-feature-table");
+    assert.equal(await wizardTables.count(), 11, "wizard features table plus ten spell tables");
+    assert.equal(await wizardTables.first().locator('thead th[colspan="9"]').textContent(), "——各環階法術位——");
+    assert.equal(await wizardTables.first().locator("tbody tr").count(), 20);
+    assert.match(await wizardTables.first().locator("tbody tr").nth(17).innerText(), /爐火純青/);
+    assert.equal(await modal.locator("#classCreationSrd .class-rule-list li").count(), 4, "Becoming a Wizard keeps its two bulleted lists");
+    assert.deepEqual(await wizardTables.nth(1).locator("tbody tr", { hasText: "克敵機先" }).locator("td").allTextContents(), ["克敵機先", "預言", "M"], "True Strike is marked M");
+    assert.equal(await wizardTables.nth(3).locator("tbody tr").count(), 36, "level 2 list includes the spell missing from the source list");
+    assert.deepEqual(await wizardTables.nth(3).locator("tbody tr", { hasText: "魅影之力" }).locator("td").allTextContents(), ["魅影之力", "幻術", "C"]);
+    await showTab("class");
+
+    // 換職業回到網站版、沒有 SRD 的職業移除開關；重新開啟視窗也回到網站版。
+    // 先換到契術師並切到 SRD 版，再把法師從頁面上的清單拿掉、換成法師。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="warlock"]').click();
+    await chooseSrd("class");
+    await setSrdClasses(srdClassList.filter(id => id !== "wizard"));
     await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="wizard"]').click();
     assert.equal(await switches().count(), 0, "wizard has no switch after a class with SRD text");
     assert.equal(await modal.locator("#classFeatures").isVisible(), true);
     assert.equal(await modal.locator("#classFeaturesSrd").isVisible(), false);
+    await setSrdClasses(srdClassList);
     await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="barbarian"]').click();
     assert.equal(await pressed("class"), "site", "changing class returns to 網站版");
     await chooseSrd("class");
@@ -3316,7 +3401,7 @@ async function verifyClassFeatureSupplementalChoices(browser, url) {
     assert.equal(await page.locator("#character-features #metamagic-options-section").count(), 1);
     await open({ class: "warlock", level: "2" });
     assert.equal(await modal.locator("#eldritch-invocations-section").isVisible(), true);
-    await modal.locator('input[data-invocation-name="原初之一教習"]').first().check();
+    await modal.locator('input[data-invocation-name="遠古者的教誨"]').first().check();
     await modal.locator('#feat-choice-lessons-1').selectOption("魔法學徒");
     await modal.locator('[data-class-feature-additional="lessons-1"]').getByLabel("魔法學徒法表", { exact: true }).selectOption("wizard");
     assert.equal(await modal.locator('[data-class-feature-additional="lessons-1"]').getByLabel("一環法術", { exact: true }).isEnabled(), true, "invocation origin feats use the same live supplemental form");

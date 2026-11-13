@@ -257,7 +257,7 @@
     { name: '幻象迷蹤', max: 1 },
     { name: '超凡跳躍', max: 1 },
     { name: '魔鬼視界', max: 1 },
-    { name: '原初之一教習', max: 3 },
+    { name: '遠古者的教誨', max: 3 },
     { name: '苦痛魔爆', max: 3 },
     { name: '魔能長槍', max: 3 },
     { name: '斥力魔爆', max: 3 },

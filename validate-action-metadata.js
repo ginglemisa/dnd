@@ -2415,10 +2415,10 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.evaluate(saved => applyStateObject(saved), saved);
     await page.selectOption("#class", "warlock");
     await page.evaluate(() => openCharacterFeatures("invocations"));
-    const lessons = page.locator('#eldritch-invocations-output input[data-invocation-name="原初之一教習"]');
+    const lessons = page.locator('#eldritch-invocations-output input[data-invocation-name="遠古者的教誨"]');
     await lessons.first().check();
     assert.equal(await page.locator('#feats-area label[for="derived-feat-lessons-1"]').textContent(), "原初教習", "one lesson hides the number");
-    assert.equal(await page.locator('label[for="feat-choice-lessons-1"]').textContent(), "原初之一教習 1：起源專長", "invocation source keeps its full label");
+    assert.equal(await page.locator('label[for="feat-choice-lessons-1"]').textContent(), "遠古者的教誨 1：起源專長", "invocation source keeps its full label");
     await page.selectOption("#feat-choice-lessons-1", "熟習");
     await lessons.nth(1).check();
     assert.equal(await page.locator('#feats-area label[for="derived-feat-lessons-1"]').textContent(), "原初教習1");

@@ -460,7 +460,7 @@
     { id: "armor-of-shadows", label: "幽影護甲", description: "隨時可施展法師護甲，不耗法術位。\n沒穿護甲時，基礎 AC 變成 13 + 敏捷調整值。" },
     { id: "eldritch-mind", label: "魔能意志", description: "維持專注的體質豁免具有優勢（擲兩次取高），法術更不容易被打斷。" },
     { id: "fiendish-vigor", label: "邪魔活力", description: "隨時可施展虛假生命，不耗法術位，臨時生命值視為擲滿。" },
-    { id: "lessons-of-the-first-ones", label: "原初之一教習", description: "獲得 1 個起源專長。可重複選這項，但每次要選不同專長。", extra: { type: "originFeat" } },
+    { id: "lessons-of-the-first-ones", label: "遠古者的教誨", description: "獲得 1 個起源專長。可重複選這項，但每次要選不同專長。", extra: { type: "originFeat" } },
     { id: "mask-of-many-faces", label: "千面之臉", description: "隨時可施展易容術，不耗法術位。" },
     { id: "misty-visions", label: "幻象迷蹤", description: "隨時可施展無聲幻影，不耗法術位。" },
     { id: "otherworldly-leap", label: "超凡跳躍", description: "隨時可施展跳躍術，不耗法術位。" },
