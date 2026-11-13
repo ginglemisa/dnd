@@ -626,31 +626,6 @@
   font-size: var(--fs-lg);
 }
 
-.character-features-info-icon {
-  display: inline-grid;
-  place-items: center;
-  width: 1.25em;
-  height: 1.25em;
-  margin-left: 0.16em;
-  border: 1.5px solid currentColor;
-  border-radius: 50%;
-  box-sizing: border-box;
-  font-family: Arial, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  font-style: normal;
-  text-transform: none;
-  letter-spacing: 0;
-  line-height: 1;
-  vertical-align: 0.02em;
-}
-
-.character-features-info-icon--hint {
-  margin-left: 0.12em;
-  margin-right: 0.12em;
-  vertical-align: 0;
-}
-
 .character-features-hint {
   grid-column: 1 / -1;
   margin: 0.45rem 0 0;

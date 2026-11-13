@@ -107,16 +107,16 @@
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/base.css?v=20261111-menu-layout">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261112-skill-effect-tips">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261113-srd-appendix">
-  <link rel="stylesheet" href="css/sheet-spells.css?v=20261112-merge-main-menu">
+  <link rel="stylesheet" href="css/base.css?v=20261113-info-icon">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261113-info-icon">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261113-info-icon">
+  <link rel="stylesheet" href="css/sheet-spells.css?v=20261113-info-icon">
   <link rel="stylesheet" href="css/utility.css?v=20261111-menu-layout">
   <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
   <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/tabletop.css?v=20261112-merge-main-menu">
-  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261112-skill-effect-tips">
+  <link rel="stylesheet" href="css/tabletop-hud.css?v=20261113-info-icon">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
   <link rel="stylesheet" href="css/quick-build.css?v=20261110-safari">
@@ -144,13 +144,13 @@
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261113-blessed-warrior" defer></script>
   <script src="tabletop-druid.js?v=20261112-merge-main-menu" defer></script>
-  <script src="tabletop-resources.js?v=20261112-wild-shape-slots" defer></script>
+  <script src="tabletop-resources.js?v=20261113-info-icon" defer></script>
   <script src="tabletop-actions.js?v=20261113-champion-names" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261111-magic-effects-6" defer></script>
   <script src="legal-modal.js?v=20261111-serif-big5" defer></script>
   <script src="onboarding-tour.js?v=20261109-merge-main" defer></script>
-  <script src="quick-build.js?v=20261113-wording" defer></script>
+  <script src="quick-build.js?v=20261113-info-icon" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
   <script src="spell-management.js?v=20261107-share-readonly" defer></script>
   <script src="share-readonly.js?v=20261107-share-menu" defer></script>
@@ -627,13 +627,13 @@
 <div class="basic-overview">
   <div class="section basic-overview-group">
     <p id="field-info-hint" class="field-info-hint" hidden>
-      <span>想了解特性內容？點選各欄位旁的<span class="character-features-info-icon character-features-info-icon--hint">i</span>即可查看。</span>
+      <span>想了解特性內容？點選各欄位旁的<span class="info-icon info-icon--inline">i</span>即可查看。</span>
       <button type="button" class="field-info-hint__dismiss">我知道了</button>
     </p>
     <div class="basic-row basic-row--class-level">
     <div class="mini-stat-card basic-pair-card basic-pair-card--class-level">
       <div class="basic-pair-field basic-pair-field--class">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="creation" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業">職業 <span class="character-features-info-icon" aria-hidden="true">i</span></button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="creation" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業">職業 <span class="info-icon" aria-hidden="true">i</span></button>
         <select id="class">
           <option value="">待選</option>
           <option value="barbarian">野蠻人</option>
@@ -651,7 +651,7 @@
         </select>
       </div>
       <div class="basic-pair-field basic-pair-field--level">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="class" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業特性">等級 <span class="character-features-info-icon" aria-hidden="true">i</span></button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="class" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業特性">等級 <span class="info-icon" aria-hidden="true">i</span></button>
         <select id="level">
           <option value="">--</option>
           <option value="1">1</option>
@@ -696,7 +696,7 @@
   <div class="basic-row basic-row--origin">
     <div class="mini-stat-card basic-pair-card basic-pair-card--equal">
       <div class="basic-pair-field">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="background" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看背景能力">背景 <span class="character-features-info-icon" aria-hidden="true">i</span></button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="background" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看背景能力">背景 <span class="info-icon" aria-hidden="true">i</span></button>
         <select id="background">
           <option value="">待選</option>
           <option value="acolyte">侍僧</option>
@@ -710,7 +710,7 @@
       </div>
       <button type="button" id="custom-background-edit" class="custom-background-edit" aria-haspopup="dialog" hidden>修改背景</button>
       <div class="basic-pair-field basic-pair-field--race">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="race" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看種族能力">種族 <span class="character-features-info-icon" aria-hidden="true">i</span></button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="race" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看種族能力">種族 <span class="info-icon" aria-hidden="true">i</span></button>
         <button type="button" id="character-choice-warning-toggle" class="character-choice-warning-toggle" aria-controls="class-feature-choice-reminder" aria-expanded="true" hidden>隱藏警告</button>
         <div class="race-select-control">
         <select id="race">
@@ -1430,7 +1430,7 @@
   <div id="spell-prepared-summary" class="spell-prepared-summary">
     <div class="spell-prepared-actions">
       <button type="button" id="spell-primer-trigger" class="spell-primer" aria-haspopup="dialog" onclick="openSpellPrimer(this)">
-        <span class="spell-primer__info" aria-hidden="true">i</span>
+        <span class="info-icon" aria-hidden="true">i</span>
         <span>法術入門</span>
       </button>
       <button id="spell-prepare" type="button" disabled aria-haspopup="dialog">準備法術</button>
@@ -5149,7 +5149,7 @@ function updateArmorInfo() {
 }
 </script>
 <script src="sheet-spells.js?v=20261113-spell-list"></script>
-<script src="rule-tips.js?v=20261113-epic-boons"></script>
+<script src="rule-tips.js?v=20261113-info-icon"></script>
 <script>
 const SPELL_QR_IMAGE_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwAQMAAAAEm3vRAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABD0lEQVRYhe2YMQ6DMAxFXTFk5EgcjR6NIzEyINLYDk6ahpSiiun/BeHH9GXHPxBB96v3UXN4GZayAlzHq7o3zp2nIRSfqQLcwKG26Qu5ragAf8FdeC4PMRX4X5j2+QY+g9N8k2uOP7Bh2xx8Kkor1lcN8Hmcy0/UErBJLQzTzI/JbXFTs7vAh1gVVwibOu6dmLUicIHlDGQv/UriJUuPRwK+iEUcEVmCg9XSuwR8iHsZa3bSTOVYs2QLGvgDJ3GEtixtNxXgCziPNXovoS4ff+AqzvJ0bNBOvwduYutA2yXyHQGfwjEMcpZ2FVOBr2GyWLMvaOADLEqd+h5rgKs4DrTXVvTy56C87AH/hqG79QLS1jgHWvai8gAAAABJRU5ErkJggg==";
 
