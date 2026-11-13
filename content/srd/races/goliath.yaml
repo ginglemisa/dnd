@@ -2,7 +2,7 @@
 id: goliath
 name: 歌利亞
 source: srd
-creatureType: 類人生物
+creatureType: 人型生物
 sizes:
   - { size: 中型, height: 約 7-8 呎高 }
 speed: 35

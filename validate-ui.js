@@ -2549,7 +2549,7 @@ async function verifyCharacterFeatures(browser, url) {
 async function verifyClassSrdVersion(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
   const modal = page.locator("#character-features-modal");
-  const panels = { creation: "#class-creation-panel", class: "#class-abilities-panel" };
+  const panels = { creation: "#class-creation-panel", class: "#class-abilities-panel", metamagic: "#metamagic-options-section" };
   const set = (id, value) => page.evaluate(([id, value]) => {
     const select = document.getElementById(id);
     select.value = value;
@@ -2570,13 +2570,13 @@ async function verifyClassSrdVersion(browser, url) {
     await page.goto(url);
     await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
     await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
-    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger"], "only classes with SRD text get the switch");
+    assert.deepEqual(await page.evaluate(() => classSrdClasses), ["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger", "rogue", "sorcerer"], "only classes with SRD text get the switch");
 
     // 沒有 SRD 譯文的職業：沒有開關，標題與版面不變。
-    await set("class", "rogue");
+    await set("class", "wizard");
     await page.evaluate(() => openCharacterFeatures("class"));
-    assert.equal(await switches().count(), 0, "rogue has no version switch");
-    assert.equal(await modal.locator('#class-abilities-panel [data-feature-title="class"]').textContent(), "盜賊Rogue");
+    assert.equal(await switches().count(), 0, "wizard has no version switch");
+    assert.equal(await modal.locator('#class-abilities-panel [data-feature-title="class"]').textContent(), "法師Wizard");
     assert.equal(await modal.locator("#classFeaturesSrd").isVisible(), false);
     await modal.locator(".app-dialog__close").click();
 
@@ -2760,10 +2760,64 @@ async function verifyClassSrdVersion(browser, url) {
     assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 6, "ranger features table plus five spell tables");
     await showTab("class");
 
+    // 盜賊：沒有法術列表；11 級以後與妙手 3 級高來高去、9–17 級只在 SRD 版，能力內文沒有表格。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="rogue"]').click();
+    assert.equal(await pressed("class"), "site", "changing to rogue returns to 網站版");
+    await chooseSrd("class");
+    const rogueHeadings = await srdHeadings();
+    for (const heading of ["1 級：偷襲", "5 級：靈巧打擊", "11 級：強化靈巧打擊", "20 級：逢凶化吉", "盜賊子職：妙手", "3 級：高來高去", "17 級：眼明手快"]) {
+      assert(rogueHeadings.includes(heading), `rogue SRD 版 shows ${heading}`);
+    }
+    assert.equal(rogueHeadings.filter(heading => heading.endsWith("：專精")).length, 1, "rogue Expertise stays one level 1 feature, as in the source");
+    assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 0, "rogue features carry no tables");
+    await showTab("creation");
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 1, "rogue has the features table only");
+    assert.match(await modal.locator("#classCreationSrd").innerText(), /盜賊核心特質[\s\S]*每個盜賊等級一顆 D8[\s\S]*偷襲[\s\S]*10d6/);
+    await showTab("class");
+
+    // 術士：全施法職業；能力內文有「生成法術位」「龍族法術」兩張表與緊接段落的清單；
+    // 原文寫在能力之後的「超魔法選項」是「超魔」頁籤的 SRD 版（內容檔的 srd.appendix）。
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="sorcerer"]').click();
+    assert.equal(await pressed("class"), "site", "changing to sorcerer returns to 網站版");
+    await chooseSrd("class");
+    const sorcererHeadings = await srdHeadings();
+    for (const heading of ["1 級：天生術法", "2 級：魔力泉湧", "7 級：術法化身", "20 級：奧術昇華", "術士子職：龍族術法", "3 級：龍族法術", "18 級：與龍同行"]) {
+      assert(sorcererHeadings.includes(heading), `sorcerer SRD 版 shows ${heading}`);
+    }
+    assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 2, "Creating Spell Slots and Draconic Spells tables");
+    assert.equal(await modal.locator("#classFeaturesSrd .class-srd-feature", { hasText: "1 級：天生術法" }).locator(".class-rule-list li").count(), 2, "Innate Sorcery keeps its two-item list");
+    assert.equal(await modal.locator("#classFeaturesSrd .class-srd-heading, #classFeaturesSrd .class-srd-subheading").count(), 0, "feature text carries no subheadings");
+    await showTab("creation");
+    const sorcererCreation = await modal.locator("#classCreationSrd .class-srd-heading, #classCreationSrd .class-srd-subheading").allTextContents();
+    assert(sorcererCreation.includes("術士法術列表") && sorcererCreation.includes("9 環術士法術"), "sorcerer spell list follows the overview");
+    assert.equal(sorcererCreation.includes("超魔法選項"), false, "Metamagic Options live in the 超魔 tab, not the overview");
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table").count(), 11, "sorcerer features table plus ten spell tables");
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-table").first().locator('thead th[colspan="9"]').textContent(), "——各環階法術位——");
+    // 「超魔」頁籤（附錄）：同一個開關與版本；SRD 版只顯示譯文，勾選卡片留在網站版，切回去勾選與存檔都不變。
+    await modal.locator('#class-creation-panel .class-version-switch [data-spell-version="site"]').click();
+    await showTab("metamagic");
+    assert.equal(await pressed("metamagic"), "site", "the 超魔 tab shares the version state");
+    assert.equal(await modal.locator("#metamagic-options-disclosure").isVisible(), true);
+    assert.equal(await modal.locator("#metamagicSrd").isVisible(), false);
+    const metamagicState = await page.evaluate(() => collectStateObject());
+    await modal.locator('#metamagic-options-section .class-version-switch [data-spell-version="srd"]').click();
+    await modal.locator("#metamagicSrd .spell-version__attribution").waitFor();
+    assert.equal(await modal.locator("#metamagic-summary").isVisible(), false, "SRD 版 hides the selection summary");
+    assert.equal(await modal.locator("#metamagic-options-disclosure").isVisible(), false, "SRD 版 hides the choice cards");
+    assert.deepEqual(await modal.locator("#metamagicSrd .class-srd-heading, #metamagicSrd .class-srd-subheading").allTextContents(),
+      ["超魔法選項", "謹慎法術", "遠程法術", "強效法術", "延效法術", "升階法術", "瞬發法術", "追蹤法術", "精妙法術", "轉化法術", "孿生法術"]);
+    assert.match(await modal.locator("#metamagicSrd").innerText(), /消耗：1 點術法點[\s\S]*豁免自動成功，而且如果它原本[\s\S]*譯自 SRD 5\.2\.1/, "the sentence split across two source lines is one line again");
+    assert.equal(await modal.locator("#metamagicSrd [id], #metamagicSrd input, #metamagicSrd [data-feature-id]").count(), 0, "appendix SRD text carries no ids or controls");
+    assert.equal(await pressed("class"), "srd", "all class tabs share the version");
+    await modal.locator('#metamagic-options-section .class-version-switch [data-spell-version="site"]').click();
+    assert.equal(await modal.locator("#metamagic-options-disclosure").isVisible(), true);
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), metamagicState, "switching the appendix version keeps character data");
+    await showTab("class");
+
     // 換職業回到網站版、沒有 SRD 的職業移除開關；重新開啟視窗也回到網站版。
     await chooseSrd("class");
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="rogue"]').click();
-    assert.equal(await switches().count(), 0, "rogue has no switch after a class with SRD text");
+    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="wizard"]').click();
+    assert.equal(await switches().count(), 0, "wizard has no switch after a class with SRD text");
     assert.equal(await modal.locator("#classFeatures").isVisible(), true);
     assert.equal(await modal.locator("#classFeaturesSrd").isVisible(), false);
     await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="barbarian"]').click();

@@ -536,6 +536,16 @@
   display: none;
 }
 
+/* 附錄頁籤（超魔、魔祈）的 SRD 版：只顯示譯文，勾選摘要與選項卡片留在網站版。
+   整個區塊被「補齊職業選項」視窗借走時不套用，標題列與 SRD 區也不跟著顯示。 */
+.character-features > .character-feature-panel[data-content-version="srd"] > :is(.selection-summary, .feature-choice-disclosure) {
+  display: none;
+}
+
+#class-feature-choices-modal :is(#metamagic-options-section, #eldritch-invocations-section) > :is(.character-feature-title, .class-srd-output) {
+  display: none;
+}
+
 .class-srd-output {
   white-space: normal;
 }
@@ -569,9 +579,13 @@
   text-align: center;
 }
 
-.class-srd-output .class-srd-creation > p {
+.class-srd-output :is(.class-srd-creation, .class-srd-appendix) > p {
   margin: 0.48rem 0;
   line-height: 1.62;
+}
+
+.class-srd-output .class-srd-appendix > .class-srd-heading:first-child {
+  margin-top: 0;
 }
 
 /* SRD 版的側欄（原文框起來的補充，例如聖騎士「違背誓言」）：內容檔寫成「> 」開頭的區塊，放在所屬能力內文的最後。 */

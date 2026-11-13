@@ -1555,14 +1555,18 @@ function renderClassFeaturePanels(html, output, creationOutput) {
   creationOutput.replaceChildren(creation || document.createTextNode("無資料"));
 }
 
-// 職業頁「網站版｜SRD 版」切換：只有內容檔寫了 srd 區塊的職業（classSrdClasses）才在「職業」「特性」頁籤的標題列右側顯示開關，
-// 兩個開關共用同一個狀態，外觀與文字沿用法術詳情的切換（.spell-version__tabs）。SRD 版只供顯示（class-srd.generated.js 的 HTML），
-// 以和網站版相同的 getClassFeatureHtmlBeforeLevel 依目前等級與子職篩選：未選等級時列出全部（SRD 為 1–20 級），
-// 「職業」頁籤的核心特質與特性表同網站版不篩選。每次開啟角色能力視窗或換職業都回到網站版；換等級、子職時保留目前版本並重新篩選。
+// 職業頁「網站版｜SRD 版」切換：只有內容檔寫了 srd 區塊的職業（classSrdClasses）才在「職業」「特性」與附錄頁籤（術士「超魔」、
+// 契術師「魔祈」）的標題列右側顯示開關，各頁籤的開關共用同一個狀態，外觀與文字沿用法術詳情的切換（.spell-version__tabs）。
+// SRD 版只供顯示（class-srd.generated.js 的 HTML），以和網站版相同的 getClassFeatureHtmlBeforeLevel 依目前等級與子職篩選：
+// 未選等級時列出全部（SRD 為 1–20 級），「職業」頁籤的核心特質與特性表、附錄頁籤的選項同網站版不篩選。
+// 附錄頁籤切到 SRD 版時只顯示原文譯文，勾選卡片留在網站版（切回去照舊，勾選狀態不變）。
+// 每次開啟角色能力視窗或換職業都回到網站版；換等級、子職時保留目前版本並重新篩選。
 // 版本只留在當頁記憶體，不寫進存檔或本機偏好。SRD 版 HTML 在第一次切到 SRD 版時才載入，離線版已內嵌。
 const CLASS_CONTENT_VERSION_PANELS = Object.freeze([
   Object.freeze({ panel: "creation", srdId: "classCreationSrd" }),
-  Object.freeze({ panel: "class", srdId: "classFeaturesSrd" })
+  Object.freeze({ panel: "class", srdId: "classFeaturesSrd" }),
+  Object.freeze({ panel: "metamagic", srdId: "metamagicSrd", appendix: true }),
+  Object.freeze({ panel: "invocations", srdId: "invocationsSrd", appendix: true })
 ]);
 let classContentVersion = "site";
 let classContentVersionClass = "";
@@ -1657,7 +1661,7 @@ async function renderClassSrdView() {
   const token = ++classSrdRenderToken;
   if (classContentVersion !== "srd") return;
   const className = classContentVersionClass;
-  const containers = CLASS_CONTENT_VERSION_PANELS.map(({ panel, srdId }) => ({ panel, element: document.getElementById(srdId) })).filter(({ element }) => element);
+  const containers = CLASS_CONTENT_VERSION_PANELS.map(({ panel, srdId, appendix }) => ({ panel, appendix, element: document.getElementById(srdId) })).filter(({ element }) => element);
   const note = text => Object.assign(document.createElement("p"), { className: "spell-note-muted", textContent: text });
   if (!globalThis.classSrdText) containers.forEach(({ element }) => element.replaceChildren(note("SRD 版載入中…")));
   const data = await loadClassSrdData().catch(() => null);
@@ -1670,8 +1674,13 @@ async function renderClassSrdView() {
   const level = document.getElementById("level")?.value || "";
   const template = document.createElement("template");
   template.innerHTML = getClassFeatureHtmlBeforeLevel(raw, level && !isNaN(level) ? parseInt(level) + 1 : Infinity, window.getSelectedSubclassId?.(className) || "");
-  containers.forEach(({ panel, element }) => {
+  containers.forEach(({ panel, appendix, element }) => {
     const content = template.content.querySelector(`[data-class-feature-panel="${panel}"]`);
+    // 這個職業沒有的附錄頁籤（例如術士沒有「魔祈」）：頁籤本身不顯示，內容清空即可。
+    if (!content && appendix) {
+      element.replaceChildren();
+      return;
+    }
     element.replaceChildren(content || document.createTextNode("無資料"), Object.assign(document.createElement("p"), {
       className: "spell-version__attribution", textContent: "譯自 SRD 5.2.1（CC BY 4.0）"
     }));

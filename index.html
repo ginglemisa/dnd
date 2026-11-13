@@ -109,7 +109,7 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261111-menu-layout">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261112-skill-effect-tips">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261113-srd-sidebar">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261113-srd-appendix">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261112-merge-main-menu">
   <link rel="stylesheet" href="css/utility.css?v=20261111-menu-layout">
   <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
@@ -133,7 +133,7 @@
   <script src="background-content.generated.js?v=c9f6c95f6ead" defer></script>
   <script src="tool-data.js?v=20261104-class-picks" defer></script>
   <script src="feat-content.generated.js?v=472eb42de3f0" defer></script>
-  <script src="equipment-notes.js?v=20261113-persuasion" defer></script>
+  <script src="equipment-notes.js?v=20261113-humanoid" defer></script>
   <script src="spell-content.generated.js?v=0" defer></script>
   <script src="spell-list.js?v=20261111-magic-effects-6" defer></script>
   <script src="condition.js?v=20261111-magic-abilities" defer></script>
@@ -951,19 +951,23 @@
   <div class="output class-srd-output" id="classFeaturesSrd" hidden></div>
 </div>
 <div class="section is-hidden character-feature-panel" id="metamagic-options-section" role="tabpanel" aria-labelledby="character-features-tab-metamagic" data-feature-panel="metamagic" hidden inert>
+  <h3 class="character-feature-title" data-feature-title="class" hidden></h3>
   <div id="metamagic-summary" class="selection-summary">尚未勾選超魔法</div>
   <details id="metamagic-options-disclosure" class="feature-choice-disclosure" data-feature-choice-disclosure="metamagic" open>
     <summary tabindex="0">超魔法選項</summary>
     <div class="output" id="metamagicOptions">無資料</div>
   </details>
+  <div class="output class-srd-output" id="metamagicSrd" hidden></div>
 </div>
 
 <div class="section is-hidden character-feature-panel" id="eldritch-invocations-section" role="tabpanel" aria-labelledby="character-features-tab-invocations" data-feature-panel="invocations" hidden inert>
+  <h3 class="character-feature-title" data-feature-title="class" hidden></h3>
   <div id="warlock-invocation-summary" class="selection-summary">尚未勾選魔能祈喚</div>
   <details id="invocation-options-disclosure" class="feature-choice-disclosure" data-feature-choice-disclosure="invocations" open>
     <summary tabindex="0">魔能祈喚選項</summary>
     <div class="output" id="eldritch-invocations-output">無資料</div>
   </details>
+  <div class="output class-srd-output" id="invocationsSrd" hidden></div>
 </div>
   <div class="section character-feature-panel" id="background-features-section" role="tabpanel" aria-labelledby="character-features-tab-background" data-feature-panel="background" hidden inert>
     <h3 class="character-feature-title" data-feature-title="background" hidden></h3>
@@ -1463,7 +1467,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261111-magic-abilities"></script>
   <script src="spell-sources.js?v=20261113-blessed-warrior"></script>
-  <script src="class-features-ui.js?v=20261113-blessed-warrior"></script>
+  <script src="class-features-ui.js?v=20261113-srd-appendix"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({

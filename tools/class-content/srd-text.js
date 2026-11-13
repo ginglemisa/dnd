@@ -1,5 +1,6 @@
 // 職業頁「SRD 版」（職業與子職內容檔的 srd 區塊）轉成網站顯示的 HTML，只供顯示：網站程式不從中讀取規則。
 // 輸出結構比照 classFeatures：data-class-feature-panel="creation"（核心特質、成為某職業、特性表）與 "class"（1–20 級能力）；
+// 有自己頁籤的附錄（超魔、魔祈）另輸出 data-class-feature-panel="metamagic"／"invocations"（srd.appendix，不依等級篩選）；
 // 能力段落帶 data-feature-level，子職段落另帶 data-subclass，網站以和網站版相同的函式（getClassFeatureHtmlBeforeLevel）篩選。
 // 不輸出 data-feature-id（職業頁找能力位置只看網站版）、表單控制項或 id。
 // Markdown 子集：段落（空行分隔；段落內換行保留為 <br>）、「- 」清單、「### 」「#### 」小標、GFM 表格、_斜體_、**粗體**。
@@ -106,8 +107,15 @@ function renderClassSrd(classDef, subclasses) {
       + `<h3>${inline(subclass.srd.title, `${subWhere}.title`)}</h3>${blocks(subclass.srd.intro, `${subWhere}.intro`, { tables: false })}</section>`);
     features.push(...subclass.srd.features.map(feature => featureSection(feature, `${subWhere}.features`, subclass.id)));
   }
+  // 附錄頁籤（超魔、魔祈）的 SRD 版：data-class-feature-panel 是該附錄的 kind（load.js 已確認 name 對得上）。
+  const appendix = (classDef.srd.appendix || []).map(item => {
+    const kind = classDef.appendix.find(entry => entry.kind && entry.name === item.name).kind;
+    const itemWhere = `${where}.appendix（${item.name}）`;
+    return `\n<section class="class-srd-appendix" data-class-feature-panel="${escapeHtml(kind)}"><h3 class="class-srd-heading">${inline(item.name, itemWhere)}</h3>`
+      + `${blocks(item.text, itemWhere, { headings: [4], sidebars: false })}</section>`;
+  });
   return `<section class="class-creation-content class-srd-creation" data-class-feature-panel="creation">${blocks(classDef.srd.overview, `${where}.overview`, { headings: [3, 4] })}</section>\n`
-    + `<div class="class-feature-content class-srd-content" data-class-feature-panel="class">\n${features.join("\n")}\n</div>`;
+    + `<div class="class-feature-content class-srd-content" data-class-feature-panel="class">\n${features.join("\n")}\n</div>${appendix.join("")}`;
 }
 
 module.exports = { renderClassSrd };
