@@ -1105,7 +1105,7 @@ async function verifyPreparedRingRange(page) {
   await page.locator("#spell-search-result-list button", { hasText: "回生術" }).click();
   await page.locator(".quick-build-spell-prepare-confirm").click();
   const mismatch = page.getByRole("dialog", { name: "職業不符", exact: true });
-  assert.match(await mismatch.innerText(), /不在聖騎士的職業法術清單中/u, "preparing follows the site class list, not the lookup list");
+  assert.match(await mismatch.innerText(), /不在聖騎士的職業法術列表中/u, "preparing follows the site class list, not the lookup list");
   await mismatch.getByRole("button", { name: "關閉", exact: true }).click();
   assert.deepEqual(await playerIds(page), before, "a paladin cannot prepare SRD-only lookup spells");
   await page.locator("#spell-search").fill("");
@@ -1113,7 +1113,7 @@ async function verifyPreparedRingRange(page) {
   console.log("Prepared ring range: automatic cantrip/slot rings, class-option cantrips, retained high rings, unrestricted manual rings, lookup-only SRD spells and SRD-only paladin lookup spells kept out of preparation passed.");
 }
 
-// 受祝福的勇士／德魯伊教戰士：勾選時例外開放牧師／德魯伊戲法；準備視窗、職業特性頁連結與放大鏡搜尋
+// 受祝福的勇者／德魯伊教戰士：勾選時例外開放牧師／德魯伊戲法；準備視窗、職業特性頁連結與放大鏡搜尋
 // 都寫入同一組選項戲法欄（名額 2），取消選項後例外消失。
 async function verifyClassOptionCantrips(page) {
   const dialog = pickerDialog(page), ringFilter = dialog.getByRole("combobox", { name: "篩選環階", exact: true });

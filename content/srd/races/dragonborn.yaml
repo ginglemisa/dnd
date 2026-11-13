@@ -2,7 +2,7 @@
 id: dragonborn
 name: 龍裔
 source: srd
-creatureType: 類人生物
+creatureType: 人型生物
 sizes:
   - { size: 中型, height: 約 5-7 呎高 }
 speed: 30

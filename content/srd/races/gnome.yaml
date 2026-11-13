@@ -2,7 +2,7 @@
 id: gnome
 name: 侏儒
 source: srd
-creatureType: 類人生物
+creatureType: 人型生物
 sizes:
   - { size: 小型, height: 約 3-4 呎高 }
 speed: 30

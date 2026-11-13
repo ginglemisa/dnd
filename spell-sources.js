@@ -586,12 +586,12 @@ function getSpellScrollAccess(spellId) {
     : { allowed: false, reason: "none" };
 }
 
-// 準備法術視窗的「戲法」篩選：來源能力（如受祝福的勇士）給予戲法即算，戲法尚未選定也算。
+// 準備法術視窗的「戲法」篩選：來源能力（如受祝福的勇者）給予戲法即算，戲法尚未選定也算。
 function hasCurrentSpellSourceCantrips() {
   return getCurrentSpellSourceSpecs().some(spec => spellEntryFromSourceSpec(spec).level === 0);
 }
 
-// 職業選項給予的自選戲法（受祝福的勇士、德魯伊教戰士）：勾選時例外開放該法表的戲法，
+// 職業選項給予的自選戲法（受祝福的勇者、德魯伊教戰士）：勾選時例外開放該法表的戲法，
 // 名額為選項的戲法欄；選擇只存在這些欄位（classFeatureCantrips），不加入玩家準備清單。
 // 自動管理才適用；手動管理不限法表。
 function getClassFeatureCantripGrant() {
@@ -671,7 +671,7 @@ function getClassAlwaysPreparedSpellSpecs() {
   return [...getClassBaseSpellSpecs(classValue, level), ...getClassFeatureCantripSpecs(classValue, level)];
 }
 
-// 職業選項給予的自選戲法欄（getClassFeatureCantripChoices，例如受祝福的勇士 2 個牧師戲法）。
+// 職業選項給予的自選戲法欄（getClassFeatureCantripChoices，例如受祝福的勇者 2 個牧師戲法）。
 function getClassFeatureCantripSpecs(classValue, level) {
   const chosen = window.SpellManagement?.collectClassFeatureCantrips() || {};
   return getClassFeatureCantripChoices(classValue).flatMap(choice => {

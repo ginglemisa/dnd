@@ -2,7 +2,7 @@
 id: human
 name: 人類
 source: srd
-creatureType: 類人生物
+creatureType: 人型生物
 sizes:
   - { size: 中型, height: 約 4-7 呎高 }
   - { size: 小型, height: 約 2-4 呎高 }

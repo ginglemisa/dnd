@@ -2602,7 +2602,7 @@
     const selectedClass = document.getElementById("class")?.value;
     if (!["cleric", "druid", "paladin", "ranger", "warlock", "sorcerer"].includes(selectedClass)) return [];
     return (globalScope.buildPdfPrecheckMessages?.() || [])
-      .filter(entry => /神聖使命|原初使命|神佑打擊|元素狂怒|防守戰術|戰鬥風格|受祝福的勇士|德魯伊教戰士|魔能祈喚|超魔法/.test(entry.message))
+      .filter(entry => /神聖使命|原初使命|神佑打擊|元素狂怒|防守戰術|戰鬥風格|受祝福的勇者|德魯伊教戰士|魔能祈喚|超魔法/.test(entry.message))
       .map(entry => ({ label: "職業選項", detail: entry.message, warning: true, choiceTarget: entry }));
   }
 

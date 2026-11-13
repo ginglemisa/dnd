@@ -367,7 +367,7 @@
     druid: [{ id: "druid-druidic", text: () => "會說德魯伊的祕密語言「德魯伊語」，也能留下只有懂這種語言的人才會自動發現的暗號。" }],
     fighter: [{ id: "fighter-second-wind", text: ctx => `關鍵時刻恢復 1d10 + ${QUICK_BUILD_LEVEL} 生命值。\n可用 ${ctx.value("secondWindUses")} 次，短休恢復 1 次，長休後全部恢復。` }],
     monk: [
-      { id: "monk-martial-arts", text: ctx => `未穿護甲、未持盾時：可多打 1 次徒手攻擊，傷害可改用 1d${ctx.value("martialArtsDie")}，攻擊與傷害可用敏捷取代力量。\n只適用徒手或武僧武器。` },
+      { id: "monk-martial-arts", text: ctx => `未穿護甲、未持盾時：可多打 1 次徒手打擊，傷害可改用 1d${ctx.value("martialArtsDie")}，攻擊與傷害可用敏捷取代力量。\n只適用徒手或武僧武器。` },
       { id: "monk-unarmored-defense", text: () => "未穿護甲、未持盾時，AC = 10 + 敏捷調整值 + 感知調整值。" }
     ],
     paladin: [{ id: "paladin-lay-on-hands", text: () => `擁有 ${QUICK_BUILD_LEVEL * 5} 點治療能量，觸碰生物（可以是自己）分配點數回血；也可花 5 點改為移除中毒。\n長休後全部恢復。` }],
@@ -460,7 +460,7 @@
     { id: "armor-of-shadows", label: "幽影護甲", description: "隨時可施展法師護甲，不耗法術位。\n沒穿護甲時，基礎 AC 變成 13 + 敏捷調整值。" },
     { id: "eldritch-mind", label: "魔能意志", description: "維持專注的體質豁免具有優勢（擲兩次取高），法術更不容易被打斷。" },
     { id: "fiendish-vigor", label: "邪魔活力", description: "隨時可施展虛假生命，不耗法術位，臨時生命值視為擲滿。" },
-    { id: "lessons-of-the-first-ones", label: "原初之一教習", description: "獲得 1 個起源專長。可重複選這項，但每次要選不同專長。", extra: { type: "originFeat" } },
+    { id: "lessons-of-the-first-ones", label: "遠古者的教誨", description: "獲得 1 個起源專長。可重複選這項，但每次要選不同專長。", extra: { type: "originFeat" } },
     { id: "mask-of-many-faces", label: "千面之臉", description: "隨時可施展易容術，不耗法術位。" },
     { id: "misty-visions", label: "幻象迷蹤", description: "隨時可施展無聲幻影，不耗法術位。" },
     { id: "otherworldly-leap", label: "超凡跳躍", description: "隨時可施展跳躍術，不耗法術位。" },
@@ -2378,7 +2378,7 @@
   function offHandDescription(mainHand, offHand) {
     if (!offHand) return weaponHasProperty(mainHand, "雙手") ? "空著（這把武器要雙手拿）" : "空著";
     if (offHand === "盾牌") return `盾牌（AC +${globalThis.shield?.[0]?.AC ?? 2}，更難被打中）`;
-    if (offHand === "武藝") return "武藝（徒手攻擊，不用拿武器。未穿護甲、未持盾才能用，攻擊後可用附贈動作再打一次）";
+    if (offHand === "武藝") return "武藝（徒手打擊，不用拿武器。未穿護甲、未持盾才能用，攻擊後可用附贈動作再打一次）";
     return weaponHasProperty(offHand, "輕型") ? `${offHand}（攻擊後可用附贈動作再砍一次，這次傷害不加屬性調整值）` : offHand;
   }
 
@@ -2776,7 +2776,7 @@
         return `<option value="${escapeHtml(name)}"${current === name ? " selected" : ""}${peerDuplicate ? " disabled" : ""}>${escapeHtml(skillOptionLabel(name))}${peerDuplicate ? "（本頁已選）" : ""}</option>`;
       }).join("")}</select>${skillDescriptionButton(current)}</div></div>`;
     };
-    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：專精</h3><section class="quick-build-choice-panel"><p class="quick-build-option-note">從你已熟練的技能中選 ${requiredCount} 項，擲骰時的額外加分加倍（+${quickBuildProficiencyBonus()} 變成 +${quickBuildProficiencyBonus() * 2}）。${draft.choices.class === "rogue" ? "\n推薦：巧手、隱匿。清單裡找不到的技能，代表你還沒熟練，可以回步驟 3 調整。" : ""}</p><div class="quick-build-spell-fields">${Array.from({ length: requiredCount }, (_, index) => select(index)).join("")}</div></section>`;
+    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：專精</h3><section class="quick-build-choice-panel"><p class="quick-build-option-note">從你已熟練的技能中選 ${requiredCount} 項，擲骰時的額外加分加倍（+${quickBuildProficiencyBonus()} 變成 +${quickBuildProficiencyBonus() * 2}）。${draft.choices.class === "rogue" ? "\n建議選擇：巧手、隱匿。清單裡找不到的技能，代表你還沒熟練，可以回步驟 3 調整。" : ""}</p><div class="quick-build-spell-fields">${Array.from({ length: requiredCount }, (_, index) => select(index)).join("")}</div></section>`;
     body.querySelectorAll("[data-level-one-expertise]").forEach(selectEl => selectEl.addEventListener("change", () => updateLevelOneField(next => { next.expertise = [...body.querySelectorAll("[data-level-one-expertise]")].map(item => item.value || ""); })));
   }
 

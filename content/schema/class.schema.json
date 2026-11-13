@@ -238,7 +238,21 @@
       "description": "SRD 5.2.1 繁中直譯：職業頁的「SRD 版」（唯讀，頁尾註明譯自 SRD 5.2.1）。有這個區塊的職業，職業頁標題列才顯示「網站版｜SRD 版」切換。只限公開內容包。",
       "properties": {
         "overview": { "$ref": "feature.schema.json#/definitions/srdText", "description": "「職業」頁籤的 SRD 版：核心特質表、成為某職業、職業特性前言與特性表（不依等級篩選，同網站版的創角資訊與特性表）。" },
-        "features": { "$ref": "feature.schema.json#/definitions/srdFeatures", "description": "「特性」頁籤的 SRD 版：1–20 級職業能力。" }
+        "features": { "$ref": "feature.schema.json#/definitions/srdFeatures", "description": "「特性」頁籤的 SRD 版：1–20 級職業能力。" },
+        "appendix": {
+          "type": "array",
+          "minItems": 1,
+          "description": "附錄頁籤（超魔、魔祈）的 SRD 版：原文寫在職業能力之後的小節（術士「超魔法選項」、契術師「魔能祈喚選項」）。職業有 srd 時，每個寫了 kind 的 appendix 都要有一項，以 name 對應。",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "text"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "description": "小節標題，須與本職業某個寫了 kind 的 appendix 的 name 相同；顯示在該頁籤 SRD 版的最上方。" },
+              "text": { "$ref": "feature.schema.json#/definitions/srdText", "description": "小節全文，可用「#### 」小標（各選項的名稱），不可用「### 」小標與側欄。" }
+            }
+          }
+        }
       }
     }
   },

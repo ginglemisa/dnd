@@ -42,7 +42,7 @@ const baseline = {
       ["bonus",3,"等級 3：散打技巧","dynamic-bonus-class-1kcppo0"],
       ["reaction",3,"等級 3：撥擋化勁","dynamic-reaction-class-5l2yua"],
       ["reaction",4,"等級 4：輕身墜","dynamic-reaction-class-1l1lc9s"],
-      ["action",5,"等級 5：震懾擊","dynamic-action-class-1g9j8ui"],
+      ["action",5,"等級 5：震懾打擊","dynamic-action-class-1g9j8ui"],
       ["bonus",6,"等級 6：混元體","dynamic-bonus-class-3mzm48"],
     ],
     "paladin": [
@@ -265,7 +265,7 @@ const personalizedClasses = {
     ["action",2,"等級 2：吐故納新","dynamic-action-monk-curated-uncanny-metabolism"],
     ["reaction",3,"等級 3：撥擋化勁","dynamic-reaction-monk-curated-deflect-attacks"],
     ["reaction",4,"等級 4：輕身墜","dynamic-reaction-monk-curated-slow-fall"],
-    ["action",5,"等級 5：震懾擊","dynamic-action-monk-curated-stunning-strike"],
+    ["action",5,"等級 5：震懾打擊","dynamic-action-monk-curated-stunning-strike"],
     ["action",5,"等級 5：額外攻擊","dynamic-action-monk-curated-extra-attack"],
     ["bonus",6,"等級 6：混元體（散打子職）","dynamic-bonus-monk-curated-wholeness-of-body"]
   ],
@@ -278,6 +278,7 @@ const personalizedClasses = {
   rogue: [
     ["action",1,"等級 1：偷襲","dynamic-action-rogue-curated-sneak-attack"],
     ["bonus",3,"等級 3：快手（妙手子職）","dynamic-bonus-rogue-curated-fast-hands"],
+    ["movement",3,"等級 3：高來高去（妙手子職）","dynamic-movement-rogue-curated-second-story-work"],
     ["bonus",3,"等級 3：手穩就準","dynamic-bonus-rogue-curated-steady-aim"],
     ["bonus",2,"等級 2：靈巧動作","dynamic-bonus-class-1vms7ce"],
     ["reaction",5,"等級 5：直覺閃避","dynamic-reaction-class-5f9k5x"]
@@ -410,7 +411,7 @@ async function verifyCoverage(page) {
       const wildShape = classOption("bonus", "荒野形態").description;
       check(wildShape.includes(`使用次數：${uses} 次`) && wildShape.includes(`（目前 ${hours} 小時）`) && wildShape.includes(`（目前 ${level} 點）`), "Wild Shape shows current uses, duration and temporary HP");
       check(["提前結束", "短休後恢復 1 次", "變形規則", "遊戲數據", "熟練項", "施法限制", "裝備互動"].every(text => wildShape.includes(text)), "Wild Shape retains ending, recovery and transformation rules");
-      check(!/最大挑戰等級|推薦：|查看其他動物|見下方/.test(wildShape), "Wild Shape hides form tables and known-form lists");
+      check(!/最大挑戰等級|建議選擇：|查看其他動物|見下方/.test(wildShape), "Wild Shape hides form tables and known-form lists");
     }
     setClass("monk", 6);
     for (const score of ["16", "8", ""]) {
@@ -2414,10 +2415,10 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.evaluate(saved => applyStateObject(saved), saved);
     await page.selectOption("#class", "warlock");
     await page.evaluate(() => openCharacterFeatures("invocations"));
-    const lessons = page.locator('#eldritch-invocations-output input[data-invocation-name="原初之一教習"]');
+    const lessons = page.locator('#eldritch-invocations-output input[data-invocation-name="遠古者的教誨"]');
     await lessons.first().check();
     assert.equal(await page.locator('#feats-area label[for="derived-feat-lessons-1"]').textContent(), "原初教習", "one lesson hides the number");
-    assert.equal(await page.locator('label[for="feat-choice-lessons-1"]').textContent(), "原初之一教習 1：起源專長", "invocation source keeps its full label");
+    assert.equal(await page.locator('label[for="feat-choice-lessons-1"]').textContent(), "遠古者的教誨 1：起源專長", "invocation source keeps its full label");
     await page.selectOption("#feat-choice-lessons-1", "熟習");
     await lessons.nth(1).check();
     assert.equal(await page.locator('#feats-area label[for="derived-feat-lessons-1"]').textContent(), "原初教習1");
@@ -3598,7 +3599,7 @@ async function verifyMergedActionUi(browser, url) {
     }
     await page.locator("#tabletop-action-tab-action").click();
     assert.equal(await page.locator("#tabletop-action-panel-action .tabletop-action-context").innerText(), "點擊[基本動作]按鈕可展開／收合，角色能力的使用時機與次數限制請參照各項說明。");
-    const coverCopy = "半身遮蔽：AC 與敏捷豁免獲得 +2，例如躲在齊腰高的矮牆後，或有其他生物擋在前方。\n\n3／4遮蔽：AC 與敏捷豁免獲得 +5，例如躲在城牆射箭孔或粗大樹幹後方。\n\n完全遮蔽：視線完全看不到，通常無法被指定為目標。";
+    const coverCopy = "半掩蔽：AC 與敏捷豁免獲得 +2，例如躲在齊腰高的矮牆後，或有其他生物擋在前方。\n\n四分之三掩蔽：AC 與敏捷豁免獲得 +5，例如躲在城牆射箭孔或粗大樹幹後方。\n\n全掩蔽：視線完全看不到，通常無法被指定為目標。";
     const natural20Copy = "攻擊骰子出 20 必中，造成重擊。\n傷害骰擲兩次，固定加值只加一次。\n\n例如長劍一般傷害為 1d8＋3\n重擊傷害則是 2d8＋3\n額外傷害骰（如至聖斬）也會加倍";
     const hideCopy = "進行一次敏捷（隱匿）檢定，難度 15，嘗試避開其他生物的注意。";
     const assertRuleTag = async button => {
@@ -3643,7 +3644,7 @@ async function verifyMergedActionUi(browser, url) {
       }), true, "natural 20 remains within the viewport with a usable target");
       await page.locator("#tabletop-action-tab-movement").click();
       const cover = page.locator('#tabletop-action-panel-movement [data-action-option-key="cover"]');
-      assert.equal(await cover.locator("span").first().innerText(), "遮蔽");
+      assert.equal(await cover.locator("span").first().innerText(), "掩蔽");
       await assertRuleTag(cover);
       assert.deepEqual(await page.locator("#tabletop-action-panel-movement .tabletop-action-options button")
         .evaluateAll(buttons => buttons.slice(0, 2).map(button => button.dataset.actionOptionKey)), ["cover", "climbing"], "cover immediately precedes climbing");

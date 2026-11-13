@@ -513,7 +513,7 @@
     if (access.reason === "manual") return `手動管理法術，請自行確認能否使用。${effect}`;
     if (access.reason === "source") return `${spell.level === 0 ? "你已學會這個戲法" : "你始終準備這個法術"}，來自${access.label}。${effect}`;
     if (access.reason === "class") return effect;
-    return `不在你的職業法術清單上，也不是你${spell.level === 0 ? "學會的戲法" : "始終準備的法術"}。`;
+    return `不在你的職業法術列表上，也不是你${spell.level === 0 ? "學會的戲法" : "始終準備的法術"}。`;
   }
 
   // 卷軸的豁免 DC 與攻擊加值依環階（內容檔的表），魔法模式的卷軸到 5 環；目錄沒載入時用裝備資料的戲法與 1 環數值。

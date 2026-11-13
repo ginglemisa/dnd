@@ -2,7 +2,7 @@
 id: dwarf
 name: 矮人
 source: srd
-creatureType: 類人生物
+creatureType: 人型生物
 sizes:
   - { size: 中型, height: 約 4-5 呎高 }
 speed: 30

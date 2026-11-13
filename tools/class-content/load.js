@@ -193,12 +193,21 @@ function checkEquipment(classDef, errors) {
 }
 
 // SRD 版（srd 區塊，只供職業頁顯示）：只限公開內容包；能力依等級排列；
-// 子職的 srd 須所屬職業也有 srd，能力等級不低於 subclassLevel。Markdown 格式在產生 HTML 時檢查（srd-text.js）。
+// 子職的 srd 須所屬職業也有 srd，能力等級不低於 subclassLevel；有自己頁籤的附錄（超魔、魔祈）須有對應的 srd.appendix。
+// Markdown 格式在產生 HTML 時檢查（srd-text.js）。
 function checkSrd(classDef, errors) {
   for (const owner of [classDef, ...classDef.subclasses].filter(item => item.srd)) {
     if (owner.pack !== "srd") errors.push(`${owner.file}：srd 區塊只限公開內容包（content/srd）`);
     const levels = owner.srd.features.map(feature => feature.level);
     if (levels.some((level, index) => index && level < levels[index - 1])) errors.push(`${owner.file}：srd.features 須依等級排列`);
+  }
+  // 附錄頁籤（超魔、魔祈）的 SRD 版：以 name 對應寫了 kind 的 appendix，一對一，不可缺也不可多。
+  if (classDef.srd) {
+    const tabbed = (classDef.appendix || []).filter(item => item.kind).map(item => item.name);
+    const written = (classDef.srd.appendix || []).map(item => item.name);
+    written.filter(name => !tabbed.includes(name)).forEach(name => errors.push(`${classDef.file}：srd.appendix「${name}」沒有對應的 appendix（須與寫了 kind 的 appendix 的 name 相同）`));
+    written.filter((name, index) => written.indexOf(name) !== index).forEach(name => errors.push(`${classDef.file}：srd.appendix「${name}」重複`));
+    tabbed.filter(name => !written.includes(name)).forEach(name => errors.push(`${classDef.file}：appendix「${name}」有自己的頁籤，srd 區塊須寫對應的 srd.appendix`));
   }
   for (const subclass of classDef.subclasses.filter(item => item.srd)) {
     if (!classDef.srd) errors.push(`${subclass.file}：所屬職業 ${classDef.id} 沒有 srd 區塊，子職不可單獨寫 srd`);

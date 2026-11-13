@@ -9,14 +9,14 @@ const { backgroundFeatName } = require("../background-content/site-data");
 const BASELINE_FILE = path.join(ROOT, "feat-id-baseline.json");
 const CATEGORIES = Object.freeze({
   feats: "專長 ID（專長選單值；存檔、分享網址與快速創角草稿的專長值）",
-  featFields: "專長選擇的存檔欄位（feat-choice-<來源>、derived-feat-<來源>；<次數> 為第幾次選擇原初之一教習）",
+  featFields: "專長選擇的存檔欄位（feat-choice-<來源>、derived-feat-<來源>；<次數> 為第幾次選擇遠古者的教誨）",
   draftNames: "快速創角草稿的專長取得名稱（背景專長、人類起源專長、戰鬥風格）",
   actionKeys: "跑團動作 key"
 });
 
 // 專長選擇的來源 key，與 feat-ui.js 的 getFeatChoiceSpecs 相同：種族特質的 feat.key、職業的屬性值提升（職業-level-等級）、
 // 戰鬥風格（職業能力 feat: style 或勾選給予專長的選項為 fighting-style-職業，子職能力的 feat: style 為第二個，加 -2）、
-// 魔能祈喚「原初之一教習」（lessons-次數）。背景專長的列為 derived-feat-background。只算公開內容包。
+// 魔能祈喚「遠古者的教誨」（lessons-次數）。背景專長的列為 derived-feat-background。只算公開內容包。
 function featChoiceKeys(classes, races) {
   const keys = new Set(["lessons-<次數>"]);
   races.forEach(race => race.traits.forEach(trait => { if (trait.feat) keys.add(trait.feat.key); }));

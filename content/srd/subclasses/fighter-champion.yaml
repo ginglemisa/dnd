@@ -6,7 +6,7 @@ shortName: 勇士
 features:
   - id: fighter-improved-critical
     level: 3
-    name: 精通重擊
+    name: 強化重擊
     hint: {panels: [weapons]}
     summary: 武器與徒手打擊的攻擊檢定擲出 19 或 20 時即可造成重擊。
     text: |
@@ -30,3 +30,40 @@ features:
     feat: style
     text: |
       你再獲得 1 個自選的「戰鬥風格」專長。
+srd:
+  title: "戰士子職：勇士 Champion"
+  intro: |
+    _在戰鬥中追求體魄巔峰_
+
+    勇士致力於提升戰鬥技藝，毫不鬆懈地追求勝利。他們結合嚴格的訓練與過人的體魄，打出毀滅性的一擊、挺過危難，並贏得榮耀。無論是在體能競賽還是血腥的戰鬥中，勇士都力求摘下勝利者的桂冠。
+  features:
+    - level: 3
+      name: "強化重擊 Improved Critical"
+      text: |
+        你用武器或徒手打擊進行攻擊檢定時，只要 d20 擲出 19 或 20，就能造成重擊。
+    - level: 3
+      name: "運動健將 Remarkable Athlete"
+      text: |
+        憑藉自身的運動能力，你的先攻擲骰與力量（運動）檢定具有優勢。
+
+        此外，你造成重擊後，可以立即移動，距離最多為你速度的一半，且不會引發藉機攻擊。
+    - level: 7
+      name: "額外戰鬥風格 Additional Fighting Style"
+      text: |
+        你再獲得一個自選的「戰鬥風格」專長。
+    - level: 10
+      name: "戰場英雄 Heroic Warrior"
+      text: |
+        戰鬥的刺激驅使你邁向勝利。在戰鬥中，每當你在自己的回合開始時沒有英雄激勵，都可以給自己英雄激勵。
+    - level: 15
+      name: "卓越重擊 Superior Critical"
+      text: |
+        你用武器或徒手打擊進行攻擊檢定時，現在只要 d20 擲出 18 到 20，就能造成重擊。
+    - level: 18
+      name: "屹立不倒 Survivor"
+      text: |
+        你在戰鬥中的韌性達到巔峰，讓你獲得下列好處。
+
+        _抗拒死亡 Defy Death。_ 你的死亡豁免具有優勢。此外，你進行死亡豁免時，如果擲出 18 到 20，就能獲得擲出 20 的效果。
+
+        _英勇重振 Heroic Rally。_ 在你的每個回合開始時，如果你處於受創，且生命值至少有 1 點，你就恢復生命值，數值等於 5 加上你的體質調整值。

@@ -3014,7 +3014,7 @@ async function validateInventoryItemActions(page) {
   await closeItem();
   await page.setViewportSize({ width: 1100, height: 850 });
 
-  // 法術卷軸：職業法術清單或來源法術（戲法也算）才能施法，不符合時反灰寫原因，手動管理不檢查；確認後才用掉卷軸，舊資料依名稱對回法術。
+  // 法術卷軸：職業法術列表或來源法術（戲法也算）才能施法，不符合時反灰寫原因，手動管理不檢查；確認後才用掉卷軸，舊資料依名稱對回法術。
   const scroll = (spellName, quantity = 1, spellId = "") => ({ itemId: "法術卷軸", name: `${spellName}法術卷軸`, quantity, ...(spellId ? { spellId } : {}) });
   const setCharacter = (state, items) => page.evaluate(([state, items]) => {
     applyStateObject({ str: "10", dex: "10", con: "10", int: "10", wis: "14", cha: "10", ...state, __inventory: { version: 1, items: [] } });
@@ -3025,7 +3025,7 @@ async function validateInventoryItemActions(page) {
   await setCharacter({ class: "fighter", level: "5" }, [scroll("命令術", 1, "command")]);
   await openItem("命令術法術卷軸");
   assert.deepEqual([await castButton("命令術").isDisabled(), await scrollRow().locator(".inventory-action-row__text").textContent()],
-    [true, "命令術｜不在你的職業法術清單上，也不是你始終準備的法術。"], "scrolls off the class list are greyed out with the reason");
+    [true, "命令術｜不在你的職業法術列表上，也不是你始終準備的法術。"], "scrolls off the class list are greyed out with the reason");
   await closeItem();
   await setCharacter({ class: "cleric", level: "5" }, [scroll("命令術", 2, "command")]);
   await openItem("命令術法術卷軸");

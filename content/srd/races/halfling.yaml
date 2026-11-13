@@ -2,7 +2,7 @@
 id: halfling
 name: 半身人
 source: srd
-creatureType: 類人生物
+creatureType: 人型生物
 sizes:
   - { size: 小型, height: 約 2-3 呎高 }
 speed: 30

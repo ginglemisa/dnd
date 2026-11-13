@@ -371,8 +371,8 @@ function getFeatChoiceSpecs() {
     specs.push({ key: `${cls}-level-${grantLevel}`, source: "class", label: `等級 ${grantLevel} 專長`, type: "level", level: grantLevel, active: true });
   });
   if (cls === "warlock" && level >= 2) {
-    document.querySelectorAll('#eldritch-invocations-output input[data-invocation-name="原初之一教習"]:checked:not(:disabled)').forEach(input => {
-      specs.push({ key: `lessons-${input.dataset.invocationSlot}`, source: "invocation", label: `原初之一教習 ${input.dataset.invocationSlot}：起源專長`, type: "origin", active: true, checkboxId: input.id });
+    document.querySelectorAll('#eldritch-invocations-output input[data-invocation-name="遠古者的教誨"]:checked:not(:disabled)').forEach(input => {
+      specs.push({ key: `lessons-${input.dataset.invocationSlot}`, source: "invocation", label: `遠古者的教誨 ${input.dataset.invocationSlot}：起源專長`, type: "origin", active: true, checkboxId: input.id });
     });
   }
   return specs;
