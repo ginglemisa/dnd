@@ -2739,6 +2739,37 @@ async function verifyClassSrdVersion(browser, url) {
     for (const heading of ["1 級：聖療 Lay On Hands", "9 級：聖威懾敵 Abjure Foes", "19 級：傳奇恩惠 Epic Boon", "聖騎士子職：奉獻之誓 Oath of Devotion", "20 級：聖潔光輪 Holy Nimbus"]) {
       assert(paladinHeadings.includes(heading), `paladin SRD 版 shows ${heading}`);
     }
+    // 19 級傳奇恩惠的建議選擇是規則說明提示框（內容檔的 [[名稱]]）：十二個職業各一個，SRD 版沒有其他提示框，名稱都在詞表；
+    // 畫面上是鍵盤可操作的按鈕，按了顯示該恩惠的 SRD 譯文。
+    const boonTips = await page.evaluate(() => Object.fromEntries(Object.entries(classSrdText).map(([id, html]) => {
+      const template = document.createElement("template");
+      template.innerHTML = html;
+      const boon = [...template.content.querySelectorAll('.class-srd-feature[data-feature-level="19"]')]
+        .find(section => section.querySelector("h3").textContent === "19 級：傳奇恩惠 Epic Boon");
+      const tips = Array.from(boon.querySelectorAll("span.skill-tip"), tip => tip.dataset.skill);
+      const consistent = template.content.querySelectorAll(".skill-tip, .condition-tip, .beast-tip").length === tips.length
+        && Array.from(boon.querySelectorAll("span.skill-tip")).every(tip => tip.textContent === tip.dataset.skill && skills_example_uses[tip.dataset.skill]?.startsWith("Boon of "));
+      return [id, consistent ? tips.join() : "unexpected tips"];
+    })));
+    assert.deepEqual(boonTips, {
+      barbarian: "勢不可擋恩惠", bard: "法術回憶恩惠", cleric: "命運恩惠", druid: "次元旅行恩惠", fighter: "戰鬥造詣恩惠", monk: "勢不可擋恩惠",
+      paladin: "真實視覺恩惠", ranger: "次元旅行恩惠", rogue: "暗夜精魂恩惠", sorcerer: "次元旅行恩惠", warlock: "命運恩惠", wizard: "法術回憶恩惠"
+    }, "each class recommends its Epic Boon through a rule tip");
+    const boonTip = modal.locator("#classFeaturesSrd .class-srd-feature", { hasText: "19 級：傳奇恩惠 Epic Boon" }).locator("button.skill-tip.feature-rule-tip");
+    assert.deepEqual(await boonTip.evaluateAll(tips => tips.map(tip => [tip.dataset.skill, tip.textContent])), [["真實視覺恩惠", "真實視覺恩惠"]]);
+    await boonTip.focus();
+    await page.keyboard.press("Enter");
+    const boonPopup = page.locator("#skillPopup");
+    await boonPopup.waitFor();
+    assert.equal(await boonPopup.locator(".title").textContent(), "真實視覺恩惠");
+    assert.match(await boonPopup.locator(".content").innerText(), /Boon of Truesight[\s\S]*傳奇恩惠專長（先決條件：19 級以上）[\s\S]*你獲得下列好處。[\s\S]*屬性提升 Ability Score Increase。 把你自選的一項屬性值提高 1，最高為 30。[\s\S]*真實視覺 Truesight。 你擁有範圍 60 呎的真實視覺。/);
+    assert.deepEqual(await boonPopup.locator(".skill-popup-paragraph strong").allTextContents(), ["屬性提升 Ability Score Increase。", "真實視覺 Truesight。"]);
+    assert.equal(await boonPopup.evaluate(popup => {
+      const rect = popup.getBoundingClientRect();
+      return rect.top >= 0 && rect.left >= 0 && rect.bottom <= innerHeight && rect.right <= innerWidth;
+    }), true, "the boon tip stays inside the viewport");
+    await boonPopup.locator(".close").click();
+    assert.equal(await boonPopup.isVisible(), false);
     assert.equal(await modal.locator("#classFeaturesSrd .class-feature-table").count(), 1, "Oath of Devotion spells table");
     const paladinSidebar = modal.locator("#classFeaturesSrd .class-srd-feature", { hasText: "3 級：引導神力 Channel Divinity" }).locator(".class-srd-sidebar");
     assert.equal(await modal.locator("#classFeaturesSrd .class-srd-sidebar").count(), 1, "only Channel Divinity carries a sidebar");

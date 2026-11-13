@@ -3,13 +3,35 @@
 // 有自己頁籤的附錄（超魔、魔祈）另輸出 data-class-feature-panel="metamagic"／"invocations"（srd.appendix，不依等級篩選）；
 // 能力段落帶 data-feature-level，子職段落另帶 data-subclass，網站以和網站版相同的函式（getClassFeatureHtmlBeforeLevel）篩選。
 // 不輸出 data-feature-id（職業頁找能力位置只看網站版）、表單控制項或 id。
-// Markdown 子集：段落（空行分隔；段落內換行保留為 <br>）、「- 」清單、「### 」「#### 」小標、GFM 表格、_斜體_、**粗體**。
+// Markdown 子集：段落（空行分隔；段落內換行保留為 <br>）、「- 」清單、「### 」「#### 」小標、GFM 表格、_斜體_、**粗體**，
+// 以及段落與清單內的 [[名稱]] 規則說明提示框（見 inline）。
 // 第一列就是 | --- | 分隔列的表格沒有表頭，輸出成核心特質那種兩欄表。行內寫法沿用法術 SRD 版（tools/spell-content/srd-text.js）。
 // 每行以「> 」開頭的區塊是側欄（原文框起來的補充，例如聖騎士「違背誓言」）：只有「>」的行分段，
 // 第一段可寫「> ### 標題」當側欄標題，其餘只能是段落與清單。
 "use strict";
 const { ContentError } = require("../content/errors");
-const { inline, escapeHtml } = require("../spell-content/srd-text");
+const { loadTipTables } = require("../content/site-sources");
+const { inline: plainInline, escapeHtml } = require("../spell-content/srd-text");
+
+// 行內文字。tips 為 true（段落與清單）時可寫 [[名稱]]：規則說明提示框，名稱須是 rule-tips.js 詞表的鍵（例如七個傳奇恩惠），
+// 輸出和網站版相同的 skill-tip 標記；狀態與野獸提示框不支援。標題與表格不可寫，也不可包在斜體或粗體內。
+function inline(text, where, tips = false) {
+  const plain = part => {
+    if (/\[\[|\]\]/.test(part)) throw new ContentError(`${where}：[[名稱]] 提示框只能寫在段落與清單，且須成對：${text}`);
+    return plainInline(part, where);
+  };
+  if (!tips) return plain(text);
+  const { skills } = loadTipTables();
+  let html = "";
+  let index = 0;
+  for (const match of text.matchAll(/\[\[([^[\]|]+)\]\]/g)) {
+    if (!skills.has(match[1])) throw new ContentError(`${where}：[[${match[1]}]] 不是 rule-tips.js 詞表的規則說明名稱`);
+    const name = escapeHtml(match[1]);
+    html += `${plain(text.slice(index, match.index))}<span class="skill-tip" data-skill="${name}">${name}</span>`;
+    index = match.index + match[0].length;
+  }
+  return html + plain(text.slice(index));
+}
 
 const cells = line => line.replace(/^\|/, "").replace(/\|$/, "").split("|").map(cell => cell.trim());
 const isSeparator = line => cells(line).every(cell => /^-{3,}$/.test(cell));
@@ -84,9 +106,9 @@ function blocks(text, where, { headings = [], tables = true, sidebars = true } =
       if (!tables) throw new ContentError(`${where}：不可使用表格`);
       return table(lines, where);
     }
-    if (lines.every(line => line.startsWith("- "))) return `<ul class="class-rule-list">${lines.map(line => `<li>${inline(line.slice(2), where)}</li>`).join("")}</ul>`;
+    if (lines.every(line => line.startsWith("- "))) return `<ul class="class-rule-list">${lines.map(line => `<li>${inline(line.slice(2), where, true)}</li>`).join("")}</ul>`;
     if (lines.some(line => /^(#|\||- |• |>)/.test(line))) throw new ContentError(`${where}：小標、表格、清單或側欄須自成一段（前後空一行），清單用「- 」，側欄每行以「> 」開頭`);
-    return `<p>${lines.map(line => inline(line, where)).join("<br>")}</p>`;
+    return `<p>${lines.map(line => inline(line, where, true)).join("<br>")}</p>`;
   }).join("");
 }
 

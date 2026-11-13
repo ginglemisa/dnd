@@ -1674,6 +1674,8 @@ async function renderClassSrdView() {
   const level = document.getElementById("level")?.value || "";
   const template = document.createElement("template");
   template.innerHTML = getClassFeatureHtmlBeforeLevel(raw, level && !isNaN(level) ? parseInt(level) + 1 : Infinity, window.getSelectedSubclassId?.(className) || "");
+  // SRD 版內文的規則說明提示框（內容檔的 [[名稱]]，例如傳奇恩惠）：換成和網站版相同、鍵盤可操作的按鈕。
+  template.content.querySelectorAll("span.skill-tip").forEach(tip => tip.replaceWith(createFeatureRuleTip(tip.dataset.skill, tip.textContent)));
   containers.forEach(({ panel, appendix, element }) => {
     const content = template.content.querySelector(`[data-class-feature-panel="${panel}"]`);
     // 這個職業沒有的附錄頁籤（例如術士沒有「魔祈」）：頁籤本身不顯示，內容清空即可。
