@@ -389,7 +389,7 @@ const forceStates = async (page, states, selectors) => {
   return { forced };
 };
 const STATE_TARGETS = {
-  sheet: ["#sheet-tabs-row .tab-button:not(.active)", "#basic-tab-button", "#utility-menu-toggle", ".mini-stat-label--features", "#class", "#str", "#hp", "#manual-feat-management", "#character-choice-warning-toggle", ".field-info-hint__dismiss", "#tab-basic .feat-row button, #tab-basic button.feat-toggle", "footer a, .site-footer a"],
+  sheet: ["#sheet-tabs-row .tab-button:not(.active)", "#basic-tab-button", "#utility-menu-toggle", ".mini-stat-label--features", "#class", "#str", "#hp", "#manual-feat-management", "#character-choice-warning-toggle", "#tab-basic .feat-row button, #tab-basic button.feat-toggle", "footer a, .site-footer a"],
   equipment: ["#equipment-shop-open", "#inventory-add", "#tab-equipment button.inventory-tag", "#inventory-more", "#money-adjust-toggle", "#money-submit-btn", "#atk-main-mastery"],
   spells: ["#spell-prepare", "#spell-primer-trigger", "#spell-browse-button", "#spellcasting-ability", "#tab-spells [data-spell-id]", "#tab-spells input[type=checkbox]"],
   tabletop: ["#tabletop-tab-skills", "#tabletop-return-to-sheet", "#tabletop-condition-manage", "#tabletop-temporary-hp-toggle", ".tabletop-primary-button", "#tabletop-action-notes", "#tabletop-life-amount"],

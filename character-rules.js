@@ -1002,9 +1002,28 @@
    * 計算 AC，包含無甲防禦、護甲、盾牌、防禦戰鬥風格與魔法物品加值（magicBonus，由 getActiveMagicEffects() 算出、呼叫端決定哪些部分生效）。
    * unarmoredBaseAc：魔法物品給的沒穿護甲時基礎 AC（大法師法袍 15，加敏捷調整值，可用盾牌），和無甲防禦等算法取最高。
    */
-  function calculateArmorClass(options = {}) {
+  /**
+   * calculateArmorClass 採用的算法（kind）與它讀的屬性（abilities，屬性欄 id）。兩者共用同一份判斷：
+   * 角色卡在自動計算時，任一個要讀的屬性空白就讓 AC 留空（重甲不讀屬性，照算）。
+   * 選項同 calculateArmorClass（armor、className、level、subclass、hasAnyShield）；未知的護甲分類 kind 為 null。
+   */
+  function getArmorClassFormula(options = {}) {
     const className = String(options.className || "").trim();
     const level = Number.parseInt(options.level, 10) || 1;
+    const armor = options.armor || null;
+    if (armor) {
+      if (armor.分類 === "重甲") return { kind: "heavy", abilities: [] };
+      if (armor.分類 === "中甲") return { kind: "medium", abilities: ["dex"] };
+      if (armor.分類 === "輕甲") return { kind: "light", abilities: ["dex"] };
+      return { kind: null, abilities: [] };
+    }
+    if (hasClassFeature(className, "sorcerer-draconic-resilience", level, options.subclass)) return { kind: "draconic", abilities: ["dex", "cha"] };
+    if (!options.hasAnyShield && className === "monk") return { kind: "monk", abilities: ["dex", "wis"] };
+    if (className === "barbarian") return { kind: "barbarian", abilities: ["dex", "con"] };
+    return { kind: "unarmored", abilities: ["dex"] };
+  }
+
+  function calculateArmorClass(options = {}) {
     const dexModifier = calculateAbilityModifier(options.dexterityScore);
     const constitutionModifier = calculateAbilityModifier(options.constitutionScore);
     const wisdomModifier = calculateAbilityModifier(options.wisdomScore);
@@ -1012,24 +1031,20 @@
     const armor = options.armor || null;
     if (options.hasArmor && !armor) return null;
 
+    const { kind } = getArmorClassFormula(options);
     let armorClass;
-    if (!armor && hasClassFeature(className, "sorcerer-draconic-resilience", level, options.subclass)) {
-      armorClass = 10 + charismaModifier + dexModifier;
-    } else if (!armor && !options.hasAnyShield && className === "monk") {
-      armorClass = 10 + dexModifier + wisdomModifier;
-    } else if (!armor && className === "barbarian") {
-      armorClass = 10 + dexModifier + constitutionModifier;
-    } else if (!armor) {
-      armorClass = 10 + dexModifier;
-    }
+    if (kind === "draconic") armorClass = 10 + charismaModifier + dexModifier;
+    else if (kind === "monk") armorClass = 10 + dexModifier + wisdomModifier;
+    else if (kind === "barbarian") armorClass = 10 + dexModifier + constitutionModifier;
+    else if (kind === "unarmored") armorClass = 10 + dexModifier;
     const unarmoredBaseAc = Number(options.unarmoredBaseAc) || 0;
     if (!armor && unarmoredBaseAc) armorClass = Math.max(armorClass, unarmoredBaseAc + dexModifier);
     if (armor) {
       const armorBase = Number.parseInt(armor.AC, 10);
       if (!Number.isFinite(armorBase)) return null;
-      if (armor.分類 === "重甲") armorClass = armorBase;
-      else if (armor.分類 === "中甲") armorClass = armorBase + Math.min(2, dexModifier);
-      else if (armor.分類 === "輕甲") armorClass = armorBase + dexModifier;
+      if (kind === "heavy") armorClass = armorBase;
+      else if (kind === "medium") armorClass = armorBase + Math.min(2, dexModifier);
+      else if (kind === "light") armorClass = armorBase + dexModifier;
       else return null;
     }
 
@@ -1085,12 +1100,15 @@
    * 穿著護甲（options.isWearingArmor）且力量（options.strengthScore）低於護甲的力量需求
    * （options.armorStrengthRequirement，可傳護甲資料的原始文字）時速度降低 10 呎；力量無法判讀時不扣。
    * 魔法物品：options.ignoreArmorStrength 為 true 時不因力量需求降速（跑跳之靴），options.minimumSpeed 是速度至少的呎數（取較高）。
+   * 沒有種族（options.race 空白）時回傳空字串。
    */
   function calculateCharacterSpeed(options = {}) {
     const baseSpeedValue = Number.parseFloat(options.baseSpeed);
     const race = String(options.race || "").trim();
     const className = String(options.className || "").trim();
     const level = Number.parseInt(options.level, 10);
+    // 種族決定基礎速度：還沒選種族時不算（角色卡自動計算與 PDF 都留空）。
+    if (!race) return "";
 
     const raceSpeed = getRaceChoiceOption(race, String(options.raceChoice || "").trim())?.speed ?? getRaceRules(race)?.speed;
     const baseSpeed = raceSpeed && raceSpeed !== DEFAULT_BASE_SPEED ? raceSpeed : baseSpeedValue;
@@ -1163,6 +1181,7 @@
     isDruidBeastAllowed,
     calculateWildShapeCheck,
     calculateArmorClass,
+    getArmorClassFormula,
     getActiveMagicEffects,
     getMagicItemAdvantages,
     calculateEffectiveAbilityScore,

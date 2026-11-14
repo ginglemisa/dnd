@@ -1080,6 +1080,8 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.check("#legal-dismiss");
     await page.click("#legal-close-btn");
     await page.selectOption("#class", "fighter");
+    // 敏捷空白時自動計算的 AC 留空；這裡測盾牌與裝備，填 10（調整值 0）讓 AC 照常計算。
+    await page.fill("#dex", "10");
     // 裝備下拉只列物品欄有的物品。
     await page.evaluate(() => Inventory.add(["長劍", "標槍", "巨劍", "盾牌"].map(itemId => ({ itemId }))));
     await page.getByRole("tab", { name: "裝備", exact: true }).click();
@@ -1480,13 +1482,13 @@ async function verifyEquipmentLoadout(browser, url) {
       ["+4", "力量有效 19・食人魔力量護手"], "the higher of a capped bonus (18) and a set value (19) wins");
     assert.deepEqual((await abilityNumbers(inventoryOf({ uid: "dwarf", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-dwarvenkind" } }))).con.slice(0, 2), ["+2", "44"], "the Belt of Dwarvenkind adds 2 Constitution");
     // 力量需求用有效力量：食人魔力量護手讓穿鎖子甲（力量 13）的角色不降速。
-    const speedWith = extra => page.evaluate(([base, extra]) => { applyStateObject({ ...base, str: "10", armor: "鎖子甲", ...extra }); return document.getElementById("speed-display").value; }, [magicBase, extra]);
+    const speedWith = extra => page.evaluate(([base, extra]) => { applyStateObject({ ...base, race: "human", str: "10", armor: "鎖子甲", ...extra }); return document.getElementById("speed-display").value; }, [magicBase, extra]);
     const mail = { uid: "mail", itemId: "鎖子甲", quantity: 1 };
     assert.deepEqual([await speedWith(inventoryOf(mail)), await speedWith(inventoryOf(mail, { uid: "gauntlets", quantity: 1, attuned: true, worn: true, magic: { id: "gauntlets-of-ogre-power" } }))], ["20", "30"], "the armor Strength requirement reads the effective Strength");
     // 第 4 步：技能、檢定、熟練加值、生命值、AC、護甲與武器熟練、速度（內容檔 effects；不改玩家的欄位原值）。
     const worn = (uid, id, extra = {}) => ({ uid, quantity: 1, worn: true, attuned: true, magic: { id, ...extra } });
     const sheetNumbers = extra => page.evaluate(([base, extra]) => {
-      applyStateObject({ ...base, "speed-input": "30", ...extra });
+      applyStateObject({ ...base, race: "human", "speed-input": "30", ...extra });
       const value = id => document.getElementById(id).value;
       const summary = document.getElementById("equipment-loadout-summary-content").textContent;
       return {

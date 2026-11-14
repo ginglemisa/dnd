@@ -107,12 +107,12 @@
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/base.css?v=20261113-info-icon">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261114-name-field">
+  <link rel="stylesheet" href="css/base.css?v=20261115-basic-align">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261115-basic-align">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261113-info-icon">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261114-spell-lock">
   <link rel="stylesheet" href="css/utility.css?v=20261111-menu-layout">
-  <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/dice.css?v=20261115-basic-align">
   <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/tabletop.css?v=20261112-merge-main-menu">
@@ -138,7 +138,7 @@
   <script src="spell-list.js?v=20261111-magic-effects-6" defer></script>
   <script src="condition.js?v=20261111-magic-abilities" defer></script>
   <script src="action-panel.js?v=20261113-dash-wording" defer></script>
-  <script src="character-rules.js?v=20261112-merge-ammo-wildshape" defer></script>
+  <script src="character-rules.js?v=20261115-basic-align" defer></script>
   <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
@@ -149,7 +149,7 @@
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261111-magic-effects-6" defer></script>
   <script src="legal-modal.js?v=20261111-serif-big5" defer></script>
-  <script src="onboarding-tour.js?v=20261109-merge-main" defer></script>
+  <script src="onboarding-tour.js?v=20261115-basic-align" defer></script>
   <script src="quick-build.js?v=20261114-ability-float" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
   <script src="spell-management.js?v=20261107-share-readonly" defer></script>
@@ -629,7 +629,7 @@
     <div class="basic-row basic-row--identity">
     <div class="mini-stat-card basic-pair-card basic-pair-card--identity">
       <div class="basic-pair-field basic-pair-field--name">
-        <div id="character-name-label" class="mini-stat-label">名字</div>
+        <div id="character-name-label" class="mini-stat-label">角色名稱</div>
         <button type="button" id="character-name-display" class="character-name-display is-placeholder" aria-labelledby="character-name-label character-name-display"><span class="character-name-display__text">點我輸入</span></button>
       </div>
       <div class="basic-pair-field basic-pair-field--alignment">
@@ -649,14 +649,10 @@
       </div>
     </div>
     </div>
-    <p id="field-info-hint" class="field-info-hint" hidden>
-      <span>想了解特性內容？點選各欄位旁的<span class="info-icon info-icon--inline">i</span>即可查看。</span>
-      <button type="button" class="field-info-hint__dismiss">我知道了</button>
-    </p>
     <div class="basic-row basic-row--class-level">
     <div class="mini-stat-card basic-pair-card basic-pair-card--class-level">
       <div class="basic-pair-field basic-pair-field--class">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="creation" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業">職業 <span class="info-icon" aria-hidden="true">i</span></button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="creation" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業">職業<span class="field-details-arrow" aria-hidden="true">›</span></button>
         <select id="class">
           <option value="">待選</option>
           <option value="barbarian">野蠻人</option>
@@ -674,7 +670,7 @@
         </select>
       </div>
       <div class="basic-pair-field basic-pair-field--level">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="class" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業特性">等級 <span class="info-icon" aria-hidden="true">i</span></button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="class" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業特性">等級<span class="field-details-arrow" aria-hidden="true">›</span></button>
         <select id="level">
           <option value="">--</option>
           <option value="1">1</option>
@@ -705,7 +701,7 @@
   <div class="basic-row basic-row--origin">
     <div class="mini-stat-card basic-pair-card basic-pair-card--equal">
       <div class="basic-pair-field">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="background" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看背景能力">背景 <span class="info-icon" aria-hidden="true">i</span></button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="background" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看背景能力">背景<span class="field-details-arrow" aria-hidden="true">›</span></button>
         <select id="background">
           <option value="">待選</option>
           <option value="acolyte">侍僧</option>
@@ -719,7 +715,7 @@
       </div>
       <button type="button" id="custom-background-edit" class="custom-background-edit" aria-haspopup="dialog" hidden>修改背景</button>
       <div class="basic-pair-field basic-pair-field--race">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="race" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看種族能力">種族 <span class="info-icon" aria-hidden="true">i</span></button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="race" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看種族能力">種族<span class="field-details-arrow" aria-hidden="true">›</span></button>
         <button type="button" id="character-choice-warning-toggle" class="character-choice-warning-toggle" aria-controls="class-feature-choice-reminder" aria-expanded="true" hidden>隱藏警告</button>
         <div class="race-select-control">
         <select id="race">
@@ -828,15 +824,12 @@
       <div class="basic-metric-values">
         <div class="basic-combat-field">
           <div class="mini-stat-label">最大HP</div>
-          <input id="hp-display" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="0" aria-label="最大生命值" readonly>
+          <input id="hp-display" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="" aria-label="最大生命值" readonly>
         </div>
         <div class="basic-combat-field">
           <div class="mini-stat-label">當前HP</div>
           <input type="number" id="hp" aria-label="目前生命值" placeholder="HP" min="0" max="200" step="1" inputmode="numeric">
         </div>
-      </div>
-    </div>
-    <div class="mini-stat-card basic-hit-dice-card">
       <div class="basic-combat-field basic-pair-field--hit-dice">
         <div id="hit-die-label" class="mini-stat-label">生命骰<span class="hit-die-size" aria-hidden="true"></span></div>
         <select id="lifedicen" aria-label="生命骰數量">
@@ -851,6 +844,7 @@
           <option value="8">8</option>
         </select>
       </div>
+      </div>
     </div>
   </div>
 
@@ -859,26 +853,24 @@
       <div class="basic-metric-values">
         <div class="basic-combat-field">
           <div class="mini-stat-label">AC</div>
-          <input id="ac-display" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="10" aria-label="護甲等級" readonly>
+          <input id="ac-display" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="" aria-label="護甲等級" readonly>
         </div>
         <div class="basic-combat-field">
           <div class="mini-stat-label">速度</div>
           <input type="number" id="speed-input" class="sr-only" value="30" aria-label="基礎速度">
-          <input id="speed-display" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" value="30" aria-label="速度" readonly>
+          <input id="speed-display" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" value="" aria-label="速度" readonly>
+        </div>
+        <div class="basic-combat-field">
+          <div class="mini-stat-label">被動察覺</div>
+          <input id="passive-perception" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="被動察覺" readonly>
+        </div>
+        <div class="basic-combat-field">
+          <div class="mini-stat-label">先攻</div>
+          <input id="initiative-input" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="先攻" readonly>
         </div>
       </div>
       <div hidden>
         <input type="checkbox" id="heroic-inspiration" class="basic-display-checkbox" aria-label="英雄激勵">
-      </div>
-    </div>
-    <div class="mini-stat-card basic-combat-pair-card">
-      <div class="basic-combat-field">
-        <div class="mini-stat-label">被動察覺</div>
-        <input id="passive-perception" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="被動察覺" readonly>
-      </div>
-      <div class="basic-combat-field">
-        <div class="mini-stat-label">先攻</div>
-        <input id="initiative-input" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="先攻" readonly>
       </div>
     </div>
     </div>
@@ -1477,7 +1469,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261113-lessons-rename"></script>
   <script src="spell-sources.js?v=20261113-blessed-warrior"></script>
-  <script src="class-features-ui.js?v=20261113-srd-boon-tips"></script>
+  <script src="class-features-ui.js?v=20261115-basic-align"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -1546,6 +1538,11 @@ function openSpellPrimer(trigger) {
 function updateHPDisplay() {
   if (!isAutomaticKeyStatsEnabled()) return;
   const classValue = document.getElementById("class").value;
+  // 職業、等級、體質任一項沒填時只讓這一格留空；下面補等級 1、體質 10 的算法照舊保留。
+  if (!classValue || !document.getElementById("level").value || !getEffectiveAbilityValue("con")) {
+    document.getElementById("hp-display").value = "";
+    return;
+  }
   const maxHp = calculateCharacterMaxHp({
     className: classValue,
     level: document.getElementById("level").value || "1",
@@ -1717,6 +1714,7 @@ function bindCoreCharacterEvents() {
   // 子職決定職業詳情、動作、資源、衍生法術與數值；與職業／等級同一套重算。
   bindEventById("subclass", "change", applySubclassChange);
   ["class", "level", "subclass"].forEach(id => bindEventById(id, "change", scheduleClassFeatureChoicePrompt));
+  ["class", "level", "background", "race"].forEach(id => bindEventById(id, "change", maybeOpenFieldDetailsIntro));
   bindEventById("speed-input", "input", updateSpeedDisplay);
   // 血統選單（種族內容檔的 choice）：種族頁、速度、自選戲法與種族法術隨所選血統更新。
   const raceChoices = Object.values(getAllRaceRules()).flatMap(rules => rules.choice ? [rules.choice] : []);
@@ -1842,9 +1840,15 @@ function updateSpeedDisplay() {
   const armor = getArmorByName(armorName);
   const hasShield = isShieldItem(armorName) || isEffectiveEquippedShield();
   const magic = getActiveMagicEffects();
+  const race = document.getElementById("race")?.value || "";
+  // 還沒選種族時留空（不是算不出來的「--」）。
+  if (!race) {
+    speedDisplay.value = "";
+    return;
+  }
   speedDisplay.value = window.calculateCharacterSpeed({
     baseSpeed: document.getElementById("speed-input")?.value,
-    race: document.getElementById("race")?.value,
+    race,
     raceChoice: getSelectedRaceChoiceValue(),
     className: document.getElementById("class")?.value,
     level: document.getElementById("level")?.value,
@@ -2288,6 +2292,15 @@ function updateACDisplay() {
     && isShieldProficient();
   const magic = getActiveMagicEffects();
   const magicAc = magic.ac;
+  // 這次算法要讀的屬性（敏捷；野蠻人加體質、武僧加感知、龍族術士加魅力；重甲不讀）任一個空白就留空。
+  // 找不到護甲資料時仍照舊顯示「--」。
+  const formula = getArmorClassFormula({ armor, className, level: document.getElementById("level")?.value || "1",
+    hasAnyShield: hasOffHandShield || hasArmorShield });
+  if (!(hasArmor && !armor) && formula.abilities.some(ability => !getEffectiveAbilityValue(ability, magic))) {
+    document.getElementById("ac-display").value = "";
+    updateEquipmentLoadoutSummary();
+    return;
+  }
   const armorClass = calculateArmorClass({
     armor,
     hasArmor,
@@ -5541,7 +5554,8 @@ const LEGACY_LEGAL_DISMISS_KEYS = Object.freeze([
   "dndchar_legal_dismiss_v1",
   "dndchar_legal_dismiss_v2"
 ]);
-const FIELD_INFO_HINT_DISMISSED_KEY = "dnd.fieldInfoHintDismissed.v1";
+// 舊版「欄位 ⓘ 教學提示」已移除；留著 key 只為了讓清除紀錄順便清掉舊資料。
+const LEGACY_FIELD_INFO_HINT_DISMISSED_KEY = "dnd.fieldInfoHintDismissed.v1";
 const APP_STORAGE_KEYS = Object.freeze([
   AUTO_SAVE_KEY,
   ACTIVE_TAB_KEY,
@@ -5559,7 +5573,8 @@ const APP_STORAGE_KEYS = Object.freeze([
   TABLETOP_AVATAR_STORAGE_KEY,
   "dnd.tabletopIntroSeen.v1",
   "dnd.magicItemAcquireNoticeSeen.v1",
-  FIELD_INFO_HINT_DISMISSED_KEY,
+  LEGACY_FIELD_INFO_HINT_DISMISSED_KEY,
+  FIELD_DETAILS_INTRO_SEEN_KEY,
   "dnd.spellManagementBackup.v1",
   "dnd.spellManagementMemories.v1",
   "dnd.spellManagementClassNoticeDisabled.v1",
@@ -5593,18 +5608,6 @@ function clearAppStateAndReload() {
   window.ClassOptionMemory?.clearMemories();
   APP_STORAGE_KEYS.forEach((key) => window.dndStorage.removeItem(key));
   location.replace(`${location.pathname}${location.search}`);
-}
-
-// One-time teaching hint: dismissal lasts until APP_STORAGE_KEYS is cleared; share viewers never see it.
-function initFieldInfoHint() {
-  const hint = document.getElementById("field-info-hint");
-  if (!hint || SHARE_MODE || window.dndStorage.getItem(FIELD_INFO_HINT_DISMISSED_KEY)) return;
-  hint.hidden = false;
-  hint.querySelector("button").addEventListener("click", () => {
-    window.dndStorage.setItem(FIELD_INFO_HINT_DISMISSED_KEY, "1");
-    hint.hidden = true;
-    document.querySelector("#tab-basic .mini-stat-label--features")?.focus({ preventScroll: true });
-  });
 }
 
 function bytesToBase64Url(bytes) {
@@ -7359,7 +7362,6 @@ window.addEventListener("DOMContentLoaded", async function() {
     restoreAllFields();
   }
 }
-  initFieldInfoHint();
   withCharacterUpdateBatch(() => {
   updateRaceOptionVisibility();
   syncSubclassOptions();
@@ -7754,6 +7756,8 @@ window.addEventListener("DOMContentLoaded", async function() {
   <div id="tour-mask-bottom-2" class="tour-mask"></div>
   <div id="tour-focus-ring"></div>
   <div id="tour-focus-ring-secondary"></div>
+  <div id="tour-focus-ring-3"></div>
+  <div id="tour-focus-ring-4"></div>
   <div id="tour-tooltip" role="dialog" aria-modal="true" aria-live="polite" aria-labelledby="tour-step-title" aria-describedby="tour-step-text">
     <div class="tour-heading-row">
       <h4 id="tour-step-title"></h4>

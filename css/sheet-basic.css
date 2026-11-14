@@ -58,52 +58,20 @@
   min-width: 0;
 }
 
-.field-info-hint {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.15rem 0.75rem;
-  margin: 0 0 -0.25rem;
-  padding: 0 0.25rem;
-  color: var(--text-muted);
-  font-size: var(--fs-xs);
-  line-height: 1.5;
-}
-
-.field-info-hint[hidden] { display: none; }
-
-button.field-info-hint__dismiss {
-  display: inline;
-  width: auto;
-  min-width: 0;
-  min-height: 0;
-  margin: -0.25rem 0 -0.25rem auto;
-  padding: 0.25rem 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+/* 可點開角色能力視窗的標題（職業、等級、背景、種族）：強調色加「›」，和不能點的標題（角色名稱、陣營）區分。 */
+#tab-basic .mini-stat-label--features {
   color: var(--accent-strong);
-  font: inherit;
-  letter-spacing: inherit;
-  text-decoration: underline solid;
-  text-underline-offset: 2px;
-  white-space: nowrap;
-  cursor: pointer;
 }
 
-button.field-info-hint__dismiss:hover,
-button.field-info-hint__dismiss:active {
-  background: transparent;
-  color: var(--accent-strong);
-  box-shadow: none;
-  transform: none;
+#tab-basic .mini-stat-label--features:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
 }
 
-button.field-info-hint__dismiss:focus-visible {
-  outline: 2px solid var(--accent-strong);
-  outline-offset: 2px;
+.field-details-arrow {
+  margin-left: 0.2em;
+  font-size: 1.2em;
+  line-height: 1;
 }
 
 .basic-row {
@@ -121,30 +89,20 @@ button.field-info-hint__dismiss:focus-visible {
   grid-template-columns: 1fr;
 }
 
-/* 最大HP／當前HP｜生命骰；AC／速度｜被動察覺／先攻。 */
-.basic-row--vitals {
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+/* 兩張卡片共用四欄：最大HP／當前HP／生命骰（佔兩欄）；AC／速度／被動察覺／先攻。上下欄線對齊。 */
+.basic-row--vitals .basic-metric-values,
+.basic-row--combat .basic-metric-values {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.basic-row--combat {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.basic-row--vitals .basic-pair-field--hit-dice {
+  grid-column: span 2;
 }
 
 .basic-row--combat .speed-current-display {
   width: 100%;
   height: 3rem;
   min-height: 3rem;
-}
-
-.basic-combat-pair-card {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-  min-width: 0;
-}
-
-.basic-hit-dice-card {
-  min-width: 0;
 }
 
 .basic-combat-field {
@@ -159,17 +117,17 @@ button.field-info-hint__dismiss:focus-visible {
   min-width: 0;
 }
 
-.basic-pair-card--identity {
-  grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 0.55fr);
+/* 角色名稱｜陣營、職業｜等級、背景｜種族三行右欄同寬，中間的欄線對齊；
+   用百分比而非 fr，自訂背景多出「修改背景」那一欄時右欄寬度也不變。 */
+.basic-pair-card--identity,
+.basic-pair-card--class-level,
+.basic-pair-card--equal {
+  grid-template-columns: minmax(0, 1fr) max(7.5rem, 35%);
 }
 
 .basic-pair-card--identity #alignment {
   width: 100%;
   min-height: 3rem;
-}
-
-.basic-pair-card--class-level {
-  grid-template-columns: minmax(0, 1.5fr) minmax(5.5rem, 0.75fr);
 }
 
 .basic-pair-field--level {
@@ -218,12 +176,11 @@ button.field-info-hint__dismiss:focus-visible {
 }
 
 .basic-pair-card--equal {
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   align-content: start;
 }
 
 .basic-pair-card--custom-background {
-  grid-template-columns: minmax(0, 0.9fr) auto minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 1fr) auto max(7.5rem, 35%);
 }
 
 .custom-background-edit {
@@ -307,10 +264,15 @@ button.field-info-hint__dismiss:focus-visible {
 /* 極窄角色卡：先增加欄位寬度，不縮小文字或擠壓控制項。 */
 @media (max-width: 359.98px) {
   .basic-pair-card--identity,
-  .basic-pair-card--equal,
-  .basic-row--vitals,
-  .basic-row--combat {
+  .basic-pair-card--class-level,
+  .basic-pair-card--equal {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* 四欄改兩欄：生命骰自成一列，AC／速度、被動察覺／先攻排成 2×2。 */
+  .basic-row--vitals .basic-metric-values,
+  .basic-row--combat .basic-metric-values {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
