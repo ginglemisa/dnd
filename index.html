@@ -3252,10 +3252,11 @@ function getNextSpellCastingTexts() {
   return [formatSignedValue(mod), String(8 + pb + mod + magic.spellSaveDc), formatSignedValue(mod + pb + magic.spellAttack)];
 }
 
+// 自動計算關閉時比照 HP、AC 與技能，不覆蓋玩家填的數字（包括重新整理與載入時），只更新武器攻擊。
 function updateSpellCastingStats() {
   const inputs = AUTOMATIC_SPELL_STAT_IDS.map(id => document.getElementById(id));
   if (inputs.some(input => !input)) return;
-  getNextSpellCastingTexts().forEach((text, index) => { inputs[index].value = text; });
+  if (isAutomaticKeyStatsEnabled()) getNextSpellCastingTexts().forEach((text, index) => { inputs[index].value = text; });
   if (typeof populateHandAttacks === "function") populateHandAttacks();
 }
 
