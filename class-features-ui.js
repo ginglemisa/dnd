@@ -1247,6 +1247,46 @@ function openCharacterFeatures(tab = "class", trigger, options = {}) {
   return true;
 }
 
+// 角色能力視窗的入口教學（一台裝置一次，清除紀錄後恢復）：玩家第一次選定職業、等級、背景或種族（四個任一個）時，
+// 自動打開對應分頁；第一次關掉時用導覽遮罩亮起四個標題，告訴玩家點標題可以再打開。玩家先自己點標題打開過，就當作已經知道入口。
+const FIELD_DETAILS_INTRO_SEEN_KEY = "dnd.fieldDetailsIntroSeen.v1";
+const FIELD_DETAILS_INTRO_TABS = Object.freeze({ class: "creation", level: "class", background: "background", race: "race" });
+
+function isFieldDetailsIntroSeen() {
+  return window.dndStorage.getItem(FIELD_DETAILS_INTRO_SEEN_KEY) !== null;
+}
+
+function markFieldDetailsIntroSeen() {
+  if (!SHARE_MODE) window.dndStorage.setItem(FIELD_DETAILS_INTRO_SEEN_KEY, "1");
+}
+
+function canStartFieldDetailsIntro() {
+  return !SHARE_MODE && !autosaveSuspended && !autosaveClearing && !jsonImportInProgress && !isFieldDetailsIntroSeen()
+    && !window.onboardingTour?.active && !document.querySelector(".app-dialog");
+}
+
+function maybeOpenFieldDetailsIntro(event) {
+  const select = event.currentTarget;
+  const tab = FIELD_DETAILS_INTRO_TABS[select?.id];
+  // 只算玩家自己選的值（快速創角、匯入、讀檔不算）；改回「待選」與自訂背景（會開自訂背景表單）也不算。
+  if (!tab || !isCommittedCharacterSelectionChange(event) || !select.value
+      || (select.id === "background" && select.value === "custom") || !canStartFieldDetailsIntro()) return;
+  // 等這次選擇引起的其他視窗（例如職業選項記憶）先出現；有視窗開著就留到下次選擇。
+  setTimeout(() => {
+    if (!canStartFieldDetailsIntro() || !select.value) return;
+    markFieldDetailsIntroSeen();
+    openCharacterFeatures(tab, select, { onClose: () => setTimeout(showFieldDetailsReopenTip, 0) });
+  }, 0);
+}
+
+function showFieldDetailsReopenTip() {
+  void window.onboardingTour?.showTip?.({
+    text: "點標題可以再次打開說明",
+    getTargets: () => Array.from(document.querySelectorAll("#tab-basic .mini-stat-label--features")),
+    onTargetClick: label => openCharacterFeatures(label.dataset.characterFeaturesTab, label)
+  });
+}
+
 function bindCharacterFeatureDialog() {
   const warningToggle = document.getElementById("character-choice-warning-toggle");
   warningToggle.addEventListener("click", () => {
@@ -1256,7 +1296,10 @@ function bindCharacterFeatureDialog() {
     document.getElementById("race")?.focus({ preventScroll: true });
   });
   document.querySelectorAll("[data-character-features-tab]").forEach(button => {
-    button.addEventListener("click", () => openCharacterFeatures(button.dataset.characterFeaturesTab, button));
+    button.addEventListener("click", () => {
+      markFieldDetailsIntroSeen();
+      openCharacterFeatures(button.dataset.characterFeaturesTab, button);
+    });
   });
   const tabs = document.querySelector(".character-features-tabs");
   tabs.addEventListener("click", event => {

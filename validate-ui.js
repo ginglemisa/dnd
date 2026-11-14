@@ -109,9 +109,11 @@ function verifyAnalyticsIsolation(html) {
   console.log("Analytics isolation: hosts, owner persistence, query/share URL exclusion, sanitized location/referrer and both event paths passed (no network).");
 }
 
-async function newUiPage(browser, options = {}) {
+async function newUiPage(browser, { fieldDetailsIntro = false, ...options } = {}) {
   const page = await browser.newPage(options);
   await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  // 第一次選定職業等會自動打開角色能力視窗（入口教學），會打斷其他測試的玩家選擇；只有入口教學自己的測試保留。
+  if (!fieldDetailsIntro) await page.addInitScript(() => { try { localStorage.setItem("dnd.fieldDetailsIntroSeen.v1", "1"); } catch {} });
   page.setDefaultTimeout(10000);
   page.on("pageerror", error => browserErrors.push(String(error)));
   return page;
@@ -626,13 +628,15 @@ async function verifyPdf(page, fieldsOnly) {
   await page.addScriptTag({ url: "/pdf-field-map.js" });
   // 屬性格寫匯出選項帶來的有效值（魔法物品），力量需求降速也用它；沒有帶時寫存檔的原值。
   assert.deepEqual(await page.evaluate(() => {
-    const state = { class: "fighter", level: "1", str: "10", con: "12", armor: "鎖子甲", "speed-input": "30" };
+    const state = { class: "fighter", level: "1", race: "human", str: "10", con: "12", armor: "鎖子甲", "speed-input": "30" };
     const pick = payload => [payload.strMod1, payload.str1, payload.conMod1, payload.con1, payload.speed1];
     return [pick(buildPdfFieldPayload(state)), pick(buildPdfFieldPayload(state, { abilityScores: { str: "19", con: "19" } }))];
   }), [["10", "0", "12", "+1", "20"], ["19", "+4", "19", "+4", "30"]], "PDF ability boxes use the effective scores passed by the page");
+  assert.equal(await page.evaluate(() => buildPdfFieldPayload({ class: "fighter", level: "1", "speed-input": "30" }).speed1), "",
+    "PDF speed stays blank without a race, like the sheet");
   // 魔法物品的熟練加值（艾恩石精進）與速度選項（跑跳之靴：速度至少 30、不因力量需求降速）由匯出選項帶入，和角色卡一致。
   assert.deepEqual(await page.evaluate(() => {
-    const state = { class: "fighter", level: "5", str: "10", armor: "鎖子甲", "speed-input": "25" };
+    const state = { class: "fighter", level: "5", race: "human", str: "10", armor: "鎖子甲", "speed-input": "25" };
     const pick = payload => [payload.proficiencyBonus1, payload.speed1];
     return [
       pick(buildPdfFieldPayload(state)),
@@ -2152,6 +2156,12 @@ async function verifyCharacterFeatures(browser, url) {
       const originalRects = await fieldRects();
       await warningToggle.evaluate(el => { el.hidden = false; });
       assert.deepEqual(await fieldRects(), originalRects, `toggle preserves origin field geometry at ${width}px`);
+      const columnEdges = await page.evaluate(() => ["#alignment", "#level", "#race"].map(selector => {
+        const rect = document.querySelector(selector).getBoundingClientRect();
+        return [Math.round(rect.left), Math.round(rect.right)];
+      }));
+      assert.deepEqual(columnEdges.slice(1), [columnEdges[0], columnEdges[0]], `alignment, level and race columns line up at ${width}px`);
+      assert.equal(await page.locator("#race-options-control").isVisible(), false, `a race without options leaves no empty divider at ${width}px`);
       assert.equal(await warningToggle.evaluate(el => {
         const toggle = el.getBoundingClientRect();
         const label = el.previousElementSibling.getBoundingClientRect();
@@ -4364,7 +4374,45 @@ async function verifyAutoCalculatedChecks(browser, url) {
     });
     assert.deepEqual(await values(["exp-察覺", "prof-察覺"]), [false, true], "removing the feat falls back to proficiency");
 
-    console.log("Auto-calculated checks: triggers, blank abilities, save ticks, marker, legacy autosave/JSON/share, manual switch, full-width input, minimum skill reminder and expertise fallback and memory passed.");
+    // Max HP, AC and speed stay blank while what they need is missing (HP: class, level, CON; AC: the abilities
+    // its formula reads, heavy armor reads none; speed: race). A fresh sheet shows no placeholder numbers.
+    await page.evaluate(() => { cancelPendingAutosaveForClear(); localStorage.removeItem(AUTO_SAVE_KEY); });
+    await page.goto(url);
+    await ready();
+    const keyStats = () => values(["hp-display", "ac-display", "speed-display"]);
+    assert.deepEqual(await keyStats(), ["", "", ""], "a fresh sheet leaves max HP, AC and speed blank");
+    const keyStatsFor = state => page.evaluate(state => {
+      const full = { dex: "", con: "", wis: "", cha: "", armor: "", class: "fighter", level: "1", race: "human", ...state };
+      Object.entries(full).forEach(([id, next]) => {
+        const control = document.getElementById(id);
+        // The armor list only offers inventory items; add the option so the formula can be checked directly.
+        if (next && control.tagName === "SELECT" && !Array.from(control.options).some(option => option.value === next)) control.add(new Option(next, next));
+        control.value = next;
+      });
+      updateHPDisplay(); updateACDisplay(); updateSpeedDisplay();
+      return ["hp-display", "ac-display", "speed-display"].map(id => document.getElementById(id).value);
+    }, state);
+    assert.deepEqual(await keyStatsFor({}), ["", "", "30"], "fighter without DEX/CON: blank HP and AC");
+    assert.deepEqual(await keyStatsFor({ dex: "14", con: "14" }), ["12", "12", "30"]);
+    assert.deepEqual(await keyStatsFor({ dex: "14", con: "14", class: "" }), ["", "12", "30"], "no class: blank HP");
+    assert.deepEqual(await keyStatsFor({ dex: "14", con: "14", level: "" }), ["", "12", "30"], "no level: blank HP");
+    assert.deepEqual(await keyStatsFor({ dex: "14", con: "14", race: "" }), ["12", "12", ""], "no race: blank speed");
+    assert.deepEqual((await keyStatsFor({ armor: "鎖子甲" }))[1], "16", "heavy armor ignores DEX");
+    assert.deepEqual((await keyStatsFor({ armor: "鱗甲" }))[1], "", "medium armor needs DEX");
+    assert.deepEqual((await keyStatsFor({ armor: "鱗甲", dex: "14" }))[1], "16");
+    assert.deepEqual((await keyStatsFor({ class: "barbarian", dex: "14" }))[1], "", "barbarian unarmored needs CON");
+    assert.deepEqual((await keyStatsFor({ class: "barbarian", dex: "14", con: "16" }))[1], "15");
+    assert.deepEqual((await keyStatsFor({ class: "barbarian", dex: "14", armor: "鱗甲" }))[1], "16", "armored barbarian only needs DEX");
+    assert.deepEqual((await keyStatsFor({ class: "monk", dex: "14", con: "14" }))[1], "", "monk unarmored needs WIS");
+    assert.deepEqual((await keyStatsFor({ class: "monk", dex: "14", wis: "14" }))[1], "14");
+    await set("dex", "14", "input");
+    await set("con", "14", "input");
+    await set("class", "fighter");
+    await set("level", "1");
+    await set("race", "");
+    assert.deepEqual(await keyStats(), ["12", "12", ""], "the sheet's own listeners keep the blanks in sync");
+
+    console.log("Auto-calculated checks: triggers, blank abilities, save ticks, marker, legacy autosave/JSON/share, manual switch, full-width input, minimum skill reminder, expertise fallback and memory, blank max HP/AC/speed passed.");
   } finally { await page.close(); }
 }
 
@@ -5807,59 +5855,119 @@ async function verifyClassPicks(browser, url) {
   } finally { await page.close(); }
 }
 
-async function verifyFieldInfoHint(browser, url) {
-  const KEY = "dnd.fieldInfoHintDismissed.v1";
-  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
+// 角色能力視窗的入口：四個標題用強調色加「›」；第一次選定職業、等級、背景或種族（任一個）自動打開對應分頁，
+// 第一次關掉時用導覽遮罩亮起四個標題提示可以再打開。一台裝置一次，清除紀錄後恢復；分享頁不出現。
+async function verifyFieldDetailsIntro(browser, url) {
+  const KEY = "dnd.fieldDetailsIntroSeen.v1";
+  const page = await newUiPage(browser, { fieldDetailsIntro: true, viewport: { width: 1280, height: 900 } });
   try {
     await page.goto(url);
-    const hint = page.locator("#field-info-hint");
-    const dismiss = hint.getByRole("button", { name: "我知道了" });
-    await hint.waitFor();
-    assert.match(await hint.innerText(), /想了解特性內容？點選各欄位旁的\s*i\s*即可查看。/);
-    assert.equal(await page.evaluate(key => APP_STORAGE_KEYS.includes(key), KEY), true, "clear records includes the hint dismissal");
+    await page.locator("#legal-close-btn").click();
+    const details = page.locator("#character-features-modal");
+    const overlay = page.locator("#tour-overlay");
+    const labels = page.locator("#tab-basic .mini-stat-label--features");
+    const seen = () => page.evaluate(key => localStorage.getItem(key), KEY);
+    const selectedTab = () => details.locator('.character-features-tabs [aria-selected="true"]').getAttribute("data-feature-tab");
+    const closeDetails = () => details.locator(".app-dialog__close").click();
+    const tipShown = async () => {
+      await overlay.waitFor({ state: "visible" });
+      await page.waitForFunction(() => window.onboardingTour.active && !window.onboardingTour.isTransitioning);
+    };
 
-    const measure = () => page.evaluate(() => {
-      const button = document.querySelector(".field-info-hint__dismiss").getBoundingClientRect();
-      const text = document.querySelector("#field-info-hint > span").getBoundingClientRect();
-      const box = document.querySelector("#field-info-hint").getBoundingClientRect();
-      return { sameLine: button.top < text.bottom && button.bottom > text.top, rightAligned: Math.abs(button.right - (box.right - parseFloat(getComputedStyle(document.querySelector("#field-info-hint")).paddingRight))) < 1,
-        overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
+    assert.equal(await page.locator("#field-info-hint").count(), 0, "the old ⓘ hint line is gone");
+    assert.equal(await labels.count(), 4);
+    assert.deepEqual(await labels.evaluateAll(items => items.map(item => [item.textContent, item.querySelector(".info-icon") !== null])),
+      [["職業›", false], ["等級›", false], ["背景›", false], ["種族›", false]], "the four labels use text plus › instead of ⓘ");
+    assert.equal(await page.evaluate(() => {
+      const label = getComputedStyle(document.querySelector(".basic-pair-field--class .mini-stat-label--features")).color;
+      const plain = getComputedStyle(document.getElementById("character-name-label")).color;
+      return label !== plain;
+    }), true, "clickable labels stand apart from the plain ones");
+    assert.equal(await page.evaluate(key => APP_STORAGE_KEYS.includes(key), KEY), true, "clear records resets the intro");
+
+    // 程式改值（快速創角、匯入、讀檔）不算玩家選擇。
+    await page.locator("#class").selectOption("wizard");
+    await page.waitForTimeout(100);
+    assert.equal(await details.count(), 0, "scripted selections do not open the details");
+    assert.equal(await seen(), null);
+
+    // 第一次玩家選擇：打開對應分頁；之後其他三個都不再自動打開。
+    await chooseSelectAsPlayer(page, "race", "dwarf");
+    await details.waitFor();
+    assert.equal(await selectedTab(), "race", "the race selection opens the race tab");
+    assert.equal(await seen(), "1");
+    assert.equal(JSON.stringify(await page.evaluate(() => collectStateObject())).includes("fieldDetailsIntro"), false, "the intro stays out of character data");
+
+    // 第一次關掉：遮罩亮起四個標題，提示卡只有一句話和「知道了」，不蓋住標題。
+    await closeDetails();
+    await tipShown();
+    assert.equal(await page.locator("#tour-step-text").innerText(), "點標題可以再次打開說明");
+    assert.equal(await page.locator("#tour-next-btn").innerText(), "知道了");
+    assert.deepEqual(await page.evaluate(() => [document.getElementById("tour-prev-btn").hidden, document.getElementById("tour-skip-btn").hidden,
+      document.getElementById("tour-step-progress").hidden]), [true, true, true], "the tip has no progress or tour navigation");
+    const tipLayout = () => page.evaluate(() => {
+      const tooltip = document.getElementById("tour-tooltip").getBoundingClientRect();
+      const rects = [...document.querySelectorAll("#tab-basic .mini-stat-label--features")].map(label => label.getBoundingClientRect());
+      const overlaps = rects.some(rect => rect.left < tooltip.right && rect.right > tooltip.left && rect.top < tooltip.bottom && rect.bottom > tooltip.top);
+      const rings = ["tour-focus-ring", "tour-focus-ring-secondary", "tour-focus-ring-3", "tour-focus-ring-4"]
+        .filter(id => getComputedStyle(document.getElementById(id)).display !== "none").length;
+      return { holes: window.onboardingTour.activeHoles.length, rings, overlaps,
+        inside: tooltip.left >= 0 && tooltip.right <= innerWidth && tooltip.top >= 0 && tooltip.bottom <= innerHeight };
     });
-    let layout = await measure();
-    assert.deepEqual(layout, { sameLine: true, rightAligned: true, overflow: false }, "desktop keeps the dismiss link on the same line at the right");
-    for (const [width, height] of [[375, 812], [320, 568]]) {
-      await page.setViewportSize({ width, height });
-      layout = await measure();
-      assert.deepEqual([layout.rightAligned, layout.overflow], [true, false], `${width}px keeps the dismiss link right aligned without page overflow`);
-    }
+    assert.deepEqual(await tipLayout(), { holes: 4, rings: 4, overlaps: false, inside: true }, "desktop tip lights all four labels");
+    await page.keyboard.press("Escape");
+    await overlay.waitFor({ state: "hidden" });
+    assert.equal(await page.evaluate(() => document.activeElement?.id), "race", "closing the tip returns focus to the selection");
+    await chooseSelectAsPlayer(page, "level", "3");
+    await page.waitForTimeout(150);
+    assert.equal(await details.count(), 0, "later selections no longer open the details");
+
+    // 清除紀錄後恢復；在窄螢幕點亮著的標題：提示收起，直接打開那個分頁，之後關掉不再提示。
+    await Promise.all([page.waitForEvent("load"), page.evaluate(() => clearAppStateAndReload())]);
+    await page.locator("#legal-close-btn").click();
+    assert.equal(await seen(), null, "clear records resets the intro");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await chooseSelectAsPlayer(page, "class", "fighter");
+    await details.waitFor();
+    assert.equal(await selectedTab(), "creation", "the class selection opens the class tab");
+    await closeDetails();
+    await tipShown();
+    assert.deepEqual(await tipLayout(), { holes: 4, rings: 4, overlaps: false, inside: true }, "narrow tip lights all four labels");
+    await page.locator('[data-character-features-tab="background"]').click();
+    await details.waitFor();
+    assert.equal(await overlay.isHidden(), true, "clicking a lit label closes the tip");
+    assert.equal(await selectedTab(), "background", "and opens that label's tab");
+    await closeDetails();
+    await page.waitForTimeout(150);
+    assert.equal(await overlay.isHidden(), true, "the tip appears only once");
     await page.setViewportSize({ width: 1280, height: 900 });
 
-    await dismiss.focus();
-    await page.keyboard.press("Enter");
-    assert.equal(await hint.isHidden(), true, "dismissing hides the hint");
-    assert.equal(await page.evaluate(key => localStorage.getItem(key), KEY), "1");
-    assert.equal(await page.evaluate(() => document.activeElement?.dataset.characterFeaturesTab), "creation", "focus moves to the class info button");
-    assert.equal(JSON.stringify(await page.evaluate(() => collectStateObject())).includes("fieldInfoHint"), false, "dismissal stays out of character data");
-
-    await page.evaluate(() => { document.getElementById("class").value = "wizard"; saveAllFields(); });
-    await page.goto(url);
-    await page.waitForFunction(() => document.getElementById("class").value === "wizard");
-    await page.waitForLoadState("networkidle");
-    assert.equal(await hint.isHidden(), true, "dismissal survives a reload");
-
-    await Promise.all([page.waitForEvent("load"), page.evaluate(() => clearAppStateAndReload())]);
-    await hint.waitFor();
-    assert.equal(await page.evaluate(key => localStorage.getItem(key), KEY), null, "clear records resets the dismissal");
+    // 玩家先自己點標題打開過，就當作知道入口；選「自訂」背景（會開自訂背景表單）不算第一次。
+    await page.evaluate(key => localStorage.removeItem(key), KEY);
+    await chooseSelectAsPlayer(page, "background", "custom");
+    await page.locator(".app-dialog").waitFor();
+    assert.equal(await details.count(), 0, "the custom background form is not the intro");
+    assert.equal(await seen(), null);
+    await page.keyboard.press("Escape");
+    await page.locator(".app-dialog").waitFor({ state: "detached" });
+    await labels.first().click();
+    await details.waitFor();
+    assert.equal(await seen(), "1", "opening the details from a label counts as knowing the entry");
+    await closeDetails();
+    await page.waitForTimeout(150);
+    assert.equal(await overlay.isHidden(), true, "a label-opened dialog shows no tip");
 
     const hash = await page.evaluate(() => encodeStateToHash({ class: "wizard", level: "1", race: "human", background: "soldier" }));
-    const shared = await newUiPage(browser);
+    const shared = await newUiPage(browser, { fieldDetailsIntro: true });
     try {
       const sharedUrl = new URL(url); sharedUrl.hash = hash;
       await shared.goto(sharedUrl.href);
       await shared.locator("#share-mode-tip").waitFor();
       await shared.waitForLoadState("networkidle");
-      assert.equal(await shared.locator("#field-info-hint").isHidden(), true, "share viewers never see the hint");
+      assert.equal(await shared.locator("#tab-basic .field-details-arrow").count(), 4, "share viewers see the same labels");
+      assert.equal(await shared.evaluate(key => localStorage.getItem(key), KEY), null, "share viewers never record the intro");
     } finally { await shared.close(); }
+    console.log("Field details intro: › labels, first player selection, one-time reopen tip, label click, custom background, clear and share passed.");
   } finally { await page.close(); }
 }
 
@@ -6594,7 +6702,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifyFirstLoadDefaults(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldDetailsIntro(browser, url); await verifyFirstLoadDefaults(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
     if (all || sections.has("--data-only") || sections.has("--share-only")) await verifyShareReadonlyMode(browser, url);
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });

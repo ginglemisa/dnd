@@ -930,7 +930,9 @@ html.onboarding-app-bar-hidden .tabs-shell {
 }
 
 #tour-focus-ring,
-#tour-focus-ring-secondary {
+#tour-focus-ring-secondary,
+#tour-focus-ring-3,
+#tour-focus-ring-4 {
   position: fixed;
   pointer-events: auto;
   touch-action: none;
@@ -938,14 +940,18 @@ html.onboarding-app-bar-hidden .tabs-shell {
 }
 
 :where(html:not([data-ui-theme="warm"])) #tour-focus-ring,
-:where(html:not([data-ui-theme="warm"])) #tour-focus-ring-secondary {
+:where(html:not([data-ui-theme="warm"])) #tour-focus-ring-secondary,
+:where(html:not([data-ui-theme="warm"])) #tour-focus-ring-3,
+:where(html:not([data-ui-theme="warm"])) #tour-focus-ring-4 {
   border: 3px solid #7aa2ff;
   border-radius: 12px;
   box-shadow: 0 0 0 2px rgba(122, 162, 255, 0.38), 0 0 26px rgba(122, 162, 255, 0.7);
 }
 
 :where(html[data-ui-theme="warm"]) #tour-focus-ring,
-:where(html[data-ui-theme="warm"]) #tour-focus-ring-secondary {
+:where(html[data-ui-theme="warm"]) #tour-focus-ring-secondary,
+:where(html[data-ui-theme="warm"]) #tour-focus-ring-3,
+:where(html[data-ui-theme="warm"]) #tour-focus-ring-4 {
   border: 3px solid var(--border);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-soft);
@@ -995,6 +1001,16 @@ html[data-theme="dark"] #tour-tooltip {
 #tour-overlay[data-tour-kind="sheet"] .tour-heading-row,
 #tour-overlay[data-tour-kind="sheet"] .tour-btn-row {
   flex-shrink: 0;
+}
+
+/* 單張提示（showTip）：只有一句話和「知道了」，標題列只留給輔助技術。 */
+#tour-overlay[data-tour-kind="tip"] .tour-heading-row {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 #tour-overlay[data-tour-kind="tabletop"] #tour-tooltip {

@@ -33,7 +33,8 @@ async function selectCharacter(page, id, value) {
 }
 // Native keyboard selection is a trusted player change, unlike selectOption.
 async function chooseAsPlayer(page, id, value) {
-  await page.evaluate(() => showTab("basic"));
+  // 角色能力視窗的入口教學（第一次選定就自動打開）不在這裡測，先標成看過，免得視窗打斷後面的操作。
+  await page.evaluate(() => { showTab("basic"); localStorage.setItem("dnd.fieldDetailsIntroSeen.v1", "1"); });
   const key = await page.evaluate(({ id, value }) => {
     const select = document.getElementById(id);
     const index = Array.from(select.options).findIndex(option => option.value === value);

@@ -1716,6 +1716,7 @@ details > summary::-webkit-details-marker,
   }
 }
 
+.race-options.is-hidden,
 .race-option-row.is-hidden {
   display: none;
 }

@@ -111,9 +111,12 @@
         right: document.getElementById(`tour-mask-right-${index}`),
         bottom: document.getElementById(`tour-mask-bottom-${index}`)
       }));
+      // 導覽最多亮兩處；單張提示（showTip）最多四處，後兩個框只有它會用到。
       this.focusRings = [
         document.getElementById("tour-focus-ring"),
-        document.getElementById("tour-focus-ring-secondary")
+        document.getElementById("tour-focus-ring-secondary"),
+        document.getElementById("tour-focus-ring-3"),
+        document.getElementById("tour-focus-ring-4")
       ];
       this.masks = this.maskGroups.flatMap(group => Object.values(group)).filter(Boolean);
       this.presentedHoles = [];
@@ -526,6 +529,63 @@
       return this.start(0, "tabletop");
     }
 
+    // 單張提示（kind "tip"）：遮罩變暗、亮起 getTargets() 回傳的元素（最多四個），卡片只有一段文字和確認按鈕。
+    // 「知道了」或 Esc 只收起；點亮著的元素先收起，再交給 onTargetClick。
+    // 不切分頁、不捲回頂端、不暫停自動存檔，收起後焦點回到開啟前的位置。已有導覽或提示進行中時不顯示，回傳 false。
+    async showTip({ text = "", getTargets, confirmLabel = "知道了", onTargetClick } = {}) {
+      if (this.active || !this.overlay || !this.tooltip) return false;
+      const targets = () => (typeof getTargets === "function" ? getTargets() : []).filter(isElementVisible).slice(0, 4);
+      if (!targets().length) return false;
+      this.kind = "tip";
+      this.tipOptions = { targets, confirmLabel, onTargetClick, focus: document.activeElement };
+      const transitionId = ++this.transitionId;
+      this.overlay.dataset.tourKind = "tip";
+      this.text.replaceChildren();
+      this.renderedContentStep = null;
+      this.renderedContentKey = null;
+      this.resetHighlightState();
+      this.tooltip.style.visibility = "hidden";
+      this.applyMasksForHoles([]);
+      this.steps = [{
+        title: "提示",
+        text,
+        placement: "bottom",
+        // 放在最後一個目標下方，不蓋住前面的目標。
+        tooltipHoleIndex: () => Math.max(0, this.activeHoles.length - 1),
+        getHoles: () => targets().map(element => this.getHoleFromElements([element], 6)).filter(Boolean)
+      }];
+      this.currentIndex = 0;
+      this.stepPhase = 0;
+      this.abilityMenuGuideActive = false;
+      this.tooltipDragPosition = null;
+      this.activeHoles = [];
+      this.autosaveSuspendedSnapshot = null;
+      this.activeTabStorageSnapshot = null;
+      this.active = true;
+      this.isTransitioning = true;
+      this.lockBackgroundInteraction();
+      this.lockUserScroll();
+      this.overlay.inert = false;
+      this.overlay.style.display = "block";
+      this.overlay.setAttribute("aria-hidden", "false");
+      this.nextBtn.focus({ preventScroll: true });
+      try {
+        // 目標不在畫面裡時，捲到第一個目標在頂部選單下方。
+        const rect = getUnionRect(targets());
+        const header = document.querySelector(".tabs-shell")?.getBoundingClientRect().bottom || 0;
+        if (rect && (rect.top < header + 16 || rect.bottom > window.innerHeight - 16)) {
+          await this.animateScrollTo(window.scrollY + rect.top - Math.max(80, header + 16));
+          await waitForLayoutStability();
+        }
+        this.lastTourScrollY = window.scrollY;
+        if (!this.active || transitionId !== this.transitionId) return true;
+        await this.renderStep();
+      } finally {
+        if (transitionId === this.transitionId) this.isTransitioning = false;
+      }
+      return true;
+    }
+
     getSteps() {
       return [
         {
@@ -737,6 +797,10 @@
 
     async next() {
       if (!this.active || this.isTransitioning || this.identityDetailsOpen) return;
+      if (this.kind === "tip") {
+        this.stop();
+        return;
+      }
       if (this.kind === "sheet" && this.currentIndex === 0 && this.stepPhase === 0) {
         await this.showIdentityPhase(1);
         return;
@@ -810,7 +874,7 @@
     }
 
     async prev() {
-      if (!this.active || this.isTransitioning || this.identityDetailsOpen) return;
+      if (!this.active || this.isTransitioning || this.identityDetailsOpen || this.kind === "tip") return;
       if (this.kind === "sheet" && this.currentIndex === 0 && this.stepPhase === 1) {
         await this.showIdentityPhase(0);
         return;
@@ -1073,7 +1137,14 @@
         this.overlay.setAttribute("aria-hidden", "true");
       }
 
-      if (this.kind === "tabletop") {
+      if (this.kind === "tip") {
+        // 單張提示不換頁、不捲動，焦點回到開啟提示前的位置。
+        const focus = this.tipOptions?.focus;
+        this.tipOptions = null;
+        if (focus instanceof HTMLElement && focus.isConnected && isElementVisible(focus) && !focus.closest("[inert]")) {
+          focus.focus({ preventScroll: true });
+        }
+      } else if (this.kind === "tabletop") {
         const snapshot = this.tabletopViewSnapshot;
         this.tabletopViewSnapshot = null;
         window.TabletopMode.setPanel(completed ? "overview" : snapshot.panel, { persist: false, restoreScroll: false });
@@ -1593,6 +1664,7 @@
 
     getAllowedTourElements() {
       if (!this.active) return [];
+      if (this.kind === "tip") return this.tipOptions?.targets() || [];
       if (this.abilityMenuGuideActive) return [document.getElementById("set-default-abilities")].filter(Boolean);
       if (this.kind === "tabletop") {
         const rollSelector = this.steps[this.currentIndex]?.rollSelector;
@@ -1875,6 +1947,17 @@
         return;
       }
       if (this.tooltip?.contains(target)) return;
+      if (this.kind === "tip") {
+        // 點亮著的元素：先收起提示，再交給 onTargetClick（原本的點擊不執行，避免重複開啟）。
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const hit = this.getAllowedTourElements().find((element) => element.contains(target));
+        if (!hit) return;
+        const onTargetClick = this.tipOptions?.onTargetClick;
+        this.stop();
+        onTargetClick?.(hit);
+        return;
+      }
       if (this.kind === "tabletop") {
         if (this.getAllowedTourElements().some((element) => element.contains(target))) return;
         event.preventDefault();
@@ -2061,7 +2144,7 @@
       const holes = (typeof step.getHoles === "function" ? step.getHoles() : [])
         .map((hole) => this.getVisibleHole(hole))
         .filter(Boolean)
-        .slice(0, 2);
+        .slice(0, this.kind === "tip" ? 4 : 2);
       const visibleHoles = holes;
       const allowStepTwoControls = this.kind === "sheet" && this.currentIndex === 1;
       this.maskPointerEvents = allowStepTwoControls ? "none" : "";
@@ -2104,6 +2187,9 @@
       this.progress.textContent = `${progressIndex}/${progressTotal}`;
       this.progress.setAttribute("aria-label", `導覽進度：第 ${progressIndex} 步，共 ${progressTotal} 步`);
       this.prevBtn.disabled = this.currentIndex === 0 && this.stepPhase === 0;
+      // 單張提示沒有進度與上一步。
+      this.progress.hidden = this.kind === "tip";
+      this.prevBtn.hidden = this.kind === "tip";
       this.skipBtn.hidden = this.kind !== "tabletop" && this.currentIndex === this.steps.length - 1;
       this.skipBtn.textContent = this.kind === "tabletop" ? "關閉" : "跳過";
       this.nextBtn.textContent = this.getNextButtonText();
@@ -2195,6 +2281,7 @@
     }
 
     getNextButtonText() {
+      if (this.kind === "tip") return this.tipOptions?.confirmLabel || "知道了";
       if (this.abilityMenuGuideActive) return "開啟決定屬性";
       if (this.kind === "tabletop") return this.currentIndex === this.steps.length - 1 ? "開始使用跑團模式" : "下一步";
       if (this.currentIndex === this.steps.length - 1) return "導覽完成";
