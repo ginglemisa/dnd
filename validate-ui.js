@@ -4212,7 +4212,7 @@ async function verifyAutoCalculatedChecks(browser, url) {
       ["text is not zero", { ...base, "skill-運動": "abc" }, { auto: false, values: { "skill-運動": "abc" } }],
       ["full-width matches", { ...base, "skill-隱匿": "＋５", "save-str": "０", "skill-察覺": "＋３" }, { auto: true, values: { "skill-隱匿": "+5", "save-str": "0", "passive-perception": "13" } }],
       ["marked data recalculates", { ...base, [MARK]: true, "skill-隱匿": "+9", "spellcasting-ability": "wis", "spell-save-dc": "99" }, { auto: true, values: { "skill-隱匿": "+5", "spell-save-dc": "11" } }],
-      ["manual stays manual", { ...base, [TOGGLE]: false, "skill-隱匿": "+9", "skill-運動": "＋７" }, { auto: false, values: { "skill-隱匿": "+9", "skill-運動": "+7" } }]
+      ["manual stays manual", { ...base, [TOGGLE]: false, "skill-隱匿": "+9", "skill-運動": "＋７", "spellcasting-ability": "wis", "spell-save-dc": "99", "spell-attack-bonus": "+9" }, { auto: false, values: { "skill-隱匿": "+9", "skill-運動": "+7", "spell-save-dc": "99", "spell-attack-bonus": "+9" } }]
     ];
     const loaders = {
       autosave: async state => {

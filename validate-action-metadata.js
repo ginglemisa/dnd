@@ -1843,6 +1843,15 @@ async function verifyEquipmentLoadout(browser, url) {
       Inventory.setAttuned("wand", false);
     });
     assert.deepEqual(await spellFields(), ["14", "+30"], "manual spell numbers stay manual");
+    await page.evaluate(() => {
+      const select = document.getElementById("spellcasting-ability");
+      select.value = "cha";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      const level = document.getElementById("level");
+      level.value = String(Number(level.value) + 1);
+      level.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert.deepEqual(await spellFields(), ["14", "+30"], "changing the spellcasting ability or level leaves manual numbers alone");
     await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
 
     // 兩用武器：一般模式主手的另一手空著或武藝才算雙手；主手2模式只看有沒有持盾；一般副手欄不適用。
