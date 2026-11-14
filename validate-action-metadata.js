@@ -1835,7 +1835,7 @@ async function verifyEquipmentLoadout(browser, url) {
       assert.deepEqual(await spellNumbers({ mainHand: name, ...inventoryOf(heldStaff(id)) }), ["14", "+8"], `${name} counts once held`);
     }
     assert.match(await page.locator("#equipment-loadout-summary-content").evaluate(element => element.textContent), /賢者法杖\s*法術命中\+2/u, "the loadout summary explains the bonus");
-    assert.deepEqual(await spellNumbers({ "spell-save-dc": "19", "spell-attack-bonus": "+9", ...inventoryOf({ uid: "plain", itemId: "長棍", quantity: 1 }) }), ["19", "+9"], "a character without magic bonuses keeps its saved numbers after a magic character");
+    assert.deepEqual(await spellNumbers({ "spell-save-dc": "19", "spell-attack-bonus": "+9", ...inventoryOf({ uid: "plain", itemId: "長棍", quantity: 1 }) }), ["14", "+6"], "automatic loads replace saved spell numbers with the calculation, even without magic bonuses");
     await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }) });
     await page.evaluate(() => {
       document.getElementById("auto-calculate-key-stats-toggle").checked = false;

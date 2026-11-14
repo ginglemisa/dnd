@@ -462,6 +462,21 @@ async function main() {
     await page.keyboard.press("Escape");
     assert.equal(await page.locator("#lifedicen").inputValue(), "0", "closing after a roll retains committed dice");
     assert.equal(await page.locator('[data-rest="shortRest"]').evaluate(el => el === document.activeElement), true, "focus returns after dice dialogs");
+
+    // 從角色卡按「進入跑團模式」：當前 HP 空白就帶入最大 HP，已有數字不動。
+    const enterFromSheet = currentHp => page.evaluate(value => {
+      TabletopMode.setMode("sheet");
+      dndStorage.setItem("dnd.tabletopIntroSeen.v1", "1");
+      const hp = document.getElementById("hp");
+      hp.value = value;
+      hp.dispatchEvent(new Event("input", { bubbles: true }));
+      document.getElementById("tabletop-mode-toggle").click();
+      return { hp: hp.value, max: document.getElementById("hp-display").value, mode: document.documentElement.dataset.viewMode };
+    }, currentHp);
+    const blankEntry = await enterFromSheet("");
+    assert(Number(blankEntry.max) > 0, "the test character has a maximum HP");
+    assert.deepEqual(blankEntry, { hp: blankEntry.max, max: blankEntry.max, mode: "tabletop" }, "entering tabletop fills a blank current HP with the maximum");
+    assert.equal((await enterFromSheet("3")).hp, "3", "entering tabletop keeps an existing current HP");
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Rest choices, optional recovery, cancellation, forced single/batch dice, autosave and narrow layout passed.");
   } finally {

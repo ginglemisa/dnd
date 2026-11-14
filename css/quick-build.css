@@ -975,6 +975,32 @@
   color: var(--qb-success-text);
 }
 
+/* 點數沒分配完、原本的顯示區捲出視窗時，複製的一份固定在內容區頂端（標題線下方）的右上角。
+   高度 0 不佔版面；只有 .is-visible 時看得到，不接收點擊。sticky 的位置從內容區的 padding 內緣算起，
+   所以 top 扣掉 .quick-build-body 的上 padding（24px，窄螢幕 20px），讓它離標題線 8px。 */
+.quick-build-ability-float {
+  position: sticky;
+  top: -16px;
+  z-index: 4;
+  height: 0;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.quick-build-ability-float.is-visible {
+  visibility: visible;
+}
+
+.quick-build-ability-float .quick-build-ability-status {
+  justify-content: flex-end;
+}
+
+.quick-build-ability-float .quick-build-status-pill {
+  box-shadow: var(--qb-shadow);
+}
+
 .quick-build-ability-grid {
   display: grid;
   padding: 14px;
@@ -1744,6 +1770,10 @@
 
   #quick-build-wizard .quick-build-body {
     padding: 20px 16px;
+  }
+
+  .quick-build-ability-float {
+    top: -12px;
   }
 
   .quick-build-ability-heading {

@@ -643,6 +643,11 @@
   let pageLock = null;
   const expandedChoiceGroups = new Set();
   let pendingChoiceCardScrollGroup = null;
+  // 完成選擇後自動捲到新出現的區塊：每個區塊只捲一次，之後回頭調整、再次完成時不再強制捲動。開啟或重置視窗時清空。
+  const autoScrolledFlowSections = new Set();
+  // 屬性點數沒分配完時，點數顯示區捲出畫面就浮在視窗右上角（renderClassAbilities）。
+  let abilityStatusObserver = null;
+  let abilityStatusFloating = false;
 
   function reconcileDraft(target) {
     normalizeDraft(target);
@@ -2148,6 +2153,28 @@
       return `<div class="quick-build-ability-row${bonusEnabled ? "" : " is-bonus-locked"}"><div class="quick-build-ability-name"><strong>${infoTip(ABILITY_LABELS[ability])}</strong><small>${ability.toUpperCase()}</small></div><div class="quick-build-ability-control"><button type="button" class="quick-build-ability-step" data-class-ability-base="${ability}" data-ability-adjustment="-1" aria-label="降低${ABILITY_LABELS[ability]}基礎值"${baseValue > 8 ? "" : " disabled"}>▼</button><span class="quick-build-ability-value">${baseValue}</span><button type="button" class="quick-build-ability-step" data-class-ability-base="${ability}" data-ability-adjustment="1" aria-label="提高${ABILITY_LABELS[ability]}基礎值"${canIncreaseBase ? "" : " disabled"}>▲</button></div><div class="quick-build-ability-control"><button type="button" class="quick-build-ability-step" data-class-ability-bonus="${ability}" data-ability-adjustment="-1" aria-label="降低${ABILITY_LABELS[ability]}背景加值"${bonusEnabled && bonusValue > 0 ? "" : " disabled"}>▼</button><span class="quick-build-ability-value is-bonus">${bonusEnabled ? `+${bonusValue}` : "—"}</span><button type="button" class="quick-build-ability-step" data-class-ability-bonus="${ability}" data-ability-adjustment="1" aria-label="提高${ABILITY_LABELS[ability]}背景加值"${canIncreaseBonus ? "" : " disabled"}>▲</button></div><div class="quick-build-ability-total"><strong>${abilityTotal(draft, ability)}</strong><small>${signedModifierText(abilityTotal(draft, ability))}</small></div></div>`;
     }).join("")}</section>${optionNote("你有 27 點可分配到六項屬性。\n每項從 8 開始，最高 15；點數需全部用完才能下一步。")}${conceptHelp("屬性怎麼調整？")}${spent !== 27 ? `<div class="quick-build-warning">還有 ${27 - spent} 點沒分配，全部用完才能下一步。</div>` : ""}${bonusTotal !== 3 ? `<div class="quick-build-warning">背景加值還有 ${3 - bonusTotal} 點沒分配，分完才能下一步。</div>` : ""}`;
     body.querySelectorAll("[data-class-ability-base],[data-class-ability-bonus]").forEach(button => button.addEventListener("click", updateClassAbility));
+    if (spent !== 27 || bonusTotal !== 3) attachFloatingAbilityStatus(body);
+    else abilityStatusFloating = false;
+  }
+
+  // 複製一份點數顯示區放在區塊最前面（sticky、高度 0），原本那份捲出視窗頂端時才顯示，固定在標題線下方的右上角。
+  // 原本那份仍是報讀與版面用的正本，複製的這份 aria-hidden、不接收點擊。
+  function attachFloatingAbilityStatus(section) {
+    const status = section.querySelector(".quick-build-ability-status");
+    const root = ensureWizard().querySelector(".quick-build-body");
+    if (!status || !root || typeof IntersectionObserver !== "function") return;
+    const float = document.createElement("div");
+    float.className = "quick-build-ability-float";
+    float.setAttribute("aria-hidden", "true");
+    float.appendChild(status.cloneNode(true));
+    float.classList.toggle("is-visible", abilityStatusFloating);
+    section.prepend(float);
+    abilityStatusObserver = new IntersectionObserver(([entry]) => {
+      const rootTop = entry.rootBounds ? entry.rootBounds.top : root.getBoundingClientRect().top;
+      abilityStatusFloating = !entry.isIntersecting && entry.boundingClientRect.top < rootTop;
+      float.classList.toggle("is-visible", abilityStatusFloating);
+    }, { root });
+    abilityStatusObserver.observe(status);
   }
 
   function renderClassSpellcasting(body) {
@@ -3755,6 +3782,9 @@
     const previousScrollTop = preserveBodyScroll ? body.scrollTop : 0;
     const focusedFieldId = preserveBodyScroll && body.contains(document.activeElement) ? document.activeElement?.id : "";
     const previousFlowSections = new Set([...body.querySelectorAll("[data-flow-section]")].map(section => section.dataset.flowSection));
+    abilityStatusObserver?.disconnect();
+    abilityStatusObserver = null;
+    if (!preserveBodyScroll) abilityStatusFloating = false;
     body.innerHTML = "";
     body.classList.toggle("is-review", draft.ui.view === "review" || stepMeta.id === "level-one-review");
     if (!step) renderPlaceholder(body, stepMeta);
@@ -3781,9 +3811,11 @@
     const cardScrollTarget = pendingChoiceCardScrollGroup
       ? body.querySelector(`.quick-build-card.is-selected[data-${pendingChoiceCardScrollGroup === "class" ? "class-choice" : pendingChoiceCardScrollGroup}]`)
       : null;
-    const scrollTarget = cardScrollTarget || newlyRevealed;
+    const revealKey = newlyRevealed ? `${stepMeta.id}:${newlyRevealed.dataset.flowSection}` : "";
+    const scrollTarget = cardScrollTarget || (revealKey && !autoScrolledFlowSections.has(revealKey) ? newlyRevealed : null);
     pendingChoiceCardScrollGroup = null;
     if (preserveBodyScroll && previousFlowSections.size && scrollTarget) {
+      if (scrollTarget === newlyRevealed) autoScrolledFlowSections.add(revealKey);
       const reveal = () => {
         const targetTop = body.scrollTop + scrollTarget.getBoundingClientRect().top - body.getBoundingClientRect().top - 16;
         const reducedMotion = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -4463,6 +4495,8 @@
     syncShopCartFunding();
     expandedChoiceGroups.clear();
     pendingChoiceCardScrollGroup = null;
+    autoScrolledFlowSections.clear();
+    abilityStatusFloating = false;
     render();
     modal.inert = false;
     modal.classList.add("open");
@@ -4486,6 +4520,8 @@
     syncShopCartFunding();
     expandedChoiceGroups.clear();
     pendingChoiceCardScrollGroup = null;
+    autoScrolledFlowSections.clear();
+    abilityStatusFloating = false;
     // 重置後留在視窗內，從步驟 1（背景）重新開始；草稿等玩家再次選擇時才會存檔。
     closeSpellDetail();
     render();

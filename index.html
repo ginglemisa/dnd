@@ -108,9 +108,9 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/base.css?v=20261113-info-icon">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261113-info-icon">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261114-name-field">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261113-info-icon">
-  <link rel="stylesheet" href="css/sheet-spells.css?v=20261113-info-icon">
+  <link rel="stylesheet" href="css/sheet-spells.css?v=20261114-spell-lock">
   <link rel="stylesheet" href="css/utility.css?v=20261111-menu-layout">
   <link rel="stylesheet" href="css/dice.css?v=20261110-safari">
   <link rel="stylesheet" href="css/dialogs.css?v=20261110-safari">
@@ -118,8 +118,8 @@
   <link rel="stylesheet" href="css/tabletop.css?v=20261112-merge-main-menu">
   <link rel="stylesheet" href="css/tabletop-hud.css?v=20261113-info-icon">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
-  <link rel="stylesheet" href="css/late-overrides.css?v=20261110-safari">
-  <link rel="stylesheet" href="css/quick-build.css?v=20261110-safari">
+  <link rel="stylesheet" href="css/late-overrides.css?v=20261114-name-field">
+  <link rel="stylesheet" href="css/quick-build.css?v=20261114-ability-float">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261112-magic-effects-9" defer></script>
   <script src="magic-item-content.generated.js?v=0" defer></script>
@@ -142,7 +142,7 @@
   <script src="app-dialog.js?v=20261110-toast-flick" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261113-blessed-warrior" defer></script>
+  <script src="tabletop-mode.js?v=20261114-name-field" defer></script>
   <script src="tabletop-druid.js?v=20261112-merge-main-menu" defer></script>
   <script src="tabletop-resources.js?v=20261113-info-icon" defer></script>
   <script src="tabletop-actions.js?v=20261113-champion-names" defer></script>
@@ -150,7 +150,7 @@
   <script src="tabletop-spells.js?v=20261111-magic-effects-6" defer></script>
   <script src="legal-modal.js?v=20261111-serif-big5" defer></script>
   <script src="onboarding-tour.js?v=20261109-merge-main" defer></script>
-  <script src="quick-build.js?v=20261113-info-icon" defer></script>
+  <script src="quick-build.js?v=20261114-ability-float" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
   <script src="spell-management.js?v=20261107-share-readonly" defer></script>
   <script src="share-readonly.js?v=20261107-share-menu" defer></script>
@@ -626,6 +626,29 @@
 <div id="tab-basic" class="tab-content active" role="tabpanel" aria-label="數值頁">
 <div class="basic-overview">
   <div class="section basic-overview-group">
+    <div class="basic-row basic-row--identity">
+    <div class="mini-stat-card basic-pair-card basic-pair-card--identity">
+      <div class="basic-pair-field basic-pair-field--name">
+        <div id="character-name-label" class="mini-stat-label">名字</div>
+        <button type="button" id="character-name-display" class="character-name-display is-placeholder" aria-labelledby="character-name-label character-name-display"><span class="character-name-display__text">點我輸入</span></button>
+      </div>
+      <div class="basic-pair-field basic-pair-field--alignment">
+        <div class="mini-stat-label">陣營</div>
+        <select id="alignment" aria-label="陣營">
+          <option value="">待選</option>
+          <option value="LG">守序善良</option>
+          <option value="NG">中立善良</option>
+          <option value="CG">混亂善良</option>
+          <option value="LN">守序中立</option>
+          <option value="TN">絕對中立</option>
+          <option value="CN">混亂中立</option>
+          <option value="LE">守序邪惡</option>
+          <option value="NE">中立邪惡</option>
+          <option value="CE">混亂邪惡</option>
+        </select>
+      </div>
+    </div>
+    </div>
     <p id="field-info-hint" class="field-info-hint" hidden>
       <span>想了解特性內容？點選各欄位旁的<span class="info-icon info-icon--inline">i</span>即可查看。</span>
       <button type="button" class="field-info-hint__dismiss">我知道了</button>
@@ -654,20 +677,6 @@
         <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="class" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業特性">等級 <span class="info-icon" aria-hidden="true">i</span></button>
         <select id="level">
           <option value="">--</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-        </select>
-      </div>
-      <div class="basic-pair-field basic-pair-field--hit-dice">
-        <div id="hit-die-label" class="mini-stat-label">生命骰<span class="hit-die-size" aria-hidden="true"></span></div>
-        <select id="lifedicen" aria-label="生命骰數量">
-          <option value="0" selected>0</option>
           <option value="1">1</option>
           <option value="2">2</option>
           <option value="3">3</option>
@@ -827,6 +836,25 @@
         </div>
       </div>
     </div>
+    <div class="mini-stat-card basic-hit-dice-card">
+      <div class="basic-combat-field basic-pair-field--hit-dice">
+        <div id="hit-die-label" class="mini-stat-label">生命骰<span class="hit-die-size" aria-hidden="true"></span></div>
+        <select id="lifedicen" aria-label="生命骰數量">
+          <option value="0" selected>0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="basic-row basic-row--combat">
     <div class="mini-stat-card basic-metric-card">
       <div class="basic-metric-values">
         <div class="basic-combat-field">
@@ -843,33 +871,15 @@
         <input type="checkbox" id="heroic-inspiration" class="basic-display-checkbox" aria-label="英雄激勵">
       </div>
     </div>
-  </div>
-
-  <div class="basic-row basic-row--combat">
     <div class="mini-stat-card basic-combat-pair-card">
-      <div class="basic-combat-field">
-        <div class="mini-stat-label">先攻</div>
-        <input id="initiative-input" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="先攻" readonly>
-      </div>
       <div class="basic-combat-field">
         <div class="mini-stat-label">被動察覺</div>
         <input id="passive-perception" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="被動察覺" readonly>
       </div>
-    </div>
-    <div class="mini-stat-card">
-      <div class="mini-stat-label">陣營</div>
-      <select id="alignment">
-        <option value="">待選</option>
-        <option value="LG">守序善良</option>
-        <option value="NG">中立善良</option>
-        <option value="CG">混亂善良</option>
-        <option value="LN">守序中立</option>
-        <option value="TN">絕對中立</option>
-        <option value="CN">混亂中立</option>
-        <option value="LE">守序邪惡</option>
-        <option value="NE">中立邪惡</option>
-        <option value="CE">混亂邪惡</option>
-      </select>
+      <div class="basic-combat-field">
+        <div class="mini-stat-label">先攻</div>
+        <input id="initiative-input" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="先攻" readonly>
+      </div>
     </div>
     </div>
   </div>
@@ -1554,6 +1564,12 @@ const AUTOMATIC_KEY_STAT_IDS = Object.freeze([
   "speed-display",
   "passive-perception"
 ]);
+// 法術頁的施法調整、豁免難度、命中加值：由施法屬性算出（updateSpellCastingStats），自動計算開啟時一樣唯讀。
+const AUTOMATIC_SPELL_STAT_IDS = Object.freeze([
+  "spell-adjustment",
+  "spell-save-dc",
+  "spell-attack-bonus"
+]);
 
 function isAutomaticKeyStatsEnabled() {
   return document.getElementById("auto-calculate-key-stats-toggle")?.checked !== false;
@@ -1570,7 +1586,7 @@ function refreshAutomaticKeyStats() {
 
 function syncAutomaticKeyStatsMode({ refresh = true } = {}) {
   const automatic = isAutomaticKeyStatsEnabled();
-  AUTOMATIC_KEY_STAT_IDS.forEach((id) => {
+  [...AUTOMATIC_KEY_STAT_IDS, ...AUTOMATIC_SPELL_STAT_IDS].forEach((id) => {
     const input = document.getElementById(id);
     if (!input) return;
     input.readOnly = automatic;
@@ -1599,7 +1615,7 @@ async function handleAutomaticKeyStatsToggle(event) {
       toggle.checked = false;
       const confirmed = await window.AppDialog.requestDecision({
         title: "開啟自動計算",
-        message: `有 ${changes} 項技能或豁免的數字和計算結果不同，開啟後會改成計算結果。`,
+        message: `有 ${changes} 項技能、豁免或法術的數字和計算結果不同，開啟後會改成計算結果。`,
         confirmLabel: "開啟並更新", cancelLabel: "繼續手動", trigger: toggle
       });
       if (!confirmed) return;
@@ -1607,6 +1623,7 @@ async function handleAutomaticKeyStatsToggle(event) {
       scheduleSaveAllFields();
     }
     writeDerivedChecks();
+    updateSpellCastingStats();
   }
   syncAutomaticKeyStatsMode();
   if (toggle.checked) window.TabletopMode?.refresh?.();
@@ -3224,32 +3241,25 @@ function syncProficiencyUseChecks() {
   });
 }
 
-function updateSpellCastingStats() {
+// 施法調整、豁免難度、命中加值的計算結果，順序同 AUTOMATIC_SPELL_STAT_IDS；沒選施法屬性時都是空白。
+function getNextSpellCastingTexts() {
   const ability = document.getElementById("spellcasting-ability")?.value;
-  const adjustmentInput = document.getElementById("spell-adjustment");
-  const saveDcInput = document.getElementById("spell-save-dc");
-  const attackInput = document.getElementById("spell-attack-bonus");
-  if (!adjustmentInput || !saveDcInput || !attackInput) return;
+  if (!ability) return ["", "", ""];
+  const mod = getModifier(ability);
+  const pb = getProficiencyBonus();
+  // 魔法物品的加值只在自動計算開啟時算進去，關閉時比照 AC，玩家自己填的數字不動。
+  const magic = isAutomaticKeyStatsEnabled() ? getActiveMagicEffects() : { spellAttack: 0, spellSaveDc: 0 };
+  return [formatSignedValue(mod), String(8 + pb + mod + magic.spellSaveDc), formatSignedValue(mod + pb + magic.spellAttack)];
+}
 
-  if (!ability) {
-    adjustmentInput.value = "";
-    saveDcInput.value = "";
-    attackInput.value = "";
-  } else {
-    const mod = getModifier(ability);
-    const pb = getProficiencyBonus();
-
-    // 魔法物品的加值只在自動計算開啟時算進去，關閉時比照 AC，玩家自己填的數字不動。
-    const magic = isAutomaticKeyStatsEnabled() ? getActiveMagicEffects() : { spellAttack: 0, spellSaveDc: 0 };
-
-    adjustmentInput.value = formatSignedValue(mod);
-    saveDcInput.value = String(8 + pb + mod + magic.spellSaveDc);
-    attackInput.value = formatSignedValue(mod + pb + magic.spellAttack);
-  }
+function updateSpellCastingStats() {
+  const inputs = AUTOMATIC_SPELL_STAT_IDS.map(id => document.getElementById(id));
+  if (inputs.some(input => !input)) return;
+  getNextSpellCastingTexts().forEach((text, index) => { inputs[index].value = text; });
   if (typeof populateHandAttacks === "function") populateHandAttacks();
 }
 
-// 載入存檔與開啟自動計算時：有魔法加值才重算，沒有魔法物品的角色維持存檔裡的數字。
+// 魔法物品的法術加值：有加值才重算。載入後的完整重算在 finishDerivedChecksLoad，由關轉開的確認與重算在 handleAutomaticKeyStatsToggle。
 function refreshMagicSpellCastingStats() {
   if (!isAutomaticKeyStatsEnabled()) return;
   const magic = getActiveMagicEffects();
@@ -3518,7 +3528,8 @@ function normalizeDerivedCheckInput(input) {
 function countDerivedCheckChanges() {
   const nextTexts = [
     ...SAVE_ABILITY_IDS.map(ability => ["save-" + ability, getNextSaveText(ability)]),
-    ...getNextSkillTexts().map(([skill, text]) => ["skill-" + skill, text])
+    ...getNextSkillTexts().map(([skill, text]) => ["skill-" + skill, text]),
+    ...getNextSpellCastingTexts().map((text, index) => [AUTOMATIC_SPELL_STAT_IDS[index], text])
   ];
   return nextTexts.filter(([id, text]) => {
     const current = String(document.getElementById(id)?.value ?? "").trim();
@@ -3565,6 +3576,8 @@ function finishDerivedChecksLoad(data) {
       document.getElementById("auto-calculate-key-stats-toggle").checked = false;
     }
   }
+  // 法術數值在自動計算時唯讀，載入後仍開著就一律重算（存檔裡手改過的數字換成計算結果）。
+  if (isAutomaticKeyStatsEnabled()) updateSpellCastingStats();
   derivedChecksStateKnown = true;
   syncAutomaticKeyStatsMode({ refresh: false });
 }

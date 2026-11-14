@@ -4205,12 +4205,13 @@ async function verifyAutoCalculatedChecks(browser, url) {
     const cases = [
       ["blank", base, { auto: true, values: { "skill-隱匿": "+5", "save-dex": "+5", "skill-運動": "0", "passive-perception": "13" } }],
       ["never calculated", { ...base, "prof-dex": false, "prof-int": false }, { auto: true, values: { "prof-dex": true, "prof-int": true, "save-dex": "+5" } }],
-      ["matches the new calculation", { ...base, "skill-隱匿": "+5", "save-dex": "+5", "skill-運動": "0" }, { auto: true, values: { "skill-隱匿": "+5", "save-dex": "+5", "skill-歷史": "+1" } }],
+      // 法術數值在自動計算時唯讀：開關仍開著就換成計算結果（感知 13、熟練 +2）。
+      ["matches the new calculation", { ...base, "skill-隱匿": "+5", "save-dex": "+5", "skill-運動": "0", "spellcasting-ability": "wis", "spell-save-dc": "99", "spell-attack-bonus": "+9" }, { auto: true, values: { "skill-隱匿": "+5", "save-dex": "+5", "skill-歷史": "+1", "spell-adjustment": "+1", "spell-save-dc": "11", "spell-attack-bonus": "+3" } }],
       ["matches the old calculation", { ...base, cha: "", "skill-欺瞞": "0", "save-cha": "0", "prof-wis": true, "save-wis": "+1" }, { auto: true, values: { "skill-欺瞞": "", "save-cha": "", "save-wis": "+3" } }],
       ["differs", { ...base, "skill-隱匿": "+9", "save-dex": "+5", "skill-歷史": "+1" }, { auto: false, values: { "skill-隱匿": "+9", "save-dex": "+5", "skill-歷史": "+1", "skill-運動": "", "save-int": "" } }],
       ["text is not zero", { ...base, "skill-運動": "abc" }, { auto: false, values: { "skill-運動": "abc" } }],
       ["full-width matches", { ...base, "skill-隱匿": "＋５", "save-str": "０", "skill-察覺": "＋３" }, { auto: true, values: { "skill-隱匿": "+5", "save-str": "0", "passive-perception": "13" } }],
-      ["marked data recalculates", { ...base, [MARK]: true, "skill-隱匿": "+9" }, { auto: true, values: { "skill-隱匿": "+5" } }],
+      ["marked data recalculates", { ...base, [MARK]: true, "skill-隱匿": "+9", "spellcasting-ability": "wis", "spell-save-dc": "99" }, { auto: true, values: { "skill-隱匿": "+5", "spell-save-dc": "11" } }],
       ["manual stays manual", { ...base, [TOGGLE]: false, "skill-隱匿": "+9", "skill-運動": "＋７" }, { auto: false, values: { "skill-隱匿": "+9", "skill-運動": "+7" } }]
     ];
     const loaders = {
@@ -6517,6 +6518,7 @@ async function verifyJsonImportTransaction(browser, url) {
     const shareHash = await page.evaluate(() => encodeStateToHash(collectShareState()));
     await page.goto(`${url}${shareHash}`);
     await page.waitForFunction(() => window.SHARE_MODE === true && TabletopMode.getCharacterName() === "匯出角色");
+    assert.equal(await page.locator("#character-name-display").textContent(), "匯出角色", "the sheet's name box shows the shared character name");
     const sharedExport = await page.evaluate(() => { const result = collectJsonExportText(); downloadStateAsJson(); return JSON.parse(result.text); });
     assert.equal(Object.hasOwn(sharedExport, "__tabletopAvatar"), false, "share-mode JSON export omits the viewer's local avatar");
     assert.deepEqual(sharedExport.__tabletopActionPreferences, preferences, "share-mode JSON export keeps the shared tabletop preferences");
@@ -6530,9 +6532,10 @@ async function verifyJsonImportTransaction(browser, url) {
       preferences: JSON.parse(dndStorage.getItem("dnd.tabletopActionPreferences.v1")),
       label: TabletopMode.getTabletopActionPreferences().customActions[0]?.label,
       name: TabletopMode.getCharacterName(),
+      sheetName: document.getElementById("character-name-display").textContent,
       image: document.getElementById("tabletop-avatar-image").getAttribute("src")
     }));
-    assert.deepEqual(restored, { avatar, preferences, label: "匯出按鈕", name: "匯出角色", image: avatar },
+    assert.deepEqual(restored, { avatar, preferences, label: "匯出按鈕", name: "匯出角色", sheetName: "匯出角色", image: avatar },
       "exported JSON restores tabletop buttons, avatar and character name after the clean import");
 
     await uploadText("bad-avatar.json", JSON.stringify({ ...incoming, __tabletopAvatar: "data:text/html;base64,PHNjcmlwdD4=" }));

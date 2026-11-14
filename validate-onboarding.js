@@ -1735,6 +1735,48 @@ async function verifyQuickBuildGuidanceCopy(browser, url) {
     assert.doesNotMatch(await wizard.locator("#quick-build-prepared-0").innerText(), /法師已學會/u);
     assert.match(await wizard.locator("#quick-build-spellbook-0").innerText(), /（儀式）/u);
 
+    // 屬性點數沒分配完時，點數顯示區捲出畫面才浮在內容區右上角（標題線下 8px）；
+    // 完成後新出現的區塊只自動捲一次，回頭調整再完成不再捲。
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await openAt({ class: "barbarian", abilities: { str: 15, dex: 14, con: 13, int: 8, wis: 10, cha: 12 }, backgroundAbilityBonuses: { str: 2, con: 1 } }, "class");
+    await wizard.locator('[data-flow-section="class-proficiencies"]').waitFor();
+    const abilityFlow = await page.evaluate(async () => {
+      const frames = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const settle = async () => { await frames(); await new Promise(resolve => setTimeout(resolve, 100)); };
+      const modal = document.getElementById("quick-build-wizard");
+      const body = modal.querySelector(".quick-build-body");
+      const step = adjustment => modal.querySelector(`[data-class-ability-base="str"][data-ability-adjustment="${adjustment}"]`);
+      const toRows = async () => { body.scrollTop += modal.querySelector(".quick-build-ability-row").getBoundingClientRect().top - body.getBoundingClientRect().top - 10; await settle(); };
+      const float = () => {
+        const element = modal.querySelector(".quick-build-ability-float");
+        if (!element) return null;
+        const box = element.querySelector(".quick-build-ability-status").getBoundingClientRect();
+        return { visible: getComputedStyle(element).visibility === "visible", gap: Math.round(box.top - body.getBoundingClientRect().top), hidden: element.getAttribute("aria-hidden") };
+      };
+      const result = { completeFloat: float() };
+      await toRows();
+      step(-1).click(); await settle();
+      result.scrolledFloat = float();
+      body.scrollTop = 0; await settle();
+      result.topFloat = float()?.visible;
+      await toRows();
+      let before = body.scrollTop;
+      step(1).click(); await settle();
+      result.firstMove = body.scrollTop - before;
+      result.floatAfterComplete = float();
+      await toRows();
+      step(-1).click(); await settle();
+      before = body.scrollTop;
+      step(1).click(); await settle();
+      result.secondMove = body.scrollTop - before;
+      return result;
+    });
+    assert.deepEqual({ ...abilityFlow, firstMove: abilityFlow.firstMove > 0 }, {
+      completeFloat: null, scrolledFloat: { visible: true, gap: 8, hidden: "true" }, topFloat: false,
+      firstMove: true, floatAfterComplete: null, secondMove: 0
+    }, "the point counters float only while unfinished and scrolled away; each revealed section auto-scrolls once");
+    await page.emulateMedia({ reducedMotion: null });
+
     // 提示框能蓋在創角視窗上，鍵盤也能開啟。
     await openAt({ class: "barbarian" }, "class");
     await page.locator('[data-class-ability-base="str"]').first().waitFor();

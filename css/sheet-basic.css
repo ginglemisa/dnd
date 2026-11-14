@@ -112,6 +112,7 @@ button.field-info-hint__dismiss:focus-visible {
   min-width: 0;
 }
 
+.basic-row--identity,
 .basic-row--class-level {
   grid-template-columns: 1fr;
 }
@@ -120,18 +121,13 @@ button.field-info-hint__dismiss:focus-visible {
   grid-template-columns: 1fr;
 }
 
+/* 最大HP／當前HP｜生命骰；AC／速度｜被動察覺／先攻。 */
 .basic-row--vitals {
-  grid-template-columns: minmax(0, 4fr) minmax(0, 3fr);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
 }
 
 .basic-row--combat {
-  grid-template-columns: minmax(0, 4fr) minmax(0, 3fr);
-}
-
-.basic-row--combat > .mini-stat-card {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .basic-row--combat .speed-current-display {
@@ -141,12 +137,14 @@ button.field-info-hint__dismiss:focus-visible {
 }
 
 .basic-combat-pair-card {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
+  min-width: 0;
 }
 
-.basic-row--combat > .basic-combat-pair-card {
-  grid-template-rows: auto;
+.basic-hit-dice-card {
+  min-width: 0;
 }
 
 .basic-combat-field {
@@ -161,8 +159,17 @@ button.field-info-hint__dismiss:focus-visible {
   min-width: 0;
 }
 
+.basic-pair-card--identity {
+  grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 0.55fr);
+}
+
+.basic-pair-card--identity #alignment {
+  width: 100%;
+  min-height: 3rem;
+}
+
 .basic-pair-card--class-level {
-  grid-template-columns: minmax(0, 1.5fr) minmax(4.5rem, 0.65fr) minmax(5.5rem, 0.85fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(5.5rem, 0.75fr);
 }
 
 .basic-pair-field--level {
@@ -179,10 +186,14 @@ button.field-info-hint__dismiss:focus-visible {
   }
 }
 
-.basic-pair-field--level select,
-.basic-pair-field--hit-dice select {
+.basic-pair-field--level select {
   width: 100%;
   min-height: 2.9rem;
+}
+
+.basic-pair-field--hit-dice select {
+  width: 100%;
+  min-height: 3rem;
 }
 
 .basic-pair-card--class-level .class-feature-option {
@@ -295,14 +306,7 @@ button.field-info-hint__dismiss:focus-visible {
 
 /* 極窄角色卡：先增加欄位寬度，不縮小文字或擠壓控制項。 */
 @media (max-width: 359.98px) {
-  .basic-pair-card--class-level {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .basic-pair-field--class {
-    grid-column: 1 / -1;
-  }
-
+  .basic-pair-card--identity,
   .basic-pair-card--equal,
   .basic-row--vitals,
   .basic-row--combat {
@@ -325,6 +329,7 @@ button.field-info-hint__dismiss:focus-visible {
 #tab-basic #hp-display,
 #tab-basic #ac-display,
 #tab-basic .speed-current-display,
+#tab-basic .character-name-display,
 #tab-basic .basic-display-checkbox,
 #tab-basic .tight-input,
 #tab-basic .hp-card input[type="number"] {
@@ -344,6 +349,7 @@ button.field-info-hint__dismiss:focus-visible {
 :where(html:not([data-ui-theme="warm"])) #tab-basic #hp-display,
 :where(html:not([data-ui-theme="warm"])) #tab-basic #ac-display,
 :where(html:not([data-ui-theme="warm"])) #tab-basic .speed-current-display,
+:where(html:not([data-ui-theme="warm"])) #tab-basic .character-name-display,
 :where(html:not([data-ui-theme="warm"])) #tab-basic .basic-display-checkbox,
 :where(html:not([data-ui-theme="warm"])) #tab-basic .tight-input,
 :where(html:not([data-ui-theme="warm"])) #tab-basic .hp-card input[type="number"] {
@@ -356,6 +362,7 @@ button.field-info-hint__dismiss:focus-visible {
 :where(html[data-ui-theme="warm"]) #tab-basic #hp-display,
 :where(html[data-ui-theme="warm"]) #tab-basic #ac-display,
 :where(html[data-ui-theme="warm"]) #tab-basic .speed-current-display,
+:where(html[data-ui-theme="warm"]) #tab-basic .character-name-display,
 :where(html[data-ui-theme="warm"]) #tab-basic .basic-display-checkbox,
 :where(html[data-ui-theme="warm"]) #tab-basic .tight-input,
 :where(html[data-ui-theme="warm"]) #tab-basic .hp-card input[type="number"] {
@@ -535,6 +542,48 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
 #alignment,
 #alignment option {
   font-weight: 800;
+}
+
+/* 名字：外觀比照自動計算的數值框，點了開「修改角色名稱」對話框（tabletop-mode.js），不是輸入框。
+   和旁邊的陣營下拉等高；單行顯示，太長以「…」截斷。 */
+.basic-pair-field--name {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+#tab-basic .mini-stat-card button.character-name-display {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 3rem;
+  margin: 0;
+  padding: 0.35rem 0.85rem;
+  color: var(--text);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  line-height: 1.4;
+  transform: none;
+  translate: none;
+  cursor: pointer;
+}
+
+.character-name-display__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#tab-basic .mini-stat-card button.character-name-display.is-placeholder {
+  color: var(--text-muted);
+  font-size: var(--fs-base);
+  font-weight: 600;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html #tab-basic .mini-stat-card button.character-name-display:hover {
+    border-color: var(--accent);
+  }
 }
 
 .ability-grid {
