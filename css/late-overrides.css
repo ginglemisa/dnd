@@ -1,5 +1,6 @@
 /* ===== Remaining dark and late overrides (rules that must stay last) ===== */
 html[data-theme="dark"] #tab-basic #hp-display,
+html[data-theme="dark"] #tab-basic .character-name-display,
 html[data-theme="dark"] #tab-basic #ac-display,
 html[data-theme="dark"] #tab-basic .speed-current-display,
 html[data-theme="dark"] #tab-basic .basic-display-checkbox,
@@ -10,6 +11,7 @@ html[data-theme="dark"] #tab-basic .hp-card input[type="number"] {
 }
 
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic #hp-display,
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .character-name-display,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic #ac-display,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .speed-current-display,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .basic-display-checkbox,
@@ -19,6 +21,7 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tab-basic .hp-card 
 }
 
 html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic #hp-display,
+html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .character-name-display,
 html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic #ac-display,
 html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .speed-current-display,
 html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-checkbox,

@@ -1079,7 +1079,7 @@
 
     const nextName = await globalScope.AppDialog.showContent({
       title: "修改角色名稱",
-      message: "名稱會顯示在跑團模式，並自動帶入 PDF 匯出。",
+      message: "名稱會顯示在數值頁與跑團模式，並自動帶入 PDF 匯出。",
       trigger,
       cancelLabel: "取消",
       confirmLabel: "儲存名稱",
@@ -1903,6 +1903,13 @@
     return value !== null && value >= 0
       ? value
       : null;
+  }
+
+  // 玩家從角色卡進入跑團模式時，當前HP 空白就帶入最大HP；導覽的預覽不經過這裡，不改玩家資料。
+  function fillEmptyCurrentHp() {
+    if (!elements.currentHpSource || elements.currentHpSource.value.trim() !== "") return;
+    const maximumHp = readMaximumHp();
+    if (maximumHp > 0) setCurrentHp(maximumHp);
   }
 
   function setCurrentHp(value) {
@@ -2863,6 +2870,17 @@
     return inputs.length > 0 && ranked.length >= 4 && inputs.every(input => parseRollModifier(input.value) !== null);
   }
 
+  // 數值頁的名字框：跑團模式關閉時也要更新，所以不放在 renderDisplay。
+  function renderSheetCharacterName() {
+    const button = elements.sheetCharacterName;
+    if (!button) return;
+    const name = combatState.characterName;
+    const text = button.querySelector(".character-name-display__text") || button;
+    text.textContent = name || "點我輸入";
+    button.classList.toggle("is-placeholder", !name);
+    button.title = name;
+  }
+
   function renderSummary() {
     if (elements.characterName) {
       const name = combatState.characterName || "點我修改角色名稱";
@@ -3372,6 +3390,7 @@
       globalScope.cancelAnimationFrame(scheduledRender);
       scheduledRender = 0;
     }
+    renderSheetCharacterName();
     renderDisplay();
   }
 
@@ -5212,6 +5231,11 @@
             "tabletop-title"
           ),
 
+        sheetCharacterName:
+          document.getElementById(
+            "character-name-display"
+          ),
+
         ac:
           document.getElementById(
             "tabletop-ac"
@@ -5457,6 +5481,7 @@
           }
           const introKey = "dnd.tabletopIntroSeen.v1";
           if (globalScope.dndStorage?.getItem(introKey)) {
+            fillEmptyCurrentHp();
             applyModeVisibility("tabletop");
             return;
           }
@@ -5469,11 +5494,20 @@
           });
           if (!confirmed) return;
           globalScope.dndStorage?.setItem(introKey, "1");
+          fillEmptyCurrentHp();
           applyModeVisibility("tabletop");
         }
       );
 
     elements.characterName
+      ?.addEventListener(
+        "click",
+        (event) => {
+          requestCharacterName(event.currentTarget);
+        }
+      );
+
+    elements.sheetCharacterName
       ?.addEventListener(
         "click",
         (event) => {
@@ -5688,6 +5722,7 @@
 
     populateConditionOptions();
     bindEvents();
+    renderSheetCharacterName();
 
     syncSpellPanelAvailability();
 

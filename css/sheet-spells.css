@@ -1951,3 +1951,12 @@ button.spell-picked-jump:active {
   text-align: center;
 }
 
+/* 自動計算時施法調整、豁免難度、命中加值唯讀（index.html 的 syncAutomaticKeyStatsMode），比照技能頁看起來是結果而不是輸入欄。 */
+#tab-spells .spell-casting-stats input[readonly] {
+  border-color: var(--border);
+  background: transparent;
+  box-shadow: none;
+  caret-color: transparent;
+  cursor: default;
+}
+
