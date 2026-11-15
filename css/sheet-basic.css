@@ -89,14 +89,13 @@
   grid-template-columns: 1fr;
 }
 
-/* 兩張卡片共用四欄：最大HP／當前HP／生命骰（佔兩欄）；AC／速度／被動察覺／先攻。上下欄線對齊。 */
-.basic-row--vitals .basic-metric-values,
-.basic-row--combat .basic-metric-values {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+/* 最大HP／當前HP／生命骰三欄等寬；AC／速度／被動察覺／先攻四欄等寬。 */
+.basic-row--vitals .basic-metric-values {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.basic-row--vitals .basic-pair-field--hit-dice {
-  grid-column: span 2;
+.basic-row--combat .basic-metric-values {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .basic-row--combat .speed-current-display {
@@ -269,10 +268,14 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* 四欄改兩欄：生命骰自成一列，AC／速度、被動察覺／先攻排成 2×2。 */
+  /* 改兩欄：生命骰自成一列，AC／速度、被動察覺／先攻排成 2×2。 */
   .basic-row--vitals .basic-metric-values,
   .basic-row--combat .basic-metric-values {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .basic-row--vitals .basic-pair-field--hit-dice {
+    grid-column: span 2;
   }
 }
 

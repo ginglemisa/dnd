@@ -2191,6 +2191,40 @@ async function verifyCharacterFeatures(browser, url) {
       assert.equal((await reminders.textContent()).includes("等級 8"), false, "restored warnings reflect current choices");
       await page.locator("#level").selectOption("8");
     }
+    // 種族延伸選單：右緣與種族欄對齊；高等精靈戲法在左、傳承在右（同背景｜種族欄線），選單只顯示中文並可「查看」；生命骰三欄等寬。
+    for (const width of [1280, 375, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      const edges = selector => page.locator(selector).evaluate(el => {
+        const rect = el.getBoundingClientRect();
+        return [Math.round(rect.left), Math.round(rect.right)];
+      });
+      for (const [race, control] of [["goliath", "#goliath-ancestry"], ["dragonborn", "#dragonborn-ancestry"], ["gnome", "#gnome-lineage"]]) {
+        await page.locator("#race").selectOption(race);
+        assert.equal((await edges(control))[1], (await edges("#race"))[1], `${race} option select reaches the race column edge at ${width}px`);
+      }
+      await page.locator("#race").selectOption("elf");
+      await page.locator("#elf-lineage").selectOption("high_elf");
+      const cantripEdges = await edges("#high-elf-cantrip-control");
+      if (width >= 360) {
+        assert.deepEqual(await edges("#elf-lineage"), await edges("#race"), `high elf lineage sits under the race column at ${width}px`);
+        assert.deepEqual(cantripEdges, await edges("#background"), `high elf cantrip and view fill the background column at ${width}px`);
+      } else {
+        assert.deepEqual([cantripEdges, await edges("#elf-lineage")], [await edges("#race"), await edges("#race")], `high elf choices stack at ${width}px`);
+      }
+      assert.equal(await page.locator("#high-elf-cantrip option:checked").textContent(), "魔法伎倆", "high elf cantrip options show the Chinese name only");
+      assert.equal(await page.locator("#high-elf-cantrip-view").isEnabled(), true);
+      const vitalWidths = await page.locator(".basic-row--vitals .basic-metric-values > *").evaluateAll(cells => cells.map(cell => Math.round(cell.getBoundingClientRect().width)));
+      if (width >= 360) assert.equal(new Set(vitalWidths).size, 1, `max HP, current HP and hit dice share equal widths at ${width}px`);
+      await page.locator("#race").selectOption("dwarf");
+    }
+    await page.locator("#race").selectOption("elf");
+    await page.locator("#high-elf-cantrip-view").click();
+    await page.locator("#quick-build-spell-detail-content").filter({ hasText: "魔法伎倆" }).waitFor();
+    await page.keyboard.press("Escape");
+    await page.locator("#quick-build-spell-detail").waitFor({ state: "hidden" });
+    await page.locator("#elf-lineage").selectOption("wood_elf");
+    assert.equal(await page.locator("#high-elf-cantrip-control").isVisible(), false, "other lineages hide the cantrip choice and its view button");
+    await page.locator("#race").selectOption("dwarf");
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.locator("#class").selectOption("rogue");
     await page.locator("#level").selectOption("1");
