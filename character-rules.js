@@ -428,24 +428,56 @@
     return hitDie ? Object.freeze({ Y: hitDie, Z: hitDie / 2 + 1 }) : { Y: 0, Z: 0 };
   }
 
-  /** 計算最大生命值，包含矮人與術士的專案既有加值規則。 */
-  function calculateCharacterMaxHp(options = {}) {
+  /** 職業或子職能力的顯示名稱（計算說明用；規則判斷仍用能力 ID）。 */
+  function getClassFeatureName(className, featureId, subclassId) {
+    return getClassFeatureRules(className, subclassId).find(feature => feature.id === featureId)?.name || "";
+  }
+
+  /**
+   * 最大生命值的算式明細，calculateCharacterMaxHp 與計算說明視窗共用：{ total, hitDie, level, rows }。
+   * rows 為 [{ label, detail, expression, value }]，不符合條件的加值不列；體質調整值一定列。
+   * magicHitPointSources 是 [{ label, perLevel }]（getActiveMagicEffects().sources 的 hitPointsPerLevel），沒給時以「魔法物品」一行顯示。
+   */
+  function getCharacterMaxHpBreakdown(options = {}) {
     const className = String(options.className || "").trim();
     const level = Number.parseInt(options.level, 10);
     const normalizedLevel = Number.isFinite(level) && level > 0 ? level : 1;
     const constitutionModifier = calculateAbilityModifier(options.constitutionScore);
     const { Y: firstLevelHp, Z: laterLevelHp } = getHitDiceValues(className);
+    const rows = [];
+    const add = (label, detail, expression, value) => rows.push({ label, detail, expression, value });
 
-    let maxHp = firstLevelHp
-      + constitutionModifier * normalizedLevel
-      + laterLevelHp * (normalizedLevel - 1);
+    add("1 級：生命骰最大值", `d${firstLevelHp} 的最大值`, String(firstLevelHp), firstLevelHp);
+    if (normalizedLevel > 1) {
+      add("2 級起每級固定值", `${firstLevelHp} ÷ 2 + 1 = ${laterLevelHp}，共 ${normalizedLevel - 1} 個等級`,
+        `${laterLevelHp} × ${normalizedLevel - 1}`, laterLevelHp * (normalizedLevel - 1));
+    }
+    add("體質調整值 × 等級", "", `${formatSignedValue(constitutionModifier) || "0"} × ${normalizedLevel}`, constitutionModifier * normalizedLevel);
 
-    maxHp += (getRaceRules(options.race)?.hpPerLevel || 0) * normalizedLevel;
-    if (hasClassFeature(className, "sorcerer-draconic-resilience", normalizedLevel, options.subclass)) maxHp += normalizedLevel;
-    if (options.hasToughFeat) maxHp += normalizedLevel * 2;
+    const race = getRaceRules(options.race);
+    const racePerLevel = race?.hpPerLevel || 0;
+    if (racePerLevel) {
+      const traitNames = (race.traits || []).filter(trait => trait.hpPerLevel).map(trait => trait.name);
+      add(traitNames.join("、") || race.name, `種族：每級 +${racePerLevel}`, `${racePerLevel} × ${normalizedLevel}`, racePerLevel * normalizedLevel);
+    }
+    if (hasClassFeature(className, "sorcerer-draconic-resilience", normalizedLevel, options.subclass)) {
+      add(getClassFeatureName(className, "sorcerer-draconic-resilience", options.subclass), "子職：每級 +1", `1 × ${normalizedLevel}`, normalizedLevel);
+    }
+    if (options.hasToughFeat) add("強韌體魄", "專長：每級 +2", `2 × ${normalizedLevel}`, normalizedLevel * 2);
     // 魔法物品的每級生命值上限加值（狂戰斧，getActiveMagicEffects().hitPointsPerLevel）。
-    maxHp += (Number(options.magicHitPointsPerLevel) || 0) * normalizedLevel;
-    return maxHp;
+    const magicPerLevel = Number(options.magicHitPointsPerLevel) || 0;
+    const magicSources = (options.magicHitPointSources || []).filter(source => source.perLevel);
+    const listed = magicSources.reduce((sum, source) => sum + source.perLevel, 0) === magicPerLevel
+      ? magicSources : magicPerLevel ? [{ label: "魔法物品", perLevel: magicPerLevel }] : [];
+    listed.forEach(source => add(source.label, `魔法物品：每級 ${formatSignedValue(source.perLevel)}`,
+      `${source.perLevel} × ${normalizedLevel}`, source.perLevel * normalizedLevel));
+
+    return { total: rows.reduce((sum, row) => sum + row.value, 0), hitDie: firstLevelHp, level: normalizedLevel, rows };
+  }
+
+  /** 計算最大生命值，包含矮人與術士的專案既有加值規則（明細見 getCharacterMaxHpBreakdown）。 */
+  function calculateCharacterMaxHp(options = {}) {
+    return getCharacterMaxHpBreakdown(options).total;
   }
 
   /** 將生命值輸入四捨五入並限制在 0～200；空值或無效值回傳空字串。 */
@@ -999,10 +1031,6 @@
   }
 
   /**
-   * 計算 AC，包含無甲防禦、護甲、盾牌、防禦戰鬥風格與魔法物品加值（magicBonus，由 getActiveMagicEffects() 算出、呼叫端決定哪些部分生效）。
-   * unarmoredBaseAc：魔法物品給的沒穿護甲時基礎 AC（大法師法袍 15，加敏捷調整值，可用盾牌），和無甲防禦等算法取最高。
-   */
-  /**
    * calculateArmorClass 採用的算法（kind）與它讀的屬性（abilities，屬性欄 id）。兩者共用同一份判斷：
    * 角色卡在自動計算時，任一個要讀的屬性空白就讓 AC 留空（重甲不讀屬性，照算）。
    * 選項同 calculateArmorClass（armor、className、level、subclass、hasAnyShield）；未知的護甲分類 kind 為 null。
@@ -1023,7 +1051,14 @@
     return { kind: "unarmored", abilities: ["dex"] };
   }
 
-  function calculateArmorClass(options = {}) {
+  /**
+   * AC 的算式明細，calculateArmorClass 與計算說明視窗共用：{ total, summary, rows: [{ label, detail, value }] }；算不出來時為 null。
+   * summary 是採用哪一種算法的一句話。選項同 calculateArmorClass，另可傳：
+   * armorLabel（護甲的顯示名稱）、unarmoredBaseLabel（給沒穿護甲基礎 AC 的物品名稱）、
+   * shieldNote（持盾但不加 AC 的原因，例如未受盾牌訓練）、magicBonuses（[{ label, value }]，有給時取代 magicBonus）。
+   */
+  function getArmorClassBreakdown(options = {}) {
+    const className = String(options.className || "").trim();
     const dexModifier = calculateAbilityModifier(options.dexterityScore);
     const constitutionModifier = calculateAbilityModifier(options.constitutionScore);
     const wisdomModifier = calculateAbilityModifier(options.wisdomScore);
@@ -1032,26 +1067,70 @@
     if (options.hasArmor && !armor) return null;
 
     const { kind } = getArmorClassFormula(options);
-    let armorClass;
-    if (kind === "draconic") armorClass = 10 + charismaModifier + dexModifier;
-    else if (kind === "monk") armorClass = 10 + dexModifier + wisdomModifier;
-    else if (kind === "barbarian") armorClass = 10 + dexModifier + constitutionModifier;
-    else if (kind === "unarmored") armorClass = 10 + dexModifier;
-    const unarmoredBaseAc = Number(options.unarmoredBaseAc) || 0;
-    if (!armor && unarmoredBaseAc) armorClass = Math.max(armorClass, unarmoredBaseAc + dexModifier);
+    let rows = [];
+    let summary = "";
+    const base = (label, detail = "") => ({ label, detail, value: 10 });
+    const ability = (label, value, detail = "") => ({ label: `${label}調整值`, detail, value });
     if (armor) {
       const armorBase = Number.parseInt(armor.AC, 10);
       if (!Number.isFinite(armorBase)) return null;
-      if (kind === "heavy") armorClass = armorBase;
-      else if (kind === "medium") armorClass = armorBase + Math.min(2, dexModifier);
-      else if (kind === "light") armorClass = armorBase + dexModifier;
-      else return null;
+      const name = options.armorLabel || armor.名稱 || "護甲";
+      if (kind === "heavy") {
+        summary = `穿著${name}（重甲）：護甲的 AC，不加敏捷調整值。`;
+        rows = [{ label: `${name}（重甲）`, detail: "", value: armorBase }];
+      } else if (kind === "medium") {
+        summary = `穿著${name}（中甲）：護甲的 AC ＋ 敏捷調整值，敏捷最多加 2。`;
+        rows = [{ label: `${name}（中甲）`, detail: "", value: armorBase },
+          ability("敏捷", Math.min(2, dexModifier), dexModifier > 2 ? `敏捷調整值 ${formatSignedValue(dexModifier)}，中甲最多 +2` : "")];
+      } else if (kind === "light") {
+        summary = `穿著${name}（輕甲）：護甲的 AC ＋ 敏捷調整值。`;
+        rows = [{ label: `${name}（輕甲）`, detail: "", value: armorBase }, ability("敏捷", dexModifier)];
+      } else {
+        return null;
+      }
+    } else {
+      if (kind === "draconic") {
+        const feature = getClassFeatureName(className, "sorcerer-draconic-resilience", options.subclass);
+        summary = `沒穿護甲，有${feature}：10 ＋ 敏捷調整值 ＋ 魅力調整值。`;
+        rows = [base("基礎", feature), ability("敏捷", dexModifier), ability("魅力", charismaModifier)];
+      } else if (kind === "monk") {
+        const feature = getClassFeatureName(className, "monk-unarmored-defense");
+        summary = `沒穿護甲也沒持盾，有${feature}：10 ＋ 敏捷調整值 ＋ 感知調整值。`;
+        rows = [base("基礎", feature), ability("敏捷", dexModifier), ability("感知", wisdomModifier)];
+      } else if (kind === "barbarian") {
+        const feature = getClassFeatureName(className, "barbarian-unarmored-defense");
+        summary = `沒穿護甲，有${feature}：10 ＋ 敏捷調整值 ＋ 體質調整值。`;
+        rows = [base("基礎", feature), ability("敏捷", dexModifier), ability("體質", constitutionModifier)];
+      } else {
+        summary = "沒穿護甲：10 ＋ 敏捷調整值。";
+        rows = [base("基礎"), ability("敏捷", dexModifier)];
+      }
+      // 大法師法袍：沒穿護甲時基礎 AC 15＋敏捷，和上面的算法取最高（一樣高時照上面的算法說明）。
+      const unarmoredBaseAc = Number(options.unarmoredBaseAc) || 0;
+      if (unarmoredBaseAc && unarmoredBaseAc + dexModifier > rows.reduce((sum, row) => sum + row.value, 0)) {
+        const label = options.unarmoredBaseLabel || "魔法物品";
+        summary = `沒穿護甲，${label}的基礎 AC 比較高：${unarmoredBaseAc} ＋ 敏捷調整值。`;
+        rows = [{ label: `${label}的基礎 AC`, detail: "", value: unarmoredBaseAc }, ability("敏捷", dexModifier)];
+      }
     }
 
-    if (options.hasShield) armorClass += 2;
-    if (armor && options.hasDefenseFightingStyle) armorClass += 1;
-    armorClass += Number(options.magicBonus) || 0;
-    return armorClass;
+    if (options.hasShield) rows.push({ label: "盾牌", detail: "", value: 2 });
+    else if (options.hasAnyShield && options.shieldNote) rows.push({ label: "盾牌", detail: options.shieldNote, value: 0 });
+    if (armor && options.hasDefenseFightingStyle) rows.push({ label: "防禦戰鬥風格", detail: "穿著護甲時", value: 1 });
+    const magicBonus = Number(options.magicBonus) || 0;
+    const magicBonuses = Array.isArray(options.magicBonuses) ? options.magicBonuses
+      : magicBonus ? [{ label: "魔法物品", value: magicBonus }] : [];
+    magicBonuses.filter(item => item.value).forEach(item => rows.push({ label: item.label, detail: "魔法物品", value: item.value }));
+    return { total: rows.reduce((sum, row) => sum + row.value, 0), summary, rows };
+  }
+
+  /**
+   * 計算 AC，包含無甲防禦、護甲、盾牌、防禦戰鬥風格與魔法物品加值（magicBonus，由 getActiveMagicEffects() 算出、呼叫端決定哪些部分生效）。
+   * unarmoredBaseAc：魔法物品給的沒穿護甲時基礎 AC（大法師法袍 15，加敏捷調整值，可用盾牌），和無甲防禦等算法取最高。
+   * 明細見 getArmorClassBreakdown。
+   */
+  function calculateArmorClass(options = {}) {
+    return getArmorClassBreakdown(options)?.total ?? null;
   }
 
   /** 將有限數值格式化為帶正負號的顯示文字；正數補上「+」。 */
@@ -1103,16 +1182,36 @@
    * 沒有種族（options.race 空白）時回傳空字串。
    */
   function calculateCharacterSpeed(options = {}) {
+    const breakdown = getCharacterSpeedBreakdown(options);
+    return breakdown ? String(breakdown.total) : "";
+  }
+
+  /**
+   * 速度的算式明細，calculateCharacterSpeed 與計算說明視窗共用：{ total, rows: [{ label, detail, value, display? }] }；
+   * 沒有種族或基礎速度不是數字時為 null。選項同 calculateCharacterSpeed，另可傳 minimumSpeedLabel（給「速度至少」的物品名稱）。
+   * 「速度至少」那一行不是加減，value 為 0、display 是顯示文字。
+   */
+  function getCharacterSpeedBreakdown(options = {}) {
     const baseSpeedValue = Number.parseFloat(options.baseSpeed);
     const race = String(options.race || "").trim();
     const className = String(options.className || "").trim();
     const level = Number.parseInt(options.level, 10);
     // 種族決定基礎速度：還沒選種族時不算（角色卡自動計算與 PDF 都留空）。
-    if (!race) return "";
+    if (!race) return null;
 
-    const raceSpeed = getRaceChoiceOption(race, String(options.raceChoice || "").trim())?.speed ?? getRaceRules(race)?.speed;
-    const baseSpeed = raceSpeed && raceSpeed !== DEFAULT_BASE_SPEED ? raceSpeed : baseSpeedValue;
-    if (!Number.isFinite(baseSpeed)) return "";
+    const raceRules = getRaceRules(race);
+    const raceChoice = getRaceChoiceOption(race, String(options.raceChoice || "").trim());
+    const raceSpeed = raceChoice?.speed ?? raceRules?.speed;
+    const usesRaceSpeed = Boolean(raceSpeed && raceSpeed !== DEFAULT_BASE_SPEED);
+    const baseSpeed = usesRaceSpeed ? raceSpeed : baseSpeedValue;
+    if (!Number.isFinite(baseSpeed)) return null;
+    // 種族速度 30 時數字取自基礎速度欄；欄位仍是 30（和種族一樣）就照樣寫出種族，玩家改過才寫「基礎速度欄」。
+    const raceSpeedName = raceChoice?.speed ? raceChoice.name : raceRules?.name;
+    const rows = [{
+      label: "基礎速度",
+      detail: (usesRaceSpeed || baseSpeed === raceSpeed) && raceSpeedName ? `種族：${raceSpeedName}` : "基礎速度欄",
+      value: baseSpeed
+    }];
 
     const monkBonusApplies = className === "monk"
       && Number.isFinite(level)
@@ -1128,15 +1227,26 @@
       && level >= 6
       && !options.isWearingHeavyArmor;
 
-    let classSpeedBonus = 0;
-    if (monkBonusApplies) classSpeedBonus = getClassProgressionValue("monk", "unarmoredMovement", level) || 0;
-    else if (barbarianBonusApplies || rangerBonusApplies) classSpeedBonus = 10;
-    const featSpeedBonus = options.hasSpeedyFeat ? 10 : 0;
+    if (monkBonusApplies) {
+      const bonus = getClassProgressionValue("monk", "unarmoredMovement", level) || 0;
+      if (bonus) rows.push({ label: getClassFeatureName("monk", "monk-unarmored-movement"), detail: "沒穿護甲、沒持盾", value: bonus });
+    } else if (barbarianBonusApplies) {
+      rows.push({ label: getClassFeatureName("barbarian", "barbarian-fast-movement"), detail: "沒穿重甲", value: 10 });
+    } else if (rangerBonusApplies) {
+      rows.push({ label: getClassFeatureName("ranger", "ranger-roving"), detail: "沒穿重甲", value: 10 });
+    }
+    if (options.hasSpeedyFeat) rows.push({ label: "迅捷步法", detail: "專長", value: 10 });
     const strengthRequirement = options.isWearingArmor ? parseArmorStrengthRequirement(options.armorStrengthRequirement) : 0;
     const strengthScore = parseExactSignedValue(options.strengthScore);
-    const armorStrengthPenalty = !options.ignoreArmorStrength && strengthRequirement > 0 && strengthScore !== null && strengthScore < strengthRequirement ? 10 : 0;
-    const speed = Math.max(0, baseSpeed + classSpeedBonus + featSpeedBonus - armorStrengthPenalty);
-    return String(Math.max(speed, Number(options.minimumSpeed) || 0));
+    if (!options.ignoreArmorStrength && strengthRequirement > 0 && strengthScore !== null && strengthScore < strengthRequirement) {
+      rows.push({ label: "護甲力量需求", detail: `力量 ${strengthScore} 低於需求 ${strengthRequirement}`, value: -10 });
+    }
+    const speed = Math.max(0, rows.reduce((sum, row) => sum + row.value, 0));
+    const minimumSpeed = Number(options.minimumSpeed) || 0;
+    if (minimumSpeed > speed) {
+      rows.push({ label: options.minimumSpeedLabel || "魔法物品", detail: `速度至少 ${minimumSpeed} 呎，取較高`, value: 0, display: `至少 ${minimumSpeed}` });
+    }
+    return { total: Math.max(speed, minimumSpeed), rows };
   }
 
   // 已知形態、最大 CR 與飛行以職業文本的 2／4／8 級野獸形態表為準；使用次數與時數取自德魯伊內容檔。
@@ -1174,9 +1284,16 @@
   }
 
   // 將純規則函式提供給 index.html 的傳統 script 呼叫。
+  // 屬性 ID 的中文名稱（計算說明的「力量調整值」等顯示文字）。
+  const CharacterAbilityLabels = Object.freeze({ str: "力量", dex: "敏捷", con: "體質", int: "智力", wis: "感知", cha: "魅力" });
+
   Object.assign(globalScope, {
     calculateAbilityModifier,
     CharacterSkillAbilities,
+    CharacterAbilityLabels,
+    getCharacterMaxHpBreakdown,
+    getArmorClassBreakdown,
+    getCharacterSpeedBreakdown,
     getDruidWildShapeRules,
     isDruidBeastAllowed,
     calculateWildShapeCheck,

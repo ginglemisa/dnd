@@ -1,6 +1,7 @@
 // rule-tips.js
 // 規則說明提示框：技能／規則說明詞表（skills_example_uses，含 SRD 傳奇恩惠專長的譯文）、提示標記（skillTip、createFeatureRuleTip、highlightFeatureRuleTerms），
-// 以及技能／狀態說明浮層（#skillPopup；標記帶 data-tip-text 時顯示這段即時文字）與野獸資料卡浮層（#beastPopup，內容由 monster.js 的 createBeastCard 產生，含網站版／SRD 版切換）。
+// 以及技能／狀態說明浮層（#skillPopup；標記帶 data-tip-text 時顯示這段即時文字）與野獸資料卡浮層（#beastPopup，內容由 monster.js 的 createBeastCard 產生，含網站版／SRD 版切換），
+// 還有角色卡數字的計算浮層（#calculation-popup）與計算說明視窗（內容由 index.html 的 getCalculationTip 提供）。
 // 同步載入，位置緊接 sheet-spells.js（原本 index.html 行內浮層程式所在處）：浮層在解析到這裡時建立，事件監聽的註冊順序與原本相同。
 // 浮層與事件只在有 document 時建立；建置工具（tools/content/site-sources.js）在沒有 document 的 vm 沙箱讀取詞表時略過。
 
@@ -289,9 +290,95 @@ function hideSkillPopup({ restoreFocus = false } = {}) {
   if (restoreFocus && trigger?.isConnected && !trigger.closest("[inert]")) trigger.focus({ preventScroll: true });
 }
 
+// ====== 計算浮層與計算說明視窗 =====
+// 一般角色卡上標了 data-calculation 的數字（武器命中與傷害、先攻、豁免、技能、最大 HP、AC 等）：
+// 點擊或聚焦後按 Enter 時，向 index.html 的 getCalculationTip(trigger) 要內容，規則與數字都由它算，這裡只負責顯示。
+// 內容：{ kind: "popup" | "dialog", title, summary?, rows: [{ label, detail?, expression?, value }], total: { label, value }, notes? }；
+// 回傳 null 表示目前不提供（自動計算關閉、欄位空白等）。popup 是貼在數字下方的浮層，dialog 用 AppDialog 開視窗。
+if (typeof document !== "undefined") (function setupCalculationPopup() {
+  if (document.getElementById("calculation-popup")) return;
+
+  const popup = document.createElement("div");
+  popup.id = "calculation-popup";
+  popup.setAttribute("role", "dialog");
+  document.body.appendChild(popup);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideCalculationPopup();
+    // 唯讀的數字欄可以用 Tab 聚焦；按 Enter 和點擊一樣。可以輸入時（自動計算關閉）不攔截。
+    // 不是輸入框的數字（裝備頁「目前 AC」）在可以看說明時是 role="button"，Enter 與空白鍵都可以。
+    const trigger = e.target.closest?.("[data-calculation]");
+    const isButton = trigger?.getAttribute("role") === "button";
+    if (!trigger || !(e.key === "Enter" || (isButton && e.key === " ")) || !(trigger.readOnly || isButton)) return;
+    if (showCalculationTip(trigger)) e.preventDefault();
+  });
+
+  document.addEventListener("click", (e) => {
+    const trigger = e.target.closest?.("[data-calculation]");
+    if (trigger) {
+      showCalculationTip(trigger);
+      return;
+    }
+    if (!e.target.closest?.("#calculation-popup")) hideCalculationPopup();
+  }, true);
+})();
+
+function renderCalculationPopupHtml(tip) {
+  return `<div class="calculation-popup-title">${escapeHtml(tip.title)}</div>
+    <div class="calculation-popup-rows">${tip.rows.map(row => `<div><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(String(row.value))}</strong></div>`).join("")}</div>
+    <div class="calculation-popup-total"><span>${escapeHtml(tip.total.label)}</span><strong>${escapeHtml(String(tip.total.value))}</strong></div>`;
+}
+
+function renderCalculationDialogHtml(tip) {
+  const hasExpression = tip.rows.some(row => row.expression);
+  const cell = (className, text) => `<td class="${className}">${escapeHtml(String(text ?? ""))}</td>`;
+  const rows = tip.rows.map(row => `<tr><th scope="row">${escapeHtml(row.label)}${row.detail
+    ? `<span class="calculation-dialog-detail">${escapeHtml(row.detail)}</span>` : ""}</th>${hasExpression
+    ? cell("calculation-dialog-expression", row.expression) : ""}${cell("calculation-dialog-value", row.value)}</tr>`).join("");
+  const notes = (tip.notes || []).map(note => `<p class="calculation-dialog-note">${String(note).split("\n").map(escapeHtml).join("<br>")}</p>`).join("");
+  return `${tip.summary ? `<p class="calculation-dialog-summary">${escapeHtml(tip.summary)}</p>` : ""}
+    <table class="calculation-dialog-table"><tbody>${rows}</tbody>
+      <tfoot><tr><th scope="row">${escapeHtml(tip.total.label)}</th>${hasExpression ? "<td></td>" : ""}${cell("calculation-dialog-value", tip.total.value)}</tr></tfoot>
+    </table>${notes}`;
+}
+
+// 有內容可顯示時回傳 true。
+function showCalculationTip(trigger) {
+  const tip = typeof getCalculationTip === "function" ? getCalculationTip(trigger) : null;
+  if (!tip) {
+    hideCalculationPopup();
+    return false;
+  }
+  if (tip.kind === "dialog") {
+    hideCalculationPopup();
+    window.AppDialog?.showMessage({
+      title: tip.title,
+      variant: "calculation",
+      trigger,
+      renderContent(body) { body.insertAdjacentHTML("beforeend", renderCalculationDialogHtml(tip)); }
+    });
+    return true;
+  }
+  const popup = document.getElementById("calculation-popup");
+  popup.innerHTML = renderCalculationPopupHtml(tip);
+  popup.setAttribute("aria-label", tip.title);
+  popup.style.display = "block";
+  const rect = trigger.getBoundingClientRect();
+  const left = Math.max(10, Math.min(rect.left, window.innerWidth - popup.offsetWidth - 10));
+  const top = Math.max(10, Math.min(rect.bottom + 8, window.innerHeight - popup.offsetHeight - 10));
+  popup.style.left = `${left}px`;
+  popup.style.top = `${top}px`;
+  return true;
+}
+
+function hideCalculationPopup() {
+  const popup = document.getElementById("calculation-popup");
+  if (popup) popup.style.display = "none";
+}
+
 // 讓共用說明浮層可用滑鼠或觸控拖移；事件委派也能涵蓋稍後建立的浮層。
 if (typeof document !== "undefined") (function setupDraggableContextPopups() {
-  const popupSelector = "#beastPopup, #skillPopup, #weaponRulePopup";
+  const popupSelector = "#beastPopup, #skillPopup, #weaponRulePopup, #calculation-popup";
   let dragState = null;
 
   document.addEventListener("pointerdown", (event) => {

@@ -1208,7 +1208,7 @@ async function verifyEquipmentLoadout(browser, url) {
     // 陽炎劍同調後還改成光耀傷害（第 2 步的詞彙：damageType）。
     assert.deepEqual((await magicNumbers({ mainHand: "陽炎劍", ...inventoryOf({ uid: "sun", itemId: "長劍", quantity: 1, attuned: true, magic: { id: "sun-blade" } }) })).main,
       ["+8", "1d10+5光耀"], "attuned items apply");
-    const details = await page.evaluate(() => { const result = calculateHandAttacks()[0].details; return [result.magicLabel, result.magicAttackBonus, result.magicDamageBonus, renderAttackCalculationPopup(result, "hit").includes("陽炎劍")]; });
+    const details = await page.evaluate(() => { const result = calculateHandAttacks()[0].details; return [result.magicLabel, result.magicAttackBonus, result.magicDamageBonus, renderCalculationPopupHtml(buildAttackCalculationTip(result, "hit")).includes("陽炎劍")]; });
     assert.deepEqual(details, ["陽炎劍", 2, 2, true], "attack details list the magic bonus");
     assert.match(await page.locator("#equipment-loadout-summary-content").textContent(), /陽炎劍：.*魔法 \+2/u, "the loadout summary names the magic weapon and its bonus");
     const armored = { armor: "鎖子甲+1", offHand: "盾牌+2" };
@@ -1281,7 +1281,7 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.deepEqual(await page.evaluate(() => {
       const details = calculateHandAttacks()[0].details;
       const summary = document.getElementById("equipment-loadout-summary-content").textContent;
-      return { popup: renderAttackCalculationPopup(details, "damage").includes("霜銘（長劍）額外傷害</span><strong>1d6 冷凍"), summary: [summary.includes("1d10 揮砍＋1d6 冷凍"), summary.includes("冰點以下的溫度中發光")] };
+      return { popup: renderCalculationPopupHtml(buildAttackCalculationTip(details, "damage")).includes("霜銘（長劍）額外傷害</span><strong>1d6 冷凍"), summary: [summary.includes("1d10 揮砍＋1d6 冷凍"), summary.includes("冰點以下的溫度中發光")] };
     }), { popup: true, summary: [true, true] }, "the damage popup and the loadout summary list the extra die and the weapon note");
     assert.deepEqual(await magicNumbers({ mainHand: "霜銘（長劍）", ...inventoryOf({ ...frost, attuned: false }) }).then(result => result.main), ["+6", "1d10+3揮砍"], "Frost Brand needs attunement");
     assert.deepEqual(await magicNumbers({ mainHand: "長劍", offHand: "惡毒武器（短劍）", ...inventoryOf({ uid: "plain", itemId: "長劍", quantity: 1 }, { uid: "vicious", itemId: "短劍", quantity: 1, magic: { id: "vicious-weapon" } }) }),
@@ -1300,14 +1300,14 @@ async function verifyEquipmentLoadout(browser, url) {
     // 射手護腕：穿著時長弓、短弓傷害 +2，其他武器不變。
     const bracersOn = { uid: "archery", quantity: 1, attuned: true, worn: true, magic: { id: "bracers-of-archery" } };
     assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf({ uid: "bow", itemId: "長弓", quantity: 1 }, bracersOn) }).then(result => result.main), ["+5", "1d8+4穿刺"], "Bracers of Archery add damage to longbows");
-    assert.deepEqual(await page.evaluate(() => renderAttackCalculationPopup(calculateHandAttacks()[0].details, "damage").includes("射手護腕")), true, "the damage popup names the bracers");
+    assert.deepEqual(await page.evaluate(() => renderCalculationPopupHtml(buildAttackCalculationTip(calculateHandAttacks()[0].details, "damage")).includes("射手護腕")), true, "the damage popup names the bracers");
     assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf({ uid: "bow", itemId: "長弓", quantity: 1 }, { ...bracersOn, worn: false }) }).then(result => result.main), ["+5", "1d8+2穿刺"], "bracers in the pack add nothing");
     assert.deepEqual(await magicNumbers({ mainHand: "長劍", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, bracersOn) }).then(result => result.main), ["+6", "1d10+3揮砍"], "bracers leave other weapons alone");
     // 第 8 步：裝備中的魔法彈藥加在拿著對應武器的那一手（長弓配箭矢）；沒裝備、種類不同或只是普通彈藥都不加。
     const bow = { uid: "bow", itemId: "長弓", quantity: 1 };
     const arrows = (extra = {}) => ({ uid: "arrows", itemId: "箭矢", quantity: 20, magic: { id: "ammunition-plus", bonus: 1 }, ...extra });
     assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf(bow, arrows({ ammo: true })) }).then(result => result.main), ["+6", "1d8+3穿刺"], "equipped +1 arrows add to the longbow");
-    assert.deepEqual(await page.evaluate(() => [renderAttackCalculationPopup(calculateHandAttacks()[0].details, "hit").includes("箭矢+1"), document.getElementById("equipment-loadout-summary-content").textContent.includes("魔法 +1")]), [true, true], "the hit popup and the loadout summary name the ammunition");
+    assert.deepEqual(await page.evaluate(() => [renderCalculationPopupHtml(buildAttackCalculationTip(calculateHandAttacks()[0].details, "hit")).includes("箭矢+1"), document.getElementById("equipment-loadout-summary-content").textContent.includes("魔法 +1")]), [true, true], "the hit popup and the loadout summary name the ammunition");
     assert.deepEqual(await magicNumbers({ mainHand: "長弓", ...inventoryOf(bow, arrows()) }).then(result => result.main), ["+5", "1d8+2穿刺"], "arrows that are not equipped add nothing");
     assert.deepEqual(await magicNumbers({ mainHand: "輕弩", ...inventoryOf({ uid: "xbow", itemId: "輕弩", quantity: 1 }, arrows({ ammo: true })) }).then(result => result.main), ["+5", "1d8+2穿刺"], "arrows do not fit a crossbow");
     assert.deepEqual(await magicNumbers({ mainHand: "長劍", offHand: "手弩", ...inventoryOf({ uid: "sword", itemId: "長劍", quantity: 1 }, { uid: "hxbow", itemId: "手弩", quantity: 1 }, { uid: "bolts", itemId: "弩矢", quantity: 10, magic: { id: "ammunition-plus", bonus: 3 }, ammo: true }) }),
@@ -1453,7 +1453,7 @@ async function verifyEquipmentLoadout(browser, url) {
       applyStateObject({ ...base, "prof-str": true, "prof-con": true, ...extra });
       const value = id => document.getElementById(id).value;
       return {
-        str: [value("str"), document.querySelector("#str-mod .modifier-main").textContent, document.querySelector("#str-mod .ability-effect-tip")?.getAttribute("aria-label") || ""],
+        str: [value("str"), document.querySelector("#str-mod .modifier-main").textContent, document.querySelector('.ability-effect-tip[data-ability="str"]')?.getAttribute("aria-label") || ""],
         con: [document.querySelector("#con-mod .modifier-main").textContent, value("hp-display"), value("save-con")],
         checks: [value("skill-運動"), value("save-str"), value("atk-main-hit"), getCarryCapacityPounds()],
         saved: collectStateObject().str
@@ -1688,7 +1688,7 @@ async function verifyEquipmentLoadout(browser, url) {
     await abilityNumbers(inventoryOf(giantBelt));
     const previousTab = await page.evaluate(() => document.querySelector(".tab-content:not([hidden])")?.id.replace(/^tab-/u, "") || "");
     await page.evaluate(() => showTab("basic"));
-    await page.locator("#str-mod .ability-effect-tip").click();
+    await page.locator('.ability-effect-tip[data-ability="str"]').click();
     assert.deepEqual(await page.evaluate(() => [getComputedStyle(document.getElementById("skillPopup")).display, document.querySelector("#skillPopup .title").textContent, document.querySelector("#skillPopup .content").textContent.replace(/\s+/gu, "")]),
       ["block", "力量", "力量有效21・巨人之力腰帶（山丘）"], "the marker opens the rule popup with the effective score and its source");
     await page.keyboard.press("Escape");
@@ -1877,13 +1877,91 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.deepEqual(await versatile({ offHandAsMain: true, offHand: "長棍", main2Shield: true }), ["1d8+3揮砍", "1d6+3鈍擊"], "main 2 mode with a shield is one-handed");
     assert.deepEqual(await versatile({ offHandAsMain: true, mainHand: "", offHand: "長劍" }), ["", "1d10+3揮砍"], "main hand 2 alone is two-handed");
     assert.deepEqual(await versatile({ mainHand: "短矛" }), ["1d8+3穿刺", ""], "throwing weapons show the melee two-handed die");
-    assert.match(await page.evaluate(() => renderAttackCalculationPopup(attackCalculationDetails.main, "damage")), /武器傷害（兩用，雙手）.*1d8.*投擲時武器傷害.*1d6/su, "the popup explains the two-handed and thrown dice");
+    assert.match(await page.evaluate(() => renderCalculationPopupHtml(buildAttackCalculationTip(attackCalculationDetails.main, "damage"))), /武器傷害（兩用，雙手）.*1d8.*投擲時武器傷害.*1d6/su, "the popup explains the two-handed and thrown dice");
     const versatileMonk = { class: "monk", str: "10", dex: "16", mainHand: "長棍" };
     assert.deepEqual(await versatile(versatileMonk), ["1d8+3鈍擊", ""], "a monk with a free hand uses the versatile die");
     assert.deepEqual(await versatile({ ...versatileMonk, offHand: "武藝" }), ["1d8+3鈍擊", "1d6+3鈍擊"], "martial arts counts as an empty hand");
     assert.deepEqual(await versatile({ ...versatileMonk, offHand: "匕首" }), ["1d6+3鈍擊", "1d6+3穿刺"], "a monk holding another weapon keeps the one-handed die");
     await versatile({ ...versatileMonk, level: "5" });
     assert.equal(await page.evaluate(() => attackCalculationDetails.main.usesVersatileDie), false, "a martial arts die at least as large is not labelled two-handed");
+
+    // 計算說明：自動算出的數字點了開浮層或視窗，明細的總和就是格子裡的數字；不符合條件的加值不列。
+    // 前面的兩用武器存檔沒有自動計算標記，載入時已把開關關掉；先打開再載入。
+    await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
+    await page.evaluate(state => applyStateObject(state), { ...versatileBase, __autoCalculatedChecks: true, race: "dwarf", level: "5", str: "16", dex: "14", con: "14", wis: "12",
+      offHand: "盾牌", "prof-str": true, "prof-con": true, "prof-運動": true, "prof-察覺": true });
+    const calculationTips = () => page.evaluate(() => {
+      const tip = id => {
+        const field = document.getElementById(id);
+        const result = getCalculationTip(field);
+        return result && { kind: result.kind, field: field.value, total: result.total.value, labels: result.rows.map(row => row.label), notes: result.notes || [] };
+      };
+      return { hp: tip("hp-display"), ac: tip("ac-display"), speed: tip("speed-display"), initiative: tip("initiative-input"),
+        passive: tip("passive-perception"), save: tip("save-str"), skill: tip("skill-運動"), spell: tip("spell-save-dc"), attack: tip("atk-main-hit") };
+    });
+    let tips = await calculationTips();
+    assert.deepEqual([tips.hp.kind, tips.hp.field, tips.hp.total, tips.hp.labels],
+      ["dialog", "49", "49", ["1 級：生命骰最大值", "2 級起每級固定值", "體質調整值 × 等級", "矮人剛毅"]], "the HP dialog lists only the sources that apply");
+    assert.match(tips.hp.notes[0], /^升級時也可以改用擲骰（d10 \+ 體質調整值）。\n若採用此規則，請在選單關閉「自動計算」。$/u);
+    assert.deepEqual([tips.ac.kind, tips.ac.field, tips.ac.total, tips.ac.labels], ["dialog", "14", "14", ["基礎", "敏捷調整值", "盾牌"]], "the AC dialog explains the unarmored formula and the shield");
+    assert.deepEqual([tips.speed.kind, tips.speed.field, tips.speed.total, tips.speed.labels], ["dialog", "30", "30 呎", ["基礎速度"]]);
+    // 種族速度 30、基礎速度欄也是 30：照樣寫出種族；玩家改過基礎速度欄才寫欄位。
+    const speedDetail = speed => page.evaluate(speed => {
+      document.getElementById("speed-input").value = speed;
+      return getCalculationTip(document.getElementById("speed-display")).rows[0].detail;
+    }, speed);
+    assert.equal(await speedDetail("30"), "種族：矮人", "a 30-foot race speed names the race");
+    assert.equal(await speedDetail("25"), "基礎速度欄", "an edited base speed names the field");
+    await speedDetail("30");
+    for (const key of ["initiative", "passive", "save", "skill", "spell", "attack"]) {
+      assert.deepEqual([tips[key].kind, tips[key].total], ["popup", tips[key].field], `the ${key} popup total matches the field`);
+    }
+    assert.deepEqual([tips.save.labels, tips.skill.labels], [["力量調整值", "熟練加值（5 級）"], ["力量調整值", "熟練加值（5 級）"]]);
+    const tabBeforeCalculation = await page.evaluate(() => document.querySelector(".tab-content.active")?.id.replace(/^tab-/, ""));
+    await page.evaluate(() => showTab("basic", document.querySelector('[aria-controls="tab-basic"]')));
+    await page.locator("#initiative-input").click();
+    assert.match(await page.locator("#calculation-popup").innerText(), /先攻計算[\s\S]*敏捷調整值[\s\S]*結果/u, "clicking the initiative opens the popup");
+    await page.locator("#hp-display").click();
+    const calculationDialog = page.locator('.app-dialog[data-variant="calculation"]');
+    await calculationDialog.waitFor();
+    assert.equal(await page.locator("#calculation-popup").isVisible(), false, "opening a dialog closes the popup");
+    assert.match(await calculationDialog.innerText(), /最大 HP[\s\S]*矮人剛毅[\s\S]*49/u);
+    await page.keyboard.press("Escape");
+    await calculationDialog.waitFor({ state: "detached" });
+    assert.equal(await page.evaluate(() => document.activeElement?.id), "hp-display", "closing the dialog returns focus to the number");
+    await page.keyboard.press("Enter");
+    await calculationDialog.waitFor();
+    await page.keyboard.press("Escape");
+    await calculationDialog.waitFor({ state: "detached" });
+    // 裝備頁「目前 AC」也開同一個 AC 視窗；可以看說明時是按鈕，鍵盤 Enter 也能開，關閉後焦點回到它。
+    await page.evaluate(() => showTab("equipment", document.querySelector('[aria-controls="tab-equipment"]')));
+    const equipmentAc = page.locator("#equipment-current-ac-value");
+    assert.deepEqual(await equipmentAc.evaluate(el => [el.textContent, el.getAttribute("role"), el.tabIndex, el.getAttribute("aria-label")]),
+      ["14", "button", 0, "目前 AC 14，查看計算"], "the equipment AC is a button while its calculation is available");
+    await equipmentAc.click();
+    await calculationDialog.waitFor();
+    assert.match(await calculationDialog.innerText(), /AC[\s\S]*盾牌[\s\S]*14/u, "the equipment AC opens the AC dialog");
+    await page.keyboard.press("Escape");
+    await calculationDialog.waitFor({ state: "detached" });
+    assert.equal(await page.evaluate(() => document.activeElement?.id), "equipment-current-ac-value");
+    await page.keyboard.press("Enter");
+    await calculationDialog.waitFor();
+    await page.keyboard.press("Escape");
+    await calculationDialog.waitFor({ state: "detached" });
+    await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = false; syncEquipmentAcCalculationTrigger(); });
+    assert.deepEqual(await equipmentAc.evaluate(el => [el.getAttribute("role"), el.hasAttribute("tabindex")]), [null, false], "manual AC is plain text");
+    await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; syncEquipmentAcCalculationTrigger(); });
+    await page.evaluate(tab => showTab(tab, document.querySelector(`[aria-controls="tab-${tab}"]`)), tabBeforeCalculation);
+    // 自動計算關閉：數字是玩家填的，不提供說明；武器命中看自己的 AUTO 開關，照常可以看。
+    await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = false; });
+    tips = await calculationTips();
+    assert.deepEqual([tips.hp, tips.initiative, tips.skill, tips.attack?.kind], [null, null, null, "popup"], "manual numbers have no calculation");
+    await page.evaluate(() => { document.getElementById("auto-calculate-key-stats-toggle").checked = true; });
+    // 施法數值：法術豁免難度＝8＋熟練加值＋施法屬性調整值。
+    await page.evaluate(state => applyStateObject(state), { __spellManagement: { version: 2, manual: false, entries: [] }, __autoCalculatedChecks: true, class: "wizard", level: "1", int: "16", "spellcasting-ability": "int" });
+    tips = await calculationTips();
+    assert.deepEqual([tips.spell?.kind, tips.spell?.field, tips.spell?.total, tips.spell?.labels],
+      ["popup", "13", "13", ["基礎", "熟練加值（1 級）", "智力調整值（施法屬性）"]], "the spell save DC popup lists 8, proficiency and the ability");
 
     // 刃之魔契：不再熟練全部軍用武器，只有標記為契約武器的那一把熟練、可用魅力；同時只有一把。
     // 傷害類型（預設黯蝕）存在 pactWeaponDamageType，裝備摘要視窗、刃之魔契卡片與跑團動作的下拉都是它的鏡像。

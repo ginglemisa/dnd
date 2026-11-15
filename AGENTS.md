@@ -58,7 +58,7 @@
 | 怪物（野獸、召喚物） | `content/srd/monsters/`（建置產物見上），`monster.js`（`BeastCatalog`、`createBeastCard`） |
 | 法術 | `content/srd/spells/`（建置產物見上），`spell-list.js`（`SpellCatalog`）建立索引與 API；SRD 譯文檢查 `tools/spell-reference/` |
 | 狀態、神祇 | `condition.js`、`deity-info.js` |
-| 規則說明提示框（技能／規則詞表、技能／狀態／野獸浮層） | `rule-tips.js`；野獸資料卡 `monster.js` 的 `createBeastCard`（網站版／SRD 版切換共用 `sheet-spells.js` 的 `createContentVersionView`） |
+| 規則說明提示框（技能／規則詞表、技能／狀態／野獸浮層、數字的計算浮層與計算說明視窗） | `rule-tips.js`（計算內容由 `index.html` 的 `getCalculationTip()` 提供）；野獸資料卡 `monster.js` 的 `createBeastCard`（網站版／SRD 版切換共用 `sheet-spells.js` 的 `createContentVersionView`） |
 | 魔法物品 | `content/srd/magic-items/`（建置產物見上），`magic-items.js`（`MagicItemCatalog`）；魔法商店模式與取得視窗 `magic-item-shop.js`（`MagicItemShop`） |
 | 裝備與商店 | `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；物品欄資料 `inventory.js`（`Inventory`）、標籤介面 `inventory-ui.js` |
 | 角色卡 DOM、初始化、持久化、分享 | `index.html` |

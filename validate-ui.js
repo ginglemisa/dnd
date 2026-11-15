@@ -5792,7 +5792,7 @@ async function verifyInventoryPersistence(browser, url) {
     ] } };
     const abilitySnapshot = target => target.evaluate(() => ({
       raw: [document.getElementById("str").value, document.getElementById("con").value, collectStateObject().str, collectStateObject().con],
-      shown: [document.querySelector("#str-mod .modifier-main").textContent, document.querySelector("#str-mod .ability-effect-tip").getAttribute("aria-label"), document.querySelector("#con-mod .modifier-main").textContent],
+      shown: [document.querySelector("#str-mod .modifier-main").textContent, document.querySelector('.ability-effect-tip[data-ability="str"]').getAttribute("aria-label"), document.querySelector("#con-mod .modifier-main").textContent],
       numbers: [document.getElementById("atk-main-hit").value, getCarryCapacityPounds()]
     }));
     const abilityExpected = {
@@ -6415,6 +6415,17 @@ async function verifyShareReadonlyMode(browser, url) {
     await page.locator("#armor").selectOption("鎖子甲");
     assert.equal(await page.locator("#ac-display").inputValue(), "16", "automatic AC follows the armor");
     assert.equal(await page.locator("#share-ac-warning").isVisible(), false, "no AC warning while calculation is automatic");
+    // 計算說明照常可以點開；數字本身仍鎖住。
+    await page.evaluate(() => showTab("skills", document.querySelector('[aria-controls="tab-skills"]')));
+    assert.equal(await isLocked("skill-運動"), true);
+    await page.locator("#skill-運動").click();
+    assert.match(await page.locator("#calculation-popup").innerText(), /運動計算[\s\S]*結果/u, "share mode opens the calculation popup on a locked number");
+    await page.evaluate(() => showTab("basic", document.querySelector('[aria-controls="tab-basic"]')));
+    await page.locator("#hp-display").click();
+    await page.locator('.app-dialog[data-variant="calculation"]').waitFor();
+    await page.keyboard.press("Escape");
+    await page.locator('.app-dialog[data-variant="calculation"]').waitFor({ state: "detached" });
+    await page.evaluate(() => showTab("equipment", document.querySelector('[aria-controls="tab-equipment"]')));
 
     // 自動計算關著：保留分享者的數字，只開放 AC；換護甲、換下盾牌與有熟練時換上盾牌才提示。
     const stats = { "hp-display": "99", "ac-display": "21", "speed-display": "45", "initiative-input": "+7", "passive-perception": "19" };

@@ -29,7 +29,11 @@
     "select[data-rest-change]"
   ].join(", ");
 
-  const AC_WARNING_TEXT = "更換護甲後 AC 不會自動重算，請自行修改數值";
+  // 點了會開計算說明的數字（rule-tips.js 的計算浮層與說明視窗）：仍照上面的規則鎖住不能改，只是點擊不攔截。
+  // 要讓其他數字也能看算式，在欄位加 data-calculation 並由 index.html 的 getCalculationTip 提供內容即可。
+  const CALCULATION_TRIGGERS = "[data-calculation]";
+
+  const AC_WARNING_TEXT ="更換護甲後 AC 不會自動重算，請自行修改數值";
   let active = false;
   let applyQueued = false;
   let acWarningHidden = false;
@@ -128,7 +132,7 @@
     if (!(target instanceof Element)) return;
     const control = target.matches("input, select, textarea") ? target
       : target.closest("button, a") ? null : target.closest("label")?.control;
-    if (control?.dataset.shareLocked !== "true") return;
+    if (control?.dataset.shareLocked !== "true" || control.matches(CALCULATION_TRIGGERS)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
   }

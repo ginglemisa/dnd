@@ -1976,6 +1976,77 @@ html[data-theme="dark"] .feat-desc-subtitle {
   text-decoration-style: solid;
 }
 
+/* 計算說明視窗（rule-tips.js，最大 HP、AC、速度）：一句算法說明、每行一個來源（名稱、補充、算式、數值）、總和與附註。 */
+.app-dialog[data-variant="calculation"] .app-dialog__surface {
+  width: min(100%, 28rem);
+}
+
+.app-dialog__body .calculation-dialog-summary {
+  margin-bottom: 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.calculation-dialog-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+}
+
+.calculation-dialog-table th,
+.calculation-dialog-table td {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border);
+  vertical-align: baseline;
+}
+
+.calculation-dialog-table th {
+  font-weight: 700;
+  text-align: left;
+}
+
+.calculation-dialog-detail {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+}
+
+.calculation-dialog-expression {
+  padding-inline: 0.75rem;
+  color: var(--text-muted);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.calculation-dialog-value {
+  color: var(--text);
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.calculation-dialog-table tfoot th,
+.calculation-dialog-table tfoot td {
+  padding-top: 0.65rem;
+  border-top: 2px solid var(--border-strong);
+  color: var(--text);
+}
+
+.calculation-dialog-table tfoot .calculation-dialog-value {
+  color: var(--accent);
+  font-size: var(--fs-xl);
+  font-weight: 900;
+}
+
+.app-dialog__body .calculation-dialog-note {
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
 *::before,

@@ -94,6 +94,8 @@ function raceRules(race) {
       id: trait.id,
       name: trait.name,
       level: trait.level || 1,
+      // 每級 HP 上限加值的來源特性（計算說明視窗顯示特性名稱；總和在種族的 hpPerLevel）。
+      ...(trait.hpPerLevel ? { hpPerLevel: trait.hpPerLevel } : {}),
       ...(trait.hint ? { hint: { panels: [...trait.hint.panels] } } : {}),
       ...(trait.resource ? { resource: { ...trait.resource, label: trait.resource.label || trait.name } } : {}),
       ...(trait.skillChoice ? { skillChoice: Array.isArray(trait.skillChoice) ? [...trait.skillChoice] : trait.skillChoice } : {}),

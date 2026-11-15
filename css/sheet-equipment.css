@@ -1804,7 +1804,19 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .equipment-summary-row .eq
   text-align: center;
 }
 
-#attack-calculation-popup {
+/* 自動計算時點了開 AC 的計算說明（rule-tips.js）；外觀不變，只換游標並加鍵盤焦點框。 */
+.equipment-current-ac strong[role="button"] {
+  cursor: pointer;
+}
+
+.equipment-current-ac strong[role="button"]:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* 計算浮層（rule-tips.js）：武器命中、傷害、先攻、豁免、技能等數字的算式。 */
+#calculation-popup {
   position: fixed;
   z-index: 10020;
   display: none;
@@ -1813,68 +1825,68 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .equipment-summary-row .eq
   color: var(--text-body);
 }
 
-:where(html:not([data-ui-theme="warm"])) #attack-calculation-popup {
+:where(html:not([data-ui-theme="warm"])) #calculation-popup {
   border: 1px solid rgba(114, 133, 176, 0.28);
   border-radius: 1rem;
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 18px 38px rgba(17, 31, 63, 0.18);
 }
 
-:where(html[data-ui-theme="warm"]) #attack-calculation-popup {
+:where(html[data-ui-theme="warm"]) #calculation-popup {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface-strong);
   box-shadow: var(--shadow-strong);
 }
 
-.attack-calculation-title {
+.calculation-popup-title {
   margin-bottom: 0.6rem;
   color: var(--text);
   font-size: var(--fs-md);
   font-weight: 900;
 }
 
-.attack-calculation-rows {
+.calculation-popup-rows {
   display: grid;
   gap: 0.4rem;
 }
 
-.attack-calculation-rows div,
-.attack-calculation-total {
+.calculation-popup-rows div,
+.calculation-popup-total {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
 }
 
-.attack-calculation-rows span,
-.attack-calculation-total span {
+.calculation-popup-rows span,
+.calculation-popup-total span {
   color: var(--text-muted);
   font-size: var(--fs-sm);
   font-weight: 700;
 }
 
-.attack-calculation-rows strong {
+.calculation-popup-rows strong {
   color: var(--text);
   font-size: var(--fs-sm);
   font-weight: 900;
   text-align: right;
 }
 
-.attack-calculation-total {
+.calculation-popup-total {
   align-items: baseline;
   margin-top: 0.65rem;
   padding-top: 0.65rem;
 }
 
-:where(html:not([data-ui-theme="warm"])) .attack-calculation-total {
+:where(html:not([data-ui-theme="warm"])) .calculation-popup-total {
   border-top: 1px solid rgba(151, 168, 201, 0.3);
 }
 
-:where(html[data-ui-theme="warm"]) .attack-calculation-total {
+:where(html[data-ui-theme="warm"]) .calculation-popup-total {
   border-top: 1px solid var(--border);
 }
 
-.attack-calculation-total strong {
+.calculation-popup-total strong {
   color: var(--accent);
   font-size: var(--fs-xl);
   font-weight: 900;

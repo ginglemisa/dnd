@@ -355,6 +355,11 @@
   color: var(--auto-value);
 }
 
+/* 自動算出的數字點了會開計算說明（rule-tips.js）；外觀不變，只把滑鼠游標換成手指。 */
+:is(#tab-basic, #tab-skills, #tab-spells):not(.manual-key-stats) [data-calculation] {
+  cursor: pointer;
+}
+
 #tab-basic .derived-stat-input {
   margin: 0;
   caret-color: transparent;
@@ -695,9 +700,9 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   }
 }
 
-/* 魔法物品的 ✦（.skill-tip 按鈕，點了開規則說明浮層寫內容與物品）：屬性格調整值旁（有效值），
+/* 魔法物品的 ✦（.skill-tip 按鈕，點了開規則說明浮層寫內容與物品）：屬性格 STR 等縮寫右側（有效值），
    技能頁的技能名稱旁（優勢、技能加值）與「技能」標題旁（所有檢定、熟練加值）。沒有物品影響時不出現。 */
-.modifier button.ability-effect-tip,
+.ability-title button.ability-effect-tip,
 .skill-name button.skill-effect-tip,
 .skill-section-heading button.skill-effect-tip {
   display: inline-flex;
@@ -719,8 +724,8 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   text-decoration: none;
 }
 
-.modifier button.ability-effect-tip:hover,
-.modifier button.ability-effect-tip:active,
+.ability-title button.ability-effect-tip:hover,
+.ability-title button.ability-effect-tip:active,
 .skill-name button.skill-effect-tip:hover,
 .skill-name button.skill-effect-tip:active,
 .skill-section-heading button.skill-effect-tip:hover,
@@ -731,11 +736,19 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   transform: none;
 }
 
-.modifier button.ability-effect-tip:focus-visible,
+.ability-title button.ability-effect-tip:focus-visible,
 .skill-name button.skill-effect-tip:focus-visible,
 .skill-section-heading button.skill-effect-tip:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
+}
+
+/* 屬性格的 ✦ 接在 STR 等縮寫右側：上下負邊距抵掉 24px 點擊範圍、右邊負邊距抵掉自己的寬度，
+   標題高度與縮寫的置中位置都不變。 */
+.ability-title button.ability-effect-tip {
+  margin: -0.3rem -24px -0.3rem 0;
+  vertical-align: middle;
+  letter-spacing: 0;
 }
 
 /* 技能頁的 ✦ 接在文字後面：上下負邊距抵掉 24px 點擊範圍，格子與標題高度不變。 */

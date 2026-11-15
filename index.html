@@ -108,17 +108,17 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261115-auto-value">
   <link rel="stylesheet" href="css/base.css?v=20261115-race-options">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261115-attack-auto-value">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261115-attack-auto-value">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261116-calculation-tips">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261116-calculation-tips">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261114-spell-lock">
   <link rel="stylesheet" href="css/utility.css?v=20261111-menu-layout">
   <link rel="stylesheet" href="css/dice.css?v=20261115-basic-align">
-  <link rel="stylesheet" href="css/dialogs.css?v=20261115-attack-auto-value">
+  <link rel="stylesheet" href="css/dialogs.css?v=20261116-calculation-tips">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
   <link rel="stylesheet" href="css/tabletop.css?v=20261115-dialog-motion-85">
   <link rel="stylesheet" href="css/tabletop-hud.css?v=20261113-info-icon">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
-  <link rel="stylesheet" href="css/late-overrides.css?v=20261115-attack-auto-value">
+  <link rel="stylesheet" href="css/late-overrides.css?v=20261116-calculation-tips">
   <link rel="stylesheet" href="css/quick-build.css?v=20261114-ability-float">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261112-magic-effects-9" defer></script>
@@ -138,7 +138,7 @@
   <script src="spell-list.js?v=20261111-magic-effects-6" defer></script>
   <script src="condition.js?v=20261111-magic-abilities" defer></script>
   <script src="action-panel.js?v=20261113-dash-wording" defer></script>
-  <script src="character-rules.js?v=20261115-basic-align" defer></script>
+  <script src="character-rules.js?v=20261116-calculation-tips" defer></script>
   <script src="app-dialog.js?v=20261115-dialog-motion" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
@@ -153,7 +153,7 @@
   <script src="quick-build.js?v=20261114-ability-float" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
   <script src="spell-management.js?v=20261107-share-readonly" defer></script>
-  <script src="share-readonly.js?v=20261107-share-menu" defer></script>
+  <script src="share-readonly.js?v=20261116-calculation-tips" defer></script>
   <script src="class-option-memory.js?v=20261106-background-memory" defer></script>
   <script src="page-swipe.js?v=20261110-page-swipe" defer></script>
   <script src="deity-info.js" defer></script>
@@ -827,7 +827,7 @@
       <div class="basic-metric-values">
         <div class="basic-combat-field">
           <div class="mini-stat-label">最大HP</div>
-          <input id="hp-display" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="" aria-label="最大生命值" readonly>
+          <input id="hp-display" data-calculation="max-hp" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="" aria-label="最大生命值" readonly>
         </div>
         <div class="basic-combat-field">
           <div class="mini-stat-label">當前HP</div>
@@ -856,20 +856,20 @@
       <div class="basic-metric-values">
         <div class="basic-combat-field">
           <div class="mini-stat-label">AC</div>
-          <input id="ac-display" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="" aria-label="護甲等級" readonly>
+          <input id="ac-display" data-calculation="ac" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="" aria-label="護甲等級" readonly>
         </div>
         <div class="basic-combat-field">
           <div class="mini-stat-label">速度</div>
           <input type="number" id="speed-input" class="sr-only" value="30" aria-label="基礎速度">
-          <input id="speed-display" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" value="" aria-label="速度" readonly>
+          <input id="speed-display" data-calculation="speed" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" value="" aria-label="速度" readonly>
         </div>
         <div class="basic-combat-field">
           <div class="mini-stat-label">被動察覺</div>
-          <input id="passive-perception" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="被動察覺" readonly>
+          <input id="passive-perception" data-calculation="passive-perception" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="被動察覺" readonly>
         </div>
         <div class="basic-combat-field">
           <div class="mini-stat-label">先攻</div>
-          <input id="initiative-input" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="先攻" readonly>
+          <input id="initiative-input" data-calculation="initiative" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="先攻" readonly>
         </div>
       </div>
       <div hidden>
@@ -990,12 +990,12 @@
   <div class="section" id="save-section">
     <div class="skill-section-heading"><h3>屬性豁免</h3><button type="button" id="calculate-saves-button" class="skill-calc-button" onclick="fillSaves()" hidden>填入計算值</button></div>
   <div class="save-grid">
-    <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">力量</span></label><input type="text" inputmode="numeric" id="save-str"></div>
-    <div class="save-pair"><label class="save-name" for="prof-dex"><input type="checkbox" id="prof-dex"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">敏捷</span></label><input type="text" inputmode="numeric" id="save-dex"></div>
-    <div class="save-pair"><label class="save-name" for="prof-con"><input type="checkbox" id="prof-con"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">體質</span></label><input type="text" inputmode="numeric" id="save-con"></div>
-    <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">智力</span></label><input type="text" inputmode="numeric" id="save-int"></div>
-    <div class="save-pair"><label class="save-name" for="prof-wis"><input type="checkbox" id="prof-wis"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">感知</span></label><input type="text" inputmode="numeric" id="save-wis"></div>
-    <div class="save-pair"><label class="save-name" for="prof-cha"><input type="checkbox" id="prof-cha"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">魅力</span></label><input type="text" inputmode="numeric" id="save-cha"></div>
+    <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">力量</span></label><input type="text" inputmode="numeric" data-calculation="save" id="save-str"></div>
+    <div class="save-pair"><label class="save-name" for="prof-dex"><input type="checkbox" id="prof-dex"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">敏捷</span></label><input type="text" inputmode="numeric" data-calculation="save" id="save-dex"></div>
+    <div class="save-pair"><label class="save-name" for="prof-con"><input type="checkbox" id="prof-con"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">體質</span></label><input type="text" inputmode="numeric" data-calculation="save" id="save-con"></div>
+    <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">智力</span></label><input type="text" inputmode="numeric" data-calculation="save" id="save-int"></div>
+    <div class="save-pair"><label class="save-name" for="prof-wis"><input type="checkbox" id="prof-wis"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">感知</span></label><input type="text" inputmode="numeric" data-calculation="save" id="save-wis"></div>
+    <div class="save-pair"><label class="save-name" for="prof-cha"><input type="checkbox" id="prof-cha"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">魅力</span></label><input type="text" inputmode="numeric" data-calculation="save" id="save-cha"></div>
   </div>
 </div>
 
@@ -1011,23 +1011,23 @@
       <div class="skill-stack">
         <div class="skill-group">
           <h4 class="skill-group-heading"><span>力量</span><span class="skill-group-mod" data-ability="str"></span></h4>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="運動">運動</span><span class="skill-ability">(力量)</span></div><input type="text" inputmode="numeric" id="skill-運動"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="運動">運動</span><span class="skill-ability">(力量)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-運動"></div>
         </div>
         <div class="skill-group">
           <h4 class="skill-group-heading"><span>敏捷</span><span class="skill-group-mod" data-ability="dex"></span></h4>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-體操" data-skill-rank="體操" aria-label="體操 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-體操" class="circle-checkbox" data-skill-rank="體操" aria-label="體操 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="體操">體操</span><span class="skill-ability">(敏捷)</span></div><input type="text" inputmode="numeric" id="skill-體操"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-巧手" data-skill-rank="巧手" aria-label="巧手 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-巧手" class="circle-checkbox" data-skill-rank="巧手" aria-label="巧手 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="巧手">巧手</span><span class="skill-ability">(敏捷)</span></div><input type="text" inputmode="numeric" id="skill-巧手"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-隱匿" data-skill-rank="隱匿" aria-label="隱匿 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-隱匿" class="circle-checkbox" data-skill-rank="隱匿" aria-label="隱匿 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="隱匿">隱匿</span><span class="skill-ability">(敏捷)</span></div><input type="text" inputmode="numeric" id="skill-隱匿"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-體操" data-skill-rank="體操" aria-label="體操 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-體操" class="circle-checkbox" data-skill-rank="體操" aria-label="體操 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="體操">體操</span><span class="skill-ability">(敏捷)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-體操"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-巧手" data-skill-rank="巧手" aria-label="巧手 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-巧手" class="circle-checkbox" data-skill-rank="巧手" aria-label="巧手 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="巧手">巧手</span><span class="skill-ability">(敏捷)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-巧手"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-隱匿" data-skill-rank="隱匿" aria-label="隱匿 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-隱匿" class="circle-checkbox" data-skill-rank="隱匿" aria-label="隱匿 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="隱匿">隱匿</span><span class="skill-ability">(敏捷)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-隱匿"></div>
         </div>
       </div>
       <div class="skill-stack">
         <div class="skill-group">
           <h4 class="skill-group-heading"><span>智力</span><span class="skill-group-mod" data-ability="int"></span></h4>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-奧秘" data-skill-rank="奧秘" aria-label="奧秘 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-奧秘" class="circle-checkbox" data-skill-rank="奧秘" aria-label="奧秘 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="奧秘">奧秘</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" id="skill-奧秘"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-歷史" data-skill-rank="歷史" aria-label="歷史 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-歷史" class="circle-checkbox" data-skill-rank="歷史" aria-label="歷史 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="歷史">歷史</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" id="skill-歷史"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-調查" data-skill-rank="調查" aria-label="調查 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-調查" class="circle-checkbox" data-skill-rank="調查" aria-label="調查 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="調查">調查</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" id="skill-調查"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-自然" data-skill-rank="自然" aria-label="自然 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-自然" class="circle-checkbox" data-skill-rank="自然" aria-label="自然 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="自然">自然</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" id="skill-自然"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-宗教" data-skill-rank="宗教" aria-label="宗教 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-宗教" class="circle-checkbox" data-skill-rank="宗教" aria-label="宗教 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="宗教">宗教</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" id="skill-宗教"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-奧秘" data-skill-rank="奧秘" aria-label="奧秘 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-奧秘" class="circle-checkbox" data-skill-rank="奧秘" aria-label="奧秘 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="奧秘">奧秘</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-奧秘"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-歷史" data-skill-rank="歷史" aria-label="歷史 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-歷史" class="circle-checkbox" data-skill-rank="歷史" aria-label="歷史 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="歷史">歷史</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-歷史"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-調查" data-skill-rank="調查" aria-label="調查 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-調查" class="circle-checkbox" data-skill-rank="調查" aria-label="調查 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="調查">調查</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-調查"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-自然" data-skill-rank="自然" aria-label="自然 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-自然" class="circle-checkbox" data-skill-rank="自然" aria-label="自然 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="自然">自然</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-自然"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-宗教" data-skill-rank="宗教" aria-label="宗教 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-宗教" class="circle-checkbox" data-skill-rank="宗教" aria-label="宗教 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="宗教">宗教</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-宗教"></div>
         </div>
       </div>
     </div>
@@ -1035,20 +1035,20 @@
       <div class="skill-stack">
         <div class="skill-group">
           <h4 class="skill-group-heading"><span>感知</span><span class="skill-group-mod" data-ability="wis"></span></h4>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-馴獸" data-skill-rank="馴獸" aria-label="馴獸 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-馴獸" class="circle-checkbox" data-skill-rank="馴獸" aria-label="馴獸 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="馴獸">馴獸</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" id="skill-馴獸"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-洞悉" data-skill-rank="洞悉" aria-label="洞悉 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-洞悉" class="circle-checkbox" data-skill-rank="洞悉" aria-label="洞悉 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="洞悉">洞悉</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" id="skill-洞悉"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-醫藥" data-skill-rank="醫藥" aria-label="醫藥 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-醫藥" class="circle-checkbox" data-skill-rank="醫藥" aria-label="醫藥 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="醫藥">醫藥</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" id="skill-醫藥"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-察覺" data-skill-rank="察覺" aria-label="察覺 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-察覺" class="circle-checkbox" data-skill-rank="察覺" aria-label="察覺 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="察覺">察覺</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" id="skill-察覺"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-求生" data-skill-rank="求生" aria-label="求生 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-求生" class="circle-checkbox" data-skill-rank="求生" aria-label="求生 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="求生">求生</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" id="skill-求生"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-馴獸" data-skill-rank="馴獸" aria-label="馴獸 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-馴獸" class="circle-checkbox" data-skill-rank="馴獸" aria-label="馴獸 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="馴獸">馴獸</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-馴獸"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-洞悉" data-skill-rank="洞悉" aria-label="洞悉 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-洞悉" class="circle-checkbox" data-skill-rank="洞悉" aria-label="洞悉 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="洞悉">洞悉</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-洞悉"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-醫藥" data-skill-rank="醫藥" aria-label="醫藥 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-醫藥" class="circle-checkbox" data-skill-rank="醫藥" aria-label="醫藥 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="醫藥">醫藥</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-醫藥"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-察覺" data-skill-rank="察覺" aria-label="察覺 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-察覺" class="circle-checkbox" data-skill-rank="察覺" aria-label="察覺 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="察覺">察覺</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-察覺"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-求生" data-skill-rank="求生" aria-label="求生 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-求生" class="circle-checkbox" data-skill-rank="求生" aria-label="求生 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="求生">求生</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-求生"></div>
         </div>
       </div>
       <div class="skill-stack">
         <div class="skill-group">
           <h4 class="skill-group-heading"><span>魅力</span><span class="skill-group-mod" data-ability="cha"></span></h4>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-欺瞞" data-skill-rank="欺瞞" aria-label="欺瞞 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-欺瞞" class="circle-checkbox" data-skill-rank="欺瞞" aria-label="欺瞞 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="欺瞞">欺瞞</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" id="skill-欺瞞"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-威嚇" data-skill-rank="威嚇" aria-label="威嚇 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-威嚇" class="circle-checkbox" data-skill-rank="威嚇" aria-label="威嚇 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="威嚇">威嚇</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" id="skill-威嚇"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-表演" data-skill-rank="表演" aria-label="表演 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-表演" class="circle-checkbox" data-skill-rank="表演" aria-label="表演 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="表演">表演</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" id="skill-表演"></div>
-          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-遊說" data-skill-rank="遊說" aria-label="遊說 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-遊說" class="circle-checkbox" data-skill-rank="遊說" aria-label="遊說 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="遊說">遊說</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" id="skill-遊說"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-欺瞞" data-skill-rank="欺瞞" aria-label="欺瞞 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-欺瞞" class="circle-checkbox" data-skill-rank="欺瞞" aria-label="欺瞞 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="欺瞞">欺瞞</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-欺瞞"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-威嚇" data-skill-rank="威嚇" aria-label="威嚇 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-威嚇" class="circle-checkbox" data-skill-rank="威嚇" aria-label="威嚇 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="威嚇">威嚇</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-威嚇"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-表演" data-skill-rank="表演" aria-label="表演 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-表演" class="circle-checkbox" data-skill-rank="表演" aria-label="表演 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="表演">表演</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-表演"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-遊說" data-skill-rank="遊說" aria-label="遊說 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-遊說" class="circle-checkbox" data-skill-rank="遊說" aria-label="遊說 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="遊說">遊說</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" data-calculation="skill" id="skill-遊說"></div>
         </div>
       </div>
     </div>
@@ -1141,8 +1141,8 @@
     </div>
     <div class="weapon-attack-fields" role="group" aria-label="主手攻擊欄位">
       <label class="weapon-attack-name">名稱<input type="text" id="atk-main-name" placeholder="尚未裝備"></label>
-      <label>命中<input type="text" id="atk-main-hit" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="main" data-attack-calculation="hit"></label>
-      <label>傷害<input type="text" id="atk-main-dmg" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="main" data-attack-calculation="damage"></label>
+      <label>命中<input type="text" id="atk-main-hit" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="main" data-calculation="attack-hit"></label>
+      <label>傷害<input type="text" id="atk-main-dmg" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="main" data-calculation="attack-damage"></label>
       <input type="text" id="atk-main-note" class="weapon-attack-free-note" aria-label="主手攻擊備註" placeholder="備註：">
     </div>
   </section>
@@ -1150,8 +1150,8 @@
     <h4 id="atk-off-title"><span id="atk-off-title-text">副手攻擊</span><button type="button" id="atk-off-mastery" class="weapon-mastery-badge" data-weapon-rule-kind="mastery" hidden></button></h4>
     <div id="atk-off-fields" class="weapon-attack-fields" role="group" aria-label="副手攻擊欄位">
       <label class="weapon-attack-name">名稱<input type="text" id="atk-off-name" placeholder="尚未裝備"></label>
-      <label>命中<input type="text" id="atk-off-hit" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="off" data-attack-calculation="hit"></label>
-      <label>傷害<input type="text" id="atk-off-dmg" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="off" data-attack-calculation="damage"></label>
+      <label>命中<input type="text" id="atk-off-hit" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="off" data-calculation="attack-hit"></label>
+      <label>傷害<input type="text" id="atk-off-dmg" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="off" data-calculation="attack-damage"></label>
       <input type="text" id="atk-off-note" class="weapon-attack-free-note" aria-label="副手攻擊備註" placeholder="備註：">
     </div>
   </section>
@@ -1237,7 +1237,7 @@
       <h4 id="equipment-loadout-summary-title">目前裝備摘要</h4>
       <div id="equipment-loadout-summary-content" class="equipment-loadout-summary-content" aria-live="polite"></div>
       <div class="equipment-current-ac">
-        <span>目前 AC</span><strong id="equipment-current-ac-value">10</strong>
+        <span>目前 AC</span><strong id="equipment-current-ac-value" data-calculation="ac" data-calculation-field="ac-display">10</strong>
       </div>
     </section>
 
@@ -1361,11 +1361,11 @@
     </div>
     <div class="spell-casting-field">
       <div class="stat-label">豁免難度</div>
-      <input type="number" id="spell-save-dc" inputmode="numeric" aria-label="豁免難度" min="0" max="30" placeholder="">
+      <input type="number" id="spell-save-dc" data-calculation="spell-save-dc" inputmode="numeric" aria-label="豁免難度" min="0" max="30" placeholder="">
     </div>
     <div class="spell-casting-field">
       <div class="stat-label">命中加值</div>
-      <input type="text" id="spell-attack-bonus" inputmode="numeric" aria-label="命中加值" maxlength="4" placeholder="">
+      <input type="text" id="spell-attack-bonus" data-calculation="spell-attack" inputmode="numeric" aria-label="命中加值" maxlength="4" placeholder="">
     </div>
   </div>
   <p id="manual-spell-hint-sheet" class="manual-spell-source-hint" hidden></p>
@@ -1546,15 +1546,21 @@ function updateHPDisplay() {
     document.getElementById("hp-display").value = "";
     return;
   }
-  const maxHp = calculateCharacterMaxHp({
-    className: classValue,
+  document.getElementById("hp-display").value = String(calculateCharacterMaxHp(getMaxHpCalculationOptions()));
+}
+
+// 最大 HP 的計算選項：角色卡數字與計算說明視窗共用。
+function getMaxHpCalculationOptions(magic = getActiveMagicEffects()) {
+  return {
+    className: document.getElementById("class").value,
     level: document.getElementById("level").value || "1",
-    constitutionScore: getEffectiveAbilityValue("con") || "10",
+    constitutionScore: getEffectiveAbilityValue("con", magic) || "10",
     race: document.getElementById("race").value,
     hasToughFeat: hasSelectedFeat("強韌體魄"),
-    magicHitPointsPerLevel: getActiveMagicEffects().hitPointsPerLevel
-  });
-  document.getElementById("hp-display").value = String(maxHp);
+    magicHitPointsPerLevel: magic.hitPointsPerLevel,
+    magicHitPointSources: magic.sources.filter(source => source.hitPointsPerLevel)
+      .map(source => ({ label: source.label, perLevel: source.hitPointsPerLevel }))
+  };
 }
 
 const AUTOMATIC_KEY_STAT_IDS = Object.freeze([
@@ -1602,6 +1608,7 @@ function syncAutomaticKeyStatsMode({ refresh = true } = {}) {
   document.getElementById("tab-basic")?.classList.toggle("manual-key-stats", !automatic);
   document.getElementById("tab-skills")?.classList.toggle("manual-key-stats", !automatic);
   document.getElementById("tab-spells")?.classList.toggle("manual-key-stats", !automatic);
+  syncEquipmentAcCalculationTrigger();
   // 上面的迴圈會解開唯讀；分享模式只留 AC 可改。
   window.ShareReadonly?.apply();
   if (automatic && refresh) refreshAutomaticKeyStats();
@@ -1861,19 +1868,21 @@ function updateSpeedDisplay() {
   const speedDisplay = document.getElementById("speed-display");
   if (!speedDisplay || !isAutomaticKeyStatsEnabled() || typeof window.calculateCharacterSpeed !== "function") return;
 
-  const armorName = document.getElementById("armor")?.value || "";
-  const armor = getArmorByName(armorName);
-  const hasShield = isShieldItem(armorName) || isEffectiveEquippedShield();
-  const magic = getActiveMagicEffects();
-  const race = document.getElementById("race")?.value || "";
   // 還沒選種族時留空（不是算不出來的「--」）。
-  if (!race) {
+  if (!document.getElementById("race")?.value) {
     speedDisplay.value = "";
     return;
   }
-  speedDisplay.value = window.calculateCharacterSpeed({
+  speedDisplay.value = window.calculateCharacterSpeed(getSpeedCalculationOptions()) || "--";
+}
+
+// 速度的計算選項：角色卡數字與計算說明視窗共用。
+function getSpeedCalculationOptions(magic = getActiveMagicEffects()) {
+  const armorName = document.getElementById("armor")?.value || "";
+  const armor = getArmorByName(armorName);
+  return {
     baseSpeed: document.getElementById("speed-input")?.value,
-    race,
+    race: document.getElementById("race")?.value || "",
     raceChoice: getSelectedRaceChoiceValue(),
     className: document.getElementById("class")?.value,
     level: document.getElementById("level")?.value,
@@ -1882,9 +1891,9 @@ function updateSpeedDisplay() {
     armorStrengthRequirement: armor?.力量需求,
     ...getMagicSpeedOptions(magic),
     strengthScore: getEffectiveAbilityValue("str", magic),
-    hasShield,
+    hasShield: isShieldItem(armorName) || isEffectiveEquippedShield(),
     hasSpeedyFeat: hasSelectedFeat("迅捷步法")
-  }) || "--";
+  };
 }
 
 // 魔法物品給 calculateCharacterSpeed 的選項：速度至少（跑跳之靴）、不因護甲力量需求降速（跑跳之靴；秘銀護甲沒有力量需求，效果相同）。
@@ -2305,47 +2314,57 @@ function updateACDisplay() {
     updateEquipmentLoadoutSummary();
     return;
   }
-  const armorName = document.getElementById("armor")?.value;
-  const hasArmor = Boolean(armorName) && !isShieldItem(armorName);
-  const hasArmorShield = isShieldItem(armorName);
-  const className = document.getElementById("class")?.value;
-  const armor = hasArmor ? getArmorByName(armorName) : null;
-  const hasOffHandShield = isEffectiveEquippedShield();
-  // 未受盾牌訓練仍算持盾（影響無甲防禦），但不獲得盾牌的 AC 加值。
-  const hasShield = (hasOffHandShield || hasArmorShield)
-    && !(hasOffHandShield && hasArmorShield)
-    && isShieldProficient();
   const magic = getActiveMagicEffects();
-  const magicAc = magic.ac;
+  const options = getArmorClassCalculationOptions(magic);
   // 這次算法要讀的屬性（敏捷；野蠻人加體質、武僧加感知、龍族術士加魅力；重甲不讀）任一個空白就留空。
   // 找不到護甲資料時仍照舊顯示「--」。
-  const formula = getArmorClassFormula({ armor, className, level: document.getElementById("level")?.value || "1",
-    hasAnyShield: hasOffHandShield || hasArmorShield });
-  if (!(hasArmor && !armor) && formula.abilities.some(ability => !getEffectiveAbilityValue(ability, magic))) {
+  const formula = getArmorClassFormula(options);
+  if (!(options.hasArmor && !options.armor) && formula.abilities.some(ability => !getEffectiveAbilityValue(ability, magic))) {
     document.getElementById("ac-display").value = "";
     updateEquipmentLoadoutSummary();
     return;
   }
-  const armorClass = calculateArmorClass({
+  document.getElementById("ac-display").value = calculateArmorClass(options) ?? "--";
+  updateEquipmentLoadoutSummary();
+}
+
+// AC 的計算選項：角色卡數字與計算說明視窗共用。
+function getArmorClassCalculationOptions(magic = getActiveMagicEffects()) {
+  const armorName = document.getElementById("armor")?.value;
+  const hasArmor = Boolean(armorName) && !isShieldItem(armorName);
+  const hasArmorShield = isShieldItem(armorName);
+  const armor = hasArmor ? getArmorByName(armorName) : null;
+  const hasOffHandShield = isEffectiveEquippedShield();
+  const hasAnyShield = hasOffHandShield || hasArmorShield;
+  const bothShields = hasOffHandShield && hasArmorShield;
+  // 未受盾牌訓練仍算持盾（影響無甲防禦），但不獲得盾牌的 AC 加值。
+  const hasShield = hasAnyShield && !bothShields && isShieldProficient();
+  const magicAc = magic.ac;
+  // 魔法盾牌的加值和一般盾牌同一個條件（未受盾牌訓練時不算）；其他物品（防護戒指等）逐件列出，
+  // 總和等於 magicAc.other（getActiveMagicEffects 的 sources 只列這一類）。
+  const magicBonuses = [
+    armor && magicAc.armor ? { label: "護甲的魔法加值", value: magicAc.armor } : null,
+    hasShield && magicAc.shield ? { label: "盾牌的魔法加值", value: magicAc.shield } : null,
+    ...magic.sources.filter(source => source.ac).map(source => ({ label: source.label, value: source.ac }))
+  ].filter(Boolean);
+  return {
     armor,
+    armorLabel: armorName,
     hasArmor,
-    className,
+    className: document.getElementById("class")?.value,
     level: document.getElementById("level")?.value || "1",
-    dexterityScore: getEffectiveAbilityValue("dex") || "10",
-    constitutionScore: getEffectiveAbilityValue("con") || "10",
-    wisdomScore: getEffectiveAbilityValue("wis") || "10",
-    charismaScore: getEffectiveAbilityValue("cha") || "10",
-    hasAnyShield: hasOffHandShield || hasArmorShield,
+    dexterityScore: getEffectiveAbilityValue("dex", magic) || "10",
+    constitutionScore: getEffectiveAbilityValue("con", magic) || "10",
+    wisdomScore: getEffectiveAbilityValue("wis", magic) || "10",
+    charismaScore: getEffectiveAbilityValue("cha", magic) || "10",
+    hasAnyShield,
     hasShield,
+    shieldNote: hasAnyShield && !hasShield ? (bothShields ? "同時拿兩面盾牌，不加 AC" : "未受盾牌訓練，不加 AC") : "",
     hasDefenseFightingStyle: hasDefenseFightingStyleFeat(),
     // 大法師法袍：沒穿護甲時基礎 AC 15＋敏捷，和無甲防禦取最高。
     unarmoredBaseAc: magic.unarmoredAc,
-    // 魔法盾牌的加值和一般盾牌同一個條件（未受盾牌訓練時不算）。
-    magicBonus: (armor ? magicAc.armor : 0) + (hasShield ? magicAc.shield : 0) + magicAc.other
-  });
-
-  document.getElementById("ac-display").value = armorClass ?? "--";
-  updateEquipmentLoadoutSummary();
+    magicBonuses
+  };
 }
 // 計算AC底部
 
@@ -3186,15 +3205,17 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
         }
       }
 
-      // 調整值用有效值；魔法物品改變屬性時，調整值旁加 ✦ 標記，點了（觸控也可）在規則說明浮層顯示「有效 21・巨人之力腰帶（山丘）」。
+      // 調整值用有效值；魔法物品改變屬性時，STR 等縮寫右側加 ✦ 標記，點了（觸控也可）在規則說明浮層顯示「有效 21・巨人之力腰帶（山丘）」。
       const effective = getEffectiveAbilityScore(input.id);
       const mod = calculateModifier(effective.score ?? input.valueAsNumber);
+      const title = modDisplay.closest(".ability")?.querySelector(".ability-title");
+      title?.querySelector(".ability-effect-tip")?.remove();
       if (!mod) {
         modDisplay.textContent = "";
         return;
       }
       modDisplay.innerHTML = `<span class="modifier-main">${mod}</span>`;
-      if (effective.changed) modDisplay.appendChild(createAbilityEffectTip(input.id, effective));
+      if (effective.changed) title?.appendChild(createAbilityEffectTip(input.id, effective));
     }
 
     const ABILITY_EFFECT_LABELS = { str: "力量", dex: "敏捷", con: "體質", int: "智力", wis: "感知", cha: "魅力" };
@@ -3204,6 +3225,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
       const tip = document.createElement("button");
       tip.type = "button";
       tip.className = "skill-tip ability-effect-tip";
+      tip.dataset.ability = ability;
       tip.dataset.skill = label;
       tip.dataset.tipText = text;
       tip.textContent = "✦";
@@ -3279,15 +3301,51 @@ function syncProficiencyUseChecks() {
   });
 }
 
+// 計算說明的明細共用工具：rows 為 [{ label, value, text? }]，text 是不帶正負號的顯示文字（例如基礎 8）。
+function sumCalculationRows(rows) {
+  return rows.reduce((sum, row) => sum + row.value, 0);
+}
+
+// 魔法物品加值逐件列出（getActiveMagicEffects().sources）；逐件加總和 total 對不上時（例如只傳了部分效果）併成一行「魔法物品」。
+function getMagicBonusRows(effects, readValue, total) {
+  const rows = (effects?.sources || []).map(source => ({ label: source.label, value: readValue(source) || 0 })).filter(row => row.value);
+  const expected = Number(total) || 0;
+  if (sumCalculationRows(rows) === expected) return rows;
+  return expected ? [{ label: "魔法物品", value: expected }] : [];
+}
+
+// 「熟練加值（5 級）」；魔法物品提高熟練加值時加上物品名稱（艾恩石精進）。
+function getProficiencyBonusLabel(effects = getActiveMagicEffects()) {
+  const level = parseInt(document.getElementById("level")?.value || "1", 10);
+  const items = (effects?.sources || []).filter(source => source.proficiencyBonus).map(source => source.label);
+  return `熟練加值（${level} 級${items.length ? `，含${items.join("、")}` : ""}）`;
+}
+
+// 施法調整、豁免難度、命中加值的明細；沒選施法屬性時為 null。
+function getSpellCastingBreakdown() {
+  const ability = document.getElementById("spellcasting-ability")?.value;
+  if (!ability) return null;
+  const modifier = getModifier(ability);
+  const effects = getActiveMagicEffects();
+  const proficiency = { label: getProficiencyBonusLabel(effects), value: getProficiencyBonus(effects) };
+  const abilityRow = { label: `${CharacterAbilityLabels[ability] || ""}調整值（施法屬性）`, value: modifier };
+  // 魔法物品的加值只在自動計算開啟時算進去，關閉時比照 AC，玩家自己填的數字不動。
+  const magic = isAutomaticKeyStatsEnabled() ? effects : { spellAttack: 0, spellSaveDc: 0, sources: [] };
+  const saveDcRows = [{ label: "基礎", value: 8, text: "8" }, proficiency, abilityRow,
+    ...getMagicBonusRows(magic, source => source.spellSaveDc, magic.spellSaveDc)];
+  const attackRows = [proficiency, abilityRow, ...getMagicBonusRows(magic, source => source.spellAttack, magic.spellAttack)];
+  return {
+    modifier,
+    saveDc: { total: sumCalculationRows(saveDcRows), rows: saveDcRows },
+    attack: { total: sumCalculationRows(attackRows), rows: attackRows }
+  };
+}
+
 // 施法調整、豁免難度、命中加值的計算結果，順序同 AUTOMATIC_SPELL_STAT_IDS；沒選施法屬性時都是空白。
 function getNextSpellCastingTexts() {
-  const ability = document.getElementById("spellcasting-ability")?.value;
-  if (!ability) return ["", "", ""];
-  const mod = getModifier(ability);
-  const pb = getProficiencyBonus();
-  // 魔法物品的加值只在自動計算開啟時算進去，關閉時比照 AC，玩家自己填的數字不動。
-  const magic = isAutomaticKeyStatsEnabled() ? getActiveMagicEffects() : { spellAttack: 0, spellSaveDc: 0 };
-  return [formatSignedValue(mod), String(8 + pb + mod + magic.spellSaveDc), formatSignedValue(mod + pb + magic.spellAttack)];
+  const breakdown = getSpellCastingBreakdown();
+  if (!breakdown) return ["", "", ""];
+  return [formatSignedValue(breakdown.modifier), String(breakdown.saveDc.total), formatSignedValue(breakdown.attack.total)];
 }
 
 // 自動計算關閉時比照 HP、AC 與技能，不覆蓋玩家填的數字（包括重新整理與載入時），只更新武器攻擊。
@@ -3353,9 +3411,16 @@ function writeDerivedCheckValue(input, value) {
   if (input && input.value !== value) input.value = value;
 }
 
-// 守護靈氣的豁免加值只在跑團模式顯示（失能時移除），角色卡保留一般數值。
+// 豁免的明細：屬性調整值、熟練加值（有熟練時）、魔法物品。守護靈氣的豁免加值只在跑團模式顯示（失能時移除），角色卡保留一般數值。
+function getSaveBreakdown(ability, proficient, effects = getActiveMagicEffects()) {
+  const rows = [{ label: `${CharacterAbilityLabels[ability] || ""}調整值`, value: getModifier(ability, effects) }];
+  if (proficient) rows.push({ label: getProficiencyBonusLabel(effects), value: getProficiencyBonus(effects) });
+  rows.push(...getMagicBonusRows(effects, source => source.saves, effects.saves));
+  return { total: sumCalculationRows(rows), rows };
+}
+
 function getSaveTotal(ability, proficient, effects = getActiveMagicEffects()) {
-  return getModifier(ability, effects) + (proficient ? getProficiencyBonus(effects) : 0) + effects.saves;
+  return getSaveBreakdown(ability, proficient, effects).total;
 }
 
 function getNextSaveText(ability) {
@@ -3440,9 +3505,14 @@ function updatePassivePerceptionDisplay() {
 // 先攻的計算值；敏捷空白或無法判讀時為 null。effects 同 getModifier。
 // 魔法物品的所有屬性檢定加值（幸運石，effects.checks）也加在先攻（使用者決定）；角色卡、跑團與 PDF 都讀這個值。
 function getInitiativeTotal(effects = getActiveMagicEffects()) {
+  return getInitiativeBreakdown(effects)?.total ?? null;
+}
+
+// 先攻的明細：敏捷調整值、警覺（熟練加值）或萬事通、魔法物品的所有檢定加值；敏捷空白或無法判讀時為 null。
+function getInitiativeBreakdown(effects = getActiveMagicEffects()) {
   const dexScore = Number.parseInt(getEffectiveAbilityValue("dex", effects), 10);
   if (!Number.isFinite(dexScore)) return null;
-  const dexMod = calculateAbilityModifier(dexScore);
+  const rows = [{ label: "敏捷調整值", value: calculateAbilityModifier(dexScore) }];
   const hasAlertFeat = hasSelectedFeat(ALERT_FEAT_NAME);
   const proficiencyBonus = getProficiencyBonus(effects);
   const jackOfAllTradesBonus = getJackOfAllTradesBonus(
@@ -3451,7 +3521,10 @@ function getInitiativeTotal(effects = getActiveMagicEffects()) {
     hasAlertFeat,
     proficiencyBonus
   );
-  return dexMod + (hasAlertFeat ? proficiencyBonus : jackOfAllTradesBonus) + (effects.checks || 0);
+  if (hasAlertFeat) rows.push({ label: `${ALERT_FEAT_NAME}（${getProficiencyBonusLabel(effects)}）`, value: proficiencyBonus });
+  else if (jackOfAllTradesBonus) rows.push({ label: "萬事通（熟練加值的一半）", value: jackOfAllTradesBonus });
+  rows.push(...getMagicBonusRows(effects, source => source.checks, effects.checks));
+  return { total: sumCalculationRows(rows), rows };
 }
 
 function updateAutomaticInitiative() {
@@ -3463,37 +3536,46 @@ function updateAutomaticInitiative() {
 
 // 技能檢定的計算值（Map：技能 → 數字）。effects 同 getModifier；魔法物品的技能加值（skills）與所有檢定加值（checks）也加在這裡。
 function getSkillTotals(effects = getActiveMagicEffects()) {
+  return new Map([...getSkillBreakdowns(effects)].map(([skill, breakdown]) => [skill, breakdown.total]));
+}
+
+// 技能檢定的明細（Map：技能 → { total, rows }）：屬性調整值、熟練或專精、萬事通、職業選項的檢定加值、魔法物品。
+function getSkillBreakdowns(effects = getActiveMagicEffects()) {
   const skillMap = CharacterSkillAbilities;
-  const totals = new Map();
+  const breakdowns = new Map();
 
   const selectedClass = document.getElementById("class")?.value || "";
   const level = parseInt(document.getElementById("level")?.value || "1", 10);
   const proficiencyBonus = getProficiencyBonus(effects);
+  const proficiencyLabel = getProficiencyBonusLabel(effects);
   // 選項的 grants.checkBonus（魔術使、巫祝）：這些技能檢定加上屬性調整值（至少 min）。
-  const skillCheckBonuses = new Map();
-  getActiveClassGrants().forEach(({ grants }) => {
+  const skillCheckBonuses = [];
+  getActiveClassGrants().forEach(({ feature, option, grants }) => {
     if (!grants.checkBonus) return;
     const bonus = Math.max(grants.checkBonus.min, getModifier(grants.checkBonus.ability, effects));
-    grants.checkBonus.skills.forEach(skill => skillCheckBonuses.set(skill, (skillCheckBonuses.get(skill) || 0) + bonus));
+    skillCheckBonuses.push({ label: option?.name || feature.name, skills: grants.checkBonus.skills, value: bonus });
   });
 
   for (const skill in skillMap) {
     const ab = skillMap[skill];
-    const mod = getModifier(ab, effects);
     const profInput = document.getElementById("prof-" + skill);
     const expInput = document.getElementById("exp-" + skill);
     const input = document.getElementById("skill-" + skill);
     if (!input || !profInput || !expInput) continue;
 
-    const skillProficiencyBonus = expInput.checked ? proficiencyBonus * 2 : (profInput.checked ? proficiencyBonus : 0);
-    const featureBonus = skillCheckBonuses.get(skill) || 0;
+    const rows = [{ label: `${CharacterAbilityLabels[ab] || ""}調整值`, value: getModifier(ab, effects) }];
+    if (expInput.checked) rows.push({ label: "專精（熟練加值 ×2）", value: proficiencyBonus * 2 });
+    else if (profInput.checked) rows.push({ label: proficiencyLabel, value: proficiencyBonus });
     const jackOfAllTradesBonus = getJackOfAllTradesBonus(
       selectedClass, level, profInput.checked || expInput.checked, proficiencyBonus
     );
-    const magicBonus = (effects.skills?.[skill] || 0) + (effects.checks || 0);
-    totals.set(skill, mod + skillProficiencyBonus + featureBonus + jackOfAllTradesBonus + magicBonus);
+    if (jackOfAllTradesBonus) rows.push({ label: "萬事通（熟練加值的一半）", value: jackOfAllTradesBonus });
+    skillCheckBonuses.filter(item => item.skills.includes(skill)).forEach(item => rows.push({ label: item.label, value: item.value }));
+    rows.push(...getMagicBonusRows(effects, source => source.skills?.[skill], effects.skills?.[skill]));
+    rows.push(...getMagicBonusRows(effects, source => source.checks, effects.checks));
+    breakdowns.set(skill, { total: sumCalculationRows(rows), rows });
   }
-  return totals;
+  return breakdowns;
 }
 
 // 技能（skill-*）、豁免（save-*）與先攻（initiative-input）的計算值；不是這三種或屬性空白時為 null。
@@ -3509,6 +3591,104 @@ function getDerivedCheckTotal(id, effects = getActiveMagicEffects()) {
   }
   if (id === "initiative-input") return getInitiativeTotal(effects);
   return null;
+}
+
+// 計算浮層與計算說明視窗的內容（rule-tips.js 在點擊或按 Enter 時呼叫，格式見該檔「計算浮層與計算說明視窗」）。
+// 數字欄標 data-calculation；欄位空白、自動計算關閉或跑團模式時回傳 null。武器命中、傷害看武器攻擊自己的 AUTO 開關。
+// 不是輸入框的顯示（裝備頁「目前 AC」）用 data-calculation-field 指向真正的數字欄，空白與否看那一欄。
+function getCalculationTip(trigger) {
+  const type = trigger?.dataset?.calculation;
+  const field = trigger?.dataset?.calculationField ? document.getElementById(trigger.dataset.calculationField) : trigger;
+  if (!type || !String(field?.value ?? "").trim()) return null;
+  if (type === "attack-hit" || type === "attack-damage") return getAttackCalculationTip(trigger);
+  if (!isAutomaticKeyStatsEnabled() || document.documentElement.dataset.viewMode === "tabletop") return null;
+  if (type === "max-hp") return getMaxHpCalculationTip();
+  if (type === "ac") return getArmorClassCalculationTip();
+  if (type === "speed") return getSpeedCalculationTip();
+  if (type === "passive-perception") {
+    const perception = parseSignedValue(document.getElementById("skill-察覺")?.value);
+    return buildCalculationPopupTip("被動察覺計算", { total: 10 + perception, rows: [
+      { label: "基礎", value: 10, text: "10" }, { label: "察覺技能", value: perception }] }, String);
+  }
+  if (type === "initiative") return buildCalculationPopupTip("先攻計算", getInitiativeBreakdown());
+  if (type === "save") {
+    const ability = trigger.id.slice(5);
+    if (!Object.hasOwn(CharacterAbilityLabels, ability) || isAbilityScoreBlank(ability)) return null;
+    return buildCalculationPopupTip(`${CharacterAbilityLabels[ability]}豁免計算`,
+      getSaveBreakdown(ability, document.getElementById("prof-" + ability)?.checked === true));
+  }
+  if (type === "skill") {
+    const skill = trigger.id.slice(6);
+    if (!Object.hasOwn(CharacterSkillAbilities, skill) || isAbilityScoreBlank(CharacterSkillAbilities[skill])) return null;
+    return buildCalculationPopupTip(`${skill}計算`, getSkillBreakdowns().get(skill));
+  }
+  if (type === "spell-save-dc") return buildCalculationPopupTip("法術豁免難度計算", getSpellCastingBreakdown()?.saveDc, String);
+  if (type === "spell-attack") return buildCalculationPopupTip("法術命中計算", getSpellCastingBreakdown()?.attack);
+  return null;
+}
+
+// 裝備頁「目前 AC」不是輸入框：可以看計算說明時才當成按鈕（可聚焦、讀屏念出用途），否則維持一般文字。
+function syncEquipmentAcCalculationTrigger() {
+  const trigger = document.getElementById("equipment-current-ac-value");
+  if (!trigger) return;
+  const value = document.getElementById("ac-display")?.value?.trim() || "";
+  if (isAutomaticKeyStatsEnabled() && value) {
+    trigger.tabIndex = 0;
+    trigger.setAttribute("role", "button");
+    trigger.setAttribute("aria-haspopup", "dialog");
+    trigger.setAttribute("aria-label", `目前 AC ${value}，查看計算`);
+  } else {
+    ["tabindex", "role", "aria-haspopup", "aria-label"].forEach(name => trigger.removeAttribute(name));
+  }
+}
+
+function buildCalculationPopupTip(title, breakdown, formatTotal = formatSignedValue) {
+  if (!breakdown) return null;
+  return {
+    kind: "popup",
+    title,
+    rows: breakdown.rows.map(row => ({ label: row.label, value: row.text ?? formatSigned(row.value) })),
+    total: { label: "結果", value: formatTotal(breakdown.total) }
+  };
+}
+
+function getMaxHpCalculationTip() {
+  const options = getMaxHpCalculationOptions();
+  const breakdown = getCharacterMaxHpBreakdown(options);
+  const className = document.getElementById("class")?.selectedOptions[0]?.textContent.trim() || "";
+  const constitutionModifier = calculateAbilityModifier(options.constitutionScore);
+  return {
+    kind: "dialog",
+    title: "最大 HP",
+    summary: `${className} ${breakdown.level} 級，生命骰 d${breakdown.hitDie}，體質 ${options.constitutionScore}（調整值 ${formatSigned(constitutionModifier)}）`,
+    rows: breakdown.rows.map(row => ({ ...row, value: String(row.value) })),
+    total: { label: "最大 HP", value: String(breakdown.total) },
+    notes: [`升級時也可以改用擲骰（d${breakdown.hitDie} + 體質調整值）。\n若採用此規則，請在選單關閉「自動計算」。`]
+  };
+}
+
+function getArmorClassCalculationTip() {
+  const breakdown = getArmorClassBreakdown(getArmorClassCalculationOptions());
+  if (!breakdown) return null;
+  return {
+    kind: "dialog",
+    title: "AC",
+    summary: breakdown.summary,
+    rows: breakdown.rows.map((row, index) => ({ label: row.label, detail: row.detail, value: index === 0 ? String(row.value) : formatSigned(row.value) })),
+    total: { label: "AC", value: String(breakdown.total) }
+  };
+}
+
+function getSpeedCalculationTip() {
+  const breakdown = getCharacterSpeedBreakdown(getSpeedCalculationOptions());
+  if (!breakdown) return null;
+  return {
+    kind: "dialog",
+    title: "速度",
+    rows: breakdown.rows.map((row, index) => ({ label: row.label, detail: row.detail,
+      value: `${row.display ?? (index === 0 ? row.value : formatSigned(row.value))} 呎` })),
+    total: { label: "速度", value: `${breakdown.total} 呎` }
+  };
 }
 
 function getNextSkillTexts() {
@@ -4859,6 +5039,7 @@ function updateEquipmentLoadoutSummary() {
   if (focusedHand) content.querySelector(`[data-weapon-damage-type-hand="${focusedHand}"]`)?.focus();
   const acValue = document.getElementById("equipment-current-ac-value");
   if (acValue) acValue.textContent = document.getElementById("ac-display")?.value?.trim() || "—";
+  syncEquipmentAcCalculationTrigger();
   updateSkillEffectTips(magic);
   updateWeaponMasteryBadges();
   window.ShareReadonly?.onEquipmentChanged();
@@ -5057,7 +5238,7 @@ function updateWeaponAutomationUI() {
   document.querySelectorAll(".attack-calculation-trigger").forEach(field => {
     field.classList.toggle("is-calculation-enabled", automated && Boolean(field.value));
   });
-  if (!automated) hideAttackCalculationPopup();
+  if (!automated) window.hideCalculationPopup?.();
   updateWeaponMasteryBadges();
 }
 
@@ -5068,10 +5249,18 @@ function attackFieldsDifferFromCalculation(results) {
   }));
 }
 
-function renderAttackCalculationPopup(details, calculationType) {
-  if (!details) return "";
+// 武器命中、傷害的計算浮層內容（getCalculationTip 的一種）；武器攻擊自動化關閉或欄位空白時為 null。
+function getAttackCalculationTip(trigger) {
+  if (!isWeaponAttackAutomationEnabled() || !trigger.value) return null;
+  return buildAttackCalculationTip(attackCalculationDetails[trigger.dataset.attackHand], trigger.dataset.calculation === "attack-hit" ? "hit" : "damage");
+}
+
+// details 是 calculateHandAttacks() 一手的 details，calculationType 為 hit 或 damage。
+function buildAttackCalculationTip(details, calculationType) {
+  if (!details) return null;
+  const isHit = calculationType === "hit";
   const rows = [];
-  if (calculationType === "hit") {
+  if (isHit) {
     rows.push([`${details.abilityLabel}調整值`, formatSigned(details.abilityModifier)]);
     if (details.proficient) rows.push(["熟練加值", formatSigned(details.proficiencyBonus)]);
     else rows.push(["武器熟練", "未熟練"]);
@@ -5089,37 +5278,12 @@ function renderAttackCalculationPopup(details, calculationType) {
     rows.push(["傷害類型", details.damageType]);
     (details.extraDamage || []).forEach(extra => rows.push([`${extra.label}額外傷害`, `${extra.dice} ${extra.typeLabel}`]));
   }
-  const result = calculationType === "hit" ? details.hit : details.damage;
-  return `<div class="attack-calculation-title">${calculationType === "hit" ? "命中" : "傷害"}計算</div>
-    <div class="attack-calculation-rows">${rows.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div>
-    <div class="attack-calculation-total"><span>結果</span><strong>${escapeHtml(result)}</strong></div>`;
-}
-
-function showAttackCalculationPopup(trigger) {
-  if (!isWeaponAttackAutomationEnabled() || !trigger.value) return;
-  const details = attackCalculationDetails[trigger.dataset.attackHand];
-  if (!details) return;
-  let popup = document.getElementById("attack-calculation-popup");
-  if (!popup) {
-    popup = document.createElement("div");
-    popup.id = "attack-calculation-popup";
-    popup.setAttribute("role", "dialog");
-    document.body.appendChild(popup);
-  }
-  popup.innerHTML = renderAttackCalculationPopup(details, trigger.dataset.attackCalculation);
-  popup.style.display = "block";
-  const rect = trigger.getBoundingClientRect();
-  let left = Math.min(rect.left, window.innerWidth - popup.offsetWidth - 10);
-  let top = Math.min(rect.bottom + 8, window.innerHeight - popup.offsetHeight - 10);
-  left = Math.max(10, left);
-  top = Math.max(10, top);
-  popup.style.left = `${left}px`;
-  popup.style.top = `${top}px`;
-}
-
-function hideAttackCalculationPopup() {
-  const popup = document.getElementById("attack-calculation-popup");
-  if (popup) popup.style.display = "none";
+  return {
+    kind: "popup",
+    title: isHit ? "命中計算" : "傷害計算",
+    rows: rows.map(([label, value]) => ({ label, value })),
+    total: { label: "結果", value: isHit ? details.hit : details.damage }
+  };
 }
 
 function setupWeaponAttackAutomation() {
@@ -5159,18 +5323,6 @@ function setupWeaponAttackAutomation() {
     document.getElementById(id)?.addEventListener("input", updateManualMasteryBadge);
     document.getElementById(id)?.addEventListener("change", updateManualMasteryBadge);
   });
-  document.addEventListener("click", event => {
-    const trigger = event.target.closest?.(".attack-calculation-trigger");
-    const popup = event.target.closest?.("#attack-calculation-popup");
-    if (trigger) {
-      showAttackCalculationPopup(trigger);
-      return;
-    }
-    if (!popup) hideAttackCalculationPopup();
-  }, true);
-  document.addEventListener("keydown", event => {
-    if (event.key === "Escape") hideAttackCalculationPopup();
-  });
   updateWeaponAutomationUI();
 }
 
@@ -5201,7 +5353,7 @@ function updateArmorInfo() {
 }
 </script>
 <script src="sheet-spells.js?v=20261113-spell-list"></script>
-<script src="rule-tips.js?v=20261113-info-icon"></script>
+<script src="rule-tips.js?v=20261116-calculation-tips"></script>
 <script>
 const SPELL_QR_IMAGE_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwAQMAAAAEm3vRAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABD0lEQVRYhe2YMQ6DMAxFXTFk5EgcjR6NIzEyINLYDk6ahpSiiun/BeHH9GXHPxBB96v3UXN4GZayAlzHq7o3zp2nIRSfqQLcwKG26Qu5ragAf8FdeC4PMRX4X5j2+QY+g9N8k2uOP7Bh2xx8Kkor1lcN8Hmcy0/UErBJLQzTzI/JbXFTs7vAh1gVVwibOu6dmLUicIHlDGQv/UriJUuPRwK+iEUcEVmCg9XSuwR8iHsZa3bSTOVYs2QLGvgDJ3GEtixtNxXgCziPNXovoS4ff+AqzvJ0bNBOvwduYutA2yXyHQGfwjEMcpZ2FVOBr2GyWLMvaOADLEqd+h5rgKs4DrTXVvTy56C87AH/hqG79QLS1jgHWvai8gAAAABJRU5ErkJggg==";
 

@@ -43,7 +43,7 @@
 | `--surface`、`--surface-strong`／`-soft`／`-muted` | 容器、視窗與卡片的層次 |
 | `--text`、`--text-body`、`--text-muted` | 文字層次 |
 | `--accent`、`--accent-strong` | 強調文字、連結、選取提示 |
-| `--auto-value` | 一般角色卡上自動算出來的數字（目前四種外觀都指向 `--accent`）；玩家自己填的數字用 `--text`。開關控制的數字（最大 HP、AC、速度、被動察覺、先攻、豁免、技能、施法調整、豁免難度、命中加值）看自動計算開關，屬性調整值與技能分組的調整值一直用這個色；動作頁武器攻擊的命中、傷害看武器攻擊的 AUTO 開關（點了開計算浮層，不加底線）；跑團模式不套用 |
+| `--auto-value` | 一般角色卡上自動算出來的數字（目前四種外觀都指向 `--accent`）；玩家自己填的數字用 `--text`。開關控制的數字（最大 HP、AC、速度、被動察覺、先攻、豁免、技能、施法調整、豁免難度、命中加值）看自動計算開關，屬性調整值與技能分組的調整值一直用這個色；動作頁武器攻擊的命中、傷害看武器攻擊的 AUTO 開關；跑團模式不套用。標 `data-calculation` 的數字點了開計算浮層或計算說明視窗（`rule-tips.js`），不加底線，只把游標換成手指 |
 | `--action-fill`、`--action-hover`、`--on-accent` | 實色操作與其文字；經典暗色把舊 `--accent-gradient` 映射為實色 |
 | `--border`、`--border-strong`、`--border-decoration` | 邊框與裝飾分隔線 |
 | `--warning*`、`--success*`、`--danger*` | 語意色 |
@@ -135,7 +135,7 @@
 | 語言與工具（`skill-tab` container） | 技能頁寬 ≥40rem 左右並排、等寬等高，以下上下堆疊（語言在上）；工具增加時整列變高，不限高、不捲動。卡片內單欄，每項一行；工具卡內寬 ≤18.5rem、語言卡內寬 ≤15rem 時標籤自成一行 |
 | 跑團技能（`tabletop-skills` container） | 內寬 ≥18.75／30rem 為 2／3 欄 |
 | 魔法物品的「優勢」標籤（`.magic-advantage-tag`，樣式在 `css/tabletop-hud.css`） | 只在跑團模式：技能按鈕接在名稱右邊，按鈕寬度放不下時（flex-wrap）換到名稱下方，格子高度與數值位置不變；先攻格放在數值右邊，避免整排關鍵數值卡片長高。外觀同跑團武器卡的精通標籤 |
-| 魔法物品的 ✦（`.skill-tip.ability-effect-tip`） | 角色卡屬性格調整值旁（有效值）、技能頁技能名稱旁（優勢、技能加值，`.skill-effect-tip`）與「技能」標題旁（所有檢定、熟練加值）。accent 色、24×24 點擊範圍，觸控可點，開既有的規則說明浮層 `#skillPopup`；aria-label 寫出內容。技能頁的 ✦ 用負邊距接在文字後，格子與標題高度不變；沒有物品影響時不出現 |
+| 魔法物品的 ✦（`.skill-tip.ability-effect-tip`） | 角色卡屬性格 STR 等縮寫右側（有效值，不影響縮寫置中）、技能頁技能名稱旁（優勢、技能加值，`.skill-effect-tip`）與「技能」標題旁（所有檢定、熟練加值）。accent 色、24×24 點擊範圍，觸控可點，開既有的規則說明浮層 `#skillPopup`；aria-label 寫出內容。技能頁的 ✦ 用負邊距接在文字後，格子與標題高度不變；沒有物品影響時不出現 |
 | 角色卡各環法術框 | <400px 一欄、400–719px 兩欄、≥720px 四欄 |
 | 法術候選清單（準備法術、法術書） | <320px 單欄、320–479px 兩欄、480–719px 三欄、≥720px 四欄 |
 | 人類起源專長 | <540px 時起源專長選單、「查看」與體型維持同一行，收窄間距與內距，體型選單縮為 4.5rem；專長選單窄到約體型選單 1.8 倍寬時隱藏「查看」，說明仍見專長區 |
@@ -145,7 +145,7 @@
 
 ### AppDialog
 
-- 新 dialog／toast 一律使用 `app-dialog.js`，依用途建立變體（如 `class-feature-choices`、`spell-readonly`、`spell-browser`、`spell-primer`、`custom-background`、`legal-about`、`equipment-shop`、`equipment-shop-cart`、`equipment-detail`、`magic-item-grant`）。背景隔離、Escape、焦點還原與內容獨立捲動沿用共用行為。
+- 新 dialog／toast 一律使用 `app-dialog.js`，依用途建立變體（如 `class-feature-choices`、`spell-readonly`、`spell-browser`、`spell-primer`、`custom-background`、`legal-about`、`equipment-shop`、`equipment-shop-cart`、`equipment-detail`、`magic-item-grant`、`calculation`）。背景隔離、Escape、焦點還原與內容獨立捲動沿用共用行為。
 - 內容本身就是選項的視窗寫法（`renderContent(body, dialog)` 以 `dialog.close(value)` 結束），以分享角色卡為例，見 [BEHAVIOR.md：分享角色卡](BEHAVIOR.md#分享角色卡)。
 - 開啟動畫只給「畫面上原本沒有視窗」時開的那一個（`data-entering`）：背景遮罩淡入；寬度 >520px 從 85% 放大成視窗（200ms），≤520px 的底部抽屜從畫面底部滑上（280ms）。疊在上面的視窗、關掉前一個接著開的下一步視窗（例如分享第一步接第二步）直接出現，背景遮罩不閃。關閉沒有動畫。開了減少動態效果時不播。初始焦點是文字輸入框時，等動畫結束才放游標，手機鍵盤不和動畫同時升起。導覽的法術預覽視窗開啟後馬上要量位置，所以不播。
 - 從視窗內開啟另一個視窗時（例如準備法術視窗開啟「職業特性表」），背景視窗暫用 `--z-character-features`，讓後開的角色能力視窗在上方，並保留技能／野獸及法術詳情浮層；關閉後恢復原層級，背景視窗的草稿與篩選不變。
