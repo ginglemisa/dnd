@@ -992,6 +992,63 @@
   }
 
   /**
+   * 永久、無條件的優勢與劣勢（角色卡文字右側的圓框 A／D），純計算：畫面上的裝備與數值由呼叫端整理成 context。
+   * 來源：職業能力與種族特質的 advantage（內容檔）、魔法物品的無條件優勢（getMagicItemAdvantages）、
+   * 穿著的護甲（隱匿劣勢、未受過訓練時力量與敏捷的 D20 檢定）、重型武器（近戰力量、遠程敏捷未達 13）。
+   * context：{ className, level, subclassId, race,
+   *   armor: { name, trained, stealthDisadvantage } 或 null（沒穿護甲；trained、stealthDisadvantage 已含精靈鏈甲與秘銀護甲），
+   *   hands: [{ key: "main"|"off", weaponName, heavy, ranged, attackAbility }]（attackAbility 為命中用的屬性 ID，橡棍術、契約武器可能是 wis、cha），
+   *   abilityScores: { str, dex }（有效值數字，屬性欄空白時為 null）, weaponAutomation（武器攻擊自動化；關閉時不判斷重型武器）,
+   *   magicAdvantages（getMagicItemAdvantages() 的結果） }。
+   * 回傳 { 目標: { mode, advantage: [來源…], disadvantage: [來源…] } }，只列有淨結果的目標：同時有優勢與劣勢時互相抵銷，不列。
+   * 目標：技能 ID、「先攻」、save:<屬性 ID>（豁免）、check:<屬性 ID>（屬性檢定）、attack:<main|off>（那一手的命中）。
+   */
+  function getRollModeMarks(context = {}) {
+    const marks = {};
+    const add = (target, kind, label) => {
+      const mark = marks[target] ||= { advantage: [], disadvantage: [] };
+      if (!mark[kind].includes(label)) mark[kind].push(label);
+    };
+    const contentTarget = target => Object.hasOwn(SAVE_ROLL_TARGETS, target) ? `save:${SAVE_ROLL_TARGETS[target]}` : target;
+    const level = Number.parseInt(context.level, 10) || 0;
+    const classRules = getClassRules(context.className);
+    if (classRules) {
+      getClassFeatureRules(context.className, context.subclassId).filter(feature => feature.advantage && level >= feature.level).forEach((feature) => {
+        const subclass = feature.subclass ? classRules.subclasses.find(item => item.id === feature.subclass) : null;
+        const owner = subclass ? subclass.shortName || subclass.name : classRules.name;
+        feature.advantage.forEach(target => add(contentTarget(target), "advantage", `${feature.name}（${owner} ${feature.level} 級）`));
+      });
+    }
+    const raceRules = getRaceRules(context.race);
+    (raceRules?.traits || []).filter(trait => trait.advantage && level >= trait.level)
+      .forEach(trait => trait.advantage.forEach(target => add(contentTarget(target), "advantage", `${trait.name}（${raceRules.name}）`)));
+    Object.entries(context.magicAdvantages || {}).forEach(([target, labels]) => labels.forEach(label => add(contentTarget(target), "advantage", label)));
+    const armor = context.armor;
+    if (armor?.stealthDisadvantage) add("隱匿", "disadvantage", `隱匿劣勢（${armor.name}）`);
+    const hands = context.hands || [];
+    if (armor && !armor.trained) {
+      const label = `未受訓的護甲（${armor.name}）`;
+      ["str", "dex"].forEach((ability) => {
+        add(`check:${ability}`, "disadvantage", label);
+        add(`save:${ability}`, "disadvantage", label);
+      });
+      Object.entries(CharacterSkillAbilities).filter(([, ability]) => ability === "str" || ability === "dex").forEach(([skill]) => add(skill, "disadvantage", label));
+      add("先攻", "disadvantage", label);
+      hands.filter(hand => hand.attackAbility === "str" || hand.attackAbility === "dex").forEach(hand => add(`attack:${hand.key}`, "disadvantage", label));
+    }
+    const scores = context.abilityScores || {};
+    if (context.weaponAutomation !== false && Number.isFinite(scores.str) && Number.isFinite(scores.dex)) {
+      hands.filter(hand => hand.heavy).forEach((hand) => {
+        const ability = hand.ranged ? "dex" : "str";
+        if (scores[ability] < 13) add(`attack:${hand.key}`, "disadvantage", `重型武器（${hand.weaponName}），${CharacterAbilityLabels[ability]}未達 13`);
+      });
+    }
+    return Object.fromEntries(Object.entries(marks)
+      .filter(([, mark]) => !mark.advantage.length !== !mark.disadvantage.length)
+      .map(([target, mark]) => [target, { mode: mark.advantage.length ? "advantage" : "disadvantage", ...mark }]));
+  }
+
+  /**
    * 屬性有效值（純計算）：rawText 是屬性欄的原值，contributions 是 getActiveMagicEffects().abilities 的其中一項。
    * 順序：原值 → 加值依序加上（每筆夾在自己的上限，不會降低）→ 與設定值比（setBonus 加在 from 物品的設定值上，夾上限）→ 取最高。
    * 回傳 { raw, base, score, value, sources, changed }：base 是原值數字、score 是有效值數字（原值不是整數時兩者為 null，物品不影響），
@@ -1269,6 +1326,10 @@
     "欺瞞": "cha", "威嚇": "cha", "表演": "cha", "遊說": "cha"
   });
 
+  // 內容檔 advantage 寫豁免時的名稱（「智力豁免」）與屬性 ID；可寫的擲骰另有技能 ID 與「先攻」（getRollModeMarks）。
+  const SAVE_ROLL_TARGETS = Object.freeze({ 力量豁免: "str", 敏捷豁免: "dex", 體質豁免: "con", 智力豁免: "int", 感知豁免: "wis", 魅力豁免: "cha" });
+  const CharacterRollModeTargets = Object.freeze(["先攻", ...Object.keys(CharacterSkillAbilities), ...Object.keys(SAVE_ROLL_TARGETS)]);
+
   function isDruidBeastAllowed(form, level) {
     if (!form) return false;
     const rule = getDruidWildShapeRules(level);
@@ -1290,6 +1351,7 @@
   Object.assign(globalScope, {
     calculateAbilityModifier,
     CharacterSkillAbilities,
+    CharacterRollModeTargets,
     CharacterAbilityLabels,
     getCharacterMaxHpBreakdown,
     getArmorClassBreakdown,
@@ -1301,6 +1363,7 @@
     getArmorClassFormula,
     getActiveMagicEffects,
     getMagicItemAdvantages,
+    getRollModeMarks,
     calculateEffectiveAbilityScore,
     getEffectiveAbilityScore,
     getEffectiveAbilityValue,

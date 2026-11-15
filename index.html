@@ -108,7 +108,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261115-auto-value">
   <link rel="stylesheet" href="css/base.css?v=20261115-race-options">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261116-calculation-tips">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261116-roll-mode">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261116-calculation-tips">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261114-spell-lock">
   <link rel="stylesheet" href="css/utility.css?v=20261111-menu-layout">
@@ -138,7 +138,7 @@
   <script src="spell-list.js?v=20261111-magic-effects-6" defer></script>
   <script src="condition.js?v=20261111-magic-abilities" defer></script>
   <script src="action-panel.js?v=20261113-dash-wording" defer></script>
-  <script src="character-rules.js?v=20261116-calculation-tips" defer></script>
+  <script src="character-rules.js?v=20261116-roll-mode" defer></script>
   <script src="app-dialog.js?v=20261115-dialog-motion" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
@@ -1141,7 +1141,7 @@
     </div>
     <div class="weapon-attack-fields" role="group" aria-label="主手攻擊欄位">
       <label class="weapon-attack-name">名稱<input type="text" id="atk-main-name" placeholder="尚未裝備"></label>
-      <label>命中<input type="text" id="atk-main-hit" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="main" data-calculation="attack-hit"></label>
+      <label><span class="weapon-attack-label">命中</span><input type="text" id="atk-main-hit" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="main" data-calculation="attack-hit"></label>
       <label>傷害<input type="text" id="atk-main-dmg" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="main" data-calculation="attack-damage"></label>
       <input type="text" id="atk-main-note" class="weapon-attack-free-note" aria-label="主手攻擊備註" placeholder="備註：">
     </div>
@@ -1150,7 +1150,7 @@
     <h4 id="atk-off-title"><span id="atk-off-title-text">副手攻擊</span><button type="button" id="atk-off-mastery" class="weapon-mastery-badge" data-weapon-rule-kind="mastery" hidden></button></h4>
     <div id="atk-off-fields" class="weapon-attack-fields" role="group" aria-label="副手攻擊欄位">
       <label class="weapon-attack-name">名稱<input type="text" id="atk-off-name" placeholder="尚未裝備"></label>
-      <label>命中<input type="text" id="atk-off-hit" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="off" data-calculation="attack-hit"></label>
+      <label><span class="weapon-attack-label">命中</span><input type="text" id="atk-off-hit" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="off" data-calculation="attack-hit"></label>
       <label>傷害<input type="text" id="atk-off-dmg" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="off" data-calculation="attack-damage"></label>
       <input type="text" id="atk-off-note" class="weapon-attack-free-note" aria-label="副手攻擊備註" placeholder="備註：">
     </div>
@@ -1647,6 +1647,10 @@ function setupAutomaticKeyStats() {
   toggle.addEventListener("change", handleAutomaticKeyStatsToggle);
   document.addEventListener("input", handleDerivedCheckSourceEvent);
   document.addEventListener("change", handleDerivedCheckSourceEvent);
+  // 圓框 A／D 不受自動計算開關影響：任何欄位變動都重排一次。
+  document.addEventListener("input", scheduleRollModeMarks);
+  document.addEventListener("change", scheduleRollModeMarks);
+  scheduleRollModeMarks();
   bindEventById("ac-display", "input", () => {
     if (!isAutomaticKeyStatsEnabled()) updateEquipmentLoadoutSummary();
   });
@@ -3780,6 +3784,7 @@ function hasNeverCalculatedSaves() {
 // 所有載入路徑在資料完全還原後判斷一次：
 // 開關關閉不動；有標記就重算；舊資料的數字都正確就保持自動，只要有一項不同就保留所有數字並關閉開關。
 function finishDerivedChecksLoad(data) {
+  scheduleRollModeMarks();
   updateExpertiseVisibility({ refresh: false });
   document.querySelectorAll(DERIVED_CHECK_INPUT_SELECTOR).forEach(normalizeDerivedCheckInput);
   saveProficiencyClass = document.getElementById("class")?.value || "";
@@ -4880,7 +4885,7 @@ function buildStealthPenaltyDetail(penalty) {
 }
 
 // 魔法物品給的無條件優勢（getMagicItemAdvantages()）：跑團技能按鈕與先攻格的「優勢」小標籤，滑鼠提示與報讀寫出來源物品。
-// 只是顯示，擲骰不會自動擲兩次。角色卡技能頁改用 ✦（updateSkillEffectTips）。
+// 只是顯示，擲骰不會自動擲兩次。角色卡改用圓框 A（updateRollModeMarks）。
 function createMagicAdvantageTag(sources) {
   const tag = document.createElement("span");
   tag.className = "magic-advantage-tag";
@@ -4894,7 +4899,7 @@ function createMagicAdvantageTag(sources) {
 }
 
 // 角色卡技能頁的 ✦（和屬性格同一種 .skill-tip.ability-effect-tip，點了在規則說明浮層 #skillPopup 顯示內容）：
-// - 技能名稱旁：這個技能專屬的效果，無條件優勢「優勢・精靈之靴」與技能固定加值「+5・竊賊手套」，多個來源接在同一個浮層。
+// - 技能名稱旁：這個技能專屬的固定加值「+5・竊賊手套」，多個來源接在同一個浮層。物品給的無條件優勢改用圓框 A（updateRollModeMarks）。
 // - 技能頁標題旁：影響全部技能的效果，「所有屬性檢定 +1・幸運石」「熟練加值 +1・艾恩石（精進）」。
 // 沒有物品影響的格子不加任何東西；內容沒變時不重建按鈕。
 function createSkillEffectTip(title, text) {
@@ -4918,13 +4923,9 @@ function syncSkillEffectTip(container, title, text) {
 }
 
 function updateSkillEffectTips(magic = getActiveMagicEffects()) {
-  const advantages = getMagicItemAdvantages(magic);
   document.querySelectorAll("#tab-skills .skill-cell").forEach((cell) => {
     const skill = cell.querySelector(".skill-tip")?.dataset.skill || "";
-    const parts = [
-      ...(advantages[skill]?.length ? [`優勢・${advantages[skill].join("、")}`] : []),
-      ...magic.sources.filter(source => source.skills?.[skill]).map(source => `${formatSigned(source.skills[skill])}・${source.label}`)
-    ];
+    const parts = magic.sources.filter(source => source.skills?.[skill]).map(source => `${formatSigned(source.skills[skill])}・${source.label}`);
     syncSkillEffectTip(cell.querySelector(".skill-name"), skill, parts.join("；"));
   });
   const overall = [
@@ -4932,6 +4933,101 @@ function updateSkillEffectTips(magic = getActiveMagicEffects()) {
     ...magic.sources.filter(source => source.proficiencyBonus).map(source => `熟練加值 ${formatSigned(source.proficiencyBonus)}・${source.label}`)
   ];
   syncSkillEffectTip(document.querySelector("#skill-bonus-section .skill-section-heading h3"), "技能", overall.join("；"));
+  scheduleRollModeMarks();
+}
+
+// 永久、無條件的優勢與劣勢（getRollModeMarks）：角色卡文字右側的圓框 A／D（.roll-mode-badge，圓框沿用 .info-icon），
+// 點了在規則說明浮層 #skillPopup 顯示來源。同時有優勢與劣勢時互相抵銷，不顯示；只是顯示，擲骰不會自動擲兩次。
+// 位置：數值頁 STR／DEX 標題（屬性檢定）與「先攻」標題、技能頁的技能名稱與豁免名稱、動作頁兩手的「命中」。
+// 自動計算開關關閉時照樣顯示；武器攻擊自動化關閉時不判斷重型武器（攻擊欄是玩家自填的）。
+const ROLL_MODE_LETTERS = Object.freeze({ advantage: "A", disadvantage: "D" });
+const ROLL_MODE_LABELS = Object.freeze({ advantage: "優勢", disadvantage: "劣勢" });
+
+function getRollModeContext(magic = getActiveMagicEffects()) {
+  const abilityIdsByLabel = Object.fromEntries(Object.entries(CharacterAbilityLabels).map(([id, label]) => [label, id]));
+  const armorName = document.getElementById("armor")?.value || "";
+  const armor = getArmorByName(armorName);
+  const hands = calculateHandAttacks({ magicEffects: magic }).filter(result => result.details).map(result => ({
+    key: result.key,
+    weaponName: result.name,
+    heavy: weaponHasProp(result.details.weapon, "重型"),
+    ranged: isRangedWeapon(result.details.weapon),
+    attackAbility: abilityIdsByLabel[result.details.abilityLabel] || ""
+  }));
+  return {
+    className: document.getElementById("class")?.value || "",
+    level: document.getElementById("level")?.value || "",
+    subclassId: document.getElementById("subclass")?.value || "",
+    race: document.getElementById("race")?.value || "",
+    armor: armor ? {
+      name: armorName,
+      trained: isArmorProficient(armor),
+      // 秘銀護甲沒有隱匿劣勢（魔法物品資料的 noStealthDisadvantage）。
+      stealthDisadvantage: String(armor.隱匿懲罰 || "").trim() === "劣勢" && !magic.armor.noStealthDisadvantage
+    } : null,
+    hands,
+    abilityScores: { str: getEffectiveAbilityScore("str", magic).score, dex: getEffectiveAbilityScore("dex", magic).score },
+    weaponAutomation: isWeaponAttackAutomationEnabled(),
+    magicAdvantages: getMagicItemAdvantages(magic)
+  };
+}
+
+function createRollModeBadge(title, mode, text) {
+  const badge = document.createElement("button");
+  badge.type = "button";
+  badge.className = "skill-tip roll-mode-badge";
+  badge.dataset.rollMode = mode;
+  badge.dataset.skill = title;
+  badge.dataset.tipText = text;
+  badge.setAttribute("aria-controls", "skillPopup");
+  badge.setAttribute("aria-label", `${title}，${text}`);
+  const icon = document.createElement("span");
+  icon.className = "info-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = ROLL_MODE_LETTERS[mode];
+  badge.appendChild(icon);
+  return badge;
+}
+
+// 圓框放在 container 的 before 之前（✦ 在它後面），沒有 before 時接在最後；內容沒變時不重建按鈕。
+function syncRollModeBadge(container, title, mark, before = null) {
+  if (!container) return;
+  const current = container.querySelector(":scope > .roll-mode-badge");
+  const text = mark ? `${ROLL_MODE_LABELS[mark.mode]}：${mark[mark.mode].join("、")}` : "";
+  if ((current?.dataset.tipText || "") === text) return;
+  current?.remove();
+  if (text) container.insertBefore(createRollModeBadge(title, mark.mode, text), before?.parentNode === container ? before : null);
+}
+
+function updateRollModeMarks(magic = getActiveMagicEffects()) {
+  const marks = getRollModeMarks(getRollModeContext(magic));
+  document.querySelectorAll("#tab-skills .skill-cell").forEach((cell) => {
+    const skill = cell.querySelector(".skill-tip")?.dataset.skill || "";
+    const name = cell.querySelector(".skill-name");
+    syncRollModeBadge(name, skill, marks[skill], name?.querySelector(":scope > .skill-effect-tip"));
+  });
+  SAVE_ABILITY_IDS.forEach((ability) => {
+    syncRollModeBadge(document.getElementById(`prof-${ability}`)?.closest(".save-name"), `${CharacterAbilityLabels[ability]}豁免`, marks[`save:${ability}`]);
+  });
+  syncRollModeBadge(document.getElementById("initiative-input")?.closest(".basic-combat-field")?.querySelector(".mini-stat-label"), "先攻", marks["先攻"]);
+  ["str", "dex"].forEach((ability) => {
+    const title = document.getElementById(ability)?.closest(".ability")?.querySelector(".ability-title");
+    syncRollModeBadge(title, `${CharacterAbilityLabels[ability]}檢定`, marks[`check:${ability}`], title?.querySelector(":scope > .ability-effect-tip"));
+  });
+  ["main", "off"].forEach((hand) => {
+    syncRollModeBadge(document.getElementById(`atk-${hand}-hit`)?.closest("label")?.querySelector(".weapon-attack-label"), "命中", marks[`attack:${hand}`]);
+  });
+}
+
+// 任何欄位、物品欄或載入變動後排一次：同一輪的多個變動只算一次。
+let rollModeMarksQueued = false;
+function scheduleRollModeMarks() {
+  if (rollModeMarksQueued) return;
+  rollModeMarksQueued = true;
+  Promise.resolve().then(() => {
+    rollModeMarksQueued = false;
+    updateRollModeMarks();
+  });
 }
 
 function updateEquipmentLoadoutSummary() {

@@ -85,6 +85,15 @@ summary: 你的敏捷豁免有優勢。
 - 選項也可寫 `hint`：勾選該選項時才顯示，標題為選項名稱（例如防守戰術的衝出重圍、多重防禦）。
 - 會依角色數值計算的提示（守護靈氣的豁免加值、黑暗之賜的臨時生命值、元素親和）仍由網站程式產生。
 
+達到能力等級後永久、無條件有優勢的 D20 擲骰寫 `advantage`，角色卡在對應文字旁標圓框 A（和護甲等來源的劣勢抵銷，見 BEHAVIOR.md「優勢與劣勢標記」）：
+
+```yaml
+advantage: [運動, 先攻]
+```
+
+- 可寫技能 ID（`character-rules.js` 的 `CharacterSkillAbilities`）、`先攻`，或 `力量豁免`、`敏捷豁免`、`體質豁免`、`智力豁免`、`感知豁免`、`魅力豁免`；建置會檢查。
+- 有條件的優勢（「除非陷入失能」「對抗中毒的豁免」）不寫，照舊用 `hint`。
+
 ## 子能力
 
 小節有自己的跑團按鈕時（例如牧師引導神力的「神聖火花」、「驅散不死生物」），寫在能力的 `parts`；只是排版分段（例如狂暴的「狂暴期間」）照舊用 `####`。子能力接在能力的 `text` 之後，輸出成帶自己 ID 的小節。
@@ -497,6 +506,7 @@ pdf:
 | `resource` | 跑團資源。`key` 進存檔（列在基準檔）；`uses` 是數字或 `proficiencyBonus`；`recover: { short: all }` 表示短休也全部恢復。`kind: checkboxes` 是角色卡上的勾選框（`container` 為外框 ID，`checkbox` 為勾選框 ID 前綴，`requiresChoice` 表示選了血統才出現）；`kind: inspiration` 是長休獲得英雄激勵。 |
 | `actions` | 跑團按鈕：`key` 進跑團隱藏偏好（列在基準檔，不可改字）、`mode`、`label`、`resource`（資源 `key` 或勾選框的 `container`）、`level`、`className`、`tabletopOnly`、`proficiencyValue`。說明和特質文字不同時寫 `tabletop`；`tabletopSuffix` 空一行接在說明後；需依角色數值計算的說明寫 `behavior`（由 `action-panel.js` 的同名函式產生）。 |
 | `hint` | 跑團提示：`panels`（`overview`／`skills`）與 `summary`，標題為特質名稱。 |
+| `advantage` | 達到特質等級後永久、無條件有優勢的擲骰（例如侏儒狡黠的 `[智力豁免, 感知豁免, 魅力豁免]`），寫法同職業能力的 `advantage`；只對特定狀態或來源的優勢不寫。 |
 | `spells` | 種族特質給予的法術（例如提夫林的奇術）：`spell` 是法術 ID，`level` 是取得等級，`freeUses` 是免費施展次數；戲法或環階由法術目錄決定。 |
 | `resistances` | 固定的傷害抗性（傷害類型 ID，例如 `poison`），名稱由 `character-rules.js` 的 `getDamageTypeLabel` 決定。 |
 | `skillChoice` | 選一項技能熟練：技能 ID 清單，或 `any`。 |

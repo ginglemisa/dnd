@@ -3,7 +3,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { ROOT, loadSkillAbilities, contentSourceName, loadSpellCatalog, readIndexSelectOptions } = require("../content/site-sources");
+const { ROOT, loadSkillAbilities, loadRollModeTargets, contentSourceName, loadSpellCatalog, readIndexSelectOptions } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile, listYaml } = require("../content/yaml");
 
@@ -62,6 +62,8 @@ function checkRace(race, errors) {
     if (!trait.text && !(trait.id === "darkvision" && race.darkvision)) errors.push(`${where}：特質「${trait.name}」須有 text（只有 id 為 darkvision 且種族有 darkvision 時可省略）`);
     if (trait.afterChoice && !trait.choice) errors.push(`${where}：特質「${trait.name}」有 afterChoice 時須寫 choice: true`);
     if (trait.afterChoice && display !== "lineage-table") errors.push(`${where}：afterChoice 只能接在 lineage-table 表格之後`);
+    (trait.advantage || []).filter(target => !loadRollModeTargets().includes(target))
+      .forEach(target => errors.push(`${where}：特質「${trait.name}」advantage 的「${target}」不是技能 ID、「先攻」或「力量豁免」等豁免`));
     if (Array.isArray(trait.skillChoice)) trait.skillChoice.forEach(skill => {
       if (!Object.hasOwn(skills, skill)) errors.push(`${where}：技能「${skill}」不在 character-rules.js 的 CharacterSkillAbilities`);
     });

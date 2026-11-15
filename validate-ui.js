@@ -463,7 +463,8 @@ async function verifyAppearanceAndLayout(browser, page, url) {
             saveTargets: [...document.querySelectorAll(".save-name")].every(el => rect(el).height >= 44 && el.scrollWidth <= el.clientWidth && rect(el.querySelector("input")).width === rect(el).width && rect(el.querySelector("input")).height === rect(el).height),
             saveRows: new Set([...document.querySelectorAll(".save-pair")].map(el => Math.round(rect(el).top))).size,
             groupColumns: [...document.querySelectorAll(".skill-group-heading")].map(el => Math.round(rect(el).left)),
-            skillOrder: [...document.querySelectorAll(".skill-grid .skill-tip")].map(el => el.dataset.skill).join(""),
+            // 只看技能名稱（span）；名稱旁的圓框 A／D 與 ✦ 也是 .skill-tip 按鈕。
+            skillOrder: [...document.querySelectorAll(".skill-grid .skill-name > span.skill-tip")].map(el => el.dataset.skill).join(""),
             sectionOrder: [...document.querySelectorAll("#tab-skills .skill-section-heading h3")].map(el => el.textContent),
             notes: rect(document.getElementById("skill-extra")).height > 40,
             detail: (() => {
@@ -6594,6 +6595,16 @@ async function verifyShareReadonlyMode(browser, url) {
     await page.evaluate(() => { autoPrepareSpellFromFeature("burning-hands", document.body); });
     await page.getByText("分享模式不可將此法術加入準備清單。").waitFor();
     await page.getByRole("dialog", { name: "法術詳情", exact: true }).getByRole("button", { name: "關閉", exact: true }).first().click();
+
+    // 圓框 A／D 是算出來的顯示：分享模式照樣出現，點了開說明，豁免熟練仍鎖著。
+    await openShare(character("wizard", 3, { race: "gnome", armor: "鎖子甲" }));
+    await page.evaluate(() => showTab("skills", document.querySelector('[aria-controls="tab-skills"]')));
+    assert.deepEqual(await page.evaluate(() => Array.from(document.querySelectorAll("#tab-skills .save-name .roll-mode-badge"), badge => `${badge.dataset.skill}|${badge.textContent}`)),
+      ["力量豁免|D", "敏捷豁免|D", "智力豁免|A", "感知豁免|A", "魅力豁免|A"], "share mode shows the advantage and disadvantage marks");
+    const shareIntSave = await page.isChecked("#prof-int");
+    await page.locator('.save-name .roll-mode-badge[data-skill="智力豁免"]').click();
+    assert.deepEqual([await page.locator("#skillPopup .title").textContent(), await page.isChecked("#prof-int")], ["智力豁免", shareIntSave], "share mode badges open the popup and leave the save locked");
+    await page.keyboard.press("Escape");
 
     // 一般模式不受影響：沒有規則提示、手動管理開關與按鈕都在。
     await page.goto(url);

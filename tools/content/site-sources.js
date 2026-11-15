@@ -94,6 +94,8 @@ function loadConditionLabels() {
 
 // 技能 ID（character-rules.js 的 CharacterSkillAbilities：中文名 → 屬性）。
 const loadSkillAbilities = () => loadCharacterRules().CharacterSkillAbilities;
+// 內容檔 advantage 可寫的擲骰（技能 ID、「先攻」、「力量豁免」等六項豁免；character-rules.js 的 CharacterRollModeTargets）。
+const loadRollModeTargets = () => loadCharacterRules().CharacterRollModeTargets;
 
 // 內容來源的顯示標籤與說明（character-rules.js 的 getContentSourceLabel、getContentSourceNotice，例如 extended →「擴充」），
 // 以及加上標籤的名稱（formatContentSourceName，例如「耕者(擴充)」）。
@@ -163,4 +165,4 @@ function loadMagicItemCatalog(rules, baseLists) {
   return globals.MagicItemCatalog;
 }
 
-module.exports = { ROOT, loadMagicItemCatalog, loadEquipmentData, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadReferenceOnlyBeasts, loadSkillAbilities, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };
+module.exports = { ROOT, loadMagicItemCatalog, loadEquipmentData, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadReferenceOnlyBeasts, loadSkillAbilities, loadRollModeTargets, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };

@@ -15,6 +15,7 @@ features:
     level: 3
     name: 運動健將
     hint: {panels: [overview]}
+    advantage: [運動, 先攻]
     actions:
       - mode: movement
         key: dynamic-movement-fighter-1s26hvz

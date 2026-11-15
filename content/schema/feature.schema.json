@@ -14,6 +14,13 @@
       "minLength": 1,
       "description": "Markdown：段落、「- 」清單、**粗體**、行尾「\\」換行、「#### 標題」小節、「---」分隔線、GFM 表格（只用於能力的 text／tabletop，外框寫在 tables）。[[運動]]、[[失能]]、[[小魔鬼]] 產生提示框；{rageDamage|頁面文字} 在跑團模式換成目前數值。不可使用 HTML。"
     },
+    "advantage": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "達到能力等級後永久、無條件有優勢的 D20 擲骰：技能 ID（character-rules.js 的 CharacterSkillAbilities）、「先攻」或「力量豁免」等六項豁免（CharacterRollModeTargets）。角色卡在對應文字旁標示圓框 A；有條件的優勢（例如「除非陷入失能」）不寫。"
+    },
     "srdText": {
       "type": "string",
       "minLength": 1,
@@ -116,6 +123,7 @@
           "description": "此能力要玩家做的選擇（武器精通、專精、技能、語言、法術書法術）：選幾個、從哪裡選。網站依此決定欄位數、可選項目與缺項提醒。"
         },
         "grants": { "$ref": "#/definitions/grants", "description": "取得此能力就固定獲得的項目（例如盜賊黑話的語言）。" },
+        "advantage": { "$ref": "#/definitions/advantage" },
         "spellSourceKey": {
           "type": "string",
           "minLength": 1,
@@ -128,7 +136,7 @@
           "anyOf": [
             { "required": ["id"] }, { "required": ["type"] }, { "required": ["tableName"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
             { "required": ["changeOn"] }, { "required": ["choiceGroup"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
-            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["spellsByChoice"] }, { "required": ["spellSourceKey"] }, { "required": ["afterFeatChoice"] }, { "required": ["cantripChoiceLabel"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }, { "required": ["mount"] }, { "required": ["picks"] }, { "required": ["grants"] }
+            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["spellsByChoice"] }, { "required": ["spellSourceKey"] }, { "required": ["afterFeatChoice"] }, { "required": ["cantripChoiceLabel"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }, { "required": ["mount"] }, { "required": ["picks"] }, { "required": ["grants"] }, { "required": ["advantage"] }
           ]
         }
       },

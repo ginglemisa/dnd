@@ -97,6 +97,8 @@ function raceRules(race) {
       // 每級 HP 上限加值的來源特性（計算說明視窗顯示特性名稱；總和在種族的 hpPerLevel）。
       ...(trait.hpPerLevel ? { hpPerLevel: trait.hpPerLevel } : {}),
       ...(trait.hint ? { hint: { panels: [...trait.hint.panels] } } : {}),
+      // 永久、無條件的優勢（角色卡的圓框 A，character-rules.js 的 getRollModeMarks）。
+      ...(trait.advantage ? { advantage: [...trait.advantage] } : {}),
       ...(trait.resource ? { resource: { ...trait.resource, label: trait.resource.label || trait.name } } : {}),
       ...(trait.skillChoice ? { skillChoice: Array.isArray(trait.skillChoice) ? [...trait.skillChoice] : trait.skillChoice } : {}),
       ...(trait.feat ? { feat: { ...trait.feat } } : {}),

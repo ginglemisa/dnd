@@ -153,6 +153,13 @@
         "actions": { "type": "array", "items": { "$ref": "#/definitions/action" } },
         "spells": { "type": "array", "items": { "$ref": "#/definitions/spell" } },
         "resistances": { "type": "array", "items": { "$ref": "#/definitions/damageType" } },
+        "advantage": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "達到特質等級後永久、無條件有優勢的 D20 擲骰：技能 ID、「先攻」或「力量豁免」等六項豁免（character-rules.js 的 CharacterRollModeTargets）。角色卡在對應文字旁標示圓框 A；只對特定狀態或來源的優勢（例如對抗中毒的豁免）不寫。"
+        },
         "skillChoice": {
           "description": "選一項技能熟練：技能 ID 清單，或 any（任一技能）。",
           "oneOf": [{ "const": "any" }, { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }]

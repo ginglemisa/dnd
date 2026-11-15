@@ -1401,7 +1401,7 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => TabletopMode.setPanel("overview"));
     await page.waitForFunction(() => document.getElementById("tabletop-overview-rule-summary").textContent.includes("精靈之靴：隱匿檢定有優勢"));
     // 無條件優勢：跑團技能按鈕加「優勢」標籤（先攻格放在數值旁），報讀與滑鼠提示寫出來源；
-    // 角色卡技能頁不放標籤，改在技能名稱旁放 ✦（使用者決定），aria-label 與浮層寫「優勢・精靈之靴」。
+    // 角色卡不放標籤，改在技能名稱旁放圓框 A（✦ 只留數值類效果），aria-label 與浮層寫「優勢：精靈之靴」。
     await page.evaluate(() => TabletopMode.setPanel("skills"));
     await page.waitForFunction(() => document.querySelector("#tabletop-skill-values .magic-advantage-tag"));
     assert.deepEqual(await page.evaluate(() => {
@@ -1410,16 +1410,19 @@ async function verifyEquipmentLoadout(browser, url) {
       return {
         tabletop: tabletop.map(item => [item.querySelector(".tabletop-skill-value__label").textContent, item.querySelector("button").getAttribute("aria-label").endsWith("；優勢（精靈之靴）")]),
         sheetTags: document.querySelectorAll("#tab-skills .magic-advantage-tag").length,
-        sheet: [...document.querySelectorAll("#tab-skills .skill-effect-tip")].map(tip => [tip.closest(".skill-cell")?.querySelector(".skill-tip").textContent, tip.getAttribute("aria-label"), tip.textContent])
+        sheetEffectTips: document.querySelectorAll("#tab-skills .skill-effect-tip").length,
+        // 基準角色是 5 級戰士（勇士），運動另有「運動健將」的 A，這裡只看隱匿。
+        sheet: [...document.querySelectorAll("#tab-skills .skill-cell:has(#prof-隱匿) .roll-mode-badge")].map(badge => [badge.closest(".skill-cell")?.querySelector(".skill-tip").textContent, badge.getAttribute("aria-label"), badge.textContent])
       };
-    }), { tabletop: [["隱匿", true]], sheetTags: 0, sheet: [["隱匿", "隱匿：優勢・精靈之靴", "✦"]] }, "worn boots tag stealth in tabletop mode and mark it with ✦ on the sheet");
+    }), { tabletop: [["隱匿", true]], sheetTags: 0, sheetEffectTips: 0, sheet: [["隱匿", "隱匿，優勢：精靈之靴", "A"]] }, "worn boots tag stealth in tabletop mode and mark it with A on the sheet");
     await hints(inventoryOf({ uid: "boots", quantity: 1, magic: { id: "boots-of-elvenkind" } }));
-    await page.waitForFunction(() => document.querySelectorAll("#tab-skills .skill-effect-tip, #tabletop-skill-values .magic-advantage-tag").length === 0);
+    await page.waitForFunction(() => document.querySelectorAll("#tab-skills .skill-effect-tip, #tab-skills .skill-cell:has(#prof-隱匿) .roll-mode-badge, #tabletop-skill-values .magic-advantage-tag").length === 0);
     await hints({ offHand: "警戒之盾", ...inventoryOf({ uid: "sentinel", itemId: "盾牌", quantity: 1, magic: { id: "sentinel-shield" } }) });
     await page.evaluate(() => TabletopMode.setPanel("overview"));
     await page.waitForFunction(() => document.querySelector("#tabletop-initiative .magic-advantage-tag"));
-    assert.deepEqual(await page.evaluate(() => [document.querySelector("#tabletop-initiative .magic-advantage-tag").title, document.querySelector("#tabletop-initiative button").getAttribute("aria-label").endsWith("；優勢（警戒之盾）"), document.querySelector('#tab-skills .skill-cell:has(#prof-察覺) .skill-effect-tip')?.dataset.tipText]),
-      ["優勢：警戒之盾", true, "優勢・警戒之盾"], "the Sentinel Shield tags initiative and perception");
+    assert.deepEqual(await page.evaluate(() => [document.querySelector("#tabletop-initiative .magic-advantage-tag").title, document.querySelector("#tabletop-initiative button").getAttribute("aria-label").endsWith("；優勢（警戒之盾）"), document.querySelector('#tab-skills .skill-cell:has(#prof-察覺) .roll-mode-badge')?.dataset.tipText,
+      document.querySelector('#tab-basic .basic-combat-field .roll-mode-badge[data-skill="先攻"]')?.dataset.tipText]),
+      ["優勢：警戒之盾", true, "優勢：警戒之盾", "優勢：運動健將（勇士 3 級）、警戒之盾"], "the Sentinel Shield tags initiative and perception, and joins the champion's A on the sheet's initiative title");
     await hints(inventoryOf({ uid: "boots", quantity: 1, worn: true, magic: { id: "boots-of-elvenkind" } }));
     await hints(inventoryOf({ uid: "belt", quantity: 1, attuned: true, worn: true, magic: { id: "belt-of-dwarvenkind" } }));
     await page.evaluate(() => TabletopMode.setPanel("skills"));
@@ -1524,6 +1527,52 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.deepEqual((await sheetNumbers({ class: "wizard", armor: "鎖子甲", ...inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1 }) })).warnings, ["未熟練", "力量需求", "懲罰"], "plain chain mail still warns a wizard");
     const mithralSheet = await sheetNumbers({ str: "10", armor: mithral, ...inventoryOf({ uid: "mail", itemId: "鎖子甲", quantity: 1, magic: { id: "mithral-armor" } }) });
     assert.deepEqual([mithralSheet.speed, mithralSheet.warnings], ["30", []], "Mithral Armor has no Strength requirement or stealth disadvantage");
+    // 圓框 A／D（getRollModeMarks）：永久、無條件的優勢與劣勢標在角色卡文字右側，依畫面順序列出；同時有優勢與劣勢時抵銷。
+    const rollMarks = extra => page.evaluate(([base, extra]) => {
+      applyStateObject({ ...base, race: "", subclass: "", "weapon-attack-automation": true, ...extra });
+      return new Promise(resolve => setTimeout(resolve)).then(() => [...document.querySelectorAll(".roll-mode-badge")].map((badge) => {
+        const hand = badge.closest(".weapon-attack-card")?.getAttribute("aria-labelledby").replace(/^atk-|-title$/gu, "");
+        return `${hand ? `${hand}:` : ""}${badge.dataset.skill}|${badge.textContent}|${badge.dataset.tipText}`;
+      }));
+    }, [magicBase, extra]);
+    const mailItem = { uid: "mail", itemId: "鎖子甲", quantity: 1 };
+    const untrained = "劣勢：未受訓的護甲（鎖子甲）";
+    assert.deepEqual(await rollMarks({ class: "wizard", armor: "鎖子甲", mainHand: "長劍", ...inventoryOf(mailItem, { uid: "sword", itemId: "長劍", quantity: 1 }) }), [
+      `先攻|D|${untrained}`, `力量檢定|D|${untrained}`, `敏捷檢定|D|${untrained}`, `力量豁免|D|${untrained}`, `敏捷豁免|D|${untrained}`,
+      `運動|D|${untrained}`, `體操|D|${untrained}`, `巧手|D|${untrained}`, "隱匿|D|劣勢：隱匿劣勢（鎖子甲）、未受訓的護甲（鎖子甲）", `main:命中|D|${untrained}`
+    ], "untrained armor gives disadvantage to Strength and Dexterity checks, saves, initiative and attacks");
+    assert.deepEqual(await rollMarks({ class: "wizard", armor: elvenChain, ...inventoryOf({ ...mailItem, magic: { id: "elven-chain" } }) }), [`隱匿|D|劣勢：隱匿劣勢（${elvenChain}）`], "Elven Chain counts as trained but keeps the stealth disadvantage");
+    assert.deepEqual(await rollMarks({ level: "2", armor: mithral, ...inventoryOf({ ...mailItem, magic: { id: "mithral-armor" } }) }), [], "Mithral Armor has no stealth disadvantage");
+    assert.deepEqual(await rollMarks({ level: "2", armor: "鎖子甲", ...inventoryOf(mailItem, worn("boots", "boots-of-elvenkind")) }), [], "boots of elvenkind cancel the chain mail's stealth disadvantage");
+    // 7 級野蠻人（侏儒）穿環甲：野性直覺的先攻 A 與未受訓護甲的 D 抵銷；侏儒狡黠給智力、感知、魅力豁免 A；巨劍力量未達 13。
+    const ringUntrained = "劣勢：未受訓的護甲（環甲）";
+    assert.deepEqual(await rollMarks({ class: "barbarian", level: "7", race: "gnome", str: "12", armor: "環甲", mainHand: "巨劍", ...inventoryOf({ uid: "ring", itemId: "環甲", quantity: 1 }, { uid: "sword", itemId: "巨劍", quantity: 1 }) }), [
+      `力量檢定|D|${ringUntrained}`, `敏捷檢定|D|${ringUntrained}`, `力量豁免|D|${ringUntrained}`, `敏捷豁免|D|${ringUntrained}`,
+      "智力豁免|A|優勢：侏儒狡黠（侏儒）", "感知豁免|A|優勢：侏儒狡黠（侏儒）", "魅力豁免|A|優勢：侏儒狡黠（侏儒）",
+      `運動|D|${ringUntrained}`, `體操|D|${ringUntrained}`, `巧手|D|${ringUntrained}`, "隱匿|D|劣勢：隱匿劣勢（環甲）、未受訓的護甲（環甲）",
+      "main:命中|D|劣勢：未受訓的護甲（環甲）、重型武器（巨劍），力量未達 13"
+    ], "barbarian, gnome and untrained heavy armor marks");
+    // 點豁免的圓框只開說明，不切換熟練。
+    const tabBeforeSaveBadge = await page.evaluate(() => document.querySelector(".tab-content:not([hidden])")?.id.replace(/^tab-/u, "") || "");
+    await page.evaluate(() => showTab("skills"));
+    const intSave = await page.isChecked("#prof-int");
+    await page.locator('.save-name .roll-mode-badge[data-skill="智力豁免"]').click();
+    assert.deepEqual([await page.isChecked("#prof-int"), await page.locator("#skillPopup .title").textContent(), (await page.locator("#skillPopup .monster-detail-line").textContent()).trim()],
+      [intSave, "智力豁免", "優勢：侏儒狡黠（侏儒）"], "the save badge opens the popup without toggling proficiency");
+    await page.keyboard.press("Escape");
+    if (tabBeforeSaveBadge) await page.evaluate(tab => showTab(tab), tabBeforeSaveBadge);
+    assert.deepEqual(await rollMarks({ class: "barbarian", level: "6", race: "", armor: "" }), [], "Feral Instinct starts at level 7");
+    // 勇士 3 級：運動與先攻 A；長弓是重型遠程武器，敏捷未達 13 時命中 D；力量或敏捷空白、武器攻擊自動化關閉時不判斷重型武器。
+    const champion = { class: "fighter", subclass: "champion", level: "3", dex: "12", armor: "鎖子甲", mainHand: "長弓", ...inventoryOf(mailItem, { uid: "bow", itemId: "長弓", quantity: 1 }) };
+    const championMarks = ["先攻|A|優勢：運動健將（勇士 3 級）", "運動|A|優勢：運動健將（勇士 3 級）", "隱匿|D|劣勢：隱匿劣勢（鎖子甲）"];
+    assert.deepEqual(await rollMarks(champion), [...championMarks, "main:命中|D|劣勢：重型武器（長弓），敏捷未達 13"], "champion marks and a heavy ranged weapon below Dexterity 13");
+    assert.deepEqual(await rollMarks({ ...champion, str: "" }), championMarks, "no heavy weapon mark until both Strength and Dexterity have numbers");
+    assert.deepEqual(await rollMarks({ ...champion, "weapon-attack-automation": false }), championMarks, "no heavy weapon mark while weapon automation is off");
+    assert.deepEqual(await rollMarks({ ...champion, level: "2" }), ["隱匿|D|劣勢：隱匿劣勢（鎖子甲）", "main:命中|D|劣勢：重型武器（長弓），敏捷未達 13"], "Remarkable Athlete starts at level 3");
+    // 用感知或魅力攻擊的那一手（橡棍術、契約武器）不受未受訓護甲影響。
+    assert.deepEqual(await page.evaluate(() => Object.keys(getRollModeMarks({ armor: { name: "環甲", trained: false }, hands: [{ key: "main", attackAbility: "wis" }, { key: "off", attackAbility: "dex" }] })).filter(key => key.startsWith("attack:"))),
+      ["attack:off"], "only Strength and Dexterity attacks get the untrained armor disadvantage");
+    await page.evaluate(() => { document.getElementById("weapon-attack-automation").checked = true; });
     // 大法師法袍：沒穿護甲時基礎 AC 15＋敏捷（可以用盾牌）；穿護甲時不算。
     const archmagiRobe = worn("robe", "robe-of-the-archmagi");
     assert.deepEqual([
@@ -1543,7 +1592,7 @@ async function verifyEquipmentLoadout(browser, url) {
     // 裝備摘要的「魔法物品」列寫出加值來源。
     await sheetNumbers(inventoryOf(worn("gloves", "gloves-of-thievery"), worn("stone", "ioun-stone", { kind: "mastery" }), axe));
     assert.deepEqual(await page.evaluate(() => Array.from(document.querySelectorAll("#equipment-loadout-summary-content .equipment-summary-row"), row => row.textContent).filter(text => text.includes("巧手+5") || text.includes("熟練加值+1") || text.includes("生命值上限每級+1")).length > 0), true, "the summary lists the new magic bonuses");
-    // 技能頁的 ✦：技能專屬的效果（優勢、技能加值）在技能名稱旁，同一技能多個來源寫在同一個浮層；
+    // 技能頁的 ✦：技能專屬的效果（技能加值；優勢改用圓框 A）在技能名稱旁，同一技能多個來源寫在同一個浮層；
     // 所有檢定與熟練加值只在「技能」標題旁放一個；點了開規則說明浮層。沒有物品時都不出現。
     const skillTips = extra => page.evaluate(([base, extra]) => {
       applyStateObject({ ...base, ...extra });
@@ -1554,7 +1603,7 @@ async function verifyEquipmentLoadout(browser, url) {
     }, [magicBase, extra]);
     assert.deepEqual(await skillTips(inventoryOf()), { cells: [], heading: "" }, "no ✦ on the skills page without magic items");
     assert.deepEqual(await skillTips(inventoryOf({ ...worn("gloves", "gloves-of-thievery"), attuned: false }, worn("elven", "cloak-of-elvenkind"), { ...worn("boots", "boots-of-elvenkind"), attuned: false }, luckstone, worn("stone", "ioun-stone", { kind: "mastery" }))), {
-      cells: [["巧手", "+5・竊賊手套"], ["隱匿", "優勢・精靈斗篷、精靈之靴"]],
+      cells: [["巧手", "+5・竊賊手套"]],
       heading: "所有屬性檢定 +1・幸運石；熟練加值 +1・艾恩石（精進）"
     }, "skill-specific effects mark that skill, effects on every skill mark the heading");
     const tabBeforeSkills = await page.evaluate(() => document.querySelector(".tab-content:not([hidden])")?.id.replace(/^tab-/u, "") || "");

@@ -2,7 +2,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { ROOT, loadSkillAbilities, loadToolCatalog } = require("../content/site-sources");
+const { ROOT, loadSkillAbilities, loadRollModeTargets, loadToolCatalog } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { tableValueText } = require("../content/markdown");
 const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile, listYaml } = require("../content/yaml");
@@ -270,6 +270,8 @@ function checkClass(classDef, errors) {
       if (owner !== classDef && feature.level < classDef.subclassLevel) errors.push(`${where}：子職能力等級低於 subclassLevel`);
       if (owner !== classDef && feature.type) errors.push(`${where}：子職能力不可使用 type`);
       if (feature.id) claim(featureIds, feature.id, where, "能力 ID");
+      (feature.advantage || []).filter(target => !loadRollModeTargets().includes(target))
+        .forEach(target => errors.push(`${where}：advantage 的「${target}」不是技能 ID、「先攻」或「力量豁免」等豁免`));
       if (feature.options && !feature.choose) errors.push(`${where}：有 options 時須寫 choose`);
       if (feature.choose && (!feature.options || feature.choose > feature.options.length)) errors.push(`${where}：choose 超過選項數`);
       if ((feature.changeOn || feature.choiceGroup || feature.optionStyle) && !feature.options) errors.push(`${where}：changeOn／choiceGroup／optionStyle 只用於有 options 的能力`);

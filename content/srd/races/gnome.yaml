@@ -44,6 +44,7 @@ traits:
   - id: gnomish-cunning
     name: 侏儒狡黠
     text: 智力、感知、魅力豁免具有優勢。
+    advantage: [智力豁免, 感知豁免, 魅力豁免]
     hint: { panels: [skills], summary: 智力、感知、魅力豁免有優勢。 }
   - id: gnomish-lineage
     name: 侏儒血統

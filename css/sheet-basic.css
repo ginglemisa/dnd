@@ -759,6 +759,63 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   font-weight: 400;
 }
 
+/* 永久的優勢與劣勢：文字右側的圓框 A／D（.roll-mode-badge 按鈕，圓框是 .info-icon，顏色跟著所在文字），
+   點了開規則說明浮層寫來源。按鈕固定 1.5em 見方，上下負邊距讓所在列的高度不變；
+   選擇器帶 #tab-basic，蓋過數值頁卡片按鈕的最小高度與字級。 */
+:is(.tab-content, #tab-basic) button.roll-mode-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5em;
+  min-width: 0;
+  height: 1.5em;
+  min-height: 0;
+  margin: -0.25em 0 -0.25em 0.2em;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: 0;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: middle;
+  transition: none;
+}
+
+button.roll-mode-badge .info-icon {
+  margin-left: 0;
+}
+
+button.roll-mode-badge:hover,
+button.roll-mode-badge:active {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  transform: none;
+  translate: none;
+}
+
+button.roll-mode-badge:focus-visible {
+  outline: 2px solid var(--focus-ring, var(--accent));
+  outline-offset: 1px;
+}
+
+/* 置中的豁免名稱與 STR／DEX 縮寫：右邊負邊距抵掉圓框自己的寬度，名稱仍在格子正中間（和沒有圓框的格子對齊）。
+   豁免名稱整塊是勾選熟練的透明勾選框，圓框疊在它上面才點得到（點圓框不會切換熟練）。 */
+:is(.tab-content, #tab-basic) .ability-title button.roll-mode-badge {
+  margin-right: -1.7em;
+}
+
+/* 豁免名稱是 flex（gap 5px）：左邊距扣掉 gap，右邊負邊距同樣抵掉圓框的寬度與左邊距。 */
+:is(.tab-content, #tab-basic) .save-name button.roll-mode-badge {
+  position: relative;
+  z-index: 1;
+  margin-left: calc(0.2em - 5px);
+  margin-right: -1.7em;
+}
+
 /* ===== Skills ===== */
 #tab-skills {
   container: skill-tab / inline-size;

@@ -171,6 +171,7 @@ features:
     level: 7
     name: 野性直覺
     hint: {panels: [overview]}
+    advantage: [先攻]
     summary: 你的先攻擲骰有優勢。
     pdfMerge: true
     text: |
