@@ -341,7 +341,16 @@
 #tab-basic #ac-display,
 #tab-basic .speed-current-display {
   margin-left: 0;
-  color: var(--accent);
+}
+
+/* 數字的字色：自動算出來的是 --auto-value，玩家自己填的是一般字色（--text）。
+   開關控制的數字看自動計算開關（.manual-key-stats 是關），屬性調整值與技能分組的調整值一直是自動算的。 */
+#tab-basic:not(.manual-key-stats) :is(#hp-display, #ac-display, #speed-display, #passive-perception, #initiative-input),
+#tab-skills:not(.manual-key-stats) :is(.save-pair, .skill-cell) input[type="text"],
+#tab-spells:not(.manual-key-stats) :is(#spell-adjustment, #spell-save-dc, #spell-attack-bonus),
+#tab-basic .modifier,
+#tab-skills .skill-group-mod {
+  color: var(--auto-value);
 }
 
 #tab-basic .derived-stat-input {

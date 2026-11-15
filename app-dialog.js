@@ -14,6 +14,15 @@
       && element.getAttribute("aria-hidden") !== "true" && element.getClientRects().length > 0);
   }
 
+  const NON_TEXT_INPUT_TYPES = new Set(["button", "checkbox", "color", "file", "hidden", "image", "radio", "range", "reset", "submit"]);
+
+  // Fields that bring up the on-screen keyboard.
+  function isTextEntry(element) {
+    if (!(element instanceof HTMLElement)) return false;
+    if (element instanceof HTMLTextAreaElement || element.isContentEditable) return true;
+    return element instanceof HTMLInputElement && !NON_TEXT_INPUT_TYPES.has(element.type);
+  }
+
   // Track only the elements this dialog made inert. Elements already inert belong
   // to another lock (quick build, tour, a parent dialog) that may be released while
   // this dialog is open; restoring a snapshot would lock them again.
@@ -221,6 +230,8 @@
 
   function open(options = {}) {
     if (typeof document === "undefined") return Promise.resolve(false);
+    // Only a dialog opened onto a page with no dialog animates in; nested and replacing dialogs appear at once.
+    const entering = !activeDialog && !prefersReducedToastMotion();
     const parentDialog = activeDialog?.allowNested ? activeDialog : activeDialog?.parentDialog || null;
     if (activeDialog && activeDialog !== parentDialog) activeDialog.close(false, false);
 
@@ -232,6 +243,27 @@
 
     const surface = document.createElement("section");
     surface.className = "app-dialog__surface";
+    // A text field that would open the phone keyboard gets focus only after the open motion.
+    let focusAfterEntering = null;
+    if (entering) {
+      // The CSS plays the open motion while data-entering is set; drop it once that motion ends.
+      root.dataset.entering = "true";
+      let fallback = 0;
+      const endEntering = event => {
+        if (event && event.target !== surface) return;
+        window.clearTimeout(fallback);
+        surface.removeEventListener("animationend", endEntering);
+        surface.removeEventListener("animationcancel", endEntering);
+        delete root.dataset.entering;
+        const target = focusAfterEntering;
+        focusAfterEntering = null;
+        // Skip when the dialog closed or the player already moved focus inside it.
+        if (target?.isConnected && root.isConnected && !surface.contains(document.activeElement)) target.focus();
+      };
+      surface.addEventListener("animationend", endEntering);
+      surface.addEventListener("animationcancel", endEntering);
+      fallback = window.setTimeout(() => endEntering(), 600);
+    }
     surface.setAttribute("role", options.role === "alertdialog" ? "alertdialog" : "dialog");
     surface.setAttribute("aria-modal", "true");
 
@@ -425,7 +457,12 @@
         : options.initialFocus === "content"
           ? getFocusableElements(body)[0]
         : (cancelButton || actionButtons[0] || confirmButton);
-      (initialTarget || surface).focus();
+      if (entering && isTextEntry(initialTarget)) {
+        focusAfterEntering = initialTarget;
+      } else {
+        // While the window still moves into place, focusing must not scroll toward its starting position.
+        (initialTarget || surface).focus(entering ? { preventScroll: true } : undefined);
+      }
     });
   }
 
