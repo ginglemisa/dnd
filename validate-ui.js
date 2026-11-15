@@ -358,6 +358,44 @@ async function verifyAppearanceAndLayout(browser, page, url) {
         navigation: ["rgb(197, 164, 108)", "rgb(12, 23, 41)"], identity: "rgb(234, 211, 164)" },
       "classic dark uses brass actions with dark ink and pale gold identity labels");
     }
+    // 數字字色：自動算的是 --auto-value，手填的是一般字色；開關控制的數字跟著自動計算開關，調整值一直是自動的。
+    const readNumberColors = () => {
+      // A fresh probe per token: recolouring one probe would read the old colour mid-transition.
+      const resolve = token => {
+        const probe = document.createElement("span");
+        probe.style.cssText = `transition: none; color: var(${token})`;
+        document.body.append(probe);
+        const color = getComputedStyle(probe).color;
+        probe.remove();
+        return color;
+      };
+      const auto = resolve("--auto-value"), text = resolve("--text");
+      return ["#hp-display", "#initiative-input", "#save-str", "#spell-save-dc", "#str-mod", ".skill-group-mod", "#hp", "#str"].map(selector => {
+        const color = getComputedStyle(document.querySelector(selector)).color;
+        return color === auto ? "auto" : color === text ? "text" : color;
+      });
+    };
+    // The derived inputs fade their colour, so poll until it settles.
+    const expectNumberColors = async (expected, message) => {
+      let actual;
+      for (let attempt = 0; attempt < 20; attempt++) {
+        actual = await page.evaluate(readNumberColors);
+        if (JSON.stringify(actual) === JSON.stringify(expected)) break;
+        await page.waitForTimeout(50);
+      }
+      assert.deepEqual(actual, expected, `${family}-${mode}: ${message}`);
+    };
+    const setAutoCalculation = checked => page.evaluate(checked => {
+      const toggle = document.getElementById("auto-calculate-key-stats-toggle");
+      toggle.checked = checked;
+      toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    }, checked);
+    assert.equal(await page.locator("#auto-calculate-key-stats-toggle").isChecked(), true);
+    await expectNumberColors(["auto", "auto", "auto", "auto", "auto", "auto", "text", "text"], "calculated numbers use the auto colour");
+    await setAutoCalculation(false);
+    await expectNumberColors(["text", "text", "text", "text", "auto", "auto", "text", "text"], "manual numbers use the text colour");
+    await setAutoCalculation(true);
+    await expectNumberColors(["auto", "auto", "auto", "auto", "auto", "auto", "text", "text"], "turning calculation back on restores the auto colour");
     await page.locator("#utility-menu-toggle").click();
     await screenshot(`${family}-${mode}-menu`);
     await page.locator(".utility-menu__setting--dark").waitFor({ state: "visible" });
@@ -1619,6 +1657,7 @@ async function verifyToasts(browser) {
   await prepareToastFixture(desktop);
   await verifyToastPointerIsolation(desktop, false);
   await verifyDialogBackgroundOwnership(desktop);
+  await verifyDialogOpenMotion(desktop);
   await desktop.evaluate(() => {
     AppDialog.notify("第一則", { duration: 10000 });
     AppDialog.notify("第二則", { duration: 10000, variant: "dice-roll" });
@@ -1711,6 +1750,12 @@ async function verifyToasts(browser) {
   });
   await swipeToast(reduced, 0, 1, 160);
   assert.deepEqual(await toastMessages(reduced), ["低動態二"]);
+  assert.equal(await reduced.evaluate(() => {
+    void AppDialog.showContent({ title: "低動態視窗" });
+    const entering = document.querySelector(".app-dialog").dataset.entering;
+    document.querySelector(".app-dialog__close").click();
+    return entering;
+  }), undefined, "reduced motion opens dialogs without the open motion");
   await reduced.close();
 
   console.log("AppDialog toast stack, timeout, mouse drag, hold timeout, and touch swipes passed.");
@@ -1762,6 +1807,49 @@ async function verifyToastPointerIsolation(page, touch) {
   if (touch) await swipeToast(page, 0, -1, 160);
   else await dragToast(page, 0, -160);
   await page.waitForFunction(() => !document.querySelector(".app-toast"));
+}
+
+// Only a dialog opened onto a page with no dialog animates: zoom on desktop, slide up on phones.
+async function verifyDialogOpenMotion(page) {
+  const entering = () => page.evaluate(() => Array.from(document.querySelectorAll(".app-dialog"), el => el.dataset.entering === "true"));
+  const surfaceAnimation = () => page.locator(".app-dialog__surface").first().evaluate(el => getComputedStyle(el).animationName);
+  const settled = () => page.waitForFunction(() => !document.querySelector(".app-dialog[data-entering]"), null, { timeout: 2000 });
+
+  await page.evaluate(() => { void AppDialog.showContent({ title: "第一層", allowNested: true }); });
+  assert.deepEqual(await entering(), [true], "the first dialog plays the open motion");
+  assert.equal(await surfaceAnimation(), "app-dialog-zoom-in", "desktop dialogs grow into place");
+  await page.evaluate(() => { void AppDialog.showContent({ title: "巢狀" }); });
+  assert.deepEqual(await entering(), [true, false], "a nested dialog appears at once");
+  await settled();
+  await page.locator(".app-dialog__close").last().click();
+  await page.locator(".app-dialog__close").click();
+
+  // A text field gets focus only after the motion, so the phone keyboard does not rise with it.
+  assert.equal(await page.evaluate(() => {
+    void AppDialog.showContent({
+      title: "輸入", initialFocus: "content",
+      renderContent(body) { const input = document.createElement("input"); input.id = "dialog-motion-input"; body.append(input); }
+    });
+    return document.activeElement?.id;
+  }) === "dialog-motion-input", false, "the text field waits for the open motion");
+  await settled();
+  assert.equal(await page.evaluate(() => document.activeElement?.id), "dialog-motion-input", "the text field is focused after the motion");
+  await page.locator(".app-dialog__close").click();
+
+  // A dialog that replaces an open one appears at once, so the backdrop does not flash.
+  await page.evaluate(() => { void AppDialog.showContent({ title: "前一步" }); });
+  await settled();
+  await page.evaluate(() => { void AppDialog.showContent({ title: "下一步" }); });
+  assert.deepEqual(await entering(), [false], "a replacing dialog appears at once");
+  await page.locator(".app-dialog__close").click();
+
+  const viewport = page.viewportSize();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => { void AppDialog.showContent({ title: "手機" }); });
+  assert.equal(await surfaceAnimation(), "app-dialog-slide-up", "phone dialogs slide up from the bottom");
+  await settled();
+  await page.locator(".app-dialog__close").click();
+  await page.setViewportSize(viewport);
 }
 
 async function verifyDialogBackgroundOwnership(page) {

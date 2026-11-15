@@ -1714,6 +1714,8 @@ async function verifyQuickBuildGuidanceCopy(browser, url) {
     await wizard.locator('[data-equipment-detail="地城套組"]').first().click();
     const detailDialog = page.locator(".app-dialog").last();
     await detailDialog.waitFor();
+    // Measure once the open motion has brought the window to its place.
+    await page.waitForFunction(() => !document.querySelector(".app-dialog[data-entering]"));
     assert.equal(await coveredAt(detailDialog.locator(".app-dialog__surface")), true, "equipment detail sits above the wizard");
     assert.match(await detailDialog.innerText(), /背包/u);
     await detailDialog.locator(".app-dialog__close").click();

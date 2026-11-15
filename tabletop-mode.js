@@ -1074,25 +1074,17 @@
     if (typeof globalScope.AppDialog?.showContent !== "function") return;
 
     let input = null;
-    const fieldId = `tabletop-character-name-${Date.now()}`;
-    const hintId = `${fieldId}-hint`;
 
     const nextName = await globalScope.AppDialog.showContent({
       title: "修改角色名稱",
-      message: "名稱會顯示在數值頁與跑團模式，並自動帶入 PDF 匯出。",
       trigger,
       cancelLabel: "取消",
       confirmLabel: "儲存名稱",
       initialFocus: "content",
       renderContent(body) {
-        const field = document.createElement("label");
-        field.className = "app-dialog__number-field";
-        field.htmlFor = fieldId;
-        field.appendChild(document.createTextNode("角色名稱"));
-
         input = document.createElement("input");
-        input.id = fieldId;
         input.className = "app-dialog__number-input tabletop-character-name-input";
+        input.setAttribute("aria-label", "角色名稱");
         input.type = "text";
         input.value = combatState.characterName;
         input.placeholder = "例如：艾尼克斯・薩卡蘭姆";
@@ -1100,12 +1092,6 @@
         input.spellcheck = false;
         input.dataset.stateTransient = "true";
 
-        const hint = document.createElement("span");
-        hint.id = hintId;
-        hint.className = "app-dialog__number-hint";
-        hint.textContent = "留空可還原提示文字。PDF 匯出時仍可修改名稱。";
-
-        input.setAttribute("aria-describedby", hintId);
         input.addEventListener("keydown", (event) => {
           if (event.key !== "Enter" || event.isComposing) return;
           event.preventDefault();
@@ -1114,8 +1100,7 @@
             ?.click();
         });
 
-        field.append(input, hint);
-        body.appendChild(field);
+        body.appendChild(input);
       },
       resolveConfirm() {
         return input?.value.trim() || "";

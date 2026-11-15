@@ -22,6 +22,7 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="light"] {
   --class-tagline: #6f3f1e;
   --accent: #2852d6;
   --accent-strong: #2147b2;
+  --auto-value: var(--accent);
   --accent-soft: rgba(40, 82, 214, 0.12);
 
   --page-background:
@@ -151,6 +152,7 @@ html:where([data-ui-theme="warm"])[data-theme="light"] {
   --class-tagline: #6E4932;
   --accent: #A82F28;
   --accent-strong: #8E2923;
+  --auto-value: var(--accent);
   --accent-soft: #EFD2BF;
 
   --page-background: #FEF9ED;
@@ -274,6 +276,7 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] {
   --class-tagline: var(--accent-strong);
   --accent: #dfc48f;
   --accent-strong: #ead3a4;
+  --auto-value: var(--accent);
   --accent-soft: rgba(197, 164, 108, 0.14);
   --page-background: var(--bg);
   --nav-surface: #151e2b;
@@ -375,6 +378,7 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] {
   --class-tagline: #D6B797;
   --accent: #E3A793;
   --accent-strong: #EBB8A5;
+  --auto-value: var(--accent);
   --accent-soft: #3D2721;
   --page-background: var(--bg);
   --nav-surface: var(--surface-strong);
