@@ -107,8 +107,8 @@
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/base.css?v=20261115-basic-align">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261115-basic-align">
+  <link rel="stylesheet" href="css/base.css?v=20261115-race-options">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261115-race-options">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261113-info-icon">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261114-spell-lock">
   <link rel="stylesheet" href="css/utility.css?v=20261111-menu-layout">
@@ -760,14 +760,17 @@
       </span>
     </span>
     <span id="elf-lineage-row" class="race-option-row is-hidden" data-race-option-for="elf">
+      <span id="high-elf-cantrip-control" class="feat-choice-control is-hidden">
+        <select id="high-elf-cantrip" class="is-hidden" aria-label="高等精靈戲法" data-rest-change="longRest">
+          <option value="">--高等精靈戲法--</option>
+        </select>
+        <button type="button" id="high-elf-cantrip-view" class="feat-choice-view" aria-label="查看高等精靈戲法詳情" disabled>查看</button>
+      </span>
       <select id="elf-lineage" aria-label="精靈傳承">
         <option value="">--請選擇精靈傳承--</option>
         <option value="drow">卓爾</option>
         <option value="high_elf">高等精靈</option>
         <option value="wood_elf">木精靈</option>
-      </select>
-      <select id="high-elf-cantrip" class="is-hidden" aria-label="高等精靈戲法" data-rest-change="longRest">
-        <option value="">--高等精靈戲法--</option>
       </select>
     </span>
     <span id="gnome-lineage-row" class="race-option-row is-hidden" data-race-option-for="gnome">
@@ -1727,6 +1730,7 @@ function bindCoreCharacterEvents() {
   [...raceSpellFields, "druid-land"].forEach(id => {
     bindEventById(id, "change", () => { syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); });
   });
+  bindRaceCantripViewButtons();
   bindEventById("class", "change", updateSpellCastingStatsVisibility);
   bindEventById("background", "change", updateSpellCastingStatsVisibility);
   bindEventById("race", "change", updateSpellCastingStatsVisibility);
@@ -1787,7 +1791,7 @@ function populateHighElfCantripOptions() {
   getRaceCantripChoices().forEach(choice => {
     const select = document.getElementById(choice.field);
     if (!select || select.options.length > 1) return;
-    SpellCatalog.getSpells(choice.spellList, "cantrips").forEach(spell => { const option = document.createElement("option"); option.value = spell.spellId; option.textContent = SpellCatalog.getDisplayName(spell.spellId); select.appendChild(option); });
+    SpellCatalog.getSpells(choice.spellList, "cantrips").forEach(spell => { const option = document.createElement("option"); option.value = spell.spellId; option.textContent = spell.nameZh; select.appendChild(option); });
     if (select.querySelector(`option[value="${choice.default}"]`)) select.value = choice.default;
   });
 }
@@ -1805,8 +1809,28 @@ function updateHighElfCantripVisibility() {
     if (!select) return;
     const visible = race === choice.race && document.getElementById(choice.choiceId)?.value === choice.value;
     select.classList.toggle("is-hidden", !visible);
+    document.getElementById(`${choice.field}-control`)?.classList.toggle("is-hidden", !visible);
     document.getElementById(`${choice.choiceId}-row`)?.classList.toggle("has-cantrip", visible);
     if (visible && !select.value && select.querySelector(`option[value="${choice.default}"]`)) select.value = choice.default;
+    syncRaceCantripViewButton(choice.field);
+  });
+}
+
+// 自選戲法選單旁的「查看」：選單只顯示中文名，完整法術說明從這裡打開；沒選戲法時停用。
+function syncRaceCantripViewButton(field) {
+  const view = document.getElementById(`${field}-view`);
+  if (view) view.disabled = !SpellCatalog.getSpell(document.getElementById(field)?.value || "");
+}
+
+function bindRaceCantripViewButtons() {
+  getRaceCantripChoices().forEach(choice => {
+    const view = document.getElementById(`${choice.field}-view`);
+    if (!view) return;
+    view.addEventListener("click", () => {
+      const spell = SpellCatalog.getSpell(document.getElementById(choice.field)?.value || "");
+      if (spell) window.quickBuild?.openSpellDetail?.(spell, view);
+    });
+    bindEventById(choice.field, "change", () => syncRaceCantripViewButton(choice.field));
   });
 }
 
