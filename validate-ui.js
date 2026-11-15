@@ -370,7 +370,7 @@ async function verifyAppearanceAndLayout(browser, page, url) {
         return color;
       };
       const auto = resolve("--auto-value"), text = resolve("--text");
-      return ["#hp-display", "#initiative-input", "#save-str", "#spell-save-dc", "#str-mod", ".skill-group-mod", "#hp", "#str"].map(selector => {
+      return ["#hp-display", "#initiative-input", "#save-str", "#spell-save-dc", "#str-mod", ".skill-group-mod", "#hp", "#str", "#atk-main-hit", "#atk-main-name"].map(selector => {
         const color = getComputedStyle(document.querySelector(selector)).color;
         return color === auto ? "auto" : color === text ? "text" : color;
       });
@@ -391,11 +391,26 @@ async function verifyAppearanceAndLayout(browser, page, url) {
       toggle.dispatchEvent(new Event("change", { bubbles: true }));
     }, checked);
     assert.equal(await page.locator("#auto-calculate-key-stats-toggle").isChecked(), true);
-    await expectNumberColors(["auto", "auto", "auto", "auto", "auto", "auto", "text", "text"], "calculated numbers use the auto colour");
+    // 武器命中看武器攻擊自己的 AUTO 開關，不跟著自動計算開關；武器名稱不是數字，一直是一般字色。
+    await expectNumberColors(["auto", "auto", "auto", "auto", "auto", "auto", "text", "text", "auto", "text"], "calculated numbers use the auto colour");
     await setAutoCalculation(false);
-    await expectNumberColors(["text", "text", "text", "text", "auto", "auto", "text", "text"], "manual numbers use the text colour");
+    await expectNumberColors(["text", "text", "text", "text", "auto", "auto", "text", "text", "auto", "text"], "manual numbers use the text colour");
     await setAutoCalculation(true);
-    await expectNumberColors(["auto", "auto", "auto", "auto", "auto", "auto", "text", "text"], "turning calculation back on restores the auto colour");
+    await expectNumberColors(["auto", "auto", "auto", "auto", "auto", "auto", "text", "text", "auto", "text"], "turning calculation back on restores the auto colour");
+    const setWeaponAutomation = checked => page.evaluate(checked => {
+      const toggle = document.getElementById("weapon-attack-automation");
+      toggle.checked = checked;
+      toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    }, checked);
+    await setWeaponAutomation(false);
+    await expectNumberColors(["auto", "auto", "auto", "auto", "auto", "auto", "text", "text", "text", "text"], "manual weapon attack numbers use the text colour");
+    await setWeaponAutomation(true);
+    assert.equal(await page.locator("#atk-main-hit").evaluate(el => {
+      el.classList.add("is-calculation-enabled");
+      const line = getComputedStyle(el).textDecorationLine;
+      el.classList.remove("is-calculation-enabled");
+      return line;
+    }), "none", `${family}-${mode}: weapon attack numbers that open the calculation popup have no underline`);
     await page.locator("#utility-menu-toggle").click();
     await screenshot(`${family}-${mode}-menu`);
     await page.locator(".utility-menu__setting--dark").waitFor({ state: "visible" });

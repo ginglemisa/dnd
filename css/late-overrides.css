@@ -68,6 +68,11 @@ html[data-theme="dark"] .pdf-export-flow-modal__button--secondary {
   color: var(--text);
 }
 
+/* 武器名稱自動填入時也是一般字色（utility.css 的暗色共用規則會改成 --text-body）；命中、傷害另由 sheet-basic.css 改成 --auto-value。 */
+html[data-theme="dark"] .weapon-attack-fields input.is-automated {
+  color: var(--text);
+}
+
 html[data-theme="dark"] #tab-basic .hp-card input[type="number"],
 html[data-theme="dark"] .weapon-automation-toggle input::after,
 html[data-theme="dark"] .money-detail-toggle input::after,

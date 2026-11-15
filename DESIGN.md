@@ -43,7 +43,7 @@
 | `--surface`、`--surface-strong`／`-soft`／`-muted` | 容器、視窗與卡片的層次 |
 | `--text`、`--text-body`、`--text-muted` | 文字層次 |
 | `--accent`、`--accent-strong` | 強調文字、連結、選取提示 |
-| `--auto-value` | 一般角色卡上自動算出來的數字（目前四種外觀都指向 `--accent`）；玩家自己填的數字用 `--text`。開關控制的數字（最大 HP、AC、速度、被動察覺、先攻、豁免、技能、施法調整、豁免難度、命中加值）看自動計算開關，屬性調整值與技能分組的調整值一直用這個色；跑團模式不套用 |
+| `--auto-value` | 一般角色卡上自動算出來的數字（目前四種外觀都指向 `--accent`）；玩家自己填的數字用 `--text`。開關控制的數字（最大 HP、AC、速度、被動察覺、先攻、豁免、技能、施法調整、豁免難度、命中加值）看自動計算開關，屬性調整值與技能分組的調整值一直用這個色；動作頁武器攻擊的命中、傷害看武器攻擊的 AUTO 開關（點了開計算浮層，不加底線）；跑團模式不套用 |
 | `--action-fill`、`--action-hover`、`--on-accent` | 實色操作與其文字；經典暗色把舊 `--accent-gradient` 映射為實色 |
 | `--border`、`--border-strong`、`--border-decoration` | 邊框與裝飾分隔線 |
 | `--warning*`、`--success*`、`--danger*` | 語意色 |

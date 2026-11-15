@@ -1972,8 +1972,7 @@ html[data-theme="dark"] .feat-desc-subtitle {
   text-underline-offset: 0.14em;
 }
 
-:where(html:not([data-view-mode="tabletop"])) :is(.weapon-rule-link, .spell-highlight-action, .spell-picked-jump),
-:where(html:not([data-view-mode="tabletop"])) .weapon-attack-fields input.is-calculation-enabled {
+:where(html:not([data-view-mode="tabletop"])) :is(.weapon-rule-link, .spell-highlight-action, .spell-picked-jump) {
   text-decoration-style: solid;
 }
 

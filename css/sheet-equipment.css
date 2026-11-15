@@ -1416,10 +1416,6 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-mastery-badg
   background: var(--surface-strong);
 }
 
-.weapon-attack-fields input.is-automated {
-  color: var(--accent);
-}
-
 :where(html:not([data-ui-theme="warm"])) .weapon-attack-fields input.is-automated {
   background: linear-gradient(180deg, var(--classic-tint-bg) 0%, var(--classic-tint-bg) 100%);
 }
@@ -1430,16 +1426,6 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-mastery-badg
 
 .weapon-attack-fields input.is-calculation-enabled {
   cursor: pointer;
-}
-
-:where(html:not([data-ui-theme="warm"])) .weapon-attack-fields input.is-calculation-enabled {
-  text-decoration: underline dotted rgba(40, 82, 214, 0.55);
-  text-underline-offset: 0.18em;
-}
-
-:where(html[data-ui-theme="warm"]) .weapon-attack-fields input.is-calculation-enabled {
-  text-decoration: underline dotted var(--accent);
-  text-underline-offset: 0.18em;
 }
 
 .weapon-attack-fields .weapon-attack-free-note {
