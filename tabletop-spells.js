@@ -1,7 +1,7 @@
 (function attachTabletopSpells(globalScope) {
   "use strict";
 
-  const LEVEL_LABELS = Object.freeze(["戲法", "一環", "二環", "三環", "四環"]);
+  const LEVEL_LABELS = Object.freeze(["戲法", "一環", "二環", "三環", "四環", "五環", "六環", "七環", "八環", "九環"]);
   const DICE_TOKEN_PATTERN = /\d+\s*d\s*(?:100|20|12|10|8|6|4)(?:\s*[+-]\s*(?:\d+\s*d\s*(?:100|20|12|10|8|6|4)|\d+))*/gi;
   const elements = {};
   let initialized = false;

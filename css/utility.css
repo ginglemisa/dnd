@@ -483,26 +483,6 @@ html[data-theme="dark"] .invocation-prereq {
   box-shadow: none;
 }
 
-@media (min-width: 360px) {
-  .spell-slot-column {
-    display: grid;
-    grid-template-columns: repeat(2, max-content);
-    justify-content: center;
-    justify-items: center;
-    align-content: start;
-    gap: 0.45rem 0.55rem;
-    text-align: center;
-  }
-}
-
-@media (min-width: 500px) {
-  .spell-slot-column {
-    display: flex;
-    justify-content: center;
-    text-align: left;
-  }
-}
-
 /* ===== Hero / Footer ===== */
 :where(html:not([data-ui-theme="warm"])) .site-hero {
   padding: 8px 14px 2px;

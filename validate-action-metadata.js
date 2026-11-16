@@ -3945,6 +3945,83 @@ async function verifyMergedActionUi(browser, url) {
   }
 }
 
+// 跑團法術頁：法術位小格的欄數（1–9 環、最後一列撐滿、同列等高）。
+async function verifyTabletopSpellPanelLayout(browser, url) {
+  const context = await browser.newContext({ viewport: { width: 375, height: 800 } });
+  const page = await context.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  const state = { class: "wizard", level: "7", int: "18", "spellcasting-ability": "int",
+    __spellManagement: { version: 2, manual: false, entries: [["fire-bolt", 0], ["light", 0], ["magic-missile", 1], ["shield", 1], ["misty-step", 2]]
+      .map(([spellId, level]) => ({ spellId, spellClass: "wizard", level })) } };
+  try {
+    await page.goto(url);
+    await page.locator("#legal-ack-btn").click();
+    await page.evaluate(value => { applyStateObject(value); TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); }, state);
+    const grid = page.locator("#tabletop-spell-slots");
+    // 每列的格數；最後一格沒貼齊右邊、同列不等高或勾選框小於 20px 時丟錯。
+    const readRows = () => grid.evaluate(node => {
+      const edge = node.getBoundingClientRect().right;
+      const rows = new Map();
+      [...node.children].forEach(cell => {
+        const box = cell.getBoundingClientRect(), top = Math.round(box.top);
+        rows.set(top, [...(rows.get(top) || []), box]);
+      });
+      [...node.querySelectorAll("input")].forEach(input => {
+        const box = input.getBoundingClientRect();
+        if (box.width < 20 || box.height < 20) throw new Error(`slot checkbox shrank to ${box.width}x${box.height}`);
+      });
+      return [...rows.values()].map(row => {
+        if (Math.abs(row[row.length - 1].right - edge) > 1.5) throw new Error("the last cell of a row leaves a gap");
+        if (new Set(row.map(box => Math.round(box.height))).size > 1) throw new Error("cells in one row differ in height");
+        return row.length;
+      });
+    });
+    // 規則資料只到四環：暫時在角色卡法術頁補上五到九環的列（canonical 契約 #spellslot{環}-row／#spellslot{環}-{n}），
+    // 只顯示前 count 環，確認跑團不用改程式就會列出來；沒有的列與隱藏的列自動略過。
+    const showRings = async count => {
+      await page.evaluate(total => {
+        const wrap = document.getElementById("spell-picked-grid-wrap");
+        for (let ring = 1; ring <= 9; ring += 1) {
+          let row = document.getElementById(`spellslot${ring}-row`);
+          if (!row) {
+            row = Object.assign(document.createElement("div"), { id: `spellslot${ring}-row` });
+            row.dataset.testRing = "true";
+            row.appendChild(Object.assign(document.createElement("input"), { type: "checkbox", id: `spellslot${ring}-1` }));
+            wrap.appendChild(row);
+          }
+          row.style.display = ring > total ? "none" : "";
+        }
+      }, count);
+      await page.waitForFunction(total => document.getElementById("tabletop-spell-slots").dataset.slotCount === String(total), count);
+    };
+    await page.waitForFunction(() => document.getElementById("tabletop-spell-slots").dataset.slotCount === "4");
+    assert.deepEqual(await grid.locator(".spell-slot-label").allInnerTexts(), ["一環", "二環", "三環", "四環"]);
+    const narrow = { 1: [1], 2: [2], 3: [3], 4: [2, 2], 5: [3, 2], 6: [3, 3], 7: [3, 3, 1], 8: [3, 3, 2], 9: [3, 3, 3] };
+    const expected = { 375: narrow, 600: narrow,
+      1280: { 1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [3, 3], 7: [4, 3], 8: [4, 4], 9: [5, 4] } };
+    for (const [width, byCount] of Object.entries(expected)) {
+      await page.setViewportSize({ width: Number(width), height: 800 });
+      for (const [count, rows] of Object.entries(byCount)) {
+        await showRings(Number(count));
+        assert.deepEqual(await readRows(), rows, `${count} slot levels at ${width}px`);
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${count} slot levels at ${width}px do not overflow`);
+      }
+    }
+    await showRings(9);
+    assert.deepEqual(await grid.locator(".spell-slot-label").allInnerTexts(), ["一環", "二環", "三環", "四環", "五環", "六環", "七環", "八環", "九環"]);
+    assert.deepEqual(await page.evaluate(() => TabletopMode.getCanonicalSpellSlotGroups().map(group => group.level)), [1, 2, 3, 4, 5, 6, 7, 8, 9], "cast options read slot levels one to nine");
+    await grid.locator(".tabletop-spell-slot-column").nth(8).locator("input").check();
+    assert.equal(await page.locator("#spellslot9-1").isChecked(), true, "a ninth-level mirror writes the canonical checkbox");
+    await page.evaluate(() => document.querySelectorAll("[data-test-ring]").forEach(row => row.remove()));
+    await showRings(4);
+    assert.deepEqual(errors, []);
+  } finally {
+    await context.close();
+  }
+}
+
 async function verifyCustomSpellUi(browser, url) {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
@@ -4183,6 +4260,7 @@ async function main() {
     await page.waitForFunction(() => !!window.ActionPanel && !!window.TabletopMode);
     await verifyMergedActionUi(browser, url);
     await verifyCustomSpellUi(browser, url);
+    await verifyTabletopSpellPanelLayout(browser, url);
     const assertions = await verifyCoverage(page);
     console.log(`Action metadata: ${assertions} coverage assertions passed.`);
     await verifyUiAndPersistence(page, url);

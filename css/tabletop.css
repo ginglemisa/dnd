@@ -27,11 +27,121 @@
   width: 100%;
 }
 
-:where(html[data-ui-theme="warm"]) .tabletop-spell-slot-grid input[type="checkbox"] {
+/* ===== 法術位小格（跑團法術頁） =====
+   欄數依有法術位的環數（data-slot-count，tabletop-resources.js 的 renderSpellSlots）決定，支援 1–9 環；
+   最後一列不滿時，那一列的格子平分整列（flex-grow），同一列等高。
+   小格內有兩種排法：「直排」＝環階在上、勾選框在下；「橫排」＝環階與勾選框同一列，只用在格子夠寬的組合。 */
+.tabletop-spell-slot-grid {
+  --slot-columns: 3;
+  --slot-gap: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--slot-gap);
+}
+
+.tabletop-spell-slot-grid[data-slot-count="1"] {
+  --slot-columns: 1;
+}
+
+.tabletop-spell-slot-grid:is([data-slot-count="2"], [data-slot-count="4"]) {
+  --slot-columns: 2;
+}
+
+.tabletop-spell-slot-column {
+  --slot-check-columns: 2;
+  /* 基準寬少 0.5px：避免小數寬度進位後提早換列。 */
+  flex: 1 1 calc((100% - (var(--slot-columns) - 1) * var(--slot-gap)) / var(--slot-columns) - 0.5px);
+  display: grid;
+  grid-template-columns: repeat(var(--slot-check-columns), max-content);
+  justify-content: center;
+  justify-items: center;
+  align-content: center;
+  gap: 0.45rem 0.55rem;
+  min-height: 44px;
+  padding: 8px 7px;
+  text-align: center;
+}
+
+.tabletop-spell-slot-column[data-slot-boxes="1"] {
+  --slot-check-columns: 1;
+}
+
+.tabletop-spell-slot-column .spell-slot-label {
+  grid-column: 1 / -1;
+  margin: 0;
+  white-space: nowrap;
+  font-size: 1rem;
+}
+
+.tabletop-spell-slot-grid input[type="checkbox"] {
   flex: 0 0 20px;
   width: 20px;
   min-width: 20px;
   height: 20px;
+}
+
+/* 只有一環時格子佔整列，任何寬度都橫排。 */
+.tabletop-spell-slot-grid[data-slot-count="1"] > .tabletop-spell-slot-column {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+@media (max-width: 499.98px) {
+  /* 3 個勾選框排成 2＋1 時，落單的那個置中。 */
+  .tabletop-spell-slot-column[data-slot-boxes="3"] > input:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 500px) {
+  /* 直排的格子夠寬，勾選框排成一列。 */
+  .tabletop-spell-slot-column {
+    --slot-check-columns: 4;
+  }
+
+  .tabletop-spell-slot-column[data-slot-boxes="2"] {
+    --slot-check-columns: 2;
+  }
+
+  .tabletop-spell-slot-column[data-slot-boxes="3"] {
+    --slot-check-columns: 3;
+  }
+}
+
+@media (min-width: 500px) and (max-width: 719.98px) {
+  /* 一列最多 2 格的組合改橫排。 */
+  .tabletop-spell-slot-grid:is([data-slot-count="2"], [data-slot-count="4"]) > .tabletop-spell-slot-column {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+}
+
+@media (min-width: 720px) {
+  .tabletop-spell-slot-grid:is([data-slot-count="4"], [data-slot-count="7"], [data-slot-count="8"]) {
+    --slot-columns: 4;
+  }
+
+  .tabletop-spell-slot-grid:is([data-slot-count="5"], [data-slot-count="9"]) {
+    --slot-columns: 5;
+  }
+
+  .tabletop-spell-slot-column {
+    padding: 0.5rem 0.375rem;
+  }
+
+  .tabletop-spell-slot-column .spell-slot-label {
+    font-size: 0.875rem;
+  }
+
+  /* 一列 5 格（5、9 環）維持直排，其餘橫排。 */
+  .tabletop-spell-slot-grid:not([data-slot-count="5"], [data-slot-count="9"]) > .tabletop-spell-slot-column {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
 }
 
 .tabletop-sheet {

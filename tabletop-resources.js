@@ -218,6 +218,8 @@
     );
     column.setAttribute("role", "group");
     column.setAttribute("aria-label", `${label}法術位，勾選表示已消耗`);
+    // 直排時勾選框一列排幾個，由樣式依數量決定（css/tabletop.css）。
+    column.dataset.slotBoxes = String(canonicalInputs.length);
     column.appendChild(createElement("span", "spell-slot-label", label));
 
     canonicalInputs.forEach((canonical, index) => {
@@ -703,17 +705,21 @@
       return 0;
     }
 
-    const groups = [1, 2, 3, 4].flatMap(ring => {
+    // 環階 1–9：角色卡法術頁沒有那一列或該環沒有法術位時自動略過。
+    const groups = ["一", "二", "三", "四", "五", "六", "七", "八", "九"].flatMap((name, index) => {
+      const ring = index + 1;
       const row = document.getElementById(`spellslot${ring}-row`);
       if (!row || row.style.display === "none") return [];
       const canonicalInputs = Array.from(row.querySelectorAll('input[type="checkbox"][id]'))
         .filter(input => !input.disabled && !input.hidden && input.style.display !== "none");
       return canonicalInputs.length ? [{
-        label: `${["一", "二", "三", "四"][ring - 1]}環`,
+        label: `${name}環`,
         note: "勾選表示已消耗。",
         canonicalInputs
       }] : [];
     });
+    // 欄數由樣式依環數決定（css/tabletop.css 的 data-slot-count）。
+    target.dataset.slotCount = String(groups.length);
     target.replaceChildren(...groups.map(group => createSpellSlotMirrors(
       group.label,
       group.canonicalInputs

@@ -355,7 +355,8 @@
 
   function getCanonicalSpellSlotGroups() {
     if (typeof document === "undefined") return [];
-    return [1, 2, 3, 4].flatMap(level => {
+    // 環階 1–9：角色卡法術頁沒有那一列（#spellslot{環}-row）或該環沒有法術位時自動略過。
+    return [1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap(level => {
       const row = document.getElementById(`spellslot${level}-row`);
       if (!row || row.style.display === "none" || row.hidden) return [];
       const controls = Array.from(row.querySelectorAll('input[type="checkbox"][id]'))

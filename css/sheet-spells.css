@@ -1597,35 +1597,7 @@ html[data-theme="dark"] .pdf-export-status--error .pdf-export-flow-modal__error 
   transform: none;
 }
 
-.spell-slot-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.8rem;
-  align-items: start;
-}
-
-@media (min-width: 360px) {
-  .spell-slot-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.9rem 1rem;
-  }
-}
-
-@media (min-width: 720px) {
-  .spell-slot-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-.spell-slot-column {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: nowrap;
-  padding: 8px 7px;
-  text-align: left;
-}
-
+/* 法術位小格只用在跑團模式；排版（欄數、標籤與勾選框的排列）在 tabletop.css，這裡只留外框與底色。 */
 :where(html:not([data-ui-theme="warm"])) .spell-slot-column {
   border: 1px solid rgba(151, 168, 201, 0.26);
   border-radius: 14px;
@@ -1641,28 +1613,6 @@ html[data-theme="dark"] .pdf-export-status--error .pdf-export-flow-modal__error 
 .spell-slot-column h4 {
   margin: 0 0 6px;
   font-size: var(--fs-base);
-}
-
-.spell-slot-label {
-  display: inline-block;
-  width: auto;
-  margin: 0;
-  white-space: nowrap;
-  flex: 0 0 auto;
-  font-size: 1rem;
-}
-
-@media (min-width: 360px) {
-  .spell-slot-label {
-    display: block;
-    grid-column: 1 / -1;
-  }
-}
-
-@media (min-width: 500px) {
-  .spell-slot-label {
-    display: inline-block;
-  }
 }
 
 .spell-slot-label--jump {
