@@ -354,6 +354,8 @@
 
 .character-features-picker__group--background { --picker-columns: 7; }
 .character-features-picker__group--race { --picker-columns: 9; }
+/* 「特性」頁籤的等級跳轉列：五格只有文字，高度和背景列相同；目前所在區段用 aria-current，外觀同選中的選項。 */
+.character-features-picker__group--level { --picker-columns: 5; }
 
 .character-features-picker .character-features-picker__option {
   display: flex;
@@ -397,7 +399,8 @@
   }
 }
 
-.character-features-picker .character-features-picker__option[aria-pressed="true"] {
+.character-features-picker .character-features-picker__option[aria-pressed="true"],
+.character-features-picker .character-features-picker__option[aria-current="location"] {
   background: var(--accent-soft);
   box-shadow: inset 0 -3px 0 var(--accent);
   color: var(--accent);
