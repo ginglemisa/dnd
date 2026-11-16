@@ -98,7 +98,7 @@ html.is-share-mode :is(#help-quick-build-btn, #set-default-abilities, #restart-o
 
 /* 分享模式鎖定的角色能力：沒有對應操作的按鈕與提示直接不顯示。缺項提示也不顯示，因為看的人無法補填。 */
 html.is-share-mode :is(#feat-add-empty, .feat-icon-btn, #add-tool-proficiency, .tool-proficiency-hint, .tool-proficiency-remove,
-  .skill-calc-button, .feature-choice-card__settings-button, #spellbook-manage, #class-feature-choice-reminder, #character-choice-warning-toggle,
+  .skill-calc-button, .skill-rank-lock, .feature-choice-card__settings-button, #spellbook-manage, #class-feature-choice-reminder, #character-choice-warning-toggle,
   button.tabletop-class-choice-alert) {
   display: none !important;
 }

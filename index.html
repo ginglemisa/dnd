@@ -108,10 +108,10 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261115-auto-value">
   <link rel="stylesheet" href="css/base.css?v=20261115-race-options">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261116-roll-mode">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261116-rank-lock">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261116-calculation-tips">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261114-spell-lock">
-  <link rel="stylesheet" href="css/utility.css?v=20261111-menu-layout">
+  <link rel="stylesheet" href="css/utility.css?v=20261116-rank-lock">
   <link rel="stylesheet" href="css/dice.css?v=20261115-basic-align">
   <link rel="stylesheet" href="css/dialogs.css?v=20261116-calculation-tips">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
@@ -988,7 +988,7 @@
 
 <div id="tab-skills" class="tab-content" role="tabpanel" aria-label="技能頁" hidden>
   <div class="section" id="save-section">
-    <div class="skill-section-heading"><h3>屬性豁免</h3><button type="button" id="calculate-saves-button" class="skill-calc-button" onclick="fillSaves()" hidden>填入計算值</button></div>
+    <div class="skill-section-heading"><h3>屬性豁免</h3><button type="button" id="calculate-saves-button" class="skill-calc-button" onclick="fillSaves()" hidden>填入計算值</button><button type="button" class="skill-rank-lock" data-rank-lock="saves" aria-pressed="false" aria-label="鎖定屬性豁免的熟練" title="鎖定熟練，避免誤點"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="skill-rank-lock__shackle-open" d="M8 11V7a4 4 0 0 1 7.5-2"/><path class="skill-rank-lock__shackle-closed" d="M8 11V7a4 4 0 0 1 8 0v4"/><rect class="skill-rank-lock__body" x="5" y="11" width="14" height="10" rx="2"/></svg></button></div>
   <div class="save-grid">
     <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">力量</span></label><input type="text" inputmode="numeric" data-calculation="save" id="save-str"></div>
     <div class="save-pair"><label class="save-name" for="prof-dex"><input type="checkbox" id="prof-dex"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">敏捷</span></label><input type="text" inputmode="numeric" data-calculation="save" id="save-dex"></div>
@@ -1005,6 +1005,7 @@
     <h3>技能</h3>
     <p class="skill-legend" aria-label="技能熟練圖例"><span>○ 未熟練</span><span>● 熟練</span><span data-expertise-legend>◆ 專精</span></p>
     <button type="button" id="calculate-skills-button" class="skill-calc-button" onclick="fillSkills()" hidden>填入計算值</button>
+    <button type="button" class="skill-rank-lock" data-rank-lock="skills" aria-pressed="false" aria-label="鎖定技能的熟練與專精" title="鎖定熟練與專精，避免誤點"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="skill-rank-lock__shackle-open" d="M8 11V7a4 4 0 0 1 7.5-2"/><path class="skill-rank-lock__shackle-closed" d="M8 11V7a4 4 0 0 1 8 0v4"/><rect class="skill-rank-lock__body" x="5" y="11" width="14" height="10" rx="2"/></svg></button>
   </div>
   <div class="skill-grid">
     <div class="skill-stack skill-stack--outer">
@@ -2647,6 +2648,7 @@ document.addEventListener("DOMContentLoaded", () => withCharacterUpdateBatch(() 
   bindSpellNotesEvents();
   bindCoreCharacterEvents();
   bindSkillRankExclusiveEvents();
+  bindSkillRankLocks();
   bindSpellCastingStatsEvents();
   bindFeatureSpellHighlightEvents();
   bindCharacterFeatureDialog();
@@ -3491,6 +3493,39 @@ function bindSkillRankExclusiveEvents() {
     });
   });
   bindEventById("skill-察覺", "input", updatePassivePerceptionDisplay);
+}
+
+// 技能頁豁免與技能的熟練鎖：本機裝置偏好，不進角色存檔。鎖住時擋掉點擊（含 label 與空白鍵），
+// 程式直接改 checked（快速創角、背景帶入）不受影響。
+const SKILL_RANK_LOCKS = Object.freeze({
+  saves: { key: "dnd.saveRanksLocked.v1", section: "save-section", inputs: ".save-name input[type=\"checkbox\"]" },
+  skills: { key: "dnd.skillRanksLocked.v1", section: "skill-bonus-section", inputs: "input[data-skill-rank]" }
+});
+
+function bindSkillRankLocks() {
+  Object.entries(SKILL_RANK_LOCKS).forEach(([name, lock]) => {
+    const section = document.getElementById(lock.section);
+    const button = section?.querySelector(`.skill-rank-lock[data-rank-lock="${name}"]`);
+    if (!section || !button) return;
+    const apply = locked => {
+      button.setAttribute("aria-pressed", String(locked));
+      section.classList.toggle("is-rank-locked", locked);
+    };
+    apply(window.dndStorage.getItem(lock.key) === "true");
+    button.addEventListener("click", () => {
+      const locked = button.getAttribute("aria-pressed") !== "true";
+      apply(locked);
+      window.dndStorage.setItem(lock.key, String(locked));
+    });
+    button.addEventListener("animationend", () => button.classList.remove("is-nudged"));
+    section.addEventListener("click", event => {
+      if (!section.classList.contains("is-rank-locked") || !event.target.matches?.(lock.inputs)) return;
+      event.preventDefault();
+      button.classList.remove("is-nudged");
+      void button.offsetWidth;
+      button.classList.add("is-nudged");
+    }, true);
+  });
 }
 
 function applyStatTextMaxLengthLimit() {

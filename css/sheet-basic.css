@@ -868,6 +868,91 @@ button.roll-mode-badge:focus-visible {
   white-space: nowrap;
 }
 
+/* 豁免與技能標題最右側的熟練鎖（本機偏好）：鎖住用一般字色、實心鎖身；解鎖用淡色、開口鎖。
+   上下負邊距抵掉點擊範圍，標題高度不變。 */
+.skill-section-heading button.skill-rank-lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  margin: -0.25rem -0.3rem -0.25rem auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+}
+
+.skill-section-heading .skill-calc-button:not([hidden]) + button.skill-rank-lock {
+  margin-left: 0;
+}
+
+.skill-section-heading button.skill-rank-lock:hover,
+.skill-section-heading button.skill-rank-lock:active {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  translate: none;
+}
+
+.skill-section-heading button.skill-rank-lock[aria-pressed="true"] {
+  color: var(--text);
+}
+
+.skill-rank-lock svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.skill-rank-lock[aria-pressed="true"] .skill-rank-lock__shackle-open,
+.skill-rank-lock:not([aria-pressed="true"]) .skill-rank-lock__shackle-closed {
+  display: none;
+}
+
+.skill-rank-lock[aria-pressed="true"] .skill-rank-lock__body {
+  fill: currentColor;
+}
+
+/* 鎖住時點熟練記號：鎖頭晃一下；減少動態效果時改成短暫變色。 */
+.skill-rank-lock.is-nudged {
+  animation: skill-rank-lock-nudge 0.32s ease;
+}
+
+@keyframes skill-rank-lock-nudge {
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+@keyframes skill-rank-lock-flash {
+  50% { color: var(--accent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skill-rank-lock.is-nudged {
+    animation-name: skill-rank-lock-flash;
+  }
+}
+
+.is-rank-locked .save-name:hover,
+.is-rank-locked .skill-rank-controls:hover {
+  background: transparent;
+}
+
+.is-rank-locked .save-name input[type="checkbox"],
+.is-rank-locked .skill-rank-target,
+.is-rank-locked .skill-rank-controls input[type="checkbox"] {
+  cursor: default;
+}
+
 .skill-legend {
   display: flex;
   flex-wrap: wrap;
