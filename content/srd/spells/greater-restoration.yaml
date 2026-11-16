@@ -10,6 +10,15 @@ castingTime: [ action ]
 range: touch
 components: [ V, S, M ]
 duration: instantaneous
+site:
+  material: 價值至少100 GP的鑽石粉末（施法時消耗）
+  body: |-
+    - 觸碰一個生物，以魔法移除它身上下列其中一種效果：
+      - 1級力竭
+      - 魅惑或石化狀態
+      - 一項詛咒，包括目標與受詛咒魔法物品的同調
+      - 目標任一屬性值的降低
+      - 目標生命值上限的降低
 srd:
   material: 價值100 GP以上的鑽石粉末，法術會將其耗盡
   body: |-
