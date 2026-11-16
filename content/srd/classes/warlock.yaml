@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/class.schema.json
 id: warlock
 name: 契術師
-maxLevel: 8
+maxLevel: 10
 subclassLevel: 3
 defaultSubclass: fiend
 tagline: 契術師從超自然契約取得力量與獨特魔法。
@@ -29,19 +29,19 @@ equipment:
 progression:
   invocations:
     label: 魔能祈喚
-    byLevel: {1: 1, 2: 3, 5: 5, 7: 6}
+    byLevel: {1: 1, 2: 3, 5: 5, 7: 6, 9: 7}
   cantrips:
     label: 戲法
-    byLevel: {1: 2, 4: 3}
+    byLevel: {1: 2, 4: 3, 10: 4}
   preparedSpells:
     label: 準備法術
-    byLevel: {1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9}
+    byLevel: {1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10}
   spellSlots:
     label: 法術位
     byLevel: {1: 1, 2: 2}
   spellSlotLevel:
     label: 法術位環階
-    byLevel: {1: 1, 3: 2, 5: 3, 7: 4}
+    byLevel: {1: 1, 3: 2, 5: 3, 7: 4, 9: 5}
 values:
   magicalCunningSlots: ceil({spellSlots} / 2)
   darkOnesOwnLuckUses: max(1, {chaModifier})
@@ -115,6 +115,20 @@ features:
     feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: warlock-contact-patron
+    level: 9
+    name: 直謁宗主
+    text: |
+      你可以直接與宗主溝通，並**始終準備**法術「異界探知」。
+
+      - **免費施放：**可不消耗法術位施放 1 次來聯絡你的宗主，**長休後恢復**。
+      - **自動成功：**以這種方式施放時，你對這個法術的豁免自動成功。
+  - level: 9
+    text: |
+      **魔能祈喚補充：**契術師達到 9 級時，可選擇的魔能祈喚數量增加至 7 個，詳見「契術師特性」表。
+  - level: 10
+    text: |
+      **契約魔法補充：**契術師達到 10 級時，你也會透過「契約魔法」特性額外學會 1 個契術師戲法，詳見「契術師特性」表。
 appendix:
   - name: 魔能祈喚選項
     kind: invocations
@@ -340,6 +354,37 @@ appendix:
         spell: {id: speak-with-dead, use: at-will}
         text: |
           你可以隨意施放死者交談，且不消耗法術位。
+      - name: 庇佑饋贈
+        prerequisite: 9 級以上契術師、「書之魔契」祈喚
+        level: 9
+        text: |
+          你召喚**影之書**時，書中會多出一頁。
+
+          經你允許，生物可用一個動作在這頁寫下自己的名字；名字數量最多等同你的魅力調整值（至少 1 個）。
+
+          名字在這頁上的生物生命值降至 0 但沒有當場死亡時，改為降至 1 點生命值。這道魔法觸發 1 次後，在你完成長休前，任何生物都不能再從中受益。
+
+          你可用魔法動作觸碰這頁上的 1 個名字，將它擦去。
+      - id: warlock-lifedrinker
+        name: 啜飲生機
+        prerequisite: 9 級以上契術師、「刃之魔契」祈喚
+        level: 9
+        actions:
+          - mode: action
+            key: dynamic-action-warlock-curated-lifedrinker
+            level: 9
+            invocation: 啜飲生機
+            requiresInvocation: 刃之魔契
+        text: |
+          每回合一次，當你用契約武器命中生物時，可額外造成 1d6 黯蝕、心靈或光耀傷害（由你選擇）。
+
+          你也可以消耗 1 顆生命骰並擲骰，恢復「擲骰結果＋體質調整值」的生命值（至少 1 點）。
+      - name: 神遊遠域
+        prerequisite: 9 級以上契術師
+        level: 9
+        spell: {id: arcane-eye, use: at-will}
+        text: |
+          你可以隨意施放秘法眼，且不消耗法術位。
 srd:
   overview: |
     **契術師核心特質**
