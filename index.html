@@ -5709,6 +5709,38 @@ document.addEventListener("change", (e) => {
 const AUTO_SAVE_KEY = "dndchar_autosave_v1";
 // Safety ceilings, not character rules. Reject before changing the current sheet.
 const CHARACTER_DATA_LIMITS = Object.freeze({ bytes: 2 * 1024 * 1024, rows: 100, entries: 512, freeUses: 64, freeUseControls: 1024 });
+// 整份角色資料（autosave、JSON、分享共用）的格式版本，寫在頂層 __saveVersion。
+// 沒有這個欄位的資料是加入版本號之前存的，視為第 0 版。
+// 只有舊資料要轉換才讀得對的改動才加號碼：加 1，並在 CHARACTER_STATE_MIGRATIONS 補上「上一版 → 這一版」的轉換；
+// 單純新增欄位（舊資料沒有就用預設值）不用加。比目前還新的版本不載入，避免舊版網頁讀錯後覆寫存檔。
+// 各區塊自己的 version（__inventory、__spellManagement 等）與分享專用的 __shareStateVersion 照舊，各管各的。
+const CHARACTER_STATE_VERSION_KEY = "__saveVersion";
+const CHARACTER_STATE_VERSION = 1;
+// 第 n 項把第 n 版轉成第 n+1 版：回傳新物件，不改傳入的資料。
+const CHARACTER_STATE_MIGRATIONS = Object.freeze([
+  // 0 → 1：只多了版本號，內容不變。
+  data => data
+]);
+function getCharacterStateVersion(data) {
+  if (!Object.hasOwn(data, CHARACTER_STATE_VERSION_KEY)) return 0;
+  const version = data[CHARACTER_STATE_VERSION_KEY];
+  if (!Number.isInteger(version) || version < 0) throw new TypeError("角色資料的版本號格式不正確");
+  if (version > CHARACTER_STATE_VERSION) {
+    const error = new RangeError("角色資料來自較新版本的網站");
+    error.newerCharacterState = true;
+    throw error;
+  }
+  return version;
+}
+// 把通過預檢的資料轉成目前版本；已是目前版本時原樣回傳。
+function migrateCharacterState(data) {
+  let result = data;
+  for (let version = getCharacterStateVersion(data); version < CHARACTER_STATE_VERSION; version += 1) {
+    result = { ...CHARACTER_STATE_MIGRATIONS[version](result), [CHARACTER_STATE_VERSION_KEY]: version + 1 };
+  }
+  return result;
+}
+const NEWER_CHARACTER_STATE_HINT = "這份角色資料是較新版本的網站存的，這個頁面讀不了；請重新整理頁面，或改用最新的網站／離線檔。";
 // Device-local tabletop settings travel only in exported JSON, never in autosave or share data.
 const TABLETOP_ACTION_PREFERENCES_STORAGE_KEY = "dnd.tabletopActionPreferences.v1";
 const TABLETOP_AVATAR_STORAGE_KEY = "dnd.tabletopAvatar.v1";
@@ -5777,6 +5809,7 @@ function validateCharacterState(data) {
   if (!data || typeof data !== "object" || Array.isArray(data) || data.kind === "twd20-adventure-journal") {
     throw new TypeError("角色資料格式不正確");
   }
+  getCharacterStateVersion(data);
   const pending = [[data, 0]];
   let nodes = 0, textLength = 0;
   while (pending.length) {
@@ -6042,6 +6075,7 @@ function collectStateObject(options = {}) {
     if (isSpellRowStateKey(el.id)) return;
     data[el.id] = el.type === "checkbox" ? el.checked : el.value;
   });
+  data[CHARACTER_STATE_VERSION_KEY] = CHARACTER_STATE_VERSION;
   data[CHARACTER_SIZE_STATE_KEY] = characterSize;
   // 標記存在代表這份資料已經過自動計算判斷；判斷前（例如匯入途中先存檔）不寫，留給下次載入判斷。
   if (derivedChecksStateKnown) data[DERIVED_CHECKS_STATE_KEY] = true;
@@ -6273,6 +6307,7 @@ function restoreInventoryState(data) {
 function applyStateObject(data) {
   if (!data || typeof data !== "object") return;
   validateCharacterState(data);
+  data = migrateCharacterState(data);
   let result;
   characterStateLoadDepth += 1;
   try {
@@ -6856,7 +6891,8 @@ async function importStateFromJsonFile(file) {
   } catch (e) {
     await window.AppDialog.showMessage({
       title: "JSON 匯入失敗",
-      message: "請確認角色檔案格式及數量正確，大小不超過 2 MiB、專長與工具各不超過 100 列，且瀏覽器允許分頁暫存。原角色尚未清除。",
+      message: e?.newerCharacterState ? `${NEWER_CHARACTER_STATE_HINT}原角色尚未清除。`
+        : "請確認角色檔案格式及數量正確，大小不超過 2 MiB、專長與工具各不超過 100 列，且瀏覽器允許分頁暫存。原角色尚未清除。",
       confirmLabel: "關閉"
     });
     console.warn("JSON 匯入失敗：", e);
@@ -7006,7 +7042,8 @@ function restoreAllFields() {
     }
   } catch (e) {
     autosaveRestoreBlocked = true;
-    window.AppDialog.notify("本機角色資料超過安全限制或格式不正確，已停止還原與自動儲存；原始存檔仍保留。請匯入有效 JSON 或清除紀錄後重建。", { tone: "warning" });
+    window.AppDialog.notify(e?.newerCharacterState ? `${NEWER_CHARACTER_STATE_HINT}已停止還原與自動儲存；原始存檔仍保留。`
+      : "本機角色資料超過安全限制或格式不正確，已停止還原與自動儲存；原始存檔仍保留。請匯入有效 JSON 或清除紀錄後重建。", { tone: "warning" });
   }
 }
 function setupAutoSave(root = document) {
@@ -7639,7 +7676,8 @@ window.addEventListener("DOMContentLoaded", async function() {
     closeShareModeGuideEntries({ includeTabletopTour: true });
     await window.AppDialog.showMessage({
       title: "分享連結讀取失敗",
-      message: "網址可能過長、遭到截斷、瀏覽器不支援壓縮分享，或資料已損壞。為避免顯示錯誤角色，本頁不會讀取本機角色紀錄。",
+      message: sharedError?.newerCharacterState ? `${NEWER_CHARACTER_STATE_HINT}為避免顯示錯誤角色，本頁不會讀取本機角色紀錄。`
+        : "網址可能過長、遭到截斷、瀏覽器不支援壓縮分享，或資料已損壞。為避免顯示錯誤角色，本頁不會讀取本機角色紀錄。",
       confirmLabel: "知道了"
     });
 

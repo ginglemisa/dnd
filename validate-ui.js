@@ -6415,7 +6415,64 @@ async function verifySaveFormat(browser, url) {
       .map(id => document.getElementById(id).value)), ["", "", "", "0", "gp", "0", "0", "", "12", "2"], "legacy transient fields are ignored on load");
     assert.equal(await page.evaluate(() => { saveAllFields(); return Object.keys(JSON.parse(dndStorage.getItem("dndchar_autosave_v1"))).some(key => /^(?:spell-search|equipment-search|money-(?:note|amount|currency|pp|adjust-))/.test(key)); }), false,
       "the next autosave drops the legacy transient fields");
-    console.log("Save format: transient inputs stay out of autosave, JSON and share; legacy transient fields are ignored on load.");
+
+    // 版本號：三條路都寫目前版本；沒有版本號的舊資料是第 0 版，照常還原後以目前版本存回。
+    const version = await page.evaluate(() => CHARACTER_STATE_VERSION);
+    const versions = await page.evaluate(async () => {
+      const legacy = Object.freeze({ class: "fighter", level: "3", race: "human" });
+      const migrated = migrateCharacterState(legacy);
+      const rejects = value => { try { validateCharacterState({ class: "fighter", __saveVersion: value }); return false; } catch (error) { return error.newerCharacterState === true ? "newer" : true; } };
+      return { autosave: JSON.parse(dndStorage.getItem("dndchar_autosave_v1")).__saveVersion, exported: JSON.parse(collectJsonExportText().text).__saveVersion,
+        share: collectShareState().__saveVersion, legacyVersion: getCharacterStateVersion(legacy), migrated: migrated.__saveVersion,
+        untouched: !Object.hasOwn(legacy, "__saveVersion"), current: migrateCharacterState(migrated) === migrated,
+        rejected: [CHARACTER_STATE_VERSION + 1, "1", -1, 1.5, null].map(rejects), accepted: [0, CHARACTER_STATE_VERSION].map(rejects),
+        legacyHash: await encodeStateToHash({ ...legacy, __shareStateVersion: 1 }), // encodeStateToHash 會先預檢，較新版本的連結只能直接組。
+        newerHash: `#s2=${bytesToBase64Url(await compressJson(JSON.stringify({ ...legacy, __shareStateVersion: 1, __saveVersion: CHARACTER_STATE_VERSION + 1 })))}` };
+    });
+    assert.deepEqual([versions.autosave, versions.exported, versions.share, versions.legacyVersion, versions.migrated, versions.untouched, versions.current],
+      [version, version, version, 0, version, true, true], "every route writes the current version; unversioned data is version 0 and migrates without mutation");
+    assert.deepEqual(versions.rejected, ["newer", true, true, true, true], "newer or malformed versions are rejected");
+    assert.deepEqual(versions.accepted, [false, false]);
+
+    const legacyFile = { class: "druid", level: "4", race: "dwarf", background: "sage", "spellslot1-1": true };
+    await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
+    await Promise.all([page.waitForEvent("load"), page.locator("#import-json-file").setInputFiles({ name: "v0.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(legacyFile)) })]);
+    await page.waitForFunction(() => document.getElementById("class").value === "druid" && !autosaveRestoreBlocked);
+    assert.deepEqual(await page.evaluate(() => { const saved = JSON.parse(dndStorage.getItem("dndchar_autosave_v1")); return [saved.__saveVersion, saved.level, saved.race]; }),
+      [version, "4", "dwarf"], "version 0 JSON imports and is saved as the current version");
+
+    // 較新版本的資料不載入：原本的存檔與畫面不動，並說明原因。
+    const beforeNewer = await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1"));
+    await page.locator("#import-json-file").setInputFiles({ name: "newer.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ ...legacyFile, class: "bard", __saveVersion: version + 1 })) });
+    const newerDialog = page.getByRole("dialog", { name: "JSON 匯入失敗", exact: true });
+    assert.match(await newerDialog.textContent(), /較新版本/u);
+    await newerDialog.getByRole("button", { name: "關閉", exact: true }).click();
+    assert.deepEqual(await page.evaluate(() => [document.getElementById("class").value, dndStorage.getItem("dndchar_autosave_v1")]), ["druid", beforeNewer]);
+
+    for (const [hash, expected] of [[versions.legacyHash, "fighter"], [versions.newerHash, null]]) {
+      const shared = await newUiPage(browser);
+      try {
+        const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = hash;
+        await shared.goto(sharedUrl.href);
+        if (expected) {
+          await shared.waitForFunction(value => window.SHARE_MODE === true && document.getElementById("class").value === value, expected);
+          assert.equal(await shared.locator("#level").inputValue(), "3", "version 0 share links restore");
+        } else {
+          const dialog = shared.getByRole("dialog", { name: "分享連結讀取失敗", exact: true });
+          assert.match(await dialog.textContent(), /較新版本/u);
+          assert.equal(await shared.locator("#class").inputValue(), "", "a newer share link is not applied");
+        }
+      } finally { await shared.close(); }
+    }
+
+    const newerRaw = JSON.stringify({ class: "bard", level: "2", __saveVersion: version + 1 });
+    // 先存一次，離開頁面時才不會有待存的修改蓋掉下面放進去的資料。
+    await page.evaluate(raw => { saveAllFields(); dndStorage.setItem("dndchar_autosave_v1", raw); }, newerRaw);
+    await page.goto(url);
+    await page.waitForFunction(() => document.querySelector(".app-toast")?.textContent?.includes("較新版本"));
+    assert.deepEqual(await page.evaluate(() => [saveAllFields(), document.getElementById("class").value, dndStorage.getItem("dndchar_autosave_v1")]), [false, "", newerRaw],
+      "a newer autosave is neither applied nor overwritten");
+    console.log("Save format: transient inputs stay out of autosave, JSON and share; version written on every route, version 0 restores, newer versions are refused.");
   } finally { await page.close(); }
 }
 
