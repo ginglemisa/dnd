@@ -110,7 +110,7 @@
   <link rel="stylesheet" href="css/base.css?v=20261116-features-swipe">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261116-rank-lock">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261116-calculation-tips">
-  <link rel="stylesheet" href="css/sheet-spells.css?v=20261114-spell-lock">
+  <link rel="stylesheet" href="css/sheet-spells.css?v=20261116-ring-layout">
   <link rel="stylesheet" href="css/utility.css?v=20261116-rank-lock">
   <link rel="stylesheet" href="css/dice.css?v=20261115-basic-align">
   <link rel="stylesheet" href="css/dialogs.css?v=20261116-calculation-tips">
@@ -1383,54 +1383,7 @@
     </div>
   <div id="no-spell-slots-message" class="spell-note-muted is-hidden">目前職業與等級沒有法術位</div>
   <div id="spell-picked-grid-wrap" class="spell-overview-grid" hidden aria-label="已選法術與法術位">
-    <section class="spell-picked-box spell-overview-card" data-spell-disclosure="1" hidden>
-    <div class="spell-overview-card-heading">
-      <h4 class="spell-picked-heading"><button type="button" class="spell-overview-toggle" aria-expanded="true" aria-controls="picked-level1"><span class="spell-overview-arrow" aria-hidden="true">▸</span>一環</button></h4>
-    <div id="spellslot1-row" class="spell-overview-slot-checks" role="group" aria-label="一環法術位；勾選表示已消耗">
-      <input type="checkbox" id="spellslot1-1">
-      <input type="checkbox" id="spellslot1-2">
-      <input type="checkbox" id="spellslot1-3">
-      <input type="checkbox" id="spellslot1-4">
-    </div>
-    </div>
-    <div id="picked-level1" class="spell-picked-content">未準備此環法術</div>
-    </section>
-    <section class="spell-picked-box spell-overview-card" data-spell-disclosure="2" hidden>
-    <div class="spell-overview-card-heading">
-      <h4 class="spell-picked-heading"><button type="button" class="spell-overview-toggle" aria-expanded="true" aria-controls="picked-level2"><span class="spell-overview-arrow" aria-hidden="true">▸</span>二環</button></h4>
-    <div id="spellslot2-row" class="spell-overview-slot-checks" role="group" aria-label="二環法術位；勾選表示已消耗">
-      <input type="checkbox" id="spellslot2-1">
-      <input type="checkbox" id="spellslot2-2">
-      <input type="checkbox" id="spellslot2-3">
-      <input type="checkbox" class="spell-slot-placeholder" tabindex="-1" aria-hidden="true">
-    </div>
-    </div>
-    <div id="picked-level2" class="spell-picked-content">未準備此環法術</div>
-    </section>
-    <section class="spell-picked-box spell-overview-card" data-spell-disclosure="3" hidden>
-    <div class="spell-overview-card-heading">
-      <h4 class="spell-picked-heading"><button type="button" class="spell-overview-toggle" aria-expanded="true" aria-controls="picked-level3"><span class="spell-overview-arrow" aria-hidden="true">▸</span>三環</button></h4>
-    <div id="spellslot3-row" class="spell-overview-slot-checks" role="group" aria-label="三環法術位；勾選表示已消耗">
-      <input type="checkbox" id="spellslot3-1">
-      <input type="checkbox" id="spellslot3-2">
-      <input type="checkbox" id="spellslot3-3">
-      <input type="checkbox" class="spell-slot-placeholder" tabindex="-1" aria-hidden="true">
-    </div>
-    </div>
-    <div id="picked-level3" class="spell-picked-content">未準備此環法術</div>
-    </section>
-    <section class="spell-picked-box spell-overview-card" data-spell-disclosure="4" hidden>
-    <div class="spell-overview-card-heading">
-      <h4 class="spell-picked-heading"><button type="button" class="spell-overview-toggle" aria-expanded="true" aria-controls="picked-level4"><span class="spell-overview-arrow" aria-hidden="true">▸</span>四環</button></h4>
-    <div id="spellslot4-row" class="spell-overview-slot-checks" role="group" aria-label="四環法術位；勾選表示已消耗">
-      <input type="checkbox" id="spellslot4-1">
-      <input type="checkbox" id="spellslot4-2">
-      <input type="checkbox" class="spell-slot-placeholder" tabindex="-1" aria-hidden="true">
-      <input type="checkbox" class="spell-slot-placeholder" tabindex="-1" aria-hidden="true">
-    </div>
-    </div>
-    <div id="picked-level4" class="spell-picked-content">未準備此環法術</div>
-    </section>
+    <!-- 一到九環的卡片由 sheet-spells.js 依 SPELL_RING_CONFIGS 產生（#spellslot{環}-row、#spellslot{環}-{n}、#picked-level{環}）。 -->
   </div>
   </div>
   <div id="spell-prepared-summary" class="spell-prepared-summary">
@@ -5483,7 +5436,7 @@ function updateArmorInfo() {
   updateEquipmentLoadoutSummary();
 }
 </script>
-<script src="sheet-spells.js?v=20261113-spell-list"></script>
+<script src="sheet-spells.js?v=20261116-ring-layout"></script>
 <script src="rule-tips.js?v=20261116-calculation-tips"></script>
 <script>
 const SPELL_QR_IMAGE_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwAQMAAAAEm3vRAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABD0lEQVRYhe2YMQ6DMAxFXTFk5EgcjR6NIzEyINLYDk6ahpSiiun/BeHH9GXHPxBB96v3UXN4GZayAlzHq7o3zp2nIRSfqQLcwKG26Qu5ragAf8FdeC4PMRX4X5j2+QY+g9N8k2uOP7Bh2xx8Kkor1lcN8Hmcy0/UErBJLQzTzI/JbXFTs7vAh1gVVwibOu6dmLUicIHlDGQv/UriJUuPRwK+iEUcEVmCg9XSuwR8iHsZa3bSTOVYs2QLGvgDJ3GEtixtNxXgCziPNXovoS4ff+AqzvJ0bNBOvwduYutA2yXyHQGfwjEMcpZ2FVOBr2GyWLMvaOADLEqd+h5rgKs4DrTXVvTy56C87AH/hqG79QLS1jgHWvai8gAAAABJRU5ErkJggg==";
@@ -6040,6 +5993,8 @@ function collectStateObject(options = {}) {
     if (el.dataset.stateTransient === "true") return;
     if (!includeMoneyLogs && skippedShareFields.has(el.id)) return;
     if (isSpellRowStateKey(el.id)) return;
+    // 九環框架多出來、角色沒有的法術位不存，存檔內容與原本相同。
+    if (isDormantSpellSlotBox(el)) return;
     data[el.id] = el.type === "checkbox" ? el.checked : el.value;
   });
   data[CHARACTER_SIZE_STATE_KEY] = characterSize;
