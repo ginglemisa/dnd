@@ -149,7 +149,7 @@
         if (typeof raw[key] !== "string" || raw[key].length > limit) return [];
         text[key] = raw[key].trim();
       }
-      if (!text.nameZh || !text.description || !Number.isInteger(raw.level) || raw.level < 0 || raw.level > 4
+      if (!text.nameZh || !text.description || !Number.isInteger(raw.level) || raw.level < 0 || raw.level > 9
         || !CUSTOM_SPELL_OPTIONS.schools.includes(raw.school)
         || !Object.hasOwn(CUSTOM_SPELL_OPTIONS.castingTimes, raw.castingTime)
         || !Object.hasOwn(CUSTOM_SPELL_OPTIONS.ranges, raw.rangeType)

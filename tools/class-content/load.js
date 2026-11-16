@@ -236,6 +236,14 @@ function checkClass(classDef, errors) {
     if (!levels.includes(1)) errors.push(`${classDef.file}：特性表欄位 ${name} 須包含 1 級`);
     levels.filter(level => level > classDef.maxLevel).forEach(level => errors.push(`${classDef.file}：特性表欄位 ${name} 的 ${level} 級超過 maxLevel`));
   }
+  // 網站依名稱讀取各環法術位 spellSlots1～spellSlots9；契約魔法為 spellSlots（數量）與 spellSlotLevel（環階 1～9）。
+  Object.keys(classDef.progression || {}).filter(name => /^spellSlots\d+$/.test(name)).forEach(name => {
+    const ring = Number(name.slice("spellSlots".length));
+    if (!(ring >= 1 && ring <= 9)) errors.push(`${classDef.file}：特性表欄位 ${name} 的環階須介於 1～9`);
+  });
+  Object.values(classDef.progression?.spellSlotLevel?.byLevel || {})
+    .filter(value => value !== null && !(Number.isInteger(value) && value >= 1 && value <= 9))
+    .forEach(value => errors.push(`${classDef.file}：特性表欄位 spellSlotLevel 的值 ${value} 須介於 1～9`));
   checkProficiencies(classDef, errors, id => claim(persistedIds, id, classDef.file, "工具欄位 ID"));
   checkEquipment(classDef, errors);
   checkSrd(classDef, errors);

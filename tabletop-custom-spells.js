@@ -1,7 +1,9 @@
 (function attachTabletopCustomSpells(globalScope) {
   "use strict";
 
-  const LEVELS = ["戲法", "一環", "二環", "三環", "四環"];
+  // 自創法術可選的環階到角色可用法術的最高環階為止（SpellCatalog.getMaxLevel()；spell-list.js 先載入）。
+  const LEVELS = ["戲法", "一環", "二環", "三環", "四環", "五環", "六環", "七環", "八環", "九環"]
+    .slice(0, Math.max(1, globalScope.SpellCatalog?.getMaxLevel?.() || 4) + 1);
   const getSpells = () => globalScope.TabletopMode.getTabletopActionPreferences().customSpells || [];
   const element = (tag, className = "", text = "") => {
     const node = document.createElement(tag);

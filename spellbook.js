@@ -2,14 +2,19 @@
   "use strict";
 
   const books = { wizard: [], manual: [] };
-  const levels = ["戲法", "一環", "二環", "三環", "四環"];
   const catalog = () => globalScope.SpellCatalog;
+  // 法術書、準備與手動管理的環階範圍到角色可用法術的最高環階為止（SpellCatalog.getMaxLevel()，法術有網站版才算），
+  // 補上更高環階的網站版時這裡不用改。spell-list.js 先載入（index.html 的 defer 順序）。
+  const maxRing = Math.max(1, catalog()?.getMaxLevel?.() || 0);
+  const bookRings = Array.from({ length: maxRing }, (_, index) => index + 1);
+  const levels = ["戲法", "一環", "二環", "三環", "四環", "五環", "六環", "七環", "八環", "九環"].slice(0, maxRing + 1);
+  const isBookRing = level => Number.isInteger(level) && level >= 1 && level <= maxRing;
   const isManual = () => globalScope.SpellManagement?.isManual() === true;
   const isWizard = () => document.getElementById("class")?.value === "wizard";
   const isTome = () => !isManual() && document.getElementById("class")?.value === "warlock"
     && globalScope.hasWarlockInvocation?.("書之魔契");
-  const wizardSpells = () => catalog().getAllSpells().filter(spell => spell.level > 0
-    && spell.level <= 4 && catalog().getClassIds(spell.spellId).includes("wizard"));
+  const wizardSpells = () => catalog().getAllSpells().filter(spell => isBookRing(spell.level)
+    && catalog().getClassIds(spell.spellId).includes("wizard"));
   const management = () => globalScope.SpellManagement;
   const playerEntries = () => management()?.getPlayerEntries() || [];
   const activeBookIds = () => isManual() ? books.manual : books.wizard;
@@ -18,18 +23,18 @@
 
   function supportedSpells(minLevel = 0) {
     const classes = new Set();
-    for (let level = minLevel; level <= 4; level += 1) {
+    for (let level = minLevel; level <= maxRing; level += 1) {
       (globalScope.getAvailableSpellSourceClasses?.(level === 0 ? "cantrips" : level) || [])
         .forEach(option => classes.add(option.value));
     }
-    return catalog().getAllSpells().filter(spell => spell.level >= minLevel && spell.level <= 4
+    return catalog().getAllSpells().filter(spell => spell.level >= minLevel && spell.level <= maxRing
       && catalog().getClassIds(spell.spellId).some(id => classes.has(id)));
   }
 
-  // The shared 1st-4th preparation limit only covers rings the class can use now.
+  // The shared preparation limit only covers rings the class can use now.
   function preparedRingLabel(className, level, shared = false) {
-    if (typeof globalScope.classCanAccessSpellLevel !== "function") return `一至四環${shared ? "共用" : ""}`;
-    const highest = Math.max([4, 3, 2].find(ring => globalScope.classCanAccessSpellLevel(className, Number(level), ring)) || 1,
+    if (typeof globalScope.classCanAccessSpellLevel !== "function") return `一至${levels[maxRing]}${shared ? "共用" : ""}`;
+    const highest = Math.max(bookRings.slice(1).reverse().find(ring => globalScope.classCanAccessSpellLevel(className, Number(level), ring)) || 1,
       ...(management()?.getCustomEntries() || []).filter(entry => entry.countsAsPrepared).map(entry => entry.level));
     return highest > 1 ? `一至${levels[highest]}${shared ? "共用" : ""}` : levels[1];
   }
@@ -43,7 +48,7 @@
 
   function normalize(value) {
     return [...new Set((Array.isArray(value) ? value : []).filter(id => typeof id === "string" && id.trim()
-      && (!catalog().getSpell(id) || (catalog().getSpell(id).level >= 1 && catalog().getSpell(id).level <= 4))))];
+      && (!catalog().getSpell(id) || isBookRing(catalog().getSpell(id).level))))];
   }
 
   function getState() {
@@ -90,8 +95,8 @@
       limit: api.getLimits().prepared ?? 0 };
   }
 
-  // Same scope as the dialog's automatic「清空準備」: available 1st-4th player choices.
-  const clearablePrepared = () => playerEntries().filter(entry => Number(entry.level) >= 1 && Number(entry.level) <= 4
+  // Same scope as the dialog's automatic「清空準備」: available ringed player choices.
+  const clearablePrepared = () => playerEntries().filter(entry => isBookRing(Number(entry.level))
     && !entry.spellSource && management().isEntryAvailable(entry));
   const showsPreparedStatus = () => !isTome() && !isManual() && isWizard() && management()?.canManage() === true;
 
@@ -617,10 +622,10 @@
         if (!labels.has(entry.spellId)) labels.set(entry.spellId, new Set());
         labels.get(entry.spellId).add(entry.sourceLabel || entry.source || entry.spellSource || "來源能力");
       });
-      const ringCounts = [0, 0, 0, 0, 0];
+      const ringCounts = levels.map(() => 0);
       [...editable, ...counted].forEach(entry => {
         const level = Number(entry.level);
-        if (Number.isInteger(level) && level >= 0 && level <= 4) ringCounts[level] += 1;
+        if (level === 0 || isBookRing(level)) ringCounts[level] += 1;
       });
       draftSnapshot = { editable, selected: new Set(editable.map(entry => entry.spellId)),
         sourceLabels: labels, ringCounts, cantrips: 0, prepared: 0 };
@@ -642,7 +647,7 @@
     const cantripTotals = () => ({ count: countAt(true) + draftSnapshot.grantSlots.filter(slot => slot.spellId).length,
       limit: (limits.cantrips ?? 0) + draftSnapshot.grantSlots.length });
     refreshDraftSnapshot();
-    const canClear = entry => Number(entry.level) >= 1 && Number(entry.level) <= 4
+    const canClear = entry => isBookRing(Number(entry.level))
       && (manual ? !(share && entry.spellSource) : (!entry.spellSource && api.isEntryAvailable(entry, availability())));
     const limitAt = cantrip => Number.isFinite(cantrip ? limits.cantrips : limits.prepared)
       ? (cantrip ? limits.cantrips : limits.prepared) : Infinity;
@@ -724,7 +729,7 @@
       if (context !== candidateContext) {
         candidateContext = context;
         baseCandidates = new Map();
-        for (let level = 0; level <= 4; level += 1) {
+        for (let level = 0; level <= maxRing; level += 1) {
           const ring = level === 0 ? "cantrips" : level;
           (globalScope.getAvailableSpellSourceClasses?.(ring, { manual }) || []).forEach(option => {
             globalScope.getClassSpells(option.value, ring).forEach(spell => baseCandidates.set(spell.spellId, spell));
@@ -748,20 +753,20 @@
     const picker = createSpellPicker({ mode: "prepared", getSpells: candidateSpells,
       beforeDraw: refreshAvailableCounts,
       // Automatic management lists only rings the character can prepare now;
-      // manual management keeps cantrips through 4th level for legacy saves.
+      // manual management lists every ring that has playable spells.
       getRings() {
-        if (manual) return [0, 1, 2, 3, 4];
+        if (manual) return [0, ...bookRings];
         const rings = limits.cantrips > 0 || globalScope.hasCurrentSpellSourceCantrips?.() ? [0] : [];
         for (let ring = 1; ring <= limits.maxLevel; ring += 1) rings.push(ring);
         return rings;
       },
       // Automatic management counts only the rings the class can prepare now (cantrips
-      // only with a cantrip allowance); manual management keeps 1st through 4th level.
+      // only with a cantrip allowance); manual management counts every ring that has playable spells.
       getCountSuffix() {
         const { limit } = cantripTotals();
-        const rings = manual ? [1, 2, 3, 4] : [...(limit > 0 ? [0] : []), ...Array.from({ length: limits.maxLevel }, (_, index) => index + 1)];
+        const shown = manual ? bookRings : [...(limit > 0 ? [0] : []), ...Array.from({ length: limits.maxLevel }, (_, index) => index + 1)];
         const cantrips = draftSnapshot.ringCounts[0] + draftSnapshot.grantSlots.filter(slot => slot.spellId).length;
-        return rings.length ? ` | ${rings.map(ring => ring ? `${ring}環 ${draftSnapshot.ringCounts[ring]}` : `戲法 ${cantrips}`).join(" | ")} |` : "";
+        return shown.length ? ` | ${shown.map(ring => ring ? `${ring}環 ${draftSnapshot.ringCounts[ring]}` : `戲法 ${cantrips}`).join(" | ")} |` : "";
       },
       // Explain an empty ring filter that the class or level cannot use yet.
       getEmptyMessage(filterValue) {

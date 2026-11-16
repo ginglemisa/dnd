@@ -704,26 +704,30 @@
     return null;
   }
 
+  // 法術環階的上限（SRD 的九環）。各職業實際有幾環法術位全看特性表欄位，這裡只決定陣列長度。
+  const MAX_SPELL_SLOT_LEVEL = 9;
+
   /**
-   * 取得指定職業與等級的一至四環法術位數量，依特性表欄位：spellSlots1～spellSlots4（各環數量），
+   * 取得指定職業與等級的一至九環法術位數量（固定 9 格，沒有的環階為 0），依特性表欄位：spellSlots1～spellSlots9（各環數量），
    * 契約魔法（spellcasting: pact）為 spellSlots（數量）與 spellSlotLevel（環階）。
    */
   function getSpellSlotCounts(className, level) {
     const numericLevel = Number(level);
     const rules = getClassRules(className);
-    if (!Number.isInteger(numericLevel) || !rules || rules.spellcasting === "none") return [0, 0, 0, 0];
+    const rings = Array.from({ length: MAX_SPELL_SLOT_LEVEL }, (_, index) => index + 1);
+    if (!Number.isInteger(numericLevel) || !rules || rules.spellcasting === "none") return rings.map(() => 0);
     if (rules.spellcasting === "pact") {
       const slotLevel = getClassProgressionValue(className, "spellSlotLevel", numericLevel);
       const count = getClassProgressionValue(className, "spellSlots", numericLevel) || 0;
-      return [1, 2, 3, 4].map(spellLevel => (spellLevel === slotLevel ? count : 0));
+      return rings.map(spellLevel => (spellLevel === slotLevel ? count : 0));
     }
-    return [1, 2, 3, 4].map(spellLevel => getClassProgressionValue(className, `spellSlots${spellLevel}`, numericLevel) || 0);
+    return rings.map(spellLevel => getClassProgressionValue(className, `spellSlots${spellLevel}`, numericLevel) || 0);
   }
 
-  /** 判斷職業在指定角色等級是否可使用某一法術環階。 */
+  /** 判斷職業在指定角色等級是否可使用某一法術環階（看特性表的法術位）。 */
   function classCanAccessSpellLevel(className, characterLevel, spellLevel) {
     const numericSpellLevel = Number(spellLevel);
-    if (!Number.isInteger(numericSpellLevel) || numericSpellLevel < 0 || numericSpellLevel > 4) return false;
+    if (!Number.isInteger(numericSpellLevel) || numericSpellLevel < 0 || numericSpellLevel > MAX_SPELL_SLOT_LEVEL) return false;
     if (numericSpellLevel === 0) return Object.hasOwn(getClassRules(className)?.progression || {}, "cantrips");
 
     const slotCounts = getSpellSlotCounts(className, characterLevel);

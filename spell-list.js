@@ -240,6 +240,19 @@ globalThis.SpellCatalog = (() => {
     return [...allSpells];
   }
 
+  // 角色可用法術的最高環階（有網站版的法術裡最高的那一環）。法術書、準備法術與手動管理的環階範圍都讀這個數字，
+  // 之後補上更高環階的網站版時不用改程式。
+  const maxPlayableLevel = allSpells.reduce((highest, spell) => Math.max(highest, spell.level), 0);
+  function getMaxLevel() {
+    return maxPlayableLevel;
+  }
+
+  // 學派 ID（內容檔的 school，例如 evocation）；塑能師「強效塑能」等依學派判斷的規則讀這個，不讀顯示文字。
+  function getSchool(spellOrId) {
+    const spellId = spellIdOf(spellOrId);
+    return typeof spellId === "string" && Object.hasOwn(spellRules, spellId) ? spellRules[spellId].school : "";
+  }
+
   function getSpellIds(classId, level) {
     const normalizedLevel = normalizeLevel(level);
     const classSpellIds = typeof classId === "string" && Object.hasOwn(fullSpellIdsByClass, classId) ? fullSpellIdsByClass[classId] : undefined;
@@ -400,6 +413,8 @@ globalThis.SpellCatalog = (() => {
     schemaVersion: 3,
     getSpell,
     getAllSpells,
+    getMaxLevel,
+    getSchool,
     getSpellIds,
     getSpells,
     getClassIds,
