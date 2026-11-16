@@ -3961,9 +3961,10 @@ async function verifyFeatureReferences(browser, url) {
           if (!renderSkillPopupHtml(tip.dataset.skill, tip.dataset.condition)) failures.push(`${name}: missing explanation`);
         }
       }
+      // 10 級擴充：自然守護（中毒）、返本歸元（魅惑、恐慌、中毒、力竭）、聖威懾敵與無畏靈氣（恐慌）、不知疲倦（力竭）、神出鬼沒（隱形）。
       const conditionCounts = {
-        barbarian: 4, bard: 2, cleric: 3, druid: 1, fighter: 0, monk: 4,
-        paladin: 5, ranger: 0, rogue: 4, sorcerer: 0, warlock: 1, wizard: 0,
+        barbarian: 4, bard: 2, cleric: 3, druid: 2, fighter: 0, monk: 8,
+        paladin: 8, ranger: 1, rogue: 5, sorcerer: 0, warlock: 1, wizard: 0,
         dragonborn: 1, dwarf: 1, elf: 1, gnome: 0, goliath: 2, halfling: 1, human: 0, orc: 0, tiefling: 0
       };
       for (const [name, expected] of Object.entries(conditionCounts)) {
@@ -4001,7 +4002,7 @@ async function verifyFeatureReferences(browser, url) {
       finder.innerHTML = getFeatDescriptionHtml("尋物好手");
       const finderSkills = Array.from(finder.content.querySelectorAll("button.skill-tip"), tip => tip.dataset.skill);
       if (JSON.stringify(finderSkills) !== JSON.stringify(["洞悉", "調查", "察覺"])) failures.push(`尋物好手: skill links ${finderSkills}`);
-      for (const [name, count] of [["fighter", 2], ["monk", 1], ["ranger", 1], ["rogue", 1]]) {
+      for (const [name, count] of [["fighter", 2], ["monk", 2], ["ranger", 1], ["rogue", 1]]) {
         const template = document.createElement("template");
         template.innerHTML = highlightSpellNamesInClassFeature(classFeatures[name]);
         if (template.content.querySelectorAll('button[data-skill="藉機攻擊"]').length !== count) failures.push(`${name}: opportunity attack links`);
@@ -4017,7 +4018,7 @@ async function verifyFeatureReferences(browser, url) {
       if (createDndConditionTip("frightened", "恐懼").textContent !== "恐懼") failures.push("condition alias label");
       for (const [name, html, count] of [
         ["barbarian", classFeatures.barbarian, 1], ["ranger", classFeatures.ranger, 1],
-        ["sorcerer", classFeatures.sorcerer, 1], ["warlock", classFeatures.warlock, 1],
+        ["sorcerer", classFeatures.sorcerer, 1], ["warlock", classFeatures.warlock, 2],
         ["dragonborn", raceText.dragonborn.html, 1], ["tiefling", raceText.tiefling.html, 3]
       ]) {
         const template = document.createElement("template");
