@@ -6162,7 +6162,8 @@ async function verifyClassPicks(browser, url) {
     await page.evaluate(blank => applyStateObject({ ...blank, class: "fighter", level: "1" }), blank);
     let current = await slots(page);
     assert.deepEqual(current.map(slot => [slot.id, slot.hidden]), [
-      ["fighter-weapon-mastery-pick-1", false], ["fighter-weapon-mastery-pick-2", false], ["fighter-weapon-mastery-pick-3", false], ["fighter-weapon-mastery-pick-4", true]
+      ["fighter-weapon-mastery-pick-1", false], ["fighter-weapon-mastery-pick-2", false], ["fighter-weapon-mastery-pick-3", false], ["fighter-weapon-mastery-pick-4", true],
+      ["fighter-weapon-mastery-pick-5", true]
     ], "fighter shows three mastery selects at level 1");
     assert.ok(["長劍", "巨劍", "短弓", "鞭"].every(name => current[0].options.includes(name)) && !current[0].options.includes("武藝"), "fighter can choose proficient weapons with masteries");
     assert.ok((await issues(page)).includes("戰士武器精通尚未選完（0/3）。"), "missing masteries are reminded");
@@ -6197,27 +6198,27 @@ async function verifyClassPicks(browser, url) {
     await choose(page, "fighter-weapon-mastery-pick-4", "戰錘");
     await page.locator("#level").selectOption("1");
     current = await slots(page);
-    assert.deepEqual(current.map(slot => [slot.value, slot.hidden]), [["長劍", false], ["巨劍", false], ["長弓", false], ["戰錘", true]], "a higher-level mastery stays saved while hidden");
+    assert.deepEqual(current.map(slot => [slot.value, slot.hidden]), [["長劍", false], ["巨劍", false], ["長弓", false], ["戰錘", true], ["", true]], "a higher-level mastery stays saved while hidden");
 
     // Autosave, JSON with the class after the selects, and share restore the choices.
     await page.evaluate(() => saveAllFields());
     await page.reload();
     await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
-    assert.deepEqual((await slots(page)).map(slot => slot.value), ["長劍", "巨劍", "長弓", "戰錘"], "autosave restores masteries");
+    assert.deepEqual((await slots(page)).map(slot => slot.value), ["長劍", "巨劍", "長弓", "戰錘", ""], "autosave restores masteries");
     await page.evaluate(blank => {
       const data = collectStateObject();
       const picks = Object.fromEntries(Object.entries(data).filter(([id]) => id.startsWith("fighter-weapon-mastery-pick-")));
       applyStateObject({ ...blank, class: "wizard", level: "1" });
       applyStateObject({ ...picks, ...blank, level: "4", class: "fighter" });
     }, blank);
-    assert.deepEqual((await slots(page)).map(slot => [slot.value, slot.hidden]), [["長劍", false], ["巨劍", false], ["長弓", false], ["戰錘", false]], "JSON restores masteries regardless of field order");
+    assert.deepEqual((await slots(page)).map(slot => [slot.value, slot.hidden]), [["長劍", false], ["巨劍", false], ["長弓", false], ["戰錘", false], ["", true]], "JSON restores masteries regardless of field order");
     const hash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
     const shared = await newUiPage(browser);
     try {
       const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = hash;
       await open(shared, sharedUrl.href);
       assert.deepEqual(await shared.evaluate(() => [window.SHARE_MODE, ...Array.from(document.querySelectorAll("#classFeatures select[data-class-pick]"), select => select.value)]),
-        [true, "長劍", "巨劍", "長弓", "戰錘"], "share restores masteries");
+        [true, "長劍", "巨劍", "長弓", "戰錘", ""], "share restores masteries");
     } finally { await shared.close(); }
 
     // Rogue: finesse or light martial weapons, expertise and extra language reminders.
@@ -6377,6 +6378,95 @@ async function verifyFieldDetailsIntro(browser, url) {
 }
 
 // 存檔格式：暫時輸入不進任何一條路；要存但不分享的當下狀態只有分享不帶。
+// 10 級：8 級舊存檔原樣載入；10 級存檔經 autosave、JSON、分享還原；玩家 10 → 8 → 10 時玩家清單與職業選項保留。
+async function verifyLevelTenPersistence(browser, url) {
+  const page = await newUiPage(browser);
+  const ready = () => page.waitForFunction(() => window.TabletopMode && window.ClassOptionMemory && window.Spellbook && typeof autosaveRestoreBlocked !== "undefined" && !autosaveRestoreBlocked);
+  const snapshot = () => page.evaluate(() => ({
+    level: document.getElementById("level").value,
+    players: SpellManagement.getPlayerEntries().map(entry => entry.spellId),
+    available: SpellManagement.getEntries({ availableOnly: true }).map(entry => entry.spellId),
+    book: Spellbook.getState().wizardSpellIds,
+    slots: getSpellSlotCounts(document.getElementById("class").value, Number(document.getElementById("level").value)),
+    used: Array.from({ length: 9 }, (_, index) => document.querySelectorAll(`#spellslot${index + 1}-row input:checked`).length),
+    metamagic: Array.from(document.querySelectorAll("#metamagicOptions input[data-metamagic-name]:checked"), input => input.dataset.metamagicName)
+  }));
+  const base = { race: "human", background: "sage", int: "18", cha: "16", con: "14", "spellcasting-ability": "int" };
+  try {
+    await page.goto(url);
+    await ready();
+    // 8 級舊存檔（沒有版本號）：載入後等級、法術、法術書與法術位都不變。
+    const legacy8 = { ...base, class: "wizard", level: "8", __wizardSpellbook: { version: 2, wizardSpellIds: ["magic-missile", "fireball", "ice-storm"], manualSpellIds: [] },
+      __spellManagement: { version: 2, manual: false, entries: [{ spellId: "fireball", spellClass: "wizard" }, { spellId: "ice-storm", spellClass: "wizard" }] }, __spellSlotsUsed: { 4: 1 } };
+    await page.evaluate(state => { cancelPendingAutosaveForClear(); dndStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(state)); }, legacy8);
+    await page.goto(url);
+    await ready();
+    assert.deepEqual(await snapshot(), { level: "8", players: ["fireball", "ice-storm"], available: ["fireball", "ice-storm"],
+      book: ["magic-missile", "fireball", "ice-storm"], slots: [4, 3, 3, 2, 0, 0, 0, 0, 0], used: [0, 0, 0, 1, 0, 0, 0, 0, 0], metamagic: [] }, "a level-8 save loads unchanged");
+
+    // 10 級法師：五環法術、五環法術位已用 1 格。三條路都還原。
+    const wizard10 = { ...base, class: "wizard", level: "10", __saveVersion: await page.evaluate(() => CHARACTER_STATE_VERSION),
+      __wizardSpellbook: { version: 2, wizardSpellIds: ["magic-missile", "fireball", "cone-of-cold", "wall-of-force"], manualSpellIds: [] },
+      __spellManagement: { version: 2, manual: false, entries: [{ spellId: "fireball", spellClass: "wizard" }, { spellId: "cone-of-cold", spellClass: "wizard" }] }, __spellSlotsUsed: { 5: 1 } };
+    const expected10 = { players: ["fireball", "cone-of-cold"], available: ["fireball", "cone-of-cold"], book: ["magic-missile", "fireball", "cone-of-cold", "wall-of-force"], slots: [4, 3, 3, 3, 2, 0, 0, 0, 0] };
+    await page.evaluate(state => { cancelPendingAutosaveForClear(); dndStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(state)); }, wizard10);
+    await page.goto(url);
+    await ready();
+    const fromAutosave = await snapshot();
+    assert.deepEqual({ level: fromAutosave.level, players: fromAutosave.players, available: fromAutosave.available, book: fromAutosave.book, slots: fromAutosave.slots, used: fromAutosave.used[4] },
+      { level: "10", ...expected10, used: 1 }, "autosave restores a level-10 character with 5th-level spells and slots");
+    const exported = await page.evaluate(() => JSON.parse(collectJsonExportText().text));
+    assert.deepEqual([exported.level, exported.__spellSlotsUsed, exported.__spellManagement.entries.map(entry => entry.spellId)], ["10", { 5: 1 }, ["fireball", "cone-of-cold"]], "JSON export keeps level 10 and the 5th-level slot");
+    await page.evaluate(() => { cancelPendingAutosaveForClear(); dndStorage.removeItem(AUTO_SAVE_KEY); });
+    await page.goto(url);
+    await ready();
+    await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
+    await Promise.all([page.waitForEvent("load"), page.locator("#import-json-file").setInputFiles({ name: "level10.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(exported)) })]);
+    await ready();
+    const fromJson = await snapshot();
+    assert.deepEqual({ level: fromJson.level, players: fromJson.players, book: fromJson.book, used: fromJson.used[4] }, { level: "10", players: expected10.players, book: expected10.book, used: 1 }, "JSON import restores level 10");
+    const hash = await page.evaluate(() => encodeStateToHash({ ...collectShareState() }));
+    await page.goto("about:blank");
+    await page.goto(url + hash);
+    await page.waitForFunction(() => document.getElementById("auto-calculate-key-stats-toggle")?.dataset.shareLocked === "true");
+    const fromShare = await snapshot();
+    assert.deepEqual({ level: fromShare.level, players: fromShare.players, available: fromShare.available, book: fromShare.book, slots: fromShare.slots },
+      { level: "10", ...expected10 }, "share restores level 10");
+
+    // 玩家 10 → 8 → 10：五環法術保留但不可用，升回去恢復；術士 10 級的第 3、4 個超魔法由職業選項記憶還原。
+    await page.goto(url);
+    await ready();
+    await page.evaluate(state => applyStateObject(state), wizard10);
+    const choose = value => page.evaluate(value => {
+      const select = document.getElementById("level");
+      select.value = value;
+      const change = new Event("change", { bubbles: true });
+      change.dndCharacterSelectionCommitted = true;
+      select.dispatchEvent(change);
+    }, value);
+    await choose("8");
+    const down = await snapshot();
+    assert.deepEqual([down.players, down.available, down.book], [expected10.players, ["fireball"], expected10.book], "level 8 keeps the 5th-level choice but marks it unavailable");
+    await choose("10");
+    const up = await snapshot();
+    assert.deepEqual([up.players, up.available, up.book], [expected10.players, expected10.available, expected10.book], "returning to level 10 restores the 5th-level choice");
+    const metamagicNames = await page.evaluate(() => {
+      applyStateObject({ class: "sorcerer", level: "10", race: "human", background: "sage", cha: "16" });
+      const names = Array.from(document.querySelectorAll("#metamagicOptions input[data-metamagic-name]")).slice(0, 4);
+      names.forEach(input => { input.checked = true; input.dispatchEvent(new Event("change", { bubbles: true })); });
+      return names.map(input => input.dataset.metamagicName);
+    });
+    assert.deepEqual((await snapshot()).metamagic, metamagicNames, "level-10 sorcerers keep four metamagic options");
+    await choose("8");
+    assert.deepEqual((await snapshot()).metamagic, metamagicNames.slice(0, 2), "level 8 keeps two metamagic options");
+    await choose("10");
+    assert.deepEqual((await snapshot()).metamagic, metamagicNames, "class option memory restores the 3rd and 4th metamagic at level 10");
+    console.log("Level 10 persistence: level-8 save unchanged, level-10 autosave/JSON/share, 10 → 8 → 10 spells and metamagic passed.");
+  } finally {
+    await page.close();
+  }
+}
+
 async function verifySaveFormat(browser, url) {
   const page = await newUiPage(browser);
   const transientIds = ["spell-search", "equipment-search", "dice-system-toggle", "money-note", "money-amount", "money-currency",
@@ -7267,7 +7357,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifySaveFormat(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldDetailsIntro(browser, url); await verifyFirstLoadDefaults(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifySaveFormat(browser, url); await verifyLevelTenPersistence(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldDetailsIntro(browser, url); await verifyFirstLoadDefaults(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
     if (all || sections.has("--data-only") || sections.has("--share-only")) await verifyShareReadonlyMode(browser, url);
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });

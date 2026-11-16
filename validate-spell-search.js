@@ -137,20 +137,21 @@ async function main() {
       text: `${spell.nameZh}\n${spell.nameEn}\n${spell.nameZh} ${spell.nameEn}\n${SpellCatalog.getSpell(spell.spellId)?.desc || ""}`.toLowerCase()
     })));
     assert.equal(catalog.length, 339, "search covers all SRD spells");
-    assert.equal(catalog.filter(spell => spell.playable).length, 217);
+    assert.equal(catalog.filter(spell => spell.playable).length, 255);
     const classLists = Object.fromEntries(
       ["artificer", "bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"].map(id =>
         [id, Array.from({ length: 10 }, (_, level) => catalog.filter(spell => spell.level === level && spell.classes.includes(id)).map(spell => spell.id))])
     );
-    assert.deepEqual(await page.evaluate(() => [0, 1, 2, 3, 4].map(level => SpellCatalog.getSpellIds("wizard", level))),
-      [0, 1, 2, 3, 4].map(level => classLists.wizard[level]), "playable class lists match the lookup data");
-    // 聖騎士、遊俠：查閱有一至五環（SRD），網站法表（可準備）照舊沒有三、四環。
+    assert.deepEqual(await page.evaluate(() => [0, 1, 2, 3, 4, 5].map(level => SpellCatalog.getSpellIds("wizard", level))),
+      [0, 1, 2, 3, 4, 5].map(level => classLists.wizard[level]), "playable class lists match the lookup data");
+    // 聖騎士、遊俠：查閱有一至五環（SRD），網站法表（可準備）到三環為止（9 級起有三環法術位），沒有四、五環。
     for (const classId of ["paladin", "ranger"]) {
       assert.deepEqual(classLists[classId].flatMap((ids, level) => ids.length ? [level] : []), [1, 2, 3, 4, 5], `${classId} lookup covers first through fifth level`);
-      assert.deepEqual(await page.evaluate(id => [3, 4].map(level => SpellCatalog.getSpellIds(id, level)), classId), [[], []], `${classId} site class list stays first and second level`);
+      assert.deepEqual(await page.evaluate(id => [4, 5].map(level => SpellCatalog.getSpellIds(id, level)), classId), [[], []], `${classId} site class list stops at third level`);
+      assert.deepEqual(await page.evaluate(id => SpellCatalog.getSpellIds(id, 3), classId), classLists[classId][3], `${classId} third-level site list matches SRD`);
     }
-    assert.ok(classLists.paladin[3].includes("revivify") && classLists.ranger[3].includes("revivify"));
-    assert.equal(await page.evaluate(() => SpellCatalog.getClassIds("revivify").join()), "cleric,druid", "lookup classes never reach getClassIds");
+    assert.ok(classLists.paladin[4].includes("death-ward") && classLists.ranger[3].includes("revivify"));
+    assert.equal(await page.evaluate(() => SpellCatalog.getClassIds("death-ward").join()), "cleric", "lookup classes never reach getClassIds");
     const submit = async (query, keyboard = false) => {
       await input.fill(query);
       if (keyboard) await input.press("Enter");
@@ -190,10 +191,11 @@ async function main() {
     await checkClass("法師九環", "wizard", 9);
     await checkClass("牧師五環", "cleric", 5);
     // 只供查閱的法術：搜尋結果只開詳情（SRD 版），不詢問是否準備。
+    // 指使術（五環，有網站版）的說明提到祈願術，所以也會出現；只供查閱的祈願術只比對名稱。
     await submit("祈願術");
-    assert.deepEqual(await buttons.allTextContents(), ["祈願術 Wish"]);
+    assert.deepEqual(await buttons.allTextContents(), ["指使術 Geas", "祈願術 Wish"]);
     const selectedBeforeLookup = await page.evaluate(() => SpellManagement.getEntries());
-    await buttons.first().click();
+    await buttons.filter({ hasText: "祈願術 Wish" }).click();
     const lookupDetail = page.locator("#quick-build-spell-detail");
     assert.equal(await lookupDetail.isVisible(), true);
     await lookupDetail.locator(".spell-version__attribution").waitFor();
@@ -899,7 +901,7 @@ async function validateMagicItemShop(page) {
 
   // 物品視窗：副標、說明、提示與使用；治療藥水有 getHeal() 時是飲用。
   await page.evaluate(() => Inventory.restore({ version: 1, items: [
-    { uid: "scroll", itemId: "法術卷軸", name: "奧術之手法術卷軸", spellId: "arcane-hand", quantity: 1 },
+    { uid: "scroll", itemId: "法術卷軸", name: "連鎖閃電法術卷軸", spellId: "chain-lightning", quantity: 1 },
     { uid: "scroll1", itemId: "法術卷軸", name: "命令術法術卷軸", spellId: "command", quantity: 1 },
     { uid: "greater", quantity: 2, magic: { id: "potions-of-healing", potency: "greater" } },
     { uid: "climbing", quantity: 2, magic: { id: "potion-of-climbing" } },
@@ -944,7 +946,7 @@ async function validateMagicItemShop(page) {
   await openItem("scroll");
   assert.equal(await item.locator(".spell-version__tab").count(), 0, "scrolls above 1st level have no version tabs");
   await item.locator(".magic-item-detail__text").getByText(/卷軸上寫有單一法術的文字/u).first().waitFor();
-  await item.getByRole("button", { name: "使用奧術之手法術卷軸" }).click();
+  await item.getByRole("button", { name: "使用連鎖閃電法術卷軸" }).click();
   await item.waitFor({ state: "detached" });
   assert.equal(await page.evaluate(() => Inventory.getEntry("scroll")), null, "the last scroll closes the dialog");
   await openItem("lost");
@@ -2573,13 +2575,13 @@ async function validateInventoryStacks(page) {
   assert.equal(versions.detailTags, "50 金幣", "the equipment detail keeps its price line");
   assert.deepEqual(versions.shopItems, [["治療藥水", 50, "金幣", 0.5, null], ["法術卷軸", 30, "金幣", 0, 0], ["法術卷軸", 50, "金幣", 0, 1]], "the normal shop still reads price and weight from the equipment notes");
 
-  // 魔法模式的法術卷軸開放到 5 環，5 環只有 SRD 版，仍寫成舊卷軸的寫法；一般商店維持戲法與 1 環。
+  // 魔法模式的法術卷軸開放到 5 環（10 級擴充後 5 環都有網站版），仍寫成舊卷軸的寫法；一般商店維持戲法與 1 環。
   const scrolls = await page.evaluate(() => {
     const normal = [...new Set(EQUIPMENT_SHOP_ITEMS.filter(item => item.name === "法術卷軸").map(item => item.spellLevel))];
     const fifth = SpellCatalog.getAllReferenceSpells().filter(spell => spell.level === 5);
     return { normal, fifthCount: fifth.length, playable: fifth.filter(spell => spell.playable).length };
   });
-  assert.deepEqual(scrolls, { normal: [0, 1], fifthCount: 38, playable: 0 }, "the normal shop stays at cantrips and level 1, and level 5 has 38 SRD-only spells");
+  assert.deepEqual(scrolls, { normal: [0, 1], fifthCount: 38, playable: 38 }, "the normal shop stays at cantrips and level 1, and all 38 5th-level spells are playable");
 
   // 魔法款和同名普通款是不同的選項，value 是魔法款自己的名稱；只有魔法款時不列普通選項。重新載入不互換，存檔寫魔法款但物品欄沒有時補上那一件。
   const magicEquip = await page.evaluate(([base]) => {
@@ -3066,15 +3068,15 @@ async function validateInventoryItemActions(page) {
     [false, "命令術｜手動管理法術，請自行確認能否使用。豁免 DC 13・攻擊 +5，施法後卷軸消失。"], "manual spell management is not blocked");
   await closeItem();
   // 魔法模式的卷軸到 5 環：豁免 DC 與攻擊加值依環階，能施法時只有「施法」；只有 SRD 版的法術不能施法，只有「使用」。
-  await page.evaluate(items => Inventory.add(items), [scroll("火球術", 1, "fireball"), scroll("奧術之手", 1, "arcane-hand")]);
+  await page.evaluate(items => Inventory.add(items), [scroll("火球術", 1, "fireball"), scroll("連鎖閃電", 1, "chain-lightning")]);
   await openItem("火球術法術卷軸");
   assert.match(await scrollRow().first().locator(".inventory-action-row__text").textContent(), /豁免 DC 15・攻擊 \+7/u, "a 3rd-level scroll uses its own numbers");
   assert.equal(await item.getByRole("button", { name: "使用火球術法術卷軸" }).count(), 0, "a castable scroll has no separate use button");
   assert.equal(await item.locator(".spell-version__tab").count(), 0, "a 3rd-level scroll in the inventory shows only the SRD version");
   await closeItem();
-  await openItem("奧術之手法術卷軸");
-  assert.equal(await castButton("奧術之手").count(), 0, "SRD-only spells cannot be cast from a scroll");
-  assert.equal(await item.getByRole("button", { name: "使用奧術之手法術卷軸" }).count(), 1, "SRD-only scrolls can still be used up");
+  await openItem("連鎖閃電法術卷軸");
+  assert.equal(await castButton("連鎖閃電").count(), 0, "SRD-only spells cannot be cast from a scroll");
+  assert.equal(await item.getByRole("button", { name: "使用連鎖閃電法術卷軸" }).count(), 1, "SRD-only scrolls can still be used up");
   await closeItem();
   await page.evaluate(() => SpellManagement.setManual(false, { confirm: false }));
 

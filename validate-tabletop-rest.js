@@ -69,7 +69,13 @@ async function main() {
         ["fighter", 8, "fighter-second-wind", 3, 2], ["fighter", 2, "fighter-action-surge", 1, 0],
         ["monk", 8, "monk-focus-points", 8, 0], ["paladin", 8, "paladin-channel-divinity", 2, 1],
         ["sorcerer", 8, "sorcerer-sorcery-points", 8, 8], ["warlock", 8, "warlock-magical-cunning", 1, 1],
-        ["wizard", 8, "wizard-arcane-recovery", 1, 1]
+        ["wizard", 8, "wizard-arcane-recovery", 1, 1],
+        // 10 級：特性表提升的次數與 9、10 級新資源（不屈、神聖干預、不知疲倦只在長休恢復）。
+        ["barbarian", 10, "barbarian-rage", 4, 3], ["bard", 10, "bard-inspiration", 4, 0],
+        ["cleric", 10, "cleric-channel-divinity", 3, 2], ["cleric", 10, "cleric-divine-intervention", 1, 1],
+        ["druid", 10, "druid-wild-shape", 3, 2], ["fighter", 10, "fighter-second-wind", 4, 3], ["fighter", 10, "fighter-indomitable", 1, 1],
+        ["monk", 10, "monk-focus-points", 10, 0], ["paladin", 10, "paladin-channel-divinity", 2, 1], ["ranger", 10, "ranger-tireless", 3, 3],
+        ["sorcerer", 10, "sorcerer-sorcery-points", 10, 10], ["warlock", 10, "warlock-magical-cunning", 1, 1], ["wizard", 10, "wizard-arcane-recovery", 1, 1]
       ];
       for (const [className, level, key, maximum, expected] of shortCases) {
         prepare(className, level);
@@ -78,8 +84,9 @@ async function main() {
         check(TabletopMode.getBuiltInResourceSpent(key) === expected, `${key}: short recovery`);
         check(document.getElementById("hp").value === "0", "short rest does not heal automatically");
       }
-      for (const className of ["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"]) {
-        prepare(className);
+      for (const [className, level] of ["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"]
+        .flatMap(className => [[className, 8], [className, 10]])) {
+        prepare(className, level);
         const specs = context().specs.filter(spec => spec.target.type === "builtIn");
         specs.forEach(spec => TabletopMode.setBuiltInResourceSpent(spec.key, spec.maximum, spec.maximum));
         spendSlots(); field("lifedicen", 0);
@@ -88,11 +95,11 @@ async function main() {
         check(state().concentrationSpellId === "", `${className}: long rest ends concentration`);
         check(specs.every(spec => TabletopMode.getBuiltInResourceSpent(spec.key) === 0), `${className}: all built-in pools refilled`);
         check(context().slots.every(group => group.controls.every(control => !control.checked)), `${className}: slots refilled`);
-        check(context().hitDice === 8 && context().hp === context().maximumHp, `${className}: HP and all dice restored`);
+        check(context().hitDice === level && context().hp === context().maximumHp, `${className} ${level}: HP and all dice restored`);
         check(document.getElementById("heroic-inspiration").checked, "human inspiration granted");
       }
-      for (const className of ["wizard", "warlock"]) {
-        prepare(className); spendSlots();
+      for (const [className, level] of [["wizard", 8], ["warlock", 8], ["wizard", 10], ["warlock", 10]]) {
+        prepare(className, level); spendSlots();
         const slots = context().slots.flatMap(group => group.controls);
         check(rest("shortRest").ok, `${className}: short slots`);
         check(slots.every(slot => document.getElementById(slot.id).checked === (className === "wizard")), "only pact slots recover automatically");

@@ -1193,13 +1193,13 @@ async function verifyPreparedRingRange(page) {
   assert.deepEqual(await rings(), ["", "1", "2"]);
   assert.deepEqual(await candidateIds(), paladinCandidates, "paladin lookup leaves the preparation list unchanged");
   await close();
-  // 放大鏡搜尋的「聖騎士三環」列出 SRD 法術，但網站法表外的法術不能因此準備。
+  // 放大鏡搜尋的「聖騎士四環」列出 SRD 法術，但網站法表外的法術不能因此準備（三環法術在 10 級擴充時已列入聖騎士法表）。
   const before = await playerIds(page);
   await page.locator('[aria-controls="tab-spells"]').click();
   await page.locator("#spell-search-fab").click();
-  await page.locator("#spell-search").fill("聖騎士三環");
+  await page.locator("#spell-search").fill("聖騎士四環");
   await page.locator("#spell-search").press("Enter");
-  await page.locator("#spell-search-result-list button", { hasText: "回生術" }).click();
+  await page.locator("#spell-search-result-list button", { hasText: "防死結界" }).click();
   await page.locator(".quick-build-spell-prepare-confirm").click();
   const mismatch = page.getByRole("dialog", { name: "職業不符", exact: true });
   assert.match(await mismatch.innerText(), /不在聖騎士的職業法術列表中/u, "preparing follows the site class list, not the lookup list");
