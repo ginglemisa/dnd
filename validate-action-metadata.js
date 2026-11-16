@@ -3945,7 +3945,7 @@ async function verifyMergedActionUi(browser, url) {
   }
 }
 
-// 跑團法術頁：法術位小格的欄數（1–9 環、最後一列撐滿、同列等高）與「已選法術」各組的收合。
+// 跑團法術頁：法術位小格的排列（1–9 環、勾選框一列、依內容分寬、最後一列撐滿、同列等高）與「已選法術」各組的收合。
 async function verifyTabletopSpellPanelLayout(browser, url) {
   const context = await browser.newContext({ viewport: { width: 375, height: 800 } });
   const page = await context.newPage();
@@ -3961,13 +3961,17 @@ async function verifyTabletopSpellPanelLayout(browser, url) {
     await page.locator("#legal-ack-btn").click();
     await page.evaluate(value => { applyStateObject(value); TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); }, state);
     const grid = page.locator("#tabletop-spell-slots");
-    // 每列的格數；最後一格沒貼齊右邊、同列不等高或勾選框小於 20px 時丟錯。
+    // 每列的格數；最後一格沒貼齊右邊、同列不等高、勾選框小於 20px、同一環的勾選框不在同一列，
+    // 或環階、勾選框超出小格（被裁切）時丟錯。
     const readRows = () => grid.evaluate(node => {
       const edge = node.getBoundingClientRect().right;
       const rows = new Map();
       [...node.children].forEach(cell => {
         const box = cell.getBoundingClientRect(), top = Math.round(box.top);
         rows.set(top, [...(rows.get(top) || []), box]);
+        const inputs = [...cell.querySelectorAll("input")].map(input => input.getBoundingClientRect());
+        if (new Set(inputs.map(input => Math.round(input.top))).size > 1) throw new Error("checkboxes of one slot level wrap onto several lines");
+        if ([...cell.children].some(child => child.getBoundingClientRect().left < box.left + 1 || child.getBoundingClientRect().right > box.right - 1)) throw new Error("slot cell content is clipped");
       });
       [...node.querySelectorAll("input")].forEach(input => {
         const box = input.getBoundingClientRect();
@@ -3981,15 +3985,25 @@ async function verifyTabletopSpellPanelLayout(browser, url) {
     });
     // 規則資料只到四環：暫時在角色卡法術頁補上五到九環的列（canonical 契約 #spellslot{環}-row／#spellslot{環}-{n}），
     // 只顯示前 count 環，確認跑團不用改程式就會列出來；沒有的列與隱藏的列自動略過。
+    // 勾選框用各環的最大數量（4／3／3／3／3／2／2／1／1）；法師 7 級的四環只有 1 個，暫時補到 3 個。
     const showRings = async count => {
       await page.evaluate(total => {
         const wrap = document.getElementById("spell-picked-grid-wrap");
+        const second = document.getElementById("spellslot4-2");
+        if (second.style.display === "none") { second.dataset.testShown = "true"; second.style.display = ""; }
+        if (!document.getElementById("spellslot4-test")) {
+          const extra = Object.assign(document.createElement("input"), { type: "checkbox", id: "spellslot4-test" });
+          extra.dataset.testRing = "true";
+          second.after(extra);
+        }
         for (let ring = 1; ring <= 9; ring += 1) {
           let row = document.getElementById(`spellslot${ring}-row`);
           if (!row) {
             row = Object.assign(document.createElement("div"), { id: `spellslot${ring}-row` });
             row.dataset.testRing = "true";
-            row.appendChild(Object.assign(document.createElement("input"), { type: "checkbox", id: `spellslot${ring}-1` }));
+            for (let index = 1; index <= [3, 2, 2, 1, 1][ring - 5]; index += 1) {
+              row.appendChild(Object.assign(document.createElement("input"), { type: "checkbox", id: `spellslot${ring}-${index}` }));
+            }
             wrap.appendChild(row);
           }
           row.style.display = ring > total ? "none" : "";
@@ -3999,8 +4013,10 @@ async function verifyTabletopSpellPanelLayout(browser, url) {
     };
     await page.waitForFunction(() => document.getElementById("tabletop-spell-slots").dataset.slotCount === "4");
     assert.deepEqual(await grid.locator(".spell-slot-label").allInnerTexts(), ["一環", "二環", "三環", "四環"]);
-    const narrow = { 1: [1], 2: [2], 3: [3], 4: [2, 2], 5: [3, 2], 6: [3, 3], 7: [3, 3, 1], 8: [3, 3, 2], 9: [3, 3, 3] };
-    const expected = { 375: narrow, 600: narrow,
+    const narrow = { 1: [1], 2: [2], 3: [3], 4: [2, 2], 5: [3, 2], 6: [3, 3], 7: [3, 4], 8: [3, 3, 2], 9: [3, 3, 3] };
+    const narrower = { ...narrow, 7: [3, 2, 2] };
+    const expected = { 320: narrower, 360: narrower, 375: narrow, 390: narrow,
+      600: { 1: [1], 2: [2], 3: [3], 4: [4], 5: [3, 2], 6: [3, 3], 7: [4, 3], 8: [4, 4], 9: [4, 5] },
       1280: { 1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [3, 3], 7: [4, 3], 8: [4, 4], 9: [5, 4] } };
     for (const [width, byCount] of Object.entries(expected)) {
       await page.setViewportSize({ width: Number(width), height: 800 });
@@ -4010,13 +4026,19 @@ async function verifyTabletopSpellPanelLayout(browser, url) {
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${count} slot levels at ${width}px do not overflow`);
       }
     }
+    // 同一列依內容分寬：4 個勾選框的一環比 3 個的二環寬。
     await showRings(9);
+    assert.equal(await grid.evaluate(node => node.children[0].getBoundingClientRect().width > node.children[1].getBoundingClientRect().width + 10), true, "cells are sized by their checkbox count");
     assert.deepEqual(await grid.locator(".spell-slot-label").allInnerTexts(), ["一環", "二環", "三環", "四環", "五環", "六環", "七環", "八環", "九環"]);
     assert.deepEqual(await page.evaluate(() => TabletopMode.getCanonicalSpellSlotGroups().map(group => group.level)), [1, 2, 3, 4, 5, 6, 7, 8, 9], "cast options read slot levels one to nine");
     await grid.locator(".tabletop-spell-slot-column").nth(8).locator("input").check();
     assert.equal(await page.locator("#spellslot9-1").isChecked(), true, "a ninth-level mirror writes the canonical checkbox");
-    await page.evaluate(() => document.querySelectorAll("[data-test-ring]").forEach(row => row.remove()));
-    await showRings(4);
+    await page.evaluate(() => {
+      document.querySelectorAll("[data-test-ring]").forEach(node => node.remove());
+      document.querySelectorAll("[data-test-shown]").forEach(box => { box.style.display = "none"; delete box.dataset.testShown; });
+    });
+    await page.waitForFunction(() => document.getElementById("tabletop-spell-slots").dataset.slotCount === "4"
+      && document.querySelectorAll("#tabletop-spell-slots .tabletop-spell-slot-column:nth-child(4) input").length === 1);
     await page.setViewportSize({ width: 375, height: 800 });
 
     // 已選法術：各組可以收合，狀態記在裝置上，重新渲染後維持。
