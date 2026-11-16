@@ -24,6 +24,14 @@ features:
       狂暴期間，你**免疫**[[魅惑]]與[[恐慌]]狀態。
 
       - **進入狂暴時：**若你正處於其中一種狀態，該狀態立即終止。
+  - id: barbarian-retaliation
+    level: 10
+    name: 報復
+    actions:
+      - mode: reaction
+        key: dynamic-reaction-barbarian-curated-retaliation
+    text: |
+      受到 **5 呎內**生物的傷害時，可以用**反應**對它進行 1 次近戰攻擊。
 srd:
   title: "野蠻人子職：狂戰士道途 Path of the Berserker"
   intro: |

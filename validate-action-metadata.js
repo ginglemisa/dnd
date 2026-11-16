@@ -21,6 +21,7 @@ const baseline = {
       ["movement",5,"等級 5：快速移動","dynamic-movement-barbarian-18h2p2v"],
       ["bonus",7,"等級 7：本能飛撲","dynamic-bonus-barbarian-1iw4zkg"],
       ["movement",7,"等級 7：本能飛撲","dynamic-movement-barbarian-1iw4zkg"],
+      ["reaction",10,"等級 10：報復（狂戰子職）","dynamic-reaction-barbarian-curated-retaliation"],
     ],
     "bard": [
       ["bonus",1,"等級 1：吟遊詩人激勵","dynamic-bonus-class-r7asqs"],
@@ -267,13 +268,15 @@ const personalizedClasses = {
     ["reaction",4,"等級 4：輕身墜","dynamic-reaction-monk-curated-slow-fall"],
     ["action",5,"等級 5：震懾打擊","dynamic-action-monk-curated-stunning-strike"],
     ["action",5,"等級 5：額外攻擊","dynamic-action-monk-curated-extra-attack"],
-    ["bonus",6,"等級 6：混元體（散打子職）","dynamic-bonus-monk-curated-wholeness-of-body"]
+    ["bonus",6,"等級 6：混元體（散打子職）","dynamic-bonus-monk-curated-wholeness-of-body"],
+    ["movement",9,"等級 9：飛簷走壁","dynamic-movement-monk-curated-acrobatic-movement"]
   ],
   paladin: [
     ["bonus",1,"等級 1：聖療","dynamic-bonus-paladin-curated-lay-on-hands"],
     ["bonus",3,"等級 3：神聖感知","dynamic-bonus-paladin-curated-divine-sense"],
     ["action",3,"等級 3：祝聖武器（奉獻子職）","dynamic-action-paladin-curated-sacred-weapon"],
-    ["action",5,"等級 5：額外攻擊","dynamic-action-paladin-curated-extra-attack"]
+    ["action",5,"等級 5：額外攻擊","dynamic-action-paladin-curated-extra-attack"],
+    ["action",9,"等級 9：聖威懾敵","dynamic-action-paladin-curated-abjure-foes"]
   ],
   rogue: [
     ["action",1,"等級 1：偷襲","dynamic-action-rogue-curated-sneak-attack"],
@@ -295,7 +298,8 @@ const personalizedClasses = {
     ["action",3,"等級 3：狩獵目標（獵人子職）","dynamic-action-ranger-vdr4tc"],
     ["action",5,"等級 5：額外攻擊","dynamic-action-ranger-113ebtz"],
     ["movement",6,"等級 6：越野","dynamic-movement-ranger-bulhou"],
-    ["action",7,"等級 7：防守戰術（獵人子職）","dynamic-action-ranger-p55ifk"]
+    ["action",7,"等級 7：防守戰術（獵人子職）","dynamic-action-ranger-p55ifk"],
+    ["action",10,"等級 10：不知疲倦","dynamic-action-ranger-curated-tireless"]
   ],
   warlock: [
     ["action",2,"等級 2：秘法回流","dynamic-action-warlock-curated-arcane-recovery"],
@@ -310,7 +314,8 @@ const personalizedClasses = {
     ["action",2,"等級 2：神聖火花","dynamic-action-cleric-1c18bru"],
     ["action",2,"等級 2：驅散不死生物","dynamic-action-cleric-xonbxu"],
     ["action",3,"等級 3：生命門徒（生命子職）","dynamic-action-cleric-1ocjvx6"],
-    ["action",3,"等級 3：維持生命（生命子職）","dynamic-action-cleric-aoatsu"]
+    ["action",3,"等級 3：維持生命（生命子職）","dynamic-action-cleric-aoatsu"],
+    ["action",10,"等級 10：神聖干預","dynamic-action-cleric-curated-divine-intervention"]
   ]
 };
 
@@ -339,7 +344,7 @@ async function verifyCoverage(page) {
     }
     for (const name of Object.keys(classFeatures)) {
       check(Object.hasOwn(baseline.classes, name), `${name}: class missing from audit`);
-      for (let level = 1; level <= 8; level++) {
+      for (let level = 1; level <= 10; level++) {
         setClass(name, level);
         const expected = (personalizedClasses[name] || [...baseline.classes[name], ...(additions[name] || [])])
           .filter(r => r[1] <= level && !String(r[3] || "").includes("1iw4zkg"));

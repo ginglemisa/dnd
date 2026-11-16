@@ -5,13 +5,24 @@ nameEn: Commune with Nature
 source: srd
 level: 5
 school: divination
-classes: [ druid, ranger ]
+classes: [ druid ]
 castingTime: [ { minutes: 1 } ]
 ritual: true
 range: self
 components: [ V, S ]
 duration: instantaneous
+site:
+  body: |-
+    - 與自然靈體溝通，得知周圍區域的知識：戶外為你周圍3英里內，洞穴等天然地下環境為半徑300呎
+    - 在自然已被建築取代的地方（例如城堡與聚落），此法術無效
+    - 從下列事實中選擇三項，得知法術範圍內的相關資訊：
+      - 聚落的位置
+      - 通往其他位面的傳送門位置
+      - 一個挑戰等級10以上的天界生物、元素生物、精類、邪魔或不死生物的位置（由DM選擇是哪一個）
+      - 最常見的植物、礦物或野獸種類（由你選擇要得知哪一種）
+      - 水域的位置
 srd:
+  classes: [ druid, ranger ]
   body: |-
     你與自然靈體溝通，並獲得周遭區域的知識。在戶外時，此法術讓你得知你周圍3英里內區域的知識。在洞穴與其他天然地下環境中，半徑限制為300呎。在自然已被建築取代的地方，例如城堡與聚落，此法術不會生效。
 

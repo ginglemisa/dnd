@@ -586,6 +586,18 @@
       });
     }
 
+    // 塑能師 10 級「強效塑能」：施放塑能學派的法師法術時，一次傷害擲骰加智力調整值。
+    if (
+      hasSubclassFeature(className, "wizard-empowered-evocation", level, "wizard", 10)
+      && entry.spellClass === "wizard"
+      && globalScope.SpellCatalog.getSchool?.(entry.spellId) === "evocation"
+    ) modifiers.push({
+      id: "wizard-empowered-evocation",
+      label: "強效塑能",
+      value: getAbilityModifier("int"),
+      frequency: "once"
+    });
+
     const agonizingCantrips = globalScope.getAgonizingBlastSelections?.() || [];
     if (
       isDamageCantrip
@@ -869,6 +881,7 @@
       else if (methodId === "slot") resource = slot ? `${slot.level} 環法術位（剩餘 ${slot.available}）` : "沒有可用法術位";
       else if (methodId === "ritual") resource = `不消耗法術位；${metadata.ritualExtraTime}`;
       else if (methodId === "scroll") resource = "1 張卷軸（施法後消失）";
+      else if (methodId.startsWith("feature-")) resource = getMethod()?.resourceLabel || "能力次數";
       else if (methodId === "item") resource = item.pool
         ? `${itemCost} 次${item.pool.label}${item.alsoPool ? `與 1 次${item.alsoPool.label}` : ""}（剩餘 ${item.pool.left}/${item.pool.max}）`
         : "不消耗次數";

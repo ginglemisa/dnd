@@ -65,8 +65,10 @@
     const className = options.className ?? options.class ?? currentClass();
     const level = Number(options.level ?? currentLevel());
     const accessible = globalScope.CharacterRules?.classCanAccessSpellLevel || globalScope.classCanAccessSpellLevel;
+    // 最高可準備環階：職業法術位開放的環階，以角色可用法術的最高環階為上限（法術有網站版才算）。
     let maxLevel = 0;
-    for (let ring = 1; ring <= 4; ring += 1) if (accessible?.(className, level, ring)) maxLevel = ring;
+    const topRing = catalog()?.getMaxLevel?.() || 0;
+    for (let ring = 1; ring <= topRing; ring += 1) if (accessible?.(className, level, ring)) maxLevel = ring;
     const getPrepared = globalScope.CharacterRules?.getPreparedSpellLimit || globalScope.getPreparedSpellLimit;
     return { cantrips: globalScope.getClassCantripLimit?.(className, level) || 0,
       prepared: getPrepared?.(className, level) ?? 0, maxLevel };
@@ -85,7 +87,9 @@
     const automatic = state?.__spellManagement?.entries || sources;
     if (automatic.some(item => item.spellSource && item.spellId === entry.spellId)) return "已由來源準備此法術；原玩家選擇仍保留。";
     const cls = state?.class ?? currentClass(), level = Number(state?.level ?? currentLevel());
-    if (!catalog().getClassIds(entry.spellId).includes(cls)) return "目前職業法表不包含此法術。";
+    // 一環以上可用 extraSpellLists 的法表（吟遊詩人「魔法奧祕」）；戲法只看自己的職業法表。
+    const lists = spell.level > 0 ? globalScope.getClassSpellListIds?.(cls, level) || [cls] : [cls];
+    if (!catalog().getClassIds(entry.spellId).some(id => lists.includes(id))) return "目前職業法表不包含此法術。";
     const accessible = globalScope.CharacterRules?.classCanAccessSpellLevel || globalScope.classCanAccessSpellLevel;
     if (!level || !accessible?.(cls, level, spell.level)) return "目前等級尚未開放此法術環階。";
     return "";
@@ -292,7 +296,7 @@
         const list = document.createElement("ul");
         list.className = "manual-spell-management__changes";
         [
-          ["✅", "可自由選擇網站支援的戲法及一至四環法術。"],
+          ["✅", `可自由選擇網站支援的戲法及一至${["一", "二", "三", "四", "五", "六", "七", "八", "九"][Math.max(1, catalog()?.getMaxLevel?.() || 1) - 1]}環法術。`],
           ["✅", "目前的法術會保留，不必重新輸入。"],
           ["❗", "網站不再依職業、種族等條件自動管理法術。"],
           ["❗", "免費施法次數與法術來源需要自行記錄。"]

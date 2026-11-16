@@ -910,7 +910,8 @@ async function verifyPdf(page, fieldsOnly) {
       const componentLine = spell.desc.split("\n").find(line => line.startsWith("成分:"));
       if (!componentLine || /^材料: (?:null|無)\s*$/mu.test(spell.desc)) throw new Error(`Spell components/empty materials: ${spell.spellId}`);
       const needsMaterial = componentLine.slice(3).trim().split(/[、,\s]+/u).includes("M");
-      for (const legacy of [false, true]) {
+      // 舊格式法術區（levelNspells-area）只有戲法到四環，五環以上只測目前的格式。
+      for (const legacy of spell.level <= 4 ? [false, true] : [false]) {
         if (materialFlag(spell, legacy) !== needsMaterial) throw new Error(`PDF material component: ${spell.spellId}/legacy=${legacy}`);
       }
     }
@@ -1019,7 +1020,7 @@ async function verifyPdf(page, fieldsOnly) {
     const longSpellPayload = buildPdfFieldPayload({ class: "wizard", level: "1" }, { customSpells: [{ spellId: "custom-spell-long", level: 1, nameZh: longSpellName, desc: "學派：塑能" }] });
     if (!Object.entries(longSpellPayload).some(([key, value]) => /^sp-name-\d+$/.test(key) && value === longSpellName)) throw new Error("PDF keeps a long spell name on one line");
   });
-  console.log("PDF fields: 217 spell material flags (current/legacy), component field isolation, class tools/shields, lineage levels and official sheet field names passed.");
+  console.log("PDF fields: 255 spell material flags (current; legacy through 4th level), component field isolation, class tools/shields, lineage levels and official sheet field names passed.");
   if (fieldsOnly) return;
   await page.addScriptTag({ url: "/pdf-lib.custom.min.js" });
   await page.addScriptTag({ url: "/fontkit.custom.min.js" });
@@ -3389,6 +3390,43 @@ async function verifyClassFeatureTableJumps(browser, url) {
   }
 }
 
+// 大地結社地貌表：每格一行一個法術、欄位與地貌不換行；手機寬度在外框內橫向滑動，地貌在格內水平垂直置中。
+async function verifyDruidTerrainTable(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 375, height: 812 }, reducedMotion: "reduce" });
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
+    await page.evaluate(() => { applyStateObject({ class: "druid", level: "10", "druid-land": "arid" }); openCharacterFeatures("class"); });
+    const table = page.locator("#character-features-modal table.druid-terrain-spells");
+    await table.scrollIntoViewIfNeeded();
+    const layout = await table.evaluate(element => {
+      const shell = element.closest(".rule-table-shell");
+      const lineHeight = element.querySelector(".rule-table-cell-line").getBoundingClientRect().height;
+      const rowHeader = element.querySelector("tbody th");
+      const style = getComputedStyle(rowHeader);
+      return {
+        headers: Array.from(element.querySelectorAll("thead th"), th => th.textContent),
+        firstRow: Array.from(element.querySelector("tbody tr").querySelectorAll("td"), td => Array.from(td.querySelectorAll(".rule-table-cell-line"), line => line.textContent)),
+        oneLineSpells: Array.from(element.querySelectorAll(".rule-table-cell-line")).every(line => line.getBoundingClientRect().height <= lineHeight + 1),
+        oneLineHeaders: Array.from(element.querySelectorAll("th")).every(th => th.getClientRects().length === 1 && getComputedStyle(th).whiteSpace === "nowrap"),
+        rowHeader: [style.textAlign, style.verticalAlign],
+        scrolls: shell.scrollWidth > shell.clientWidth && getComputedStyle(shell).overflowX === "auto",
+        pageOverflow: document.documentElement.scrollWidth > innerWidth
+      };
+    });
+    assert.deepEqual(layout.headers, ["地貌", "等級 3", "等級 5", "等級 7", "等級 9"]);
+    assert.deepEqual(layout.firstRow, [["朦朧術", "燃燒之手", "火焰箭"], ["火球術"], ["枯萎術"], ["石牆術"]], "each spell sits on its own line");
+    assert.equal(layout.oneLineSpells, true, "no spell name wraps");
+    assert.equal(layout.oneLineHeaders, true, "column and terrain headers stay on one line");
+    assert.deepEqual(layout.rowHeader, ["center", "middle"], "terrain names are centered in their cells");
+    assert.deepEqual([layout.scrolls, layout.pageOverflow], [true, false], "the table scrolls sideways inside its frame on phones");
+    console.log("Druid terrain table: one spell per line, unwrapped headers, centered terrain and sideways scrolling on phones passed.");
+  } finally {
+    await page.close();
+  }
+}
+
 // 「特性」頁籤的等級跳轉列：五格依頁面上的段落啟用，點了捲到該區段第一個段落，捲動時亮目前區段；網站版與 SRD 版共用。
 async function verifyCharacterFeatureLevelNav(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
@@ -3471,7 +3509,7 @@ async function verifyCharacterFeatureLevelNav(browser, url) {
 
     // SRD 版、未選等級：列出 1–20 級，五格都啟用；子職捲到接在職業能力之後的子職標題。
     await set("level", "");
-    assert.deepEqual((await navState()).enabled, ["1-4", "5-10", "subclass"], "網站版 has no content above level 8");
+    assert.deepEqual((await navState()).enabled, ["1-4", "5-10", "subclass"], "網站版 has no content above level 10");
     await modal.locator('#class-abilities-panel .class-version-switch [data-spell-version="srd"]').click();
     await modal.locator("#classFeaturesSrd .spell-version__attribution").waitFor();
     assert.deepEqual((await navState()).enabled, ["1-4", "5-10", "11-16", "17-20", "subclass"], "SRD 版 without a level enables every range");
@@ -4056,9 +4094,10 @@ async function verifyFeatureReferences(browser, url) {
           if (!renderSkillPopupHtml(tip.dataset.skill, tip.dataset.condition)) failures.push(`${name}: missing explanation`);
         }
       }
+      // 10 級擴充：自然守護（中毒）、返本歸元（魅惑、恐慌、中毒、力竭）、聖威懾敵與無畏靈氣（恐慌）、不知疲倦（力竭）、神出鬼沒（隱形）。
       const conditionCounts = {
-        barbarian: 4, bard: 2, cleric: 3, druid: 1, fighter: 0, monk: 4,
-        paladin: 5, ranger: 0, rogue: 4, sorcerer: 0, warlock: 1, wizard: 0,
+        barbarian: 4, bard: 2, cleric: 3, druid: 2, fighter: 0, monk: 8,
+        paladin: 7, ranger: 1, rogue: 5, sorcerer: 0, warlock: 1, wizard: 0,
         dragonborn: 1, dwarf: 1, elf: 1, gnome: 0, goliath: 2, halfling: 1, human: 0, orc: 0, tiefling: 0
       };
       for (const [name, expected] of Object.entries(conditionCounts)) {
@@ -4096,7 +4135,7 @@ async function verifyFeatureReferences(browser, url) {
       finder.innerHTML = getFeatDescriptionHtml("尋物好手");
       const finderSkills = Array.from(finder.content.querySelectorAll("button.skill-tip"), tip => tip.dataset.skill);
       if (JSON.stringify(finderSkills) !== JSON.stringify(["洞悉", "調查", "察覺"])) failures.push(`尋物好手: skill links ${finderSkills}`);
-      for (const [name, count] of [["fighter", 2], ["monk", 1], ["ranger", 1], ["rogue", 1]]) {
+      for (const [name, count] of [["fighter", 2], ["monk", 2], ["ranger", 1], ["rogue", 1]]) {
         const template = document.createElement("template");
         template.innerHTML = highlightSpellNamesInClassFeature(classFeatures[name]);
         if (template.content.querySelectorAll('button[data-skill="藉機攻擊"]').length !== count) failures.push(`${name}: opportunity attack links`);
@@ -4112,7 +4151,7 @@ async function verifyFeatureReferences(browser, url) {
       if (createDndConditionTip("frightened", "恐懼").textContent !== "恐懼") failures.push("condition alias label");
       for (const [name, html, count] of [
         ["barbarian", classFeatures.barbarian, 1], ["ranger", classFeatures.ranger, 1],
-        ["sorcerer", classFeatures.sorcerer, 1], ["warlock", classFeatures.warlock, 1],
+        ["sorcerer", classFeatures.sorcerer, 1], ["warlock", classFeatures.warlock, 2],
         ["dragonborn", raceText.dragonborn.html, 1], ["tiefling", raceText.tiefling.html, 3]
       ]) {
         const template = document.createElement("template");
@@ -6294,7 +6333,8 @@ async function verifyClassPicks(browser, url) {
     await page.evaluate(blank => applyStateObject({ ...blank, class: "fighter", level: "1" }), blank);
     let current = await slots(page);
     assert.deepEqual(current.map(slot => [slot.id, slot.hidden]), [
-      ["fighter-weapon-mastery-pick-1", false], ["fighter-weapon-mastery-pick-2", false], ["fighter-weapon-mastery-pick-3", false], ["fighter-weapon-mastery-pick-4", true]
+      ["fighter-weapon-mastery-pick-1", false], ["fighter-weapon-mastery-pick-2", false], ["fighter-weapon-mastery-pick-3", false], ["fighter-weapon-mastery-pick-4", true],
+      ["fighter-weapon-mastery-pick-5", true]
     ], "fighter shows three mastery selects at level 1");
     assert.ok(["長劍", "巨劍", "短弓", "鞭"].every(name => current[0].options.includes(name)) && !current[0].options.includes("武藝"), "fighter can choose proficient weapons with masteries");
     assert.ok((await issues(page)).includes("戰士武器精通尚未選完（0/3）。"), "missing masteries are reminded");
@@ -6329,27 +6369,27 @@ async function verifyClassPicks(browser, url) {
     await choose(page, "fighter-weapon-mastery-pick-4", "戰錘");
     await page.locator("#level").selectOption("1");
     current = await slots(page);
-    assert.deepEqual(current.map(slot => [slot.value, slot.hidden]), [["長劍", false], ["巨劍", false], ["長弓", false], ["戰錘", true]], "a higher-level mastery stays saved while hidden");
+    assert.deepEqual(current.map(slot => [slot.value, slot.hidden]), [["長劍", false], ["巨劍", false], ["長弓", false], ["戰錘", true], ["", true]], "a higher-level mastery stays saved while hidden");
 
     // Autosave, JSON with the class after the selects, and share restore the choices.
     await page.evaluate(() => saveAllFields());
     await page.reload();
     await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
-    assert.deepEqual((await slots(page)).map(slot => slot.value), ["長劍", "巨劍", "長弓", "戰錘"], "autosave restores masteries");
+    assert.deepEqual((await slots(page)).map(slot => slot.value), ["長劍", "巨劍", "長弓", "戰錘", ""], "autosave restores masteries");
     await page.evaluate(blank => {
       const data = collectStateObject();
       const picks = Object.fromEntries(Object.entries(data).filter(([id]) => id.startsWith("fighter-weapon-mastery-pick-")));
       applyStateObject({ ...blank, class: "wizard", level: "1" });
       applyStateObject({ ...picks, ...blank, level: "4", class: "fighter" });
     }, blank);
-    assert.deepEqual((await slots(page)).map(slot => [slot.value, slot.hidden]), [["長劍", false], ["巨劍", false], ["長弓", false], ["戰錘", false]], "JSON restores masteries regardless of field order");
+    assert.deepEqual((await slots(page)).map(slot => [slot.value, slot.hidden]), [["長劍", false], ["巨劍", false], ["長弓", false], ["戰錘", false], ["", true]], "JSON restores masteries regardless of field order");
     const hash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
     const shared = await newUiPage(browser);
     try {
       const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = hash;
       await open(shared, sharedUrl.href);
       assert.deepEqual(await shared.evaluate(() => [window.SHARE_MODE, ...Array.from(document.querySelectorAll("#classFeatures select[data-class-pick]"), select => select.value)]),
-        [true, "長劍", "巨劍", "長弓", "戰錘"], "share restores masteries");
+        [true, "長劍", "巨劍", "長弓", "戰錘", ""], "share restores masteries");
     } finally { await shared.close(); }
 
     // Rogue: finesse or light martial weapons, expertise and extra language reminders.
@@ -6509,6 +6549,95 @@ async function verifyFieldDetailsIntro(browser, url) {
 }
 
 // 存檔格式：暫時輸入不進任何一條路；要存但不分享的當下狀態只有分享不帶。
+// 10 級：8 級舊存檔原樣載入；10 級存檔經 autosave、JSON、分享還原；玩家 10 → 8 → 10 時玩家清單與職業選項保留。
+async function verifyLevelTenPersistence(browser, url) {
+  const page = await newUiPage(browser);
+  const ready = () => page.waitForFunction(() => window.TabletopMode && window.ClassOptionMemory && window.Spellbook && typeof autosaveRestoreBlocked !== "undefined" && !autosaveRestoreBlocked);
+  const snapshot = () => page.evaluate(() => ({
+    level: document.getElementById("level").value,
+    players: SpellManagement.getPlayerEntries().map(entry => entry.spellId),
+    available: SpellManagement.getEntries({ availableOnly: true }).map(entry => entry.spellId),
+    book: Spellbook.getState().wizardSpellIds,
+    slots: getSpellSlotCounts(document.getElementById("class").value, Number(document.getElementById("level").value)),
+    used: Array.from({ length: 9 }, (_, index) => document.querySelectorAll(`#spellslot${index + 1}-row input:checked`).length),
+    metamagic: Array.from(document.querySelectorAll("#metamagicOptions input[data-metamagic-name]:checked"), input => input.dataset.metamagicName)
+  }));
+  const base = { race: "human", background: "sage", int: "18", cha: "16", con: "14", "spellcasting-ability": "int" };
+  try {
+    await page.goto(url);
+    await ready();
+    // 8 級舊存檔（沒有版本號）：載入後等級、法術、法術書與法術位都不變。
+    const legacy8 = { ...base, class: "wizard", level: "8", __wizardSpellbook: { version: 2, wizardSpellIds: ["magic-missile", "fireball", "ice-storm"], manualSpellIds: [] },
+      __spellManagement: { version: 2, manual: false, entries: [{ spellId: "fireball", spellClass: "wizard" }, { spellId: "ice-storm", spellClass: "wizard" }] }, __spellSlotsUsed: { 4: 1 } };
+    await page.evaluate(state => { cancelPendingAutosaveForClear(); dndStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(state)); }, legacy8);
+    await page.goto(url);
+    await ready();
+    assert.deepEqual(await snapshot(), { level: "8", players: ["fireball", "ice-storm"], available: ["fireball", "ice-storm"],
+      book: ["magic-missile", "fireball", "ice-storm"], slots: [4, 3, 3, 2, 0, 0, 0, 0, 0], used: [0, 0, 0, 1, 0, 0, 0, 0, 0], metamagic: [] }, "a level-8 save loads unchanged");
+
+    // 10 級法師：五環法術、五環法術位已用 1 格。三條路都還原。
+    const wizard10 = { ...base, class: "wizard", level: "10", __saveVersion: await page.evaluate(() => CHARACTER_STATE_VERSION),
+      __wizardSpellbook: { version: 2, wizardSpellIds: ["magic-missile", "fireball", "cone-of-cold", "wall-of-force"], manualSpellIds: [] },
+      __spellManagement: { version: 2, manual: false, entries: [{ spellId: "fireball", spellClass: "wizard" }, { spellId: "cone-of-cold", spellClass: "wizard" }] }, __spellSlotsUsed: { 5: 1 } };
+    const expected10 = { players: ["fireball", "cone-of-cold"], available: ["fireball", "cone-of-cold"], book: ["magic-missile", "fireball", "cone-of-cold", "wall-of-force"], slots: [4, 3, 3, 3, 2, 0, 0, 0, 0] };
+    await page.evaluate(state => { cancelPendingAutosaveForClear(); dndStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(state)); }, wizard10);
+    await page.goto(url);
+    await ready();
+    const fromAutosave = await snapshot();
+    assert.deepEqual({ level: fromAutosave.level, players: fromAutosave.players, available: fromAutosave.available, book: fromAutosave.book, slots: fromAutosave.slots, used: fromAutosave.used[4] },
+      { level: "10", ...expected10, used: 1 }, "autosave restores a level-10 character with 5th-level spells and slots");
+    const exported = await page.evaluate(() => JSON.parse(collectJsonExportText().text));
+    assert.deepEqual([exported.level, exported.__spellSlotsUsed, exported.__spellManagement.entries.map(entry => entry.spellId)], ["10", { 5: 1 }, ["fireball", "cone-of-cold"]], "JSON export keeps level 10 and the 5th-level slot");
+    await page.evaluate(() => { cancelPendingAutosaveForClear(); dndStorage.removeItem(AUTO_SAVE_KEY); });
+    await page.goto(url);
+    await ready();
+    await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
+    await Promise.all([page.waitForEvent("load"), page.locator("#import-json-file").setInputFiles({ name: "level10.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(exported)) })]);
+    await ready();
+    const fromJson = await snapshot();
+    assert.deepEqual({ level: fromJson.level, players: fromJson.players, book: fromJson.book, used: fromJson.used[4] }, { level: "10", players: expected10.players, book: expected10.book, used: 1 }, "JSON import restores level 10");
+    const hash = await page.evaluate(() => encodeStateToHash({ ...collectShareState() }));
+    await page.goto("about:blank");
+    await page.goto(url + hash);
+    await page.waitForFunction(() => document.getElementById("auto-calculate-key-stats-toggle")?.dataset.shareLocked === "true");
+    const fromShare = await snapshot();
+    assert.deepEqual({ level: fromShare.level, players: fromShare.players, available: fromShare.available, book: fromShare.book, slots: fromShare.slots },
+      { level: "10", ...expected10 }, "share restores level 10");
+
+    // 玩家 10 → 8 → 10：五環法術保留但不可用，升回去恢復；術士 10 級的第 3、4 個超魔法由職業選項記憶還原。
+    await page.goto(url);
+    await ready();
+    await page.evaluate(state => applyStateObject(state), wizard10);
+    const choose = value => page.evaluate(value => {
+      const select = document.getElementById("level");
+      select.value = value;
+      const change = new Event("change", { bubbles: true });
+      change.dndCharacterSelectionCommitted = true;
+      select.dispatchEvent(change);
+    }, value);
+    await choose("8");
+    const down = await snapshot();
+    assert.deepEqual([down.players, down.available, down.book], [expected10.players, ["fireball"], expected10.book], "level 8 keeps the 5th-level choice but marks it unavailable");
+    await choose("10");
+    const up = await snapshot();
+    assert.deepEqual([up.players, up.available, up.book], [expected10.players, expected10.available, expected10.book], "returning to level 10 restores the 5th-level choice");
+    const metamagicNames = await page.evaluate(() => {
+      applyStateObject({ class: "sorcerer", level: "10", race: "human", background: "sage", cha: "16" });
+      const names = Array.from(document.querySelectorAll("#metamagicOptions input[data-metamagic-name]")).slice(0, 4);
+      names.forEach(input => { input.checked = true; input.dispatchEvent(new Event("change", { bubbles: true })); });
+      return names.map(input => input.dataset.metamagicName);
+    });
+    assert.deepEqual((await snapshot()).metamagic, metamagicNames, "level-10 sorcerers keep four metamagic options");
+    await choose("8");
+    assert.deepEqual((await snapshot()).metamagic, metamagicNames.slice(0, 2), "level 8 keeps two metamagic options");
+    await choose("10");
+    assert.deepEqual((await snapshot()).metamagic, metamagicNames, "class option memory restores the 3rd and 4th metamagic at level 10");
+    console.log("Level 10 persistence: level-8 save unchanged, level-10 autosave/JSON/share, 10 → 8 → 10 spells and metamagic passed.");
+  } finally {
+    await page.close();
+  }
+}
+
 async function verifySaveFormat(browser, url) {
   const page = await newUiPage(browser);
   const transientIds = ["spell-search", "equipment-search", "dice-system-toggle", "money-note", "money-amount", "money-currency",
@@ -7399,7 +7528,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifySaveFormat(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldDetailsIntro(browser, url); await verifyFirstLoadDefaults(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifySaveFormat(browser, url); await verifyLevelTenPersistence(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldDetailsIntro(browser, url); await verifyFirstLoadDefaults(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
     if (all || sections.has("--data-only") || sections.has("--share-only")) await verifyShareReadonlyMode(browser, url);
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
@@ -7418,6 +7547,7 @@ async function main() {
       await verifyCharacterFeatures(browser, url);
       await verifyClassSrdVersion(browser, url);
       await verifyClassFeatureTableJumps(browser, url);
+      await verifyDruidTerrainTable(browser, url);
       await verifyCharacterFeatureLevelNav(browser, url);
       await verifyChoiceReminderHighlights(browser, url);
       await verifyClassFeatureChoicePrompt(browser, url);

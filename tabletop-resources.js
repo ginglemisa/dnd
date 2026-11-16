@@ -338,6 +338,7 @@
         for (const spec of recovered) summary.appendChild(createElement("li", "",
           `${spec.label}：${spec.recovery.shortRest === "all" ? "全回" : `恢復 ${spec.recovery.shortRest} 次`}。`));
         if (!recovered.length) summary.appendChild(createElement("li", "", "沒有自動恢復的短休資源。"));
+        if (context.shortRestExhaustion) summary.appendChild(createElement("li", "", `力竭減 ${context.shortRestExhaustion}。`));
       }
       if (isLong && grantsInspiration(context.race)) summary.appendChild(createElement("li", "", "獲得英雄激勵。"));
       // 魔法物品寫明短休或長休恢復的次數池（Inventory.recoverRestCharges 在完成時恢復）。

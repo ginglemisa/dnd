@@ -749,7 +749,7 @@ function syncMetamagicSelectionLimit() {
     if (!available) input.checked = false;
   });
   if (!available) return true;
-  return enforceCheckboxSelectionLimit(inputs, getMetamagicSelectionLimit(), null, "超魔法只能勾選兩個喔！", false);
+  return enforceCheckboxSelectionLimit(inputs, getMetamagicSelectionLimit(), null, `超魔法目前最多只能勾選 ${getMetamagicSelectionLimit()} 個喔！`, false);
 }
 
 function syncWarlockInvocationSelectionLimit() {
@@ -806,7 +806,7 @@ function renderMetamagicOptions() {
           Array.from(output.querySelectorAll("input[data-metamagic-name]")),
           getMetamagicSelectionLimit(),
           el,
-          "超魔法只能勾選兩個喔！",
+          `超魔法目前最多只能勾選 ${getMetamagicSelectionLimit()} 個喔！`,
           event.isTrusted
         );
         if (!allowed) {
@@ -2042,45 +2042,59 @@ function syncMissionCantripChoices() {
   });
 }
 
-// 4 級透過施法／契約魔法額外學會的職業戲法屬於職業戲法共用上限。
-// 選單只編輯自動管理的準備清單，並以標記辨識；舊資料戲法已選滿時視為已選。
+// 升級時透過施法／契約魔法額外學會的職業戲法（4 級、10 級）屬於職業戲法共用上限。
+// 選單只編輯自動管理的準備清單，各等級以自己的標記辨識（class-level-<等級>）；舊資料戲法已選滿、沒有標記時，
+// 由高等級的選單從最後一個戲法往前認領，視為已選。
 // 例外：只需職業與等級即可預選與查看，不等背景／種族開放「準備法術」；未選提示仍需四項都選好。
-// 哪個能力提供這個選單（等級、標籤）由 classRules 的 cantripChoiceLabel 決定。
-const LEVEL_UP_CANTRIP_TAG = "class-level-4";
+// 哪些等級有選單、標籤是什麼由 classRules 的 cantripChoices 決定（內容檔的 cantripChoiceLabel）。
 const LEVEL_UP_CANTRIP_SELECT_ID = "class-level-up-cantrip";
+const getLevelUpCantripTag = level => `class-level-${level}`;
+// 4 級沿用原本的選單 ID（缺項提示與舊測試都指向它），其他等級在後面加等級。
+const getLevelUpCantripSelectId = level => level === 4 ? LEVEL_UP_CANTRIP_SELECT_ID : `${LEVEL_UP_CANTRIP_SELECT_ID}-${level}`;
 
-function getLevelUpCantripClass() {
+function getLevelUpCantripChoices() {
   const cantripLimit = window.getClassCantripLimit;
   const className = document.getElementById("class")?.value || "";
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
   const classLabel = classOptions.find(option => option.value === className)?.text || "";
-  const feature = window.getClassFeatureRules?.(className).find(item => item.cantripChoiceLabel);
-  if (typeof cantripLimit !== "function" || !classLabel || !feature || level < feature.level
-      || cantripLimit(className, feature.level) <= cantripLimit(className, feature.level - 1)) return null;
-  return { className, classLabel, feature, limit: cantripLimit(className, level) };
+  if (typeof cantripLimit !== "function" || !classLabel) return [];
+  const limit = cantripLimit(className, level);
+  return (window.getClassRules?.(className)?.cantripChoices || [])
+    .filter(choice => level >= choice.level && cantripLimit(className, choice.level) > cantripLimit(className, choice.level - 1))
+    .map(choice => ({ className, classLabel, level: choice.level, label: choice.label, limit,
+      tag: getLevelUpCantripTag(choice.level), selectId: getLevelUpCantripSelectId(choice.level) }));
 }
 
-function getLevelUpCantripState() {
+function getLevelUpCantripStates() {
   const api = window.SpellManagement;
-  const cantripClass = getLevelUpCantripClass();
-  if (!api || api.isManual() || !cantripClass) return null;
-  const { className, classLabel, feature, limit } = cantripClass;
+  if (!api || api.isManual()) return [];
+  const choices = getLevelUpCantripChoices();
+  if (!choices.length) return [];
   const cantrips = api.getPlayerEntries().filter(entry => entry.level === 0 && api.isEntryAvailable(entry));
-  const entry = cantrips.find(item => item.classFeatureCantrip === LEVEL_UP_CANTRIP_TAG)
-    || (cantrips.length >= limit ? cantrips[cantrips.length - 1] : null);
-  return { className, classLabel, feature, entry };
+  const tags = new Set(choices.map(choice => choice.tag));
+  const untagged = cantrips.filter(entry => !tags.has(entry.classFeatureCantrip));
+  const claimed = new Map();
+  if (cantrips.length >= choices[0].limit) {
+    [...choices].reverse().filter(choice => !cantrips.some(entry => entry.classFeatureCantrip === choice.tag))
+      .forEach((choice, index) => {
+        const entry = untagged[untagged.length - 1 - index];
+        if (entry) claimed.set(choice.tag, entry);
+      });
+  }
+  return choices.map(choice => ({ ...choice,
+    entry: cantrips.find(entry => entry.classFeatureCantrip === choice.tag) || claimed.get(choice.tag) || null }));
 }
 
-function setLevelUpCantrip(spellId) {
+function setLevelUpCantrip(level, spellId) {
   const api = window.SpellManagement;
-  const state = getLevelUpCantripState();
+  const state = getLevelUpCantripStates().find(item => item.level === level);
   if (!state) return false;
   if (spellId && (!SpellCatalog.getSpell(spellId) || api.getEntries().some(entry => entry.spellId === spellId && entry.spellId !== state.entry?.spellId))) return false;
   const players = api.getPlayerEntries();
   const index = state.entry ? players.findIndex(entry => api.entryKey(entry) === api.entryKey(state.entry)) : -1;
-  players.forEach(entry => { delete entry.classFeatureCantrip; });
-  const next = spellId ? { spellId, spellClass: state.className, classFeatureCantrip: LEVEL_UP_CANTRIP_TAG } : null;
-  if (next && index < 0 && api.getPreparationCounts().cantrips >= getLevelUpCantripClass().limit) return false;
+  players.forEach(entry => { if (entry.classFeatureCantrip === state.tag) delete entry.classFeatureCantrip; });
+  const next = spellId ? { spellId, spellClass: state.className, classFeatureCantrip: state.tag } : null;
+  if (next && index < 0 && api.getPreparationCounts().cantrips >= state.limit) return false;
   if (index >= 0) players.splice(index, 1, ...(next ? [next] : []));
   else if (next) players.push(next);
   api.setPlayerEntries(players);
@@ -2088,62 +2102,66 @@ function setLevelUpCantrip(spellId) {
 }
 
 function renderLevelUpCantripChoice() {
-  const cantripClass = getLevelUpCantripClass();
-  if (!cantripClass) return;
-  const { feature } = cantripClass;
-  const paragraph = document.querySelector(`#classFeatures section[data-feature-id="${feature.id}"] > [data-after-feat-choice]`);
-  if (!paragraph) return;
-  const labelText = `${feature.cantripChoiceLabel}：額外${cantripClass.classLabel}戲法`;
-  const field = document.createElement("div");
-  field.className = "class-feature-mission-cantrip class-feature-level-up-cantrip";
-  const label = document.createElement("label");
-  label.textContent = labelText;
-  label.htmlFor = LEVEL_UP_CANTRIP_SELECT_ID;
-  const controls = document.createElement("div");
-  controls.className = "feat-choice-control";
-  const select = document.createElement("select");
-  select.id = LEVEL_UP_CANTRIP_SELECT_ID;
-  select.dataset.stateTransient = "true";
-  const view = document.createElement("button");
-  view.type = "button";
-  view.className = "feat-choice-view";
-  view.textContent = "查看";
-  view.setAttribute("aria-label", `查看${labelText}詳情`);
-  view.addEventListener("click", () => {
-    const spell = SpellCatalog.getSpell(select.value);
-    if (spell) window.quickBuild?.openSpellDetail?.(spell, view);
+  getLevelUpCantripChoices().forEach(choice => {
+    const paragraph = Array.from(document.querySelectorAll(`#classFeatures [data-cantrip-choice-level="${choice.level}"]`)).at(-1);
+    if (!paragraph) return;
+    const labelText = `${choice.label}：額外${choice.classLabel}戲法`;
+    const field = document.createElement("div");
+    field.className = "class-feature-mission-cantrip class-feature-level-up-cantrip";
+    const label = document.createElement("label");
+    label.textContent = labelText;
+    label.htmlFor = choice.selectId;
+    const controls = document.createElement("div");
+    controls.className = "feat-choice-control";
+    const select = document.createElement("select");
+    select.id = choice.selectId;
+    select.dataset.stateTransient = "true";
+    select.dataset.cantripChoiceLevel = String(choice.level);
+    const view = document.createElement("button");
+    view.type = "button";
+    view.className = "feat-choice-view";
+    view.textContent = "查看";
+    view.setAttribute("aria-label", `查看${labelText}詳情`);
+    view.addEventListener("click", () => {
+      const spell = SpellCatalog.getSpell(select.value);
+      if (spell) window.quickBuild?.openSpellDetail?.(spell, view);
+    });
+    select.addEventListener("change", () => {
+      if (!setLevelUpCantrip(choice.level, select.value)) syncLevelUpCantripChoice();
+    });
+    controls.append(select, view);
+    field.append(label, controls);
+    paragraph.after(field);
   });
-  select.addEventListener("change", () => {
-    if (!setLevelUpCantrip(select.value)) syncLevelUpCantripChoice();
-  });
-  controls.append(select, view);
-  field.append(label, controls);
-  paragraph.after(field);
   syncLevelUpCantripChoice();
 }
 
 function syncLevelUpCantripChoice() {
-  const select = document.getElementById(LEVEL_UP_CANTRIP_SELECT_ID);
-  const field = select?.closest(".class-feature-level-up-cantrip");
-  if (!field) return;
-  const state = getLevelUpCantripState();
-  field.hidden = !state;
-  if (!state) return;
-  const current = state.entry?.spellId || "";
-  const taken = new Set((window.SpellManagement.getEntries() || []).map(entry => entry.spellId));
-  taken.delete(current);
-  const spells = getClassSpells(state.className, "cantrips");
-  const full = !state.entry && window.SpellManagement.getPreparationCounts().cantrips >= getLevelUpCantripClass().limit;
-  const optionsKey = `${state.className}\u0000${full}\u0000${spells.map(spell => `${spell.spellId}${taken.has(spell.spellId) ? "!" : ""}`).join(",")}`;
-  if (select.dataset.optionsKey !== optionsKey) {
-    select.innerHTML = '<option value="">-- 請選擇額外戲法 --</option>' + spells.map(spell =>
-      `<option value="${escapeHtml(spell.spellId)}"${full || taken.has(spell.spellId) ? " disabled" : ""}>${escapeHtml(spell.nameZh)}</option>`
-    ).join("");
-    select.dataset.optionsKey = optionsKey;
-  }
-  select.value = current;
-  markPreparedSpellOptions(select);
-  field.querySelector("button").disabled = !SpellCatalog.getSpell(select.value);
+  const selects = Array.from(document.querySelectorAll(".class-feature-level-up-cantrip select[data-cantrip-choice-level]"));
+  if (!selects.length) return;
+  const states = getLevelUpCantripStates();
+  const taken = new Set((window.SpellManagement?.getEntries() || []).map(entry => entry.spellId));
+  selects.forEach(select => {
+    const field = select.closest(".class-feature-level-up-cantrip");
+    const state = states.find(item => item.level === Number(select.dataset.cantripChoiceLevel));
+    field.hidden = !state;
+    if (!state) return;
+    const current = state.entry?.spellId || "";
+    const takenElsewhere = new Set(taken);
+    takenElsewhere.delete(current);
+    const spells = getClassSpells(state.className, "cantrips");
+    const full = !state.entry && window.SpellManagement.getPreparationCounts().cantrips >= state.limit;
+    const optionsKey = `${state.className}\u0000${full}\u0000${spells.map(spell => `${spell.spellId}${takenElsewhere.has(spell.spellId) ? "!" : ""}`).join(",")}`;
+    if (select.dataset.optionsKey !== optionsKey) {
+      select.innerHTML = '<option value="">-- 請選擇額外戲法 --</option>' + spells.map(spell =>
+        `<option value="${escapeHtml(spell.spellId)}"${full || takenElsewhere.has(spell.spellId) ? " disabled" : ""}>${escapeHtml(spell.nameZh)}</option>`
+      ).join("");
+      select.dataset.optionsKey = optionsKey;
+    }
+    select.value = current;
+    markPreparedSpellOptions(select);
+    field.querySelector("button").disabled = !SpellCatalog.getSpell(select.value);
+  });
 }
 window.addEventListener("spellmanagementchange", syncLevelUpCantripChoice);
 
@@ -2198,8 +2216,17 @@ function collectClassOptionSnapshot(className, level) {
     captureBardMagicalDiscoverySelectionFromControls();
     Object.entries(getBardMagicalDiscoveryMemoryValues(getBardMagicalDiscoverySelection())).forEach(([id, value]) => put(id, value));
   }
+  // 降級時超出數量上限而被取消的選擇（魔能祈喚、超魔法）：目前的勾選都在先前的記憶裡、且已勾滿這個等級的上限時，
+  // 沿用先前較多的那份，升回去時還原；玩家在低等級改選了別的就以目前為準。
+  const previous = window.ClassOptionMemory?.get(className) || null;
+  const keepPrevious = (current, before, limit) => current.length >= limit && before.length > current.length
+    && current.every(item => before.includes(item));
   if (className === "warlock") {
-    document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]:not(:disabled)").forEach(input => put(input.id, input.checked));
+    const invocationInputs = Array.from(document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]:not(:disabled)"));
+    const checkedIds = invocationInputs.filter(input => input.checked).map(input => input.id);
+    const previousIds = Object.entries(previous?.values || {}).filter(([id, value]) => isEldritchInvocationCheckboxId(id) && value === true).map(([id]) => id);
+    const restoreIds = keepPrevious(checkedIds, previousIds, calculateWarlockInvocationSelectionLimit(className, level)) ? previousIds : checkedIds;
+    invocationInputs.forEach(input => put(input.id, restoreIds.includes(input.id)));
     document.querySelectorAll("#eldritch-invocations-output select[id]").forEach(select => put(select.id, select.value));
     put("pact-tome-invocation", pactTomeInvocationRemembered);
     const tome = getPactTomeSpellSelection();
@@ -2207,7 +2234,11 @@ function collectClassOptionSnapshot(className, level) {
     lists["pact-tome-rituals"] = tome.rituals;
   }
   const metamagicInputs = Array.from(document.querySelectorAll("#metamagicOptions input[data-metamagic-name]"));
-  if (className === "sorcerer" && metamagicInputs.some(input => !input.disabled)) lists.metamagic = getCheckedMetamagicNames();
+  if (className === "sorcerer" && metamagicInputs.some(input => !input.disabled)) {
+    const checked = getCheckedMetamagicNames();
+    const before = Array.isArray(previous?.lists?.metamagic) ? previous.lists.metamagic : [];
+    lists.metamagic = keepPrevious(checked, before, getMetamagicSelectionLimit(level)) ? before : checked;
+  }
   document.querySelectorAll("#extra-language-container select:not(:disabled)").forEach(select => put(select.id, select.value));
   getClassOptionToolSelects().forEach(select => put(select.id, select.value));
   return { level, values, lists };
@@ -2692,13 +2723,12 @@ function getClassFeatureChoiceIssues() {
   });
 
   // 下拉選單只需職業與等級即可預選；未選提示仍等四項角色選擇都完成才出現。
-  const levelUpCantrip = manualSpells ? null : getLevelUpCantripState();
-  if (levelUpCantrip && !levelUpCantrip.entry && isCharacterCoreSelectionComplete()) pushGeneral({
-    message: `${levelUpCantrip.classLabel} ${levelUpCantrip.feature.level} 級額外戲法尚未選擇。`,
+  if (!manualSpells && isCharacterCoreSelectionComplete()) getLevelUpCantripStates().filter(state => !state.entry).forEach(state => pushGeneral({
+    message: `${state.classLabel} ${state.level} 級額外戲法尚未選擇。`,
     tab: "basic",
-    selector: `#${LEVEL_UP_CANTRIP_SELECT_ID}`,
-    focusSelector: `#${LEVEL_UP_CANTRIP_SELECT_ID}`
-  });
+    selector: `#${state.selectId}`,
+    focusSelector: `#${state.selectId}`
+  }));
 
   if (!manualSpells) getClassFeatureCantripChoices(selectedClass).forEach(({ checkboxId, level, label, sourceKey, keys }) => {
     if (selectedLevel < level || !document.getElementById(checkboxId)?.checked) return;

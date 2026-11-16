@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/class.schema.json
 id: barbarian
 name: 野蠻人
-maxLevel: 8
+maxLevel: 10
 subclassLevel: 3
 defaultSubclass: berserker
 tagline: 野蠻人以狂暴強化力量與韌性，是勇猛的前線戰士。
@@ -32,11 +32,11 @@ progression:
     byLevel: {1: 2, 3: 3, 6: 4}
   rageDamage:
     label: 狂暴傷害
-    byLevel: {1: 2}
+    byLevel: {1: 2, 9: 3}
     format: +{}
   weaponMastery:
     label: 武器精通
-    byLevel: {1: 2, 4: 3}
+    byLevel: {1: 2, 4: 3, 10: 4}
 values:
   rageUsesText: {formula: "{rageUses}", format: "{} 次"}
   rageDamageText: {formula: "{rageDamage}", format: "目前 +{}"}
@@ -110,6 +110,7 @@ features:
       - mode: action
         key: dynamic-action-class-8jjnkp
         label: 魯莽
+        append: [barbarian-brutal-strike]
     text: |
       在你的回合中，第一次用力量攻擊前可以宣告魯莽攻擊。
 
@@ -195,6 +196,20 @@ features:
     feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: barbarian-brutal-strike
+    level: 9
+    name: 殘暴打擊
+    text: |
+      使用**魯莽攻擊**的回合，可以放棄 1 次力量攻擊檢定的**優勢**（這次檢定不能有劣勢）。命中時，目標額外受到 **1d10** 傷害（類型同武器或徒手打擊），你還可以選 1 種效果：
+
+      - **猛力一擊：**目標被直線推離你 15 呎，接著你可直線逼近最多一半速度的距離，不引發[[藉機攻擊]]。
+      - **斷筋一擊：**目標的速度減少 15 呎，直到你的下個回合開始；不疊加，以最近一次為準。
+  - level: 9
+    text: |
+      **狂暴補充：**9 級起，狂暴傷害提升為 +3。
+  - level: 10
+    text: |
+      **武器精通補充：**10 級起，可精通 4 種武器。
 srd:
   overview: |
     **野蠻人核心特質**

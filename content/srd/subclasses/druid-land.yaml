@@ -20,6 +20,8 @@ features:
               level: 5
             - id: blight
               level: 7
+            - id: wall-of-stone
+              level: 9
         - value: polar
           name: 極地
           spells:
@@ -30,6 +32,8 @@ features:
               level: 5
             - id: ice-storm
               level: 7
+            - id: cone-of-cold
+              level: 9
         - value: temperate
           name: 溫帶
           spells:
@@ -40,6 +44,8 @@ features:
               level: 5
             - id: freedom-of-movement
               level: 7
+            - id: tree-stride
+              level: 9
         - value: tropical
           name: 熱帶
           spells:
@@ -50,22 +56,25 @@ features:
               level: 5
             - id: polymorph
               level: 7
+            - id: insect-plague
+              level: 9
     text: |
       - **選擇地貌：**每次長休後，從旱地、極地、溫帶或熱帶中選擇 1 種地貌。
       - **始終準備：**你始終準備所選地貌對應、且目前德魯伊等級可用的法術，詳見下表。
 
-      | 地貌 | 等級 3 | 等級 5 | 等級 7 |
-      | --- | --- | --- | --- |
-      | 旱地 | 朦朧術、燃燒之手、火焰箭 | 火球術 | 枯萎術 |
-      | 極地 | 雲霧術、人類定身術、冷凍射線 | 雪雨暴 | 冰風暴 |
-      | 溫帶 | 迷蹤步、電爪、睡眠術 | 閃電束 | 行動自如 |
-      | 熱帶 | 酸液飛濺、致病射線、蛛網術 | 臭雲術 | 變形術 |
+      | 地貌 | 等級 3 | 等級 5 | 等級 7 | 等級 9 |
+      | --- | --- | --- | --- | --- |
+      | 旱地 | 朦朧術、燃燒之手、火焰箭 | 火球術 | 枯萎術 | 石牆術 |
+      | 極地 | 雲霧術、人類定身術、冷凍射線 | 雪雨暴 | 冰風暴 | 寒冰錐 |
+      | 溫帶 | 迷蹤步、電爪、睡眠術 | 閃電束 | 行動自如 | 樹躍術 |
+      | 熱帶 | 酸液飛濺、致病射線、蛛網術 | 臭雲術 | 變形術 | 疫病蟲群 |
     tables:
       - label: 大地結社地貌法術
         style: druid-terrain-spells
         kind: reference
         rowHeaders: true
-        cellLabels: [等級 3, 等級 5, 等級 7]
+        cellLabels: [等級 3, 等級 5, 等級 7, 等級 9]
+        cellLines: 、
   - id: druid-lands-aid
     level: 3
     name: 大地之援
@@ -92,6 +101,20 @@ features:
     text: |
       - **免費施法：**可不消耗法術位，施放 1 次透過「大地結社法術」準備的 1 環以上法術。使用後，須完成長休才能再次使用。
       - **短休恢復：**完成短休時，可恢復部分已消耗的法術位，環階總和等於德魯伊等級的一半（無條件進位），單一法術位最高為 5 環。使用後，須完成長休才能再次恢復法術位。
+  - id: druid-natures-ward
+    level: 10
+    name: 自然守護
+    hint: {panels: [overview]}
+    summary: 你免疫[[中毒]]狀態；依「大地結社法術」目前地貌獲得的傷害抗性列在「抗性」。
+    resistancesByChoice:
+      control: druid-land
+      choices:
+        - {value: arid, resistances: [fire]}
+        - {value: polar, resistances: [cold]}
+        - {value: temperate, resistances: [lightning]}
+        - {value: tropical, resistances: [poison]}
+    text: |
+      你免疫[[中毒]]狀態，並依「大地結社法術」目前所選的地貌獲得 1 種傷害[[抗性]]：旱地火焰、極地冷凍、溫帶閃電、熱帶毒素。
 srd:
   title: "德魯伊子職：大地結社 Circle of the Land"
   intro: |

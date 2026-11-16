@@ -28,12 +28,17 @@ features:
         level: 7
       - id: charm-monster
         level: 7
+      - id: legend-lore
+        level: 9
+      - id: summon-dragon
+        level: 9
     text: |
       達到下列術士等級後，你始終準備對應法術：
 
       - **3 級：**變造自身、繁彩球、命令術、龍息術。
       - **5 級：**恐懼術、飛行術。
       - **7 級：**秘法眼、魅惑怪物。
+      - **9 級：**通曉傳奇、龍族召喚術。
   - id: sorcerer-elemental-affinity
     level: 6
     name: 元素親和

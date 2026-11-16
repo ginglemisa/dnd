@@ -69,7 +69,7 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 
 給予專長選擇的能力寫 `feat`：`level`（屬性值提升，存檔欄位為「職業-level-等級」）或 `style`（戰鬥風格專長）；網站依此決定哪些等級有專長選單，並把選單放進該能力段落。勾選後才給予戰鬥風格專長的選項（聖騎士、遊俠）改在選項寫 `featChoice: true`。
 
-屬性值提升等有專長選單的能力，要接在選單之後的文字（例如 4 級的「施法補充」，額外戲法選單接在它後面）寫在 `afterFeatChoice`，寫法同 `text`；有 `tabletop`／`summary` 時須一併包含這段。額外戲法選單的標籤（例如「施法補充」，顯示為「施法補充：額外吟遊詩人戲法」）寫在同一能力的 `cantripChoiceLabel`，須與 `afterFeatChoice` 裡的粗體標籤一致；選單的等級取自該能力的 `level`。
+屬性值提升等有專長選單的能力，要接在選單之後的文字（例如 4 級的「施法補充」，額外戲法選單接在它後面）寫在 `afterFeatChoice`，寫法同 `text`；有 `tabletop`／`summary` 時須一併包含這段。額外戲法選單的標籤（例如「施法補充」，顯示為「施法補充：額外吟遊詩人戲法」）寫在同一能力的 `cantripChoiceLabel`，須與 `afterFeatChoice` 裡的粗體標籤一致；選單的等級取自該能力的 `level`。當級沒有可以掛的能力時（例如 10 級的「施法補充」），`cantripChoiceLabel` 寫在無名補充段落上，粗體標籤寫在它的 `text`，選單接在這段之後。該等級的特性表 `cantrips` 須比前一級多（建置會檢查），同一等級只能有一個。網站從 `classRules.cantripChoices` 讀取各等級的選單。
 
 ## 跑團提示
 
@@ -151,6 +151,7 @@ advantage: [運動, 先攻]
   | `rowHeaders` | `true`：表身每列第一格是列標題（`<th scope="row">`，例如地貌、德魯伊等級）。 |
   | `rowHeaderSuffix` | 接在每個列標題後、只在窄螢幕顯示的文字，例如 `級`（儲存格只寫 `2`）。須有 `rowHeaders`。 |
   | `cellLabels` | 表身資料欄（不含列標題）依序的欄位名稱，窄螢幕版面顯示在每格上方，例如 `[已知形態, 最大 CR, 飛行]`。 |
+  | `cellLines` | 資料格依這個分隔字拆成一行一項，分隔字不顯示，例如大地結社地貌表的 `、`（每格一行一個法術）。 |
 - 跑團說明與總覽不顯示表格。需要把表格內容變成一行跑團文字時，用 `values` 的 `fromTable` 從表格組出文字，再在表格後面單獨寫一段 `{名稱|}`（整段只在跑團顯示）。例如術士魔力泉湧的 `{slotCreationCosts|}`，跑團模式顯示「1 環消耗 2 點（術士等級 2 起）；……」；改表格時文字自動跟著變。
 
 ## 下拉選擇卡片
@@ -163,6 +164,7 @@ advantage: [運動, 先攻]
 | `placeholder` | 是 | 未選擇時的提示文字（空值選項）。 |
 | `choices` | 是 | 可選的值，每項 `{ value: acid, name: 強酸 }`；`value` 會寫進存檔，不可改名。 |
 | `text` | 否 | 卡片說明，寫法同 `text`，但不可用 `####`。 |
+| `restChange` | 否 | 休息時可改選：`shortRest`、`longRest` 或 `either`（例如邪魔淬體）。跑團休息視窗會列出這個選單，標題用能力的 `choiceName`（沒有時用能力名稱）。 |
 
 跑團說明與總覽照舊讀取整段（含卡片說明），所以有 `select` 的能力不可寫 `tabletop`／`summary`。
 
@@ -294,7 +296,7 @@ srd:
 - `primaryAbility`：`{ all: [敏捷, 感知] }` 顯示為「敏捷與感知」；`{ any: [力量, 敏捷] }` 顯示為「力量或敏捷」。
 - `spellcasting.progression`：`full`（全施法者）、`half`（半施法者）、`pact`（契約魔法）、`none`。
 - `progression.<欄位>.format`：特性表顯示格式，`{}` 代入數值，例如 `+{}`（+2）、`{}d6`（1d6）、`1d{}`（1d8，數值是骰面）。
-- 網站依欄位名稱讀取的特性表欄位：`cantrips`（戲法數量）、`preparedSpells`（準備法術數量）、`spellSlots1`～`spellSlots4`（各環法術位）；契約魔法（`pact`）為 `spellSlots`（法術位數量）與 `spellSlotLevel`（法術位環階）；契術師的 `invocations`（魔能祈喚數量）。改名會讓網站讀不到。
+- 網站依欄位名稱讀取的特性表欄位：`cantrips`（戲法數量）、`preparedSpells`（準備法術數量）、`spellSlots1`～`spellSlots9`（各環法術位，網站讀到九環；開放某一環時要有該環的網站版法術，建置會檢查）；契約魔法（`pact`）為 `spellSlots`（法術位數量）與 `spellSlotLevel`（法術位環階）；契術師的 `invocations`（魔能祈喚數量）。改名會讓網站讀不到。
 - `hitDie`、`saves`、`spellcasting.progression` 也供網站計算生命值、豁免熟練與是否具施法能力；`skills` 供快速創角的技能選擇。
 - `weapons`、`armor`、`tools` 是創角頁的顯示文字；機制資料寫在 `proficiencies`，改其中一邊時另一邊要一併修改：
   - `weapons`：`{ categories: [simple, martial], martialWithProperty: [靈巧, 輕型] }`，`martialWithProperty` 是另外熟練的軍用武器屬性（武器資料的屬性名稱）。
@@ -346,6 +348,18 @@ resource:
 
 - `restores: spellSlots`：恢復法術位，環階總和不超過 `budget`（`values` 的公式，例如 `arcaneRecoveryBudget: ceil({level} / 2)`），`maxSlotLevel` 是單一法術位的最高環階。
 - `restores: points`：恢復 `target` 資源的點數，最多 `budget` 點（例如術法復甦的 `target: sorcerer-sorcery-points`）。
+
+## 其他法表與能力施法
+
+- `extraSpellLists: [cleric, druid, wizard]`：取得此能力後，本職業一環以上的準備法術也可從這些職業法表挑選，仍算本職業的法術（吟遊詩人「魔法奧祕」）。戲法不受影響。網站經 `getClassSpellListIds()` 讀取。
+- `freeCast: { resource, maxLevel, lists, excludeCastingTimes }`：不消耗法術位的施法方式（牧師「神聖干預」）。跑團施法視窗對環階不超過 `maxLevel`、在 `lists` 法表上（省略為本職業）、施法時間不只是 `excludeCastingTimes` 的法術多一種施法方式，扣 `resource`（本職業某能力的 `resource.key`，建置會檢查）的次數。網站經 `getClassFreeCastFeatures()` 讀取。
+
+## 抗性與休息
+
+- `resistances: [poison]`：達到能力等級就有的傷害抗性；寫在選項上時勾選該選項才有。
+- `resistancesByChoice: { control: druid-land, choices: [{ value: arid, resistances: [fire] }, …] }`：依下拉選單目前的值給予抗性（例如自然守護看地貌選單，邪魔淬體看自己的 `select`）。
+- 以上都列在跑團總覽的「抗性」（`getClassResistances()`），不要再另寫內容相同的 `hint`。
+- `exhaustionRecovery: { shortRest: 1 }`：完成短休時減少的力竭等級（例如不知疲倦），跑團短休自動套用。長休減 1 是通則，不用寫。
 
 ## 能力給予的法術
 

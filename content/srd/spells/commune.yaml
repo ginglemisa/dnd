@@ -11,6 +11,12 @@ ritual: true
 range: self
 components: [ V, S, M ]
 duration: { minutes: 1 }
+site:
+  material: 焚香
+  body: |-
+    - 聯繫一位神祇或其代理者，在法術結束前提出至多三個是非題，每題都會得到正確答案
+    - 問題超出該神祇所知時，可能得到「不明」；單一詞語可能造成誤導或違背神祇利益時，DM可能改用一句簡短的話回答
+    - 若在完成長休前施放此法術超過一次，第一次之後的每次施放都有累積25%的機率得不到答案
 srd:
   material: 香
   body: |-

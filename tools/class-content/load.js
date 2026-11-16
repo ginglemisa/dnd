@@ -236,6 +236,14 @@ function checkClass(classDef, errors) {
     if (!levels.includes(1)) errors.push(`${classDef.file}：特性表欄位 ${name} 須包含 1 級`);
     levels.filter(level => level > classDef.maxLevel).forEach(level => errors.push(`${classDef.file}：特性表欄位 ${name} 的 ${level} 級超過 maxLevel`));
   }
+  // 網站依名稱讀取各環法術位 spellSlots1～spellSlots9；契約魔法為 spellSlots（數量）與 spellSlotLevel（環階 1～9）。
+  Object.keys(classDef.progression || {}).filter(name => /^spellSlots\d+$/.test(name)).forEach(name => {
+    const ring = Number(name.slice("spellSlots".length));
+    if (!(ring >= 1 && ring <= 9)) errors.push(`${classDef.file}：特性表欄位 ${name} 的環階須介於 1～9`);
+  });
+  Object.values(classDef.progression?.spellSlotLevel?.byLevel || {})
+    .filter(value => value !== null && !(Number.isInteger(value) && value >= 1 && value <= 9))
+    .forEach(value => errors.push(`${classDef.file}：特性表欄位 spellSlotLevel 的值 ${value} 須介於 1～9`));
   checkProficiencies(classDef, errors, id => claim(persistedIds, id, classDef.file, "工具欄位 ID"));
   checkEquipment(classDef, errors);
   checkSrd(classDef, errors);
@@ -307,6 +315,9 @@ function checkClass(classDef, errors) {
         Object.keys(feature.resource.recoverByLevel || {}).map(Number).filter(level => level <= feature.level || level > classDef.maxLevel)
           .forEach(level => errors.push(`${where}：resource.recoverByLevel 的 ${level} 級須高於能力等級且不超過 maxLevel`));
       }
+      if (feature.freeCast && !allFeatures.some(item => item.resource?.key === feature.freeCast.resource)) {
+        errors.push(`${where}：freeCast.resource「${feature.freeCast.resource}」不是本職業能力的 resource.key`);
+      }
       // behavior 排版 text 中標題寫成「#### 標題 {#名稱}」的小節：須有且只有一個（名稱不符或寫在其他欄位時由渲染報錯）。
       if (feature.behavior && !fs.existsSync(path.join(__dirname, "behaviors", `${feature.behavior}.js`))) errors.push(`${where}：找不到 tools/class-content/behaviors/${feature.behavior}.js`);
       if (feature.behavior && (feature.text || "").split(/\r?\n/).filter(line => /^#### /.test(line) && line.trimEnd().endsWith(`{#${feature.behavior}}`)).length !== 1) {
@@ -346,8 +357,16 @@ function checkClass(classDef, errors) {
       }
       // 選擇（picks）與固定獲得（grants）：數量、範圍與存檔欄位。
       checkPicks(classDef, feature, where, errors, id => claim(persistedIds, id, where, "選擇欄位 ID"));
-      // 4 級額外戲法選單的標籤：網站由 classRules 取得，須和 afterFeatChoice 文字裡的粗體標籤一致。
-      if (feature.cantripChoiceLabel && !feature.afterFeatChoice?.includes(`**${feature.cantripChoiceLabel}`)) errors.push(`${where}：afterFeatChoice 須以粗體寫出 cantripChoiceLabel「${feature.cantripChoiceLabel}」`);
+      // 升級額外戲法選單的標籤：網站由 classRules 的 cantripChoices 取得，須和文字裡的粗體標籤一致
+      // （有名稱的能力看 afterFeatChoice，無名補充段落看 text），且該等級的特性表戲法數須比前一級多。
+      if (feature.cantripChoiceLabel) {
+        const labelText = feature.name ? feature.afterFeatChoice : feature.text;
+        if (!labelText?.includes(`**${feature.cantripChoiceLabel}`)) errors.push(`${where}：${feature.name ? "afterFeatChoice" : "text"} 須以粗體寫出 cantripChoiceLabel「${feature.cantripChoiceLabel}」`);
+        const cantripsAt = level => Object.entries(classDef.progression?.cantrips?.byLevel || {})
+          .filter(([at]) => Number(at) <= level).sort((a, b) => Number(a[0]) - Number(b[0])).map(([, value]) => value).pop() ?? 0;
+        if (!(cantripsAt(feature.level) > cantripsAt(feature.level - 1))) errors.push(`${where}：cantripChoiceLabel 的等級 ${feature.level} 戲法數沒有增加`);
+        if (classDef.features.filter(item => item.cantripChoiceLabel && item.level === feature.level).length > 1) errors.push(`${where}：同一等級只能有一個 cantripChoiceLabel`);
+      }
       // 插入點：DOM ID 與選項、下拉選單 ID 同在職業頁上，不可重複。
       if (feature.mount) claim(persistedIds, feature.mount.id, where, "插入點 ID");
       const partTexts = (feature.parts || []).flatMap(part => [part.text, part.tabletop, part.summary]);

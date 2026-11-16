@@ -11,6 +11,12 @@ ritual: true
 range: { feet: 30 }
 components: [ V, S, M ]
 duration: { hours: 1 }
+site:
+  material: 兩顆蛋
+  body: |-
+    - 射程內至多八個你選擇的自願生物彼此心靈相連，可以透過心靈感應溝通，不需要共通語言
+    - 無法以任何語言溝通的生物不受此法術影響
+    - 溝通不受距離限制，但無法延伸到其他位面
 srd:
   material: 兩顆蛋
   body: |-

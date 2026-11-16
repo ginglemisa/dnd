@@ -101,7 +101,7 @@ async function autoPrepareSpellFromFeature(spellId, triggerEl) {
   if (!result) {
     const limits = window.SpellManagement.getLimits();
     const eligible = window.SpellManagement.isEntryAvailable({ spellId, level: spell.level, spellClass: document.getElementById("class").value });
-    const rings = window.Spellbook?.getPreparedRingLabel?.(document.getElementById("class").value, document.getElementById("level").value) || "一至四環";
+    const rings = window.Spellbook?.getPreparedRingLabel?.(document.getElementById("class").value, document.getElementById("level").value) || "各環";
     const warning = eligible ? { title: "已達準備上限", message: spell.level === 0 ? `最多可選 ${limits.cantrips} 個職業戲法，請先取消其他戲法。` : `${rings}${rings === "一環" ? "" : "合計"}最多可準備 ${limits.prepared} 個法術，請先取消其他法術。` }
       : getSpellPrepareWarning(spellId, document.getElementById("class").value);
     await window.AppDialog.showMessage({ ...warning, confirmLabel: "關閉", trigger: triggerEl });
@@ -192,7 +192,10 @@ function getAvailableSpellSourceClasses(level, options = {}) {
   const characterClass = document.getElementById("class")?.value || "";
   const characterLevel = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
   const spellLevel = level === "cantrips" ? 0 : Number(level);
-  return classOptions.filter(option => option.value === characterClass && classCanAccessSpellLevel(option.value, characterLevel, spellLevel));
+  // 環階看角色職業的法術位；一環以上另列能力開放的其他法表（吟遊詩人「魔法奧祕」），戲法只有自己的職業。
+  if (!classCanAccessSpellLevel(characterClass, characterLevel, spellLevel)) return [];
+  const lists = spellLevel > 0 ? window.getClassSpellListIds?.(characterClass, characterLevel) || [characterClass] : [characterClass];
+  return classOptions.filter(option => lists.includes(option.value));
 }
 
 function getSpellLevelLabel(level) {

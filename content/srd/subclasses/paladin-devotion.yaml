@@ -14,11 +14,16 @@ features:
         level: 5
       - id: zone-of-truth
         level: 5
+      - id: beacon-of-hope
+        level: 9
+      - id: dispel-magic
+        level: 9
     text: |
       達到下列聖騎士等級後，你始終準備對應法術：
 
       - **3 級：**防護善惡、虔誠護盾。
       - **5 級：**援助術、誠實之域。
+      - **9 級：**希望信標、解除魔法。
   - id: paladin-sacred-weapon
     level: 3
     name: 祝聖武器

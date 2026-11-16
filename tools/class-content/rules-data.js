@@ -69,6 +69,9 @@ function classRules(classDef, appendixHtml = []) {
     progression: classDef.progression || {},
     values: siteValues(classDef),
     features: namedFeatures(classDef.features, classDef),
+    // 升級額外戲法選單（等級、標籤）：有名稱的能力與無名補充段落都可以寫 cantripChoiceLabel。
+    cantripChoices: classDef.features.filter(feature => feature.cantripChoiceLabel)
+      .map(feature => ({ level: feature.level, label: feature.cantripChoiceLabel })).sort((a, b) => a.level - b.level),
     // 子職（預設子職在前）：網站的子職選單依此順序。
     subclasses: orderedSubclasses(classDef).map(subclass => ({
       id: subclass.id,

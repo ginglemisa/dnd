@@ -177,6 +177,61 @@
     return getClassFeatureRules(className, subclassId).some(feature => feature.id === featureId && numericLevel >= feature.level);
   }
 
+  /**
+   * 準備法術（一環以上）可以挑選的職業法表：自己的職業，加上已取得能力的 extraSpellLists（例如吟遊詩人 10 級「魔法奧祕」）。
+   * 戲法不受影響，仍只用自己的職業法表。從其他法表準備的法術仍算本職業的法術（spellClass 是本職業）。
+   */
+  function getClassSpellListIds(className, level, subclassId) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    if (!className) return [];
+    const extra = getClassFeatureRules(className, subclassId)
+      .filter(feature => numericLevel >= feature.level && Array.isArray(feature.extraSpellLists))
+      .flatMap(feature => feature.extraSpellLists);
+    return [...new Set([className, ...extra])];
+  }
+
+  /** 職業與子職能力在短休時額外減少的力竭等級（內容檔的 exhaustionRecovery.shortRest，加總）。 */
+  function getClassShortRestExhaustionRecovery(className, level, subclassId) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    return getClassFeatureRules(className, subclassId)
+      .filter(feature => numericLevel >= feature.level && feature.exhaustionRecovery)
+      .reduce((total, feature) => total + (feature.exhaustionRecovery.shortRest || 0), 0);
+  }
+
+  /**
+   * 職業與子職能力給的傷害抗性（內容檔的 resistances、勾選選項的 resistances、resistancesByChoice 依下拉選單）：
+   * 回傳傷害類型 ID，不重複。選項與選單讀角色卡目前的勾選與值。
+   */
+  function getClassResistances(className, level, subclassId) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    const doc = globalScope.document;
+    const types = getClassFeatureRules(className, subclassId).filter(feature => numericLevel >= feature.level).flatMap(feature => [
+      ...(feature.resistances || []),
+      ...(feature.options || []).filter(option => option.resistances && doc?.getElementById?.(option.id)?.checked).flatMap(option => option.resistances),
+      ...(feature.resistancesByChoice ? feature.resistancesByChoice.choices
+        .find(choice => choice.value === doc?.getElementById?.(feature.resistancesByChoice.control)?.value)?.resistances || [] : [])
+    ]);
+    return [...new Set(types)];
+  }
+
+  /**
+   * 不消耗法術位的施法方式（能力的 freeCast，例如牧師 10 級「神聖干預」）：已取得能力時回傳
+   * { featureId, label, resource, maxLevel, lists, excludeCastingTimes }，由跑團施法視窗列為一種施法方式，扣該能力的資源。
+   */
+  function getClassFreeCastFeatures(className, level, subclassId) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    return getClassFeatureRules(className, subclassId)
+      .filter(feature => numericLevel >= feature.level && feature.freeCast)
+      .map(feature => Object.freeze({
+        featureId: feature.id,
+        label: feature.name,
+        resource: feature.freeCast.resource,
+        maxLevel: feature.freeCast.maxLevel,
+        lists: Object.freeze([...(feature.freeCast.lists || [className])]),
+        excludeCastingTimes: Object.freeze([...(feature.freeCast.excludeCastingTimes || [])])
+      }));
+  }
+
   /** 職業的熟練機制資料（proficiencies：武器類別、護甲訓練、職業工具）；沒有時回傳 null。 */
   function getClassProficiencies(className) {
     return getClassRules(className)?.proficiencies || null;
@@ -657,8 +712,11 @@
   }
 
   /** 回傳目前角色卡允許選擇的超魔法數量。 */
-  function getMetamagicSelectionLimit() {
-    return 2;
+  // 超魔法可勾選數量：術士內容檔的 values.metamagicKnown（依等級）；沒給等級時讀角色卡目前等級。
+  function getMetamagicSelectionLimit(level) {
+    const numericLevel = Number.parseInt(level ?? globalScope.document?.getElementById?.("level")?.value, 10) || 1;
+    const value = hasClassValue("sorcerer", "metamagicKnown") ? evaluateClassValue("sorcerer", "metamagicKnown", { level: numericLevel }) : null;
+    return Number.isFinite(value) && value > 0 ? value : 2;
   }
 
   /** 依職業與等級計算魔能祈喚選擇上限；非契術師回傳 0。 */
@@ -704,26 +762,30 @@
     return null;
   }
 
+  // 法術環階的上限（SRD 的九環）。各職業實際有幾環法術位全看特性表欄位，這裡只決定陣列長度。
+  const MAX_SPELL_SLOT_LEVEL = 9;
+
   /**
-   * 取得指定職業與等級的一至四環法術位數量，依特性表欄位：spellSlots1～spellSlots4（各環數量），
+   * 取得指定職業與等級的一至九環法術位數量（固定 9 格，沒有的環階為 0），依特性表欄位：spellSlots1～spellSlots9（各環數量），
    * 契約魔法（spellcasting: pact）為 spellSlots（數量）與 spellSlotLevel（環階）。
    */
   function getSpellSlotCounts(className, level) {
     const numericLevel = Number(level);
     const rules = getClassRules(className);
-    if (!Number.isInteger(numericLevel) || !rules || rules.spellcasting === "none") return [0, 0, 0, 0];
+    const rings = Array.from({ length: MAX_SPELL_SLOT_LEVEL }, (_, index) => index + 1);
+    if (!Number.isInteger(numericLevel) || !rules || rules.spellcasting === "none") return rings.map(() => 0);
     if (rules.spellcasting === "pact") {
       const slotLevel = getClassProgressionValue(className, "spellSlotLevel", numericLevel);
       const count = getClassProgressionValue(className, "spellSlots", numericLevel) || 0;
-      return [1, 2, 3, 4].map(spellLevel => (spellLevel === slotLevel ? count : 0));
+      return rings.map(spellLevel => (spellLevel === slotLevel ? count : 0));
     }
-    return [1, 2, 3, 4].map(spellLevel => getClassProgressionValue(className, `spellSlots${spellLevel}`, numericLevel) || 0);
+    return rings.map(spellLevel => getClassProgressionValue(className, `spellSlots${spellLevel}`, numericLevel) || 0);
   }
 
-  /** 判斷職業在指定角色等級是否可使用某一法術環階。 */
+  /** 判斷職業在指定角色等級是否可使用某一法術環階（看特性表的法術位）。 */
   function classCanAccessSpellLevel(className, characterLevel, spellLevel) {
     const numericSpellLevel = Number(spellLevel);
-    if (!Number.isInteger(numericSpellLevel) || numericSpellLevel < 0 || numericSpellLevel > 4) return false;
+    if (!Number.isInteger(numericSpellLevel) || numericSpellLevel < 0 || numericSpellLevel > MAX_SPELL_SLOT_LEVEL) return false;
     if (numericSpellLevel === 0) return Object.hasOwn(getClassRules(className)?.progression || {}, "cantrips");
 
     const slotCounts = getSpellSlotCounts(className, characterLevel);
@@ -1401,6 +1463,10 @@
     getSelectedSubclassId,
     getSelectedSubclass,
     hasClassFeature,
+    getClassSpellListIds,
+    getClassFreeCastFeatures,
+    getClassResistances,
+    getClassShortRestExhaustionRecovery,
     getClassProficiencies,
     getClassPickCount,
     getClassPicks,

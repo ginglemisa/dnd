@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/class.schema.json
 id: ranger
 name: 遊俠
-maxLevel: 8
+maxLevel: 10
 subclassLevel: 3
 defaultSubclass: hunter
 tagline: 遊俠結合武藝、自然魔法與野外本領，是出色的獵手。
@@ -29,16 +29,23 @@ equipment:
 progression:
   favoredEnemy:
     label: 宿敵
-    byLevel: {1: 2, 5: 3}
+    byLevel: {1: 2, 5: 3, 9: 4}
   preparedSpells:
     label: 準備法術
-    byLevel: {1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 7: 7}
+    byLevel: {1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 7: 7, 9: 9}
   spellSlots1:
     label: １環
     byLevel: {1: 2, 3: 3, 5: 4}
   spellSlots2:
     label: ２環
     byLevel: {1: null, 5: 2, 7: 3}
+  spellSlots3:
+    label: ３環
+    byLevel: {1: null, 9: 2}
+values:
+  tirelessTempHp: {formula: "1d8 + {wisModifier}", format: "「{}」"}
+  tirelessUses: max(1, {wisModifier})
+  tirelessUsesText: {formula: "{tirelessUses}", format: "{} 次"}
 features:
   - id: ranger-spellcasting
     level: 1
@@ -145,6 +152,34 @@ features:
     feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: ranger-expertise
+    level: 9
+    name: 專精
+    picks:
+      - { kind: expertise, count: 2, from: proficient }
+    text: |
+      再選擇 2 項你已熟練但尚未專精的技能，改為**專精**。
+  - level: 9
+    text: |
+      **宿敵補充：**9 級起，宿敵可免費施放 4 次。
+  - id: ranger-tireless
+    level: 10
+    name: 不知疲倦
+    hint: {panels: [overview]}
+    summary: 每次完成短休，你的力竭等級（如果有）減少 1；跑團的短休會自動套用。
+    exhaustionRecovery: {shortRest: 1}
+    resource:
+      key: ranger-tireless
+      uses: tirelessUses
+      recover: {long: all}
+    actions:
+      - mode: action
+        key: dynamic-action-ranger-curated-tireless
+        resource: ranger-tireless
+    text: |
+      - **臨時生命值：**以**魔法動作**獲得{tirelessTempHp|「1d8 + 感知調整值」}的臨時生命值（至少 1 點）。
+      - **使用次數：**{tirelessUsesText|等同感知調整值（至少 1 次）}，**長休後全部恢復**。
+      - **減少力竭：**每次完成**短休**，你的[[力竭]]等級（如果有）減少 1。
 srd:
   overview: |
     **遊俠核心特質**

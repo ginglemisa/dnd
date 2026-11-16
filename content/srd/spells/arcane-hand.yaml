@@ -11,6 +11,21 @@ range: { feet: 120 }
 components: [ V, S, M ]
 duration: { minutes: 1 }
 concentration: true
+upcast: true
+site:
+  material: 一片蛋殼與一隻手套
+  outcomes:
+    - { kind: damage, formula: 5d8, upcastDice: 2d8, damageType: force, autoOnCast: false, context: 選擇握拳、近戰法術攻擊命中時 }
+    - { kind: damage, formula: 4d6, abilityModifier: spellcasting, upcastDice: 2d6, damageType: bludgeoning, autoOnCast: false, context: 擒抱之手擒抱目標期間，以附贈動作擠壓時 }
+  body: |-
+    - 在射程內你能看見的未被佔據空間，創造一隻大型的魔法能量手掌
+    - 這隻手是物體，不佔據空間，AC為20，生命值等於你的生命值上限；生命值降為0時法術結束
+    - 施法時，以及之後你的回合用附贈動作，你可以讓這隻手移動至多60呎，然後產生下列其中一種效果：
+      - 握拳：攻擊這隻手5呎內的一個目標，進行一次近戰法術攻擊；命中時，目標受到5d8力場傷害
+      - 推擊之手：這隻手5呎內一個巨型或更小的生物須進行力量豁免；失敗時，這隻手把它推開至多5呎，再加上你施法屬性調整值×5的呎數（例如調整值+4時，至多推開25呎）；這隻手會跟著目標移動，保持在目標5呎內
+      - 擒抱之手：這隻手5呎內一個巨型或更小的生物須進行敏捷豁免；失敗時陷入擒抱狀態，脫離擒抱的DC等於你的法術豁免DC；這隻手擒抱目標期間，你可以用附贈動作讓它擠壓目標，造成4d6加上你施法屬性調整值的鈍擊傷害
+      - 阻隔之手：來自這隻手所在空間、或穿過這隻手的攻擊與其他效果，你對它們具有半掩蔽；此外，這隻手所在的空間對你的敵人而言是困難地形
+    - 使用更高環階法術位：每比5環高一環，握拳的傷害增加2d8，擒抱之手的擠壓傷害增加2d6
 srd:
   material: 一片蛋殼與一隻手套
   body: |-

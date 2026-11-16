@@ -149,7 +149,7 @@
         if (typeof raw[key] !== "string" || raw[key].length > limit) return [];
         text[key] = raw[key].trim();
       }
-      if (!text.nameZh || !text.description || !Number.isInteger(raw.level) || raw.level < 0 || raw.level > 4
+      if (!text.nameZh || !text.description || !Number.isInteger(raw.level) || raw.level < 0 || raw.level > 9
         || !CUSTOM_SPELL_OPTIONS.schools.includes(raw.school)
         || !Object.hasOwn(CUSTOM_SPELL_OPTIONS.castingTimes, raw.castingTime)
         || !Object.hasOwn(CUSTOM_SPELL_OPTIONS.ranges, raw.rangeType)
@@ -300,6 +300,18 @@
       resourceLabel: String(freeControl.label || "免費施法次數")
     }));
 
+    // 能力的不耗法術位施法（freeCast，例如神聖干預）：扣該能力的跑團資源（resourceId 為「builtin:資源 key」），以法術原本的環階施放。
+    if (!atWill && !ritualOnly) (Array.isArray(spec.featureMethods) ? spec.featureMethods : []).forEach(feature => {
+      if (!feature?.resource || !(feature.remaining > 0)) return;
+      methods.push(freezeCastOption({
+        id: `feature-${feature.resource}`,
+        label: String(feature.label || "能力"),
+        effectiveLevel: baseLevel,
+        resourceId: `builtin:${feature.resource}`,
+        resourceLabel: `1 次${feature.label}（剩餘 ${feature.remaining}）；不消耗法術位`
+      }));
+    });
+
     if (atWill) methods.push(freezeCastOption({
       id: "at-will",
       label: "隨意施法",
@@ -381,6 +393,24 @@
     });
   }
 
+  // 目前角色可用的能力施法方式（character-rules.js 的 getClassFreeCastFeatures）：法術環階、法表、施法時間都符合，且資源還有剩。
+  function getBuiltInResourceRemaining(key) {
+    const spec = getRestContext().specs.find(item => item.key === key && item.target?.type === "builtIn");
+    return spec ? Math.max(0, spec.maximum - getBuiltInResourceSpent(key)) : 0;
+  }
+
+  function getFreeCastFeatureMethods(spell) {
+    if (typeof document === "undefined" || !spell) return [];
+    const features = globalScope.getClassFreeCastFeatures?.(document.getElementById("class")?.value || "",
+      Number(document.getElementById("level")?.value) || 0) || [];
+    const lists = globalScope.SpellCatalog?.getClassIds?.(spell.spellId) || [];
+    const times = (globalScope.SpellCatalog?.getCastingTimes?.(spell.spellId) || []).map(time => typeof time === "string" ? time : time?.unit || "");
+    return features.filter(feature => spell.level <= feature.maxLevel
+      && feature.lists.some(list => lists.includes(list))
+      && !(times.length && times.every(time => feature.excludeCastingTimes.includes(time))))
+      .map(feature => ({ resource: feature.resource, label: feature.label, remaining: getBuiltInResourceRemaining(feature.resource) }));
+  }
+
   function getSpellCastOptions(entry = {}) {
     if (entry.spellSource === "wizard-spellbook") {
       const current = globalScope.Spellbook?.getRitualEntries().find(item => item.sourceKey === entry.sourceKey);
@@ -409,6 +439,7 @@
       : Array.isArray(entry.freeUseControls) ? entry.freeUseControls : [];
     const fiendishVigorLevel = getCurrentFiendishVigorCastLevel(entry);
     return buildSpellCastOptions({
+      featureMethods: manualSpell ? [] : getFreeCastFeatureMethods(spell),
       baseLevel: spell.level,
       castMode: fiendishVigorLevel ? "at-will" : manualSpell && !["at-will", "ritual-only"].includes(entry.castMode) ? "slot" : entry.castMode,
       fixedCastLevel: fiendishVigorLevel || entry.fixedCastLevel,
@@ -471,7 +502,13 @@
     const validated = validateSpellCastSelection(getSpellCastOptions(entry), selection);
     if (!validated.ok) return validated;
 
-    if (validated.resourceId) {
+    if (validated.resourceId.startsWith("builtin:")) {
+      const key = validated.resourceId.slice("builtin:".length);
+      const spec = getRestContext().specs.find(item => item.key === key && item.target?.type === "builtIn");
+      const spent = getBuiltInResourceSpent(key);
+      if (!spec || spent >= spec.maximum) return Object.freeze({ ok: false, reason: "resource-changed" });
+      setBuiltInResourceSpent(key, spent + 1, spec.maximum);
+    } else if (validated.resourceId) {
       const resourceId = validated.resourceId;
       const canonical = typeof document !== "undefined" ? document.getElementById(resourceId) : null;
       const isCheckbox = typeof HTMLInputElement !== "undefined"
@@ -1294,7 +1331,9 @@
     const optionGroups = getRestOptionGroups();
     const token = JSON.stringify([options, collectState(), hp, maximumHp, hitDice, value("con"),
       controls.map(id => [id, document.getElementById(id)?.checked, document.getElementById(id)?.disabled]), optionGroups]);
-    return { specs, slots, optionGroups, hp, maximumHp, hitDice, token, level: Number(options.level), race: options.race,
+    // 短休額外減少的力竭（例如不知疲倦）；長休減 1 是通則。
+    const shortRestExhaustion = globalScope.getClassShortRestExhaustionRecovery?.(options.className, options.level) || 0;
+    return { specs, slots, optionGroups, hp, maximumHp, hitDice, token, level: Number(options.level), race: options.race, shortRestExhaustion,
       ready: Boolean(options.className && Number(options.level) >= 1) };
   }
 
@@ -1407,6 +1446,9 @@
     undoSnapshot = null;
     combatState.builtInResourceUsage = usage;
     combatState.temporaryHp = temporaryHp;
+    if (kind === "shortRest" && context.shortRestExhaustion) {
+      combatState.exhaustionLevel = Math.max(0, combatState.exhaustionLevel - context.shortRestExhaustion);
+    }
     if (kind === "longRest") {
       combatState.concentrationSpellId = "";
       combatState.exhaustionLevel = Math.max(0, combatState.exhaustionLevel - 1);
@@ -2408,6 +2450,14 @@
     return className === defaultClass && level >= minimumLevel;
   }
 
+  // 職業與子職能力的傷害抗性（內容檔的 resistances，例如自然守護、邪魔淬體）；和種族抗性一樣列為「抗性」。
+  function getClassResistanceEntries() {
+    const className = document.getElementById("class")?.value || "";
+    const level = document.getElementById("level")?.value || "";
+    return (globalScope.getClassResistances?.(className, level) || []).map(type => globalScope.getDamageTypeLabel?.(type)).filter(Boolean)
+      .map(label => ({ label: "抗性", detail: `${label}傷害減半。` }));
+  }
+
   function buildSorcererElementalAffinityEntry({ className, characterLevel, damageType }) {
     const level = Number.parseInt(characterLevel, 10) || 0;
     const damageTypeLabel = globalScope.getDamageTypeLabel?.(damageType) || "";
@@ -2529,6 +2579,7 @@
     const entries = [
       inPanel(getDarkvisionEntry(), "skills"),
       ...getRaceResistanceEntries().map(entry => inPanel(entry, "overview")),
+      ...getClassResistanceEntries().map(entry => inPanel(entry, "overview")),
       inPanel(getSorcererElementalAffinityEntry(), "overview")
     ].filter(Boolean);
     // 種族特質的跑團提示（種族內容檔的 hint）：標題為特質名稱，文字為 raceText 的 hints，頁籤為 hint.panels。

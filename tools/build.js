@@ -33,6 +33,31 @@ const { loadRaces } = require("./race-content/load");
 const { checkRaceIdBaseline } = require("./race-content/id-baseline");
 const { writeRaceData } = require("./race-content/site-data");
 
+// 職業在 maxLevel 內開放的每一環法術位，都要有至少一個該職業可用（有網站版）的法術；
+// 否則角色有法術位卻沒有法術可準備（例如提高 maxLevel 時漏了高環法術的網站版）。
+function getHighestSpellSlotRing(classDef) {
+  const progression = classDef.progression || {};
+  const positive = column => Object.values(column?.byLevel || {}).some(value => Number(value) > 0);
+  if (classDef.spellcasting?.progression === "pact") {
+    return Math.max(0, ...Object.values(progression.spellSlotLevel?.byLevel || {}).filter(value => Number.isInteger(value)));
+  }
+  return Math.max(0, ...Object.keys(progression).filter(name => /^spellSlots\d+$/.test(name) && positive(progression[name]))
+    .map(name => Number(name.slice("spellSlots".length))));
+}
+
+function checkSpellSlotRingsHaveSpells(classes, spells) {
+  const problems = [];
+  for (const classDef of classes.values()) {
+    const highest = getHighestSpellSlotRing(classDef);
+    for (let ring = 1; ring <= highest; ring += 1) {
+      if (![...spells.values()].some(spell => spell.site && spell.level === ring && spell.classes.includes(classDef.id))) {
+        problems.push(`${classDef.file}：${classDef.maxLevel} 級以內有 ${ring} 環法術位，但沒有任何 ${ring} 環的${classDef.name}法術有網站版（site）`);
+      }
+    }
+  }
+  if (problems.length) throw new ContentError(`法術位環階沒有可用法術：\n- ${problems.join("\n- ")}`);
+}
+
 function build({ quiet = false, updateIdBaseline = false, stampVersion = false, publicOnly = stampVersion } = {}) {
   const log = quiet ? () => {} : console.log;
   // 怪物先載入：職業頁的 [[野獸名]] 提示框與「查看其他動物」清單讀取建置中的怪物內容（不讀舊的產生檔）。
@@ -57,6 +82,7 @@ function build({ quiet = false, updateIdBaseline = false, stampVersion = false, 
     ...checkRaceIdBaseline(races, { update: updateIdBaseline })
   ];
   if (idProblems.length) throw new ContentError(`持久化 ID 與基準檔不符：\n- ${idProblems.join("\n- ")}`);
+  checkSpellSlotRingsHaveSpells(classes, spells);
   if (updateIdBaseline) log("已更新持久化 ID 基準檔。");
   // 公開資料只含公開內容包（另外載入一次）；私人內容包（子職、兼職補充）只寫進本機的私人資料檔，
   // 上線建置（--stamp-version）或 --public-only 時私人資料檔為空檔。

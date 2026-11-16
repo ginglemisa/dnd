@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/class.schema.json
 id: cleric
 name: 牧師
-maxLevel: 8
+maxLevel: 10
 subclassLevel: 3
 defaultSubclass: life
 tagline: 牧師是披甲持盾的神術施法者，能支援同伴，也能站上前線。
@@ -32,10 +32,10 @@ progression:
     byLevel: {1: null, 2: 2, 6: 3}
   cantrips:
     label: 戲法
-    byLevel: {1: 3, 4: 4}
+    byLevel: {1: 3, 4: 4, 10: 5}
   preparedSpells:
     label: 準備法術
-    byLevel: {1: 4, 2: 5, 3: 6, 4: 7, 5: 9, 6: 10, 7: 11, 8: 12}
+    byLevel: {1: 4, 2: 5, 3: 6, 4: 7, 5: 9, 6: 10, 7: 11, 8: 12, 9: 14, 10: 15}
   spellSlots1:
     label: １環
     byLevel: {1: 2, 2: 3, 3: 4}
@@ -47,7 +47,10 @@ progression:
     byLevel: {1: null, 5: 2, 6: 3}
   spellSlots4:
     label: ４環
-    byLevel: {1: null, 7: 1, 8: 2}
+    byLevel: {1: null, 7: 1, 8: 2, 9: 3}
+  spellSlots5:
+    label: ５環
+    byLevel: {1: null, 9: 1, 10: 2}
 values:
   divineSparkRoll: 1d8 + {wisModifier}
   spellSaveDc:
@@ -182,6 +185,31 @@ features:
     feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: cleric-divine-intervention
+    level: 10
+    name: 神聖干預
+    resource:
+      key: cleric-divine-intervention
+      uses: 1
+      recover: {long: all}
+    freeCast: {resource: cleric-divine-intervention, maxLevel: 5, lists: [cleric], excludeCastingTimes: [reaction]}
+    actions:
+      - mode: action
+        key: dynamic-action-cleric-curated-divine-intervention
+    tabletop: |
+      以**魔法動作**施放 1 個 **5 環或更低**、施放時間不是反應的牧師法術（不必是已準備的法術），**不消耗法術位，也不需要材料成分**。
+
+      - **已準備的法術：**在法術頁施法時，施法方式選「神聖干預」，會自動扣次數。
+      - **未準備的法術：**在資源區手動勾選神聖干預，再依法術說明擲骰。
+      - **使用次數：**1 次，**長休後恢復**。
+    text: |
+      以**魔法動作**施放 1 個 **5 環或更低**、施放時間不是反應的牧師法術（不必是已準備的法術），**不消耗法術位，也不需要材料成分**。
+
+      - **使用次數：**1 次，**長休後恢復**。
+  - level: 10
+    cantripChoiceLabel: 施法補充
+    text: |
+      **施法補充：**10 級起，額外學會 1 個牧師戲法。
 srd:
   overview: |
     **牧師核心特質**

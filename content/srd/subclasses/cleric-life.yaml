@@ -20,12 +20,17 @@ features:
         level: 7
       - id: death-ward
         level: 7
+      - id: greater-restoration
+        level: 9
+      - id: mass-cure-wounds
+        level: 9
     text: |
       達到下列牧師等級後，你始終準備對應法術：
 
       - **3 級：**援助術、祝福術、療傷術、次級復原術。
       - **5 級：**群體治癒真言、回生術。
       - **7 級：**生命靈氣、防死結界。
+      - **9 級：**高等復原術、群體療傷術。
   - id: cleric-disciple-of-life
     level: 3
     name: 生命門徒

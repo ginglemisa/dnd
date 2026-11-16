@@ -188,11 +188,13 @@ function renderOptions(feature, context, where) {
 }
 
 // 下拉選擇卡片：選單（值存進角色資料）與卡片說明。第一個選項是空值的提示文字。
-function renderSelectCard(select, markdownOptions, where) {
+// restChange：休息時可改選，輸出 data-rest-change（跑團休息視窗依此列出）與 aria-label（視窗裡的標題，取 label）。
+function renderSelectCard(select, markdownOptions, where, label = "") {
   const choices = [{ value: "", name: select.placeholder }, ...select.choices]
     .map(choice => `<option value="${escapeHtml(choice.value)}">${escapeHtml(choice.name)}</option>`).join("");
   const body = select.text ? `<div class="feature-choice-card__body">${renderMarkdown(select.text, markdownOptions, where)}</div>` : "";
-  return `<article class="feature-choice-card"><select id="${select.id}">${choices}</select>${body}</article>`;
+  const rest = select.restChange ? ` aria-label="${escapeHtml(label)}" data-rest-change="${select.restChange}"` : "";
+  return `<article class="feature-choice-card"><select id="${select.id}"${rest}>${choices}</select>${body}</article>`;
 }
 
 // 武器精通選單（picks 的 weaponMastery）：每個存檔欄位一個選單，選項（職業熟練的武器）由網站填入
@@ -278,7 +280,9 @@ function renderFeature({ feature, owner }, context) {
   // 由 renderMarkdown 把該小節交給它的 renderSubsection()。
   const behavior = feature.behavior ? { name: feature.behavior, ...require(`./behaviors/${feature.behavior}`) } : null;
   // 表格只出現在 text 與 tabletop，外框依出現順序取自 tables。
-  const tableOptions = { ...markdownOptions, tables: feature.tables || [], behavior };
+  // 無名補充段落的升級額外戲法選單：網站把選單接在帶 data-cantrip-choice-level 的段落之後。
+  const cantripMark = feature.cantripChoiceLabel && !context.view ? `data-cantrip-choice-level="${feature.level}"` : "";
+  const tableOptions = { ...markdownOptions, tables: feature.tables || [], behavior, ...(cantripMark && !feature.name ? { blockAttributes: cantripMark } : {}) };
   let body = renderMarkdown(feature.text, tableOptions, where);
   if (context.view && appended && !feature.tabletop) body = addAppendedPrefix(body, feature, where);
   if (feature.summary && context.summaries) context.summaries[feature.id] = renderInline(feature.summary, context, `${where} summary`);
@@ -286,9 +290,9 @@ function renderFeature({ feature, owner }, context) {
   if (feature.collapsible) body += feature.collapsible.map(item => `<details class="class-rule-subsection"><summary><strong>${escapeHtml(item.name)}</strong></summary>${renderMarkdown(item.text, markdownOptions, `${where} 可收合小節 ${item.name}`)}</details>`).join("");
   if (feature.parts) body += feature.parts.map(part => renderPart(part, feature, owner, context, where)).join("");
   if (feature.options) body += renderOptions(feature, context, where);
-  if (feature.select) body += renderSelectCard(feature.select, markdownOptions, `${where} 下拉選擇卡片`);
+  if (feature.select) body += renderSelectCard(feature.select, markdownOptions, `${where} 下拉選擇卡片`, feature.choiceName || feature.name);
   // 專長選單插在此段落之前（feat-ui.js）；4 級額外戲法選單讀取它的粗體標籤（class-features-ui.js）。
-  if (feature.afterFeatChoice) body += renderMarkdown(feature.afterFeatChoice, { ...markdownOptions, blockAttributes: context.view ? "" : "data-after-feat-choice" }, `${where} afterFeatChoice`);
+  if (feature.afterFeatChoice) body += renderMarkdown(feature.afterFeatChoice, { ...markdownOptions, blockAttributes: context.view ? "" : ["data-after-feat-choice", cantripMark].filter(Boolean).join(" ") }, `${where} afterFeatChoice`);
   // 插入點：網站程式插入控制項的空容器（例如 spell-sources.js 的魔法發現法術選單）。
   if (feature.mount) body += `<div id="${feature.mount.id}" class="${feature.mount.id}" aria-label="${escapeHtml(feature.mount.label)}"></div>`;
   if (context.view) {

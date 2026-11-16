@@ -792,7 +792,7 @@
       return state.__spellManagement.entries.flatMap((entry, idx) => {
         const spellId = resolveStateSpellId(entry.spellId);
         const spell = getCanonicalSpell(spellId);
-        if (!spell || spell.level > 4) return [];
+        if (!spell) return [];
         if (typeof globalScope.SpellManagement?.isEntryAvailable === 'function'
           && !globalScope.SpellManagement.isEntryAvailable(entry, { state })) return [];
         return [{ idx, level: spell.level, classKey: entry.spellClass || state.class || '', spellId }];
@@ -972,18 +972,12 @@ function isWeaponRowEmpty(payload, slot) {
     }
   }
 
+  // 角色紙的法術位欄位是 spell-level-1～spell-level-9（官方角色紙另由 lvl-1～lvl-9 複製），數量來自 getSpellSlotCounts()。
+  const PDF_SPELL_SLOT_LEVELS = 9;
   function parseSpellSlotsFromClassFeature(classKey, level) {
     const getSlotCounts = globalScope.getSpellSlotCounts;
-    const counts = typeof getSlotCounts === 'function'
-      ? getSlotCounts(classKey, level)
-      : [0, 0, 0, 0];
-    const toPdfValue = (count) => Number(count) > 0 ? String(count) : '';
-    return {
-      slot1: toPdfValue(counts[0]),
-      slot2: toPdfValue(counts[1]),
-      slot3: toPdfValue(counts[2]),
-      slot4: toPdfValue(counts[3])
-    };
+    const counts = typeof getSlotCounts === 'function' ? getSlotCounts(classKey, level) : [];
+    return Array.from({ length: PDF_SPELL_SLOT_LEVELS }, (_, index) => Number(counts[index]) > 0 ? String(counts[index]) : '');
   }
 
   // 武器熟練項與護甲訓練：職業內容檔的純文字（換行改為「,」）。
@@ -1408,7 +1402,7 @@ function isWeaponRowEmpty(payload, slot) {
     // Explicit export-only snapshots keep local custom definitions out of the
     // serialized character and prevent the mapper reading another local sheet.
     const customRows = (Array.isArray(options.customSpells) ? options.customSpells : []).slice(0, 50)
-      .filter(spell => spell && /^custom-spell-/.test(spell.spellId) && Number.isInteger(spell.level) && spell.level >= 0 && spell.level <= 4)
+      .filter(spell => spell && /^custom-spell-/.test(spell.spellId) && Number.isInteger(spell.level) && spell.level >= 0 && spell.level <= 9)
       .map((spell, idx) => ({ idx, spellId: spell.spellId, level: spell.level, customSpell: spell }));
     const allSpellRows = [...buildSpellRows(state), ...customRows].sort((a, b) => a.level - b.level);
     const spellRows = allSpellRows.slice(0, maxSpellRows);
@@ -1448,11 +1442,9 @@ function isWeaponRowEmpty(payload, slot) {
       });
     }
 
-    const slots = parseSpellSlotsFromClassFeature(classKey, level);
-    payload['spell-level-1'] = slots.slot1;
-    payload['spell-level-2'] = slots.slot2;
-    payload['spell-level-3'] = slots.slot3;
-    payload['spell-level-4'] = slots.slot4;
+    parseSpellSlotsFromClassFeature(classKey, level).forEach((count, index) => {
+      payload[`spell-level-${index + 1}`] = count;
+    });
 
     const extraNotes = [];
     const overflowToolNames = official ? [] : selectedToolNames.slice(2);
