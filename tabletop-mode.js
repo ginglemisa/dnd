@@ -1331,7 +1331,9 @@
     const optionGroups = getRestOptionGroups();
     const token = JSON.stringify([options, collectState(), hp, maximumHp, hitDice, value("con"),
       controls.map(id => [id, document.getElementById(id)?.checked, document.getElementById(id)?.disabled]), optionGroups]);
-    return { specs, slots, optionGroups, hp, maximumHp, hitDice, token, level: Number(options.level), race: options.race,
+    // 短休額外減少的力竭（例如不知疲倦）；長休減 1 是通則。
+    const shortRestExhaustion = globalScope.getClassShortRestExhaustionRecovery?.(options.className, options.level) || 0;
+    return { specs, slots, optionGroups, hp, maximumHp, hitDice, token, level: Number(options.level), race: options.race, shortRestExhaustion,
       ready: Boolean(options.className && Number(options.level) >= 1) };
   }
 
@@ -1444,6 +1446,9 @@
     undoSnapshot = null;
     combatState.builtInResourceUsage = usage;
     combatState.temporaryHp = temporaryHp;
+    if (kind === "shortRest" && context.shortRestExhaustion) {
+      combatState.exhaustionLevel = Math.max(0, combatState.exhaustionLevel - context.shortRestExhaustion);
+    }
     if (kind === "longRest") {
       combatState.concentrationSpellId = "";
       combatState.exhaustionLevel = Math.max(0, combatState.exhaustionLevel - 1);
@@ -2445,6 +2450,14 @@
     return className === defaultClass && level >= minimumLevel;
   }
 
+  // 職業與子職能力的傷害抗性（內容檔的 resistances，例如自然守護、邪魔淬體）；和種族抗性一樣列為「抗性」。
+  function getClassResistanceEntries() {
+    const className = document.getElementById("class")?.value || "";
+    const level = document.getElementById("level")?.value || "";
+    return (globalScope.getClassResistances?.(className, level) || []).map(type => globalScope.getDamageTypeLabel?.(type)).filter(Boolean)
+      .map(label => ({ label: "抗性", detail: `${label}傷害減半。` }));
+  }
+
   function buildSorcererElementalAffinityEntry({ className, characterLevel, damageType }) {
     const level = Number.parseInt(characterLevel, 10) || 0;
     const damageTypeLabel = globalScope.getDamageTypeLabel?.(damageType) || "";
@@ -2566,6 +2579,7 @@
     const entries = [
       inPanel(getDarkvisionEntry(), "skills"),
       ...getRaceResistanceEntries().map(entry => inPanel(entry, "overview")),
+      ...getClassResistanceEntries().map(entry => inPanel(entry, "overview")),
       inPanel(getSorcererElementalAffinityEntry(), "overview")
     ].filter(Boolean);
     // 種族特質的跑團提示（種族內容檔的 hint）：標題為特質名稱，文字為 raceText 的 hints，頁籤為 hint.panels。

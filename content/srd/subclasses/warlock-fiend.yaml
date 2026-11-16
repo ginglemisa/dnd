@@ -66,62 +66,62 @@ features:
     options:
       - id: warlock-fiendish-resilience-acid
         name: 強酸
-        hint: {panels: [overview]}
+        resistances: [acid]
         text: |
           你對**強酸**傷害具有[[抗性]]。
       - id: warlock-fiendish-resilience-bludgeoning
         name: 鈍擊
-        hint: {panels: [overview]}
+        resistances: [bludgeoning]
         text: |
           你對**鈍擊**傷害具有[[抗性]]。
       - id: warlock-fiendish-resilience-cold
         name: 冷凍
-        hint: {panels: [overview]}
+        resistances: [cold]
         text: |
           你對**冷凍**傷害具有[[抗性]]。
       - id: warlock-fiendish-resilience-fire
         name: 火焰
-        hint: {panels: [overview]}
+        resistances: [fire]
         text: |
           你對**火焰**傷害具有[[抗性]]。
       - id: warlock-fiendish-resilience-lightning
         name: 閃電
-        hint: {panels: [overview]}
+        resistances: [lightning]
         text: |
           你對**閃電**傷害具有[[抗性]]。
       - id: warlock-fiendish-resilience-necrotic
         name: 黯蝕
-        hint: {panels: [overview]}
+        resistances: [necrotic]
         text: |
           你對**黯蝕**傷害具有[[抗性]]。
       - id: warlock-fiendish-resilience-piercing
         name: 穿刺
-        hint: {panels: [overview]}
+        resistances: [piercing]
         text: |
           你對**穿刺**傷害具有[[抗性]]。
       - id: warlock-fiendish-resilience-poison
         name: 毒素
-        hint: {panels: [overview]}
+        resistances: [poison]
         text: |
           你對**毒素**傷害具有[[抗性]]。
       - id: warlock-fiendish-resilience-psychic
         name: 心靈
-        hint: {panels: [overview]}
+        resistances: [psychic]
         text: |
           你對**心靈**傷害具有[[抗性]]。
       - id: warlock-fiendish-resilience-radiant
         name: 光耀
-        hint: {panels: [overview]}
+        resistances: [radiant]
         text: |
           你對**光耀**傷害具有[[抗性]]。
       - id: warlock-fiendish-resilience-slashing
         name: 揮砍
-        hint: {panels: [overview]}
+        resistances: [slashing]
         text: |
           你對**揮砍**傷害具有[[抗性]]。
       - id: warlock-fiendish-resilience-thunder
         name: 雷鳴
-        hint: {panels: [overview]}
+        resistances: [thunder]
         text: |
           你對**雷鳴**傷害具有[[抗性]]。
 srd:

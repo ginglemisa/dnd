@@ -357,8 +357,16 @@ function checkClass(classDef, errors) {
       }
       // 選擇（picks）與固定獲得（grants）：數量、範圍與存檔欄位。
       checkPicks(classDef, feature, where, errors, id => claim(persistedIds, id, where, "選擇欄位 ID"));
-      // 4 級額外戲法選單的標籤：網站由 classRules 取得，須和 afterFeatChoice 文字裡的粗體標籤一致。
-      if (feature.cantripChoiceLabel && !feature.afterFeatChoice?.includes(`**${feature.cantripChoiceLabel}`)) errors.push(`${where}：afterFeatChoice 須以粗體寫出 cantripChoiceLabel「${feature.cantripChoiceLabel}」`);
+      // 升級額外戲法選單的標籤：網站由 classRules 的 cantripChoices 取得，須和文字裡的粗體標籤一致
+      // （有名稱的能力看 afterFeatChoice，無名補充段落看 text），且該等級的特性表戲法數須比前一級多。
+      if (feature.cantripChoiceLabel) {
+        const labelText = feature.name ? feature.afterFeatChoice : feature.text;
+        if (!labelText?.includes(`**${feature.cantripChoiceLabel}`)) errors.push(`${where}：${feature.name ? "afterFeatChoice" : "text"} 須以粗體寫出 cantripChoiceLabel「${feature.cantripChoiceLabel}」`);
+        const cantripsAt = level => Object.entries(classDef.progression?.cantrips?.byLevel || {})
+          .filter(([at]) => Number(at) <= level).sort((a, b) => Number(a[0]) - Number(b[0])).map(([, value]) => value).pop() ?? 0;
+        if (!(cantripsAt(feature.level) > cantripsAt(feature.level - 1))) errors.push(`${where}：cantripChoiceLabel 的等級 ${feature.level} 戲法數沒有增加`);
+        if (classDef.features.filter(item => item.cantripChoiceLabel && item.level === feature.level).length > 1) errors.push(`${where}：同一等級只能有一個 cantripChoiceLabel`);
+      }
       // 插入點：DOM ID 與選項、下拉選單 ID 同在職業頁上，不可重複。
       if (feature.mount) claim(persistedIds, feature.mount.id, where, "插入點 ID");
       const partTexts = (feature.parts || []).flatMap(part => [part.text, part.tabletop, part.summary]);

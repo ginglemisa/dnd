@@ -43,7 +43,7 @@ progression:
     label: ３環
     byLevel: {1: null, 9: 2}
 values:
-  tirelessTempHp: {formula: "1d8 + max(1, {wisModifier})", format: "「{}」"}
+  tirelessTempHp: {formula: "1d8 + {wisModifier}", format: "「{}」"}
   tirelessUses: max(1, {wisModifier})
   tirelessUsesText: {formula: "{tirelessUses}", format: "{} 次"}
 features:
@@ -166,7 +166,8 @@ features:
     level: 10
     name: 不知疲倦
     hint: {panels: [overview]}
-    summary: 每次完成短休，你的力竭等級（如果有）減少 1。
+    summary: 每次完成短休，你的力竭等級（如果有）減少 1；跑團的短休會自動套用。
+    exhaustionRecovery: {shortRest: 1}
     resource:
       key: ranger-tireless
       uses: tirelessUses
@@ -178,7 +179,7 @@ features:
     text: |
       原初力量在旅途中為你補充精力，獲得以下能力：
 
-      - **臨時生命值：**以**魔法動作**獲得{tirelessTempHp|「1d8＋感知調整值（至少為 1）」}的臨時生命值。
+      - **臨時生命值：**你可以採取一個**魔法動作**，使自己獲得等同於{tirelessTempHp|「1d8 加上你的感知調整值」}的臨時生命值，總數至少為 1。
       - **使用次數：**{tirelessUsesText|等同感知調整值（至少 1 次）}，**長休後全部恢復**。
       - **減少力竭：**每次完成**短休**，你的[[力竭]]等級（如果有）減少 1。
 srd:

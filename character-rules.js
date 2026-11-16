@@ -190,6 +190,30 @@
     return [...new Set([className, ...extra])];
   }
 
+  /** 職業與子職能力在短休時額外減少的力竭等級（內容檔的 exhaustionRecovery.shortRest，加總）。 */
+  function getClassShortRestExhaustionRecovery(className, level, subclassId) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    return getClassFeatureRules(className, subclassId)
+      .filter(feature => numericLevel >= feature.level && feature.exhaustionRecovery)
+      .reduce((total, feature) => total + (feature.exhaustionRecovery.shortRest || 0), 0);
+  }
+
+  /**
+   * 職業與子職能力給的傷害抗性（內容檔的 resistances、勾選選項的 resistances、resistancesByChoice 依下拉選單）：
+   * 回傳傷害類型 ID，不重複。選項與選單讀角色卡目前的勾選與值。
+   */
+  function getClassResistances(className, level, subclassId) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    const doc = globalScope.document;
+    const types = getClassFeatureRules(className, subclassId).filter(feature => numericLevel >= feature.level).flatMap(feature => [
+      ...(feature.resistances || []),
+      ...(feature.options || []).filter(option => option.resistances && doc?.getElementById?.(option.id)?.checked).flatMap(option => option.resistances),
+      ...(feature.resistancesByChoice ? feature.resistancesByChoice.choices
+        .find(choice => choice.value === doc?.getElementById?.(feature.resistancesByChoice.control)?.value)?.resistances || [] : [])
+    ]);
+    return [...new Set(types)];
+  }
+
   /**
    * 不消耗法術位的施法方式（能力的 freeCast，例如牧師 10 級「神聖干預」）：已取得能力時回傳
    * { featureId, label, resource, maxLevel, lists, excludeCastingTimes }，由跑團施法視窗列為一種施法方式，扣該能力的資源。
@@ -1441,6 +1465,8 @@
     hasClassFeature,
     getClassSpellListIds,
     getClassFreeCastFeatures,
+    getClassResistances,
+    getClassShortRestExhaustionRecovery,
     getClassProficiencies,
     getClassPickCount,
     getClassPicks,

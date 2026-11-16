@@ -2293,25 +2293,37 @@ details > summary::-webkit-details-marker,
   border-top: 1px dashed var(--border-strong);
 }
 
+/* 大地結社地貌表：寬度依內容，超出外框時在外框內橫向滑動（.rule-table-shell 的 overflow-x）。
+   建置依「、」把每格拆成一行一個法術（.rule-table-cell-line），法術名稱、欄名與地貌都不換行；地貌在格內水平垂直置中。 */
 :is(#tab-basic, #character-features, #class-feature-choices-modal) .output .rule-table-shell--druid-terrain-spells {
   margin-top: 0.72rem;
 }
 
-:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .druid-terrain-spells {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output table.druid-terrain-spells {
   width: max-content;
   max-width: none;
   table-layout: auto;
 }
 
-/* 覆寫基本頁通用表格的強制換行，讓欄寬與德魯伊特性表一樣依文字內容計算。 */
-:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .druid-terrain-spells th,
-:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .druid-terrain-spells td {
+/* 覆寫基本頁通用表格的強制換行（table:not(.class-feature-table) th/td，選擇器要比它具體）。 */
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output table.druid-terrain-spells th,
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output table.druid-terrain-spells td {
   white-space: nowrap !important;
   word-break: normal !important;
 }
 
-:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .druid-terrain-spells td {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output table.druid-terrain-spells td {
   text-align: left;
+  vertical-align: middle;
+}
+
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output table.druid-terrain-spells tbody th {
+  text-align: center;
+  vertical-align: middle;
+}
+
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output table.druid-terrain-spells .rule-table-cell-line {
+  display: block;
 }
 
 :is(#tab-basic, #character-features) .output .wild-shape-known-forms {

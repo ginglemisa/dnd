@@ -125,7 +125,7 @@ function joinHardBreaks(lines, options, where) {
   }).join("<br>");
 }
 
-// 表格外框：frame 為能力 tables 中對應的一項（{ label, style, kind, rowHeaders, rowHeaderSuffix, cellLabels }）。
+// 表格外框：frame 為能力 tables 中對應的一項（{ label, style, kind, rowHeaders, rowHeaderSuffix, cellLabels, cellLines }）。
 // 表頭輸出 <th scope="col">，表身輸出 <td>；rowHeaders 時每列第一格輸出 <th scope="row">（rowHeaderSuffix 包成窄螢幕才顯示的
 // <span class="rule-level-suffix">），cellLabels 依序成為表身 <td> 的 data-label（窄螢幕的欄位名稱）。
 // style 預設是進程表（rule-progress-table rule-progress-table--樣式）；kind: reference 時表格只加樣式名稱的 class。
@@ -141,7 +141,10 @@ function renderTable(block, frame, options, where, attributes) {
     const content = renderInline(cell, options, where);
     if (frame.rowHeaders && index === 0) return `<th scope="row">${content}${frame.rowHeaderSuffix ? `<span class="rule-level-suffix">${escapeHtml(frame.rowHeaderSuffix)}</span>` : ""}</th>`;
     const label = frame.cellLabels?.[index - (frame.rowHeaders ? 1 : 0)];
-    return `<td${label ? ` data-label="${escapeHtml(label)}"` : ""}>${content}</td>`;
+    // cellLines：資料格依分隔字（例如「、」）拆成一行一項（<span class="rule-table-cell-line">），分隔字不輸出。
+    const lines = frame.cellLines ? cell.split(frame.cellLines).map(item => item.trim()).filter(Boolean) : null;
+    const body = lines ? lines.map(item => `<span class="rule-table-cell-line">${renderInline(item, options, where)}</span>`).join("") : content;
+    return `<td${label ? ` data-label="${escapeHtml(label)}"` : ""}>${body}</td>`;
   }).join("");
   return `<div class="${shell}"${attributes}><table class="${table}" aria-label="${escapeHtml(frame.label)}">`
     + `<thead><tr>${header}</tr></thead>`

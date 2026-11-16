@@ -74,6 +74,7 @@ features:
         kind: reference
         rowHeaders: true
         cellLabels: [等級 3, 等級 5, 等級 7, 等級 9]
+        cellLines: 、
   - id: druid-lands-aid
     level: 3
     name: 大地之援
@@ -104,7 +105,14 @@ features:
     level: 10
     name: 自然守護
     hint: {panels: [overview]}
-    summary: 你免疫[[中毒]]狀態，並依「大地結社法術」目前所選的地貌獲得傷害[[抗性]]：旱地火焰、極地冷凍、溫帶閃電、熱帶毒素。
+    summary: 你免疫[[中毒]]狀態；依「大地結社法術」目前地貌獲得的傷害抗性列在「抗性」。
+    resistancesByChoice:
+      control: druid-land
+      choices:
+        - {value: arid, resistances: [fire]}
+        - {value: polar, resistances: [cold]}
+        - {value: temperate, resistances: [lightning]}
+        - {value: tropical, resistances: [poison]}
     text: |
       你免疫[[中毒]]狀態，並依「大地結社法術」目前所選的地貌，對 1 種傷害具有[[抗性]]：
 

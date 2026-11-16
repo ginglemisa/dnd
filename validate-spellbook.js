@@ -1514,7 +1514,38 @@ async function verifyLevelUpCantripChoice(page) {
   await chooseAsPlayer(page, "class", "cleric");
   assert.equal((await choice()).value, "light", "class memory keeps an early choice across class changes");
   assert.deepEqual(await playerIds(page), ["light"]);
-  console.log("Level 4 cantrip: class detail dropdown, shared cantrip cap, reminder/jump, legacy full lists, manual mode, early choice before background/race and JSON/share restore passed.");
+  // 10 級：第二個選單接在 10 級施法補充段落之後，用自己的標記（class-level-10），兩個選單各管各的戲法。
+  const choice10 = () => page.evaluate(() => {
+    const select = document.getElementById("class-level-up-cantrip-10");
+    const field = select?.closest(".class-feature-level-up-cantrip");
+    return field ? { hidden: field.hidden, value: select.value, label: field.querySelector("label").textContent,
+      afterNote: field.previousElementSibling?.dataset.cantripChoiceLevel === "10" } : null;
+  });
+  const tags = () => page.evaluate(() => SpellManagement.getPlayerEntries().map(entry => [entry.spellId, entry.classFeatureCantrip || ""]));
+  const wizard = (level, ids) => modern({ class: "wizard", level: String(level) }, ids.map(id => player(id, "wizard")));
+  await apply(page, wizard(9, ["fire-bolt", "light", "mage-hand", "prestidigitation"]));
+  assert.equal(await choice10(), null, "the level 10 cantrip appears from level 10");
+  await apply(page, wizard(10, ["fire-bolt", "light", "mage-hand"]));
+  assert.deepEqual(await choice10(), { hidden: false, value: "", label: "施法補充：額外法師戲法", afterNote: true });
+  assert.deepEqual(await missing(), ["法師 4 級額外戲法尚未選擇。", "法師 10 級額外戲法尚未選擇。"], "each level reminds its own cantrip");
+  await page.evaluate(() => { const select = document.getElementById("class-level-up-cantrip"); select.value = "prestidigitation"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+  await page.evaluate(() => { const select = document.getElementById("class-level-up-cantrip-10"); select.value = "ray-of-frost"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+  assert.deepEqual(await tags(), [["fire-bolt", ""], ["light", ""], ["mage-hand", ""], ["prestidigitation", "class-level-4"], ["ray-of-frost", "class-level-10"]], "the two dropdowns tag their own cantrips");
+  assert.deepEqual(await missing(), []);
+  await page.evaluate(() => { const select = document.getElementById("class-level-up-cantrip-10"); select.value = "shocking-grasp"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+  assert.deepEqual(await tags(), [["fire-bolt", ""], ["light", ""], ["mage-hand", ""], ["prestidigitation", "class-level-4"], ["shocking-grasp", "class-level-10"]], "changing the level 10 cantrip leaves the level 4 one alone");
+  const saved10 = await page.evaluate(() => collectStateObject());
+  await apply(page, modern({ class: "bard", level: "1" }));
+  await apply(page, saved10);
+  assert.deepEqual([(await choice()).value, (await choice10()).value], ["prestidigitation", "shocking-grasp"], "JSON/share restoration keeps both choices");
+  // 舊資料：沒有標記、戲法已選滿時，10 級選單認領最後一個、4 級認領倒數第二個。
+  await apply(page, wizard(10, ["fire-bolt", "light", "mage-hand", "prestidigitation", "ray-of-frost"]));
+  assert.deepEqual([(await choice()).value, (await choice10()).value], ["prestidigitation", "ray-of-frost"], "legacy full lists fill both dropdowns from the end");
+  assert.deepEqual(await missing(), []);
+  // 降到 9 級：10 級選單消失，4 級選單照舊。
+  await chooseAsPlayer(page, "level", "9");
+  assert.deepEqual([await choice10(), (await choice()).hidden], [null, false], "below level 10 only the level 4 dropdown remains");
+  console.log("Level 4 / 10 cantrip: class detail dropdowns, shared cantrip cap, separate markers, reminder/jump, legacy full lists, manual mode, early choice before background/race and JSON/share restore passed.");
 }
 
 async function verifyWizardBookPicker(page) {

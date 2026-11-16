@@ -156,6 +156,31 @@ async function main() {
       const conditionsAtZero = JSON.stringify(state().activeConditions);
       check(rest("longRest").ok && context().hp === context().maximumHp, "long rest has no initial HP restriction");
       check(JSON.stringify(state().activeConditions) === conditionsAtZero && state().exhaustionLevel === 0, "long rest only changes exhaustion among conditions");
+      // 遊俠 10 級「不知疲倦」：短休力竭減 1（內容檔的 exhaustionRecovery）；9 級與其他職業的短休不動力竭。
+      for (const [className, level, expected] of [["ranger", 10, 1], ["ranger", 9, 2], ["fighter", 10, 2]]) {
+        prepare(className, level);
+        TabletopMode.applyState({ exhaustionLevel: 2 });
+        check(context().shortRestExhaustion === (expected === 1 ? 1 : 0), `${className} ${level}: short rest exhaustion recovery`);
+        check(rest("shortRest").ok && state().exhaustionLevel === expected, `${className} ${level}: exhaustion after a short rest`);
+      }
+      prepare("ranger", 10);
+      TabletopMode.applyState({ exhaustionLevel: 0 });
+      check(rest("shortRest").ok && state().exhaustionLevel === 0, "exhaustion never drops below zero");
+      // 職業能力的傷害抗性（內容檔的 resistances）：自然守護依地貌、邪魔淬體依勾選，列進跑團總覽的「抗性」。
+      const overviewText = () => { TabletopMode.setMode("tabletop"); TabletopMode.refresh(); const text = document.getElementById("tabletop-overview-rule-summary")?.textContent || ""; TabletopMode.setMode("sheet"); return text; };
+      prepare("druid", 10); field("druid-land", "polar");
+      check(JSON.stringify(getClassResistances("druid", 10)) === JSON.stringify(["cold"]), "Nature's Ward resists the terrain's damage type");
+      field("druid-land", "tropical");
+      check(JSON.stringify(getClassResistances("druid", 10)) === JSON.stringify(["poison"]), "changing terrain changes the resistance");
+      check(getClassResistances("druid", 9).length === 0, "Nature's Ward starts at level 10");
+      check(overviewText().includes("毒素傷害減半"), "the tabletop overview lists the terrain resistance");
+      prepare("warlock", 10);
+      check(getClassResistances("warlock", 10).length === 0, "Fiendish Resilience needs a chosen type");
+      const thunder = document.getElementById("warlock-fiendish-resilience-thunder");
+      thunder.checked = true;
+      thunder.dispatchEvent(new Event("change", { bubbles: true }));
+      check(JSON.stringify(getClassResistances("warlock", 10)) === JSON.stringify(["thunder"]), "Fiendish Resilience resists the chosen type");
+      check(overviewText().includes("雷鳴傷害減半"), "the tabletop overview lists the chosen resistance");
       for (const [race, lineageId, lineage] of [
         ["dragonborn"], ["dwarf"], ["goliath", "goliath-ancestry", "cloud"], ["orc"], ["halfling"],
         ["elf", "elf-lineage", "drow"], ["elf", "elf-lineage", "high_elf"], ["elf", "elf-lineage", "wood_elf"],

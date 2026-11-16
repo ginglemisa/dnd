@@ -3377,6 +3377,43 @@ async function verifyClassFeatureTableJumps(browser, url) {
   }
 }
 
+// 大地結社地貌表：每格一行一個法術、欄位與地貌不換行；手機寬度在外框內橫向滑動，地貌在格內水平垂直置中。
+async function verifyDruidTerrainTable(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 375, height: 812 }, reducedMotion: "reduce" });
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
+    await page.evaluate(() => { applyStateObject({ class: "druid", level: "10", "druid-land": "arid" }); openCharacterFeatures("class"); });
+    const table = page.locator("#character-features-modal table.druid-terrain-spells");
+    await table.scrollIntoViewIfNeeded();
+    const layout = await table.evaluate(element => {
+      const shell = element.closest(".rule-table-shell");
+      const lineHeight = element.querySelector(".rule-table-cell-line").getBoundingClientRect().height;
+      const rowHeader = element.querySelector("tbody th");
+      const style = getComputedStyle(rowHeader);
+      return {
+        headers: Array.from(element.querySelectorAll("thead th"), th => th.textContent),
+        firstRow: Array.from(element.querySelector("tbody tr").querySelectorAll("td"), td => Array.from(td.querySelectorAll(".rule-table-cell-line"), line => line.textContent)),
+        oneLineSpells: Array.from(element.querySelectorAll(".rule-table-cell-line")).every(line => line.getBoundingClientRect().height <= lineHeight + 1),
+        oneLineHeaders: Array.from(element.querySelectorAll("th")).every(th => th.getClientRects().length === 1 && getComputedStyle(th).whiteSpace === "nowrap"),
+        rowHeader: [style.textAlign, style.verticalAlign],
+        scrolls: shell.scrollWidth > shell.clientWidth && getComputedStyle(shell).overflowX === "auto",
+        pageOverflow: document.documentElement.scrollWidth > innerWidth
+      };
+    });
+    assert.deepEqual(layout.headers, ["地貌", "等級 3", "等級 5", "等級 7", "等級 9"]);
+    assert.deepEqual(layout.firstRow, [["朦朧術", "燃燒之手", "火焰箭"], ["火球術"], ["枯萎術"], ["石牆術"]], "each spell sits on its own line");
+    assert.equal(layout.oneLineSpells, true, "no spell name wraps");
+    assert.equal(layout.oneLineHeaders, true, "column and terrain headers stay on one line");
+    assert.deepEqual(layout.rowHeader, ["center", "middle"], "terrain names are centered in their cells");
+    assert.deepEqual([layout.scrolls, layout.pageOverflow], [true, false], "the table scrolls sideways inside its frame on phones");
+    console.log("Druid terrain table: one spell per line, unwrapped headers, centered terrain and sideways scrolling on phones passed.");
+  } finally {
+    await page.close();
+  }
+}
+
 async function verifyChoiceReminderHighlights(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 375, height: 812 }, reducedMotion: "reduce" });
   await page.addInitScript(() => { try { localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"); } catch {} });
@@ -7376,6 +7413,7 @@ async function main() {
       await verifyCharacterFeatures(browser, url);
       await verifyClassSrdVersion(browser, url);
       await verifyClassFeatureTableJumps(browser, url);
+      await verifyDruidTerrainTable(browser, url);
       await verifyChoiceReminderHighlights(browser, url);
       await verifyClassFeatureChoicePrompt(browser, url);
       await verifyClassFeatureSupplementalChoices(browser, url);

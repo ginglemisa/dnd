@@ -278,7 +278,9 @@ function renderFeature({ feature, owner }, context) {
   // 由 renderMarkdown 把該小節交給它的 renderSubsection()。
   const behavior = feature.behavior ? { name: feature.behavior, ...require(`./behaviors/${feature.behavior}`) } : null;
   // 表格只出現在 text 與 tabletop，外框依出現順序取自 tables。
-  const tableOptions = { ...markdownOptions, tables: feature.tables || [], behavior };
+  // 無名補充段落的升級額外戲法選單：網站把選單接在帶 data-cantrip-choice-level 的段落之後。
+  const cantripMark = feature.cantripChoiceLabel && !context.view ? `data-cantrip-choice-level="${feature.level}"` : "";
+  const tableOptions = { ...markdownOptions, tables: feature.tables || [], behavior, ...(cantripMark && !feature.name ? { blockAttributes: cantripMark } : {}) };
   let body = renderMarkdown(feature.text, tableOptions, where);
   if (context.view && appended && !feature.tabletop) body = addAppendedPrefix(body, feature, where);
   if (feature.summary && context.summaries) context.summaries[feature.id] = renderInline(feature.summary, context, `${where} summary`);
@@ -288,7 +290,7 @@ function renderFeature({ feature, owner }, context) {
   if (feature.options) body += renderOptions(feature, context, where);
   if (feature.select) body += renderSelectCard(feature.select, markdownOptions, `${where} 下拉選擇卡片`);
   // 專長選單插在此段落之前（feat-ui.js）；4 級額外戲法選單讀取它的粗體標籤（class-features-ui.js）。
-  if (feature.afterFeatChoice) body += renderMarkdown(feature.afterFeatChoice, { ...markdownOptions, blockAttributes: context.view ? "" : "data-after-feat-choice" }, `${where} afterFeatChoice`);
+  if (feature.afterFeatChoice) body += renderMarkdown(feature.afterFeatChoice, { ...markdownOptions, blockAttributes: context.view ? "" : ["data-after-feat-choice", cantripMark].filter(Boolean).join(" ") }, `${where} afterFeatChoice`);
   // 插入點：網站程式插入控制項的空容器（例如 spell-sources.js 的魔法發現法術選單）。
   if (feature.mount) body += `<div id="${feature.mount.id}" class="${feature.mount.id}" aria-label="${escapeHtml(feature.mount.label)}"></div>`;
   if (context.view) {
