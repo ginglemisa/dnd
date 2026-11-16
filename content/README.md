@@ -294,7 +294,7 @@ srd:
 - `primaryAbility`：`{ all: [敏捷, 感知] }` 顯示為「敏捷與感知」；`{ any: [力量, 敏捷] }` 顯示為「力量或敏捷」。
 - `spellcasting.progression`：`full`（全施法者）、`half`（半施法者）、`pact`（契約魔法）、`none`。
 - `progression.<欄位>.format`：特性表顯示格式，`{}` 代入數值，例如 `+{}`（+2）、`{}d6`（1d6）、`1d{}`（1d8，數值是骰面）。
-- 網站依欄位名稱讀取的特性表欄位：`cantrips`（戲法數量）、`preparedSpells`（準備法術數量）、`spellSlots1`～`spellSlots4`（各環法術位）；契約魔法（`pact`）為 `spellSlots`（法術位數量）與 `spellSlotLevel`（法術位環階）；契術師的 `invocations`（魔能祈喚數量）。改名會讓網站讀不到。
+- 網站依欄位名稱讀取的特性表欄位：`cantrips`（戲法數量）、`preparedSpells`（準備法術數量）、`spellSlots1`～`spellSlots9`（各環法術位，網站讀到九環；開放某一環時要有該環的網站版法術，建置會檢查）；契約魔法（`pact`）為 `spellSlots`（法術位數量）與 `spellSlotLevel`（法術位環階）；契術師的 `invocations`（魔能祈喚數量）。改名會讓網站讀不到。
 - `hitDie`、`saves`、`spellcasting.progression` 也供網站計算生命值、豁免熟練與是否具施法能力；`skills` 供快速創角的技能選擇。
 - `weapons`、`armor`、`tools` 是創角頁的顯示文字；機制資料寫在 `proficiencies`，改其中一邊時另一邊要一併修改：
   - `weapons`：`{ categories: [simple, martial], martialWithProperty: [靈巧, 輕型] }`，`martialWithProperty` 是另外熟練的軍用武器屬性（武器資料的屬性名稱）。
@@ -346,6 +346,11 @@ resource:
 
 - `restores: spellSlots`：恢復法術位，環階總和不超過 `budget`（`values` 的公式，例如 `arcaneRecoveryBudget: ceil({level} / 2)`），`maxSlotLevel` 是單一法術位的最高環階。
 - `restores: points`：恢復 `target` 資源的點數，最多 `budget` 點（例如術法復甦的 `target: sorcerer-sorcery-points`）。
+
+## 其他法表與能力施法
+
+- `extraSpellLists: [cleric, druid, wizard]`：取得此能力後，本職業一環以上的準備法術也可從這些職業法表挑選，仍算本職業的法術（吟遊詩人「魔法奧祕」）。戲法不受影響。網站經 `getClassSpellListIds()` 讀取。
+- `freeCast: { resource, maxLevel, lists, excludeCastingTimes }`：不消耗法術位的施法方式（牧師「神聖干預」）。跑團施法視窗對環階不超過 `maxLevel`、在 `lists` 法表上（省略為本職業）、施法時間不只是 `excludeCastingTimes` 的法術多一種施法方式，扣 `resource`（本職業某能力的 `resource.key`，建置會檢查）的次數。網站經 `getClassFreeCastFeatures()` 讀取。
 
 ## 能力給予的法術
 
