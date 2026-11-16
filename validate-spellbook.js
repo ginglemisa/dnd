@@ -469,8 +469,9 @@ async function verifySpellOverview(browser, url) {
       assert.equal(await toggle(ring).getAttribute("aria-expanded"), "true");
     }
     await page.waitForFunction(() => getComputedStyle(document.getElementById("picked-cantrips")).gridTemplateColumns.split(" ").length > 1);
-    assert.equal(await page.evaluate(() => [...document.querySelectorAll("#spell-picked-grid-wrap .spell-picked-content")].every(list =>
-      getComputedStyle(list).gridTemplateColumns.split(" ").length === 1)), true, "leveled spells remain one per line");
+    // 各環清單的欄數是量出來的（依卡片寬度），格線欄數要與量到的一致。
+    await page.waitForFunction(() => [...document.querySelectorAll("#spell-picked-grid-wrap .spell-picked-box:not([hidden]) .spell-picked-content")].every(list =>
+      getComputedStyle(list).gridTemplateColumns.split(" ").length === Number(list.dataset.spellColumns)));
     assert.equal(await page.locator("#picked-cantrips .spell-picked-jump").first().evaluate(el => getComputedStyle(el).textDecorationStyle), "solid", "sheet spell links use a solid underline");
     assert.equal(await page.locator("#main-content .weapon-rule-link").first().evaluate(el => getComputedStyle(el).textDecorationStyle), "solid");
     assert.equal(await page.locator("#atk-main-hit").evaluate(el => getComputedStyle(el).textDecorationStyle), "solid");
@@ -524,13 +525,12 @@ async function verifySpellOverview(browser, url) {
       for (const [width, columns] of [[1100, 4], [720, 4], [719, 2], [600, 2], [400, 2], [399, 1], [360, 1], [320, 1]]) {
         await page.setViewportSize({ width, height: 850 });
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-        assert.equal(await page.locator("#spell-picked-grid-wrap").evaluate(el => getComputedStyle(el).gridTemplateColumns.split(" ").length), columns);
+        assert.equal((await ringCardRows(page))[0].length, columns, `${width}px puts ${columns} ring cards in the first row`);
         assert.equal(await page.locator("#spell-overview-management-wrap").evaluate(el => el.scrollWidth <= el.clientWidth + 1), true, `${uiTheme}/${theme}/${width} fits`);
         assert.equal(await page.locator("#spellslot1-1").evaluate(el => el.getBoundingClientRect().width), 20);
         assert.equal(await page.evaluate(() => [...document.querySelectorAll(".spell-picked-content")].every(list => {
           if (!list.children.length) return true;
           const style = getComputedStyle(list), columns = style.gridTemplateColumns.split(" ").length;
-          if (list.id !== "picked-cantrips" && columns > (innerWidth >= 720 ? 1 : 2)) return false;
           const items = [...list.children], positions = items.map(item => item.getBoundingClientRect());
           if (Math.abs(parseFloat(style.columnGap) / parseFloat(style.fontSize) - 1.2) > 0.01) return false;
           return items.every((item, index) => item.scrollWidth <= item.clientWidth + 1
@@ -540,6 +540,7 @@ async function verifySpellOverview(browser, url) {
       }
     }
     await verifyPackedSpellNames(page);
+    await verifySpellRingLayout(page);
     await apply(page, modern({ class: "fighter", level: "1", background: "acolyte",
       "derived-feat-background-magic-initiate-cantrip-1": "light",
       "derived-feat-background-magic-initiate-cantrip-2": "guidance",
@@ -597,7 +598,7 @@ async function verifyPackedSpellNames(page) {
   }), true, "a long later-row name reduces the entire list to one column and wraps without overflow");
   await page.setViewportSize({ width: 600, height: 850 });
   await apply(page, state([...cantrips, ...leveled]));
-  await waitColumns("picked-level1", 2); await waitColumns("picked-level2", 2);
+  await waitColumns("picked-level1", 3); await waitColumns("picked-level2", 2);
   const longLeveled = leveled.map(entry => ({ ...entry }));
   longLeveled[3].sourceTag = "這是較長的來源標籤".repeat(3);
   await apply(page, state([...cantrips, ...longLeveled]));
@@ -606,17 +607,107 @@ async function verifyPackedSpellNames(page) {
   await waitColumns("picked-level2", 1);
   await page.setViewportSize({ width: 399, height: 850 });
   await apply(page, state([...cantrips, ...leveled]));
-  await waitColumns("picked-level1", 2);
+  await waitColumns("picked-level1", 4);
   await page.locator('[data-spell-disclosure="1"] .spell-overview-toggle').click();
   await page.setViewportSize({ width: 720, height: 850 });
   await page.locator('[data-spell-disclosure="1"] .spell-overview-toggle').click();
-  await waitColumns("picked-level1", 1);
+  await waitColumns("picked-level1", 2);
   await page.evaluate(() => {
     const original = SpellManagement.getPlayerEntries();
     SpellManagement.setPlayerEntries(original.filter(entry => entry.level !== 1));
   });
   assert.equal(await page.locator("#picked-level1").getAttribute("data-spell-columns"), "1");
   assert.equal(await page.locator("#picked-level1").innerText(), "未準備此環法術");
+}
+
+// 可見的法術位卡片依列分組：每張的環階、位置大小與清單欄數。
+async function ringCardRows(page) {
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  return page.evaluate(() => {
+    const rows = [];
+    document.querySelectorAll("#spell-picked-grid-wrap .spell-picked-box:not([hidden])").forEach(card => {
+      const rect = card.getBoundingClientRect();
+      const item = { ring: Number(card.dataset.spellDisclosure), left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom,
+        columns: Number(card.querySelector(".spell-picked-content").dataset.spellColumns) };
+      const row = rows.find(row => Math.abs(row[0].top - item.top) < 1);
+      if (row) row.push(item); else rows.push([item]);
+    });
+    return rows;
+  });
+}
+
+async function verifySpellRingLayout(page) {
+  const gridBox = () => page.locator("#spell-picked-grid-wrap").evaluate(el => { const rect = el.getBoundingClientRect(); return { left: rect.left, right: rect.right }; });
+  const assertRows = async (expected, label) => {
+    const rows = await ringCardRows(page), grid = await gridBox();
+    assert.deepEqual(rows.map(row => row.length), expected, `${label}: cards per row`);
+    rows.forEach((row, index) => {
+      assert.ok(Math.abs(row[0].left - grid.left) < 1 && Math.abs(row[row.length - 1].right - grid.right) < 1, `${label}: row ${index + 1} fills the full width`);
+      assert.ok(row.every(card => Math.abs(card.bottom - row[0].bottom) < 1), `${label}: row ${index + 1} cards share one height`);
+      assert.ok(row.every(card => Math.abs((card.right - card.left) - (row[0].right - row[0].left)) < 1), `${label}: row ${index + 1} cards share one width`);
+    });
+    return rows;
+  };
+  const wizard = (level, entries, extra = {}) => modern({ class: "wizard", level: String(level), "manual-spell-management": true,
+    __wizardSpellbook: { version: 1, spellIds: [] }, ...extra }, entries);
+  // 三環角色（真實規則資料）：窄螢幕第三張撐滿整列並橫排多欄；同列等高，留白在卡片內。
+  const threeRings = ["cure-wounds", "bless", "shield", "detect-magic", "aid", "fireball", "counterspell", "dispel-magic"].map(id => player(id, "wizard"));
+  await page.setViewportSize({ width: 600, height: 850 });
+  await apply(page, wizard(5, threeRings));
+  await page.waitForFunction(() => document.getElementById("picked-level3").dataset.spellColumns === "3");
+  let rows = await assertRows([2, 1], "3 rings at 600px");
+  assert.ok(rows[0][0].columns < 4, "the half-width card wraps its four names instead of truncating them");
+  assert.equal(await page.locator("#picked-level3").evaluate(el => {
+    const tops = [...el.children].map(item => Math.round(item.getBoundingClientRect().top));
+    return new Set(tops).size === 1 && [...el.children].every(item => item.scrollWidth <= item.clientWidth + 1);
+  }), true, "the full-row card lays its spells out side by side without truncation");
+  await page.locator('[data-spell-disclosure="2"] .spell-overview-toggle').click();
+  await assertRows([2, 1], "collapsed neighbour at 600px");
+  await page.locator('[data-spell-disclosure="2"] .spell-overview-toggle').click();
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await assertRows([3], "3 rings at 1100px");
+  await page.setViewportSize({ width: 390, height: 850 });
+  await assertRows([1, 1, 1], "3 rings at 390px");
+  const legacySlotIds = ["1-1", "1-2", "1-3", "1-4", "2-1", "2-2", "2-3", "3-1", "3-2", "3-3", "4-1", "4-2"].map(id => `spellslot${id}`);
+  const savedSlotIds = () => page.evaluate(() => {
+    saveAllFields();
+    return [collectStateObject(), JSON.parse(dndStorage.getItem("dndchar_autosave_v1"))].map(state => Object.keys(state).filter(key => /^spellslot/.test(key)));
+  });
+  assert.deepEqual(await savedSlotIds(), [legacySlotIds, legacySlotIds], "characters without higher slots keep the original saved slot fields");
+  assert.equal(await page.evaluate(() => Object.keys(collectShareState()).some(key => /^spellslot/.test(key))), false, "share links still omit slot usage");
+  // 規則資料目前只到四環：暫時覆寫法術位數量，確認五到九環不用再改版面就能顯示。
+  await page.evaluate(() => {
+    window.__ringLayoutSlotCounts = window.getSpellSlotCounts;
+    window.__ringLayoutRings = 0;
+    window.getSpellSlotCounts = () => [4, 3, 3, 3, 3, 2, 2, 1, 1].map((count, index) => index < window.__ringLayoutRings ? count : 0);
+  });
+  try {
+    const desktop = [[1], [2], [3], [4], [3, 2], [3, 3], [4, 3], [4, 4], [3, 3, 3]];
+    for (let rings = 1; rings <= 9; rings += 1) {
+      await page.evaluate(rings => { window.__ringLayoutRings = rings; }, rings);
+      await apply(page, wizard(8, [], { "spellslot5-1": true, "spellslot9-1": true }));
+      for (const [width, expected] of [[1100, desktop[rings - 1]], [600, [...Array(Math.floor(rings / 2)).fill(2), ...(rings % 2 ? [1] : [])]], [390, Array(rings).fill(1)]]) {
+        await page.setViewportSize({ width, height: 850 });
+        rows = await assertRows(expected, `${rings} rings at ${width}px`);
+        assert.deepEqual(rows.flat().map(card => card.ring), Array.from({ length: rings }, (_, index) => index + 1));
+      }
+      assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll("#spell-picked-grid-wrap .spell-picked-box:not([hidden])")].map(card =>
+        [...card.querySelectorAll(".spell-overview-slot-checks input")].filter(box => box.offsetParent && !box.disabled).length)),
+        [4, 3, 3, 3, 3, 2, 2, 1, 1].slice(0, rings), `${rings} rings show their slot boxes`);
+      assert.equal(await page.evaluate(() => [...document.querySelectorAll("#spell-picked-grid-wrap .spell-picked-box:not([hidden]) .spell-overview-toggle")].pop().textContent),
+        `▸${"一二三四五六七八九"[rings - 1]}環`);
+      const saved = await page.evaluate(() => { const state = collectStateObject(); return Object.keys(state).filter(key => /^spellslot/.test(key) && !/^spellslot[1-3]-|^spellslot4-[12]$/.test(key)).map(key => [key, state[key]]); });
+      const extra = [["spellslot4-3", false], ["spellslot5-1", true], ["spellslot5-2", false], ["spellslot5-3", false], ["spellslot6-1", false], ["spellslot6-2", false],
+        ["spellslot7-1", false], ["spellslot7-2", false], ["spellslot8-1", false], ["spellslot9-1", true]];
+      assert.deepEqual(saved, extra.filter(([key]) => Number(key[9]) <= rings), `${rings} rings save only the higher slots the character has, and restore their usage`);
+    }
+    assert.equal(await page.evaluate(() => Object.keys(collectShareState()).some(key => /^spellslot/.test(key))), false, "higher slot usage stays out of share links");
+  } finally {
+    await page.evaluate(() => { window.getSpellSlotCounts = window.__ringLayoutSlotCounts; delete window.__ringLayoutSlotCounts; delete window.__ringLayoutRings; });
+  }
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await apply(page, wizard(5, threeRings));
+  assert.deepEqual(await savedSlotIds(), [legacySlotIds, legacySlotIds], "saved slot fields return to the original set once higher slots are gone");
 }
 
 async function verifySpellManagement(page) {

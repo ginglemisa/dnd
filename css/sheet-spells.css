@@ -1024,11 +1024,19 @@ div[id$="spells-area"] .form-row > .output {
   white-space: nowrap;
 }
 
+/* 法術位卡片：flex 換行，一列放 --spell-overview-columns 張；最後一列不滿時由 flex-grow 撐滿整列，
+   同一列等高（stretch）。basis 刻意比等分少一個 gap，避免小數誤差讓一列少放一張。 */
 .spell-overview-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.75rem;
-  align-items: start;
+  --spell-overview-columns: 1;
+  --spell-overview-gap: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--spell-overview-gap);
+}
+
+.spell-overview-grid > .spell-overview-card {
+  flex: 1 1 calc(100% / var(--spell-overview-columns) - var(--spell-overview-gap));
 }
 
 .spell-overview-card {
@@ -1136,13 +1144,18 @@ button.spell-overview-toggle:active {
 
 @media (min-width: 400px) {
   .spell-overview-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    --spell-overview-columns: 2;
   }
 }
 
+/* 桌機依可見卡片數（sheet-spells.js 寫入 data-ring-count）：1–4 張一列、5–6 張 3 欄、7–8 張 4 欄、9 張 3×3。 */
 @media (min-width: 720px) {
   .spell-overview-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    --spell-overview-columns: 4;
+  }
+
+  .spell-overview-grid:is([data-ring-count="5"], [data-ring-count="6"], [data-ring-count="9"]) {
+    --spell-overview-columns: 3;
   }
 }
 
