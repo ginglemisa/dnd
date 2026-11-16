@@ -749,7 +749,7 @@ function syncMetamagicSelectionLimit() {
     if (!available) input.checked = false;
   });
   if (!available) return true;
-  return enforceCheckboxSelectionLimit(inputs, getMetamagicSelectionLimit(), null, "超魔法只能勾選兩個喔！", false);
+  return enforceCheckboxSelectionLimit(inputs, getMetamagicSelectionLimit(), null, `超魔法目前最多只能勾選 ${getMetamagicSelectionLimit()} 個喔！`, false);
 }
 
 function syncWarlockInvocationSelectionLimit() {
@@ -806,7 +806,7 @@ function renderMetamagicOptions() {
           Array.from(output.querySelectorAll("input[data-metamagic-name]")),
           getMetamagicSelectionLimit(),
           el,
-          "超魔法只能勾選兩個喔！",
+          `超魔法目前最多只能勾選 ${getMetamagicSelectionLimit()} 個喔！`,
           event.isTrusted
         );
         if (!allowed) {

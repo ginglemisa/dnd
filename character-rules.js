@@ -688,8 +688,11 @@
   }
 
   /** 回傳目前角色卡允許選擇的超魔法數量。 */
-  function getMetamagicSelectionLimit() {
-    return 2;
+  // 超魔法可勾選數量：術士內容檔的 values.metamagicKnown（依等級）；沒給等級時讀角色卡目前等級。
+  function getMetamagicSelectionLimit(level) {
+    const numericLevel = Number.parseInt(level ?? globalScope.document?.getElementById?.("level")?.value, 10) || 1;
+    const value = hasClassValue("sorcerer", "metamagicKnown") ? evaluateClassValue("sorcerer", "metamagicKnown", { level: numericLevel }) : null;
+    return Number.isFinite(value) && value > 0 ? value : 2;
   }
 
   /** 依職業與等級計算魔能祈喚選擇上限；非契術師回傳 0。 */
