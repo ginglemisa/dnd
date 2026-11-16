@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/class.schema.json
 id: druid
 name: 德魯伊
-maxLevel: 8
+maxLevel: 10
 subclassLevel: 3
 defaultSubclass: land
 tagline: 德魯伊操使自然魔法，也能化身野獸。
@@ -33,10 +33,10 @@ progression:
     byLevel: {1: null, 2: 2, 6: 3}
   cantrips:
     label: 戲法
-    byLevel: {1: 2, 4: 3}
+    byLevel: {1: 2, 4: 3, 10: 4}
   preparedSpells:
     label: 準備法術
-    byLevel: {1: 4, 2: 5, 3: 6, 4: 7, 5: 9, 6: 10, 7: 11, 8: 12}
+    byLevel: {1: 4, 2: 5, 3: 6, 4: 7, 5: 9, 6: 10, 7: 11, 8: 12, 9: 14, 10: 15}
   spellSlots1:
     label: １環
     byLevel: {1: 2, 2: 3, 3: 4}
@@ -48,7 +48,10 @@ progression:
     byLevel: {1: null, 5: 2, 6: 3}
   spellSlots4:
     label: ４環
-    byLevel: {1: null, 7: 1, 8: 2}
+    byLevel: {1: null, 7: 1, 8: 2, 9: 3}
+  spellSlots5:
+    label: ５環
+    byLevel: {1: null, 9: 1, 10: 2}
 values:
   naturalRecoveryBudget: ceil({level} / 2)
   wildShapeUsesText: {formula: "{wildShapeUses}", format: "{} 次"}
@@ -243,6 +246,9 @@ features:
     feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - level: 10
+    text: |
+      **施法補充：**德魯伊達到 10 級時，你也會透過「施法」特性額外學會 1 個德魯伊戲法，詳見「德魯伊特性」表。
 srd:
   overview: |
     **德魯伊核心特質**
