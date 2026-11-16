@@ -150,10 +150,7 @@ const classOptions = [
 // 實際顯示幾格由 getSpellSlotCounts() 決定；規則資料開放更高環階時，這裡與版面都不用再改。
 const SPELL_RING_NAMES = Object.freeze(["一", "二", "三", "四", "五", "六", "七", "八", "九"]);
 const SPELL_RING_SLOT_CAPACITY = Object.freeze([4, 3, 3, 3, 3, 2, 2, 1, 1]);
-// 原本就在頁面上的勾選框（一到四環各 4／3／3／2 格）一向全部存檔，沒用到的存 false。
-// 這次框架多出來的格子（四環第 3 格、五到九環）只在角色實際有那一格時才存，
-// 目前的角色存檔、JSON 與分享內容維持原樣。
-const SPELL_SLOT_ALWAYS_SAVED = Object.freeze([4, 3, 3, 2]);
+// 存檔只記每環已用幾格（index.html 的 __spellSlotsUsed），所以這裡加減格子不影響存檔格式。
 const SPELL_RING_CONFIGS = Object.freeze(SPELL_RING_SLOT_CAPACITY.map((maxSlots, index) => {
   const ring = index + 1;
   return Object.freeze({ ring, name: `${SPELL_RING_NAMES[index]}環`, maxSlots,
@@ -182,18 +179,12 @@ const SPELL_PICKED_CONFIGS = Object.freeze([
     <div class="spell-overview-card-heading">
       <h4 class="spell-picked-heading"><button type="button" class="spell-overview-toggle" aria-expanded="true" aria-controls="${pickedId}"><span class="spell-overview-arrow" aria-hidden="true">▸</span>${name}</button></h4>
     <div id="${slotRowId}" class="spell-overview-slot-checks" role="group" aria-label="${name}法術位；勾選表示已消耗">
-      ${Array.from({ length: maxSlots }, (_, index) => `<input type="checkbox" id="spellslot${ring}-${index + 1}"${index < (SPELL_SLOT_ALWAYS_SAVED[ring - 1] || 0) ? "" : " disabled"}>`).join("")}
+      ${Array.from({ length: maxSlots }, (_, index) => `<input type="checkbox" id="spellslot${ring}-${index + 1}">`).join("")}
     </div>
     </div>
     <div id="${pickedId}" class="spell-picked-content">未準備此環法術</div>
     </section>`).join("");
 })();
-
-// 框架多出來、角色目前沒有的法術位勾選框不進存檔（collectStateObject 用）。
-function isDormantSpellSlotBox(el) {
-  const match = /^spellslot(\d+)-(\d+)$/.exec(el?.id || "");
-  return Boolean(match) && Number(match[2]) > (SPELL_SLOT_ALWAYS_SAVED[Number(match[1]) - 1] || 0) && el.disabled;
-}
 
 // options.manual 供準備法術視窗依草稿模式列出候選。
 function getAvailableSpellSourceClasses(level, options = {}) {
@@ -233,6 +224,17 @@ function renderFreeSpellUseChecks(spec, checkedState) {
     return `<input type="checkbox" id="${id}" class="free-spell-use-check" aria-label="${escapeHtml(spec.label)} ${index + 1}/${spec.count}" title="${escapeHtml(spec.label)}"${checked}>`;
   }).join("");
   return `<span class="free-spell-use-checks" aria-label="免費施法次數" hidden>${boxes}</span>`;
+}
+
+// 法術頁卡片上的來源標籤只顯示一個字，完整來源放在 title；動作頁與跑團仍用完整的標籤。
+// 對照表以外的標籤（例如存檔帶來的自訂文字）照原樣顯示。
+const SPELL_SOURCE_TAG_SHORT = Object.freeze({ "職業": "職", "子職": "子", "種族": "族", "專長": "專", "背景": "背", "隨意": "隨", "書契": "書", "自創": "創" });
+function renderPickedSpellSourceTag(sourceTag) {
+  if (!sourceTag) return "";
+  const short = Object.hasOwn(SPELL_SOURCE_TAG_SHORT, sourceTag) ? SPELL_SOURCE_TAG_SHORT[sourceTag] : "";
+  return short
+    ? `<span class="spell-picked-source-tag" title="來源：${escapeHtml(sourceTag)}">[${short}]</span>`
+    : `<span class="spell-picked-source-tag">[${escapeHtml(sourceTag)}]</span>`;
 }
 
 function getPickedSpellSourceTag(entry) {
@@ -472,7 +474,7 @@ function renderPickedSpellBoxes() {
         if (!checkedState.has(id)) checkedState.set(id, window.SpellManagement.getFreeUse(entry.sourceKey, index));
       }
       const sourceTag = getPickedSpellSourceTag(entry);
-      return `<span class="spell-picked-item"><button type="button" class="spell-picked-jump" data-spell-read="${escapeHtml(entry.spellId)}">${escapeHtml(spell?.nameZh || `未知法術（${entry.spellId}）`)}</button>${sourceTag ? `<span class="spell-picked-source-tag">[${escapeHtml(sourceTag)}]</span>` : ""}${spec ? renderFreeSpellUseChecks(spec, checkedState) : ""}</span>`;
+      return `<span class="spell-picked-item"><button type="button" class="spell-picked-jump" data-spell-read="${escapeHtml(entry.spellId)}">${escapeHtml(spell?.nameZh || `未知法術（${entry.spellId}）`)}</button>${renderPickedSpellSourceTag(sourceTag)}${spec ? renderFreeSpellUseChecks(spec, checkedState) : ""}</span>`;
     }).join("\n");
     target.querySelectorAll(".free-spell-use-check").forEach(input => input.addEventListener("change", () => {
       const entry = spells.find(item => getFreeSpellUseSpec(item) && Array.from({ length: getFreeSpellUseSpec(item).count }, (_, i) => getFreeSpellUseInputId(getFreeSpellUseSpec(item), i)).includes(input.id));
