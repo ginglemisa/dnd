@@ -11,6 +11,13 @@ range: { feet: 90 }
 components: [ V, S, M ]
 duration: { minutes: 1 }
 concentration: true
+upcast: true
+site:
+  material: 一根直鐵條
+  body: |-
+    - 選擇射程內一個你能看見的生物；目標須進行感知豁免，失敗時在持續時間內陷入麻痺狀態
+    - 目標在它每個回合結束時重複豁免；成功時法術對它結束
+    - 使用更高環階法術位：每比5環高一環，可額外以一個生物為目標
 srd:
   material: 一根筆直的鐵條
   body: |-
