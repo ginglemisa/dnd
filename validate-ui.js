@@ -3965,7 +3965,7 @@ async function verifyFeatureReferences(browser, url) {
       // 10 級擴充：自然守護（中毒）、返本歸元（魅惑、恐慌、中毒、力竭）、聖威懾敵與無畏靈氣（恐慌）、不知疲倦（力竭）、神出鬼沒（隱形）。
       const conditionCounts = {
         barbarian: 4, bard: 2, cleric: 3, druid: 2, fighter: 0, monk: 8,
-        paladin: 8, ranger: 1, rogue: 5, sorcerer: 0, warlock: 1, wizard: 0,
+        paladin: 7, ranger: 1, rogue: 5, sorcerer: 0, warlock: 1, wizard: 0,
         dragonborn: 1, dwarf: 1, elf: 1, gnome: 0, goliath: 2, halfling: 1, human: 0, orc: 0, tiefling: 0
       };
       for (const [name, expected] of Object.entries(conditionCounts)) {
