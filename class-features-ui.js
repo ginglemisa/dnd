@@ -1022,7 +1022,8 @@ function updateEldritchInvocationSectionVisibility() {
 }
 
 // 角色能力視窗頁籤下的快速選擇列：按鈕只代替主頁下拉選單，沿用同一個 change 流程。
-const CHARACTER_FEATURE_PICKER_FIELDS = Object.freeze({ creation: "class", class: "class", background: "background", race: "race" });
+// 「特性」頁籤（class）改用等級跳轉列（data-feature-level-nav），見下方 syncCharacterFeatureLevelNav。
+const CHARACTER_FEATURE_PICKER_FIELDS = Object.freeze({ creation: "class", background: "background", race: "race" });
 const CHARACTER_FEATURE_PICKER_CLASS_LABELS = Object.freeze({
   barbarian: "蠻", bard: "詩", cleric: "牧", druid: "德", fighter: "戰", monk: "武",
   paladin: "聖", ranger: "遊", rogue: "盜", sorcerer: "術", warlock: "契", wizard: "法"
@@ -1097,7 +1098,11 @@ function syncCharacterFeaturePicker(tab = document.querySelector('.character-fea
   const picker = document.getElementById("character-features-picker");
   if (!picker) return;
   const activeField = CHARACTER_FEATURE_PICKER_FIELDS[tab] || "";
-  picker.hidden = !activeField;
+  const levelNav = picker.querySelector("[data-feature-level-nav]");
+  const showLevelNav = tab === "class" && Boolean(levelNav);
+  picker.hidden = !activeField && !showLevelNav;
+  if (levelNav) levelNav.hidden = !showLevelNav;
+  if (showLevelNav) syncCharacterFeatureLevelNav();
   picker.querySelectorAll("[data-feature-picker]").forEach(group => {
     const select = document.getElementById(group.dataset.featurePicker);
     const buttons = Array.from(group.querySelectorAll("[data-picker-value]"));
@@ -1127,17 +1132,111 @@ function chooseCharacterFeaturePickerOption(button) {
   syncCharacterFeaturePicker();
 }
 
+// 「特性」頁籤的等級跳轉列：五格（1–4、5–10、11–16、17–20、子職）只捲動目前顯示的特性內容（網站版或 SRD 版），不改資料，分享模式也可用。
+// 區段看建置加在能力段落上的 data-feature-level／data-subclass（兩個版本都有），不從標題文字反推等級。
+// 子職能力（data-subclass，含 SRD 版的子職標題段落）一律歸「子職」格：網站版子職能力穿插在各等級之間，捲到那裡時亮「子職」。
+// 頁面上沒有段落的區段停用（等級未到、未選子職）；換版本、等級、子職後重新計算。
+const CHARACTER_FEATURE_LEVEL_NAV_RANGES = Object.freeze({ "1-4": [1, 4], "5-10": [5, 10], "11-16": [11, 16], "17-20": [17, 20] });
+// 點了某格後，捲動位置沒再變動前維持亮那一格（最後幾段捲不到頂端時，依位置會算成前一段）。
+let characterFeatureLevelNavPinned = null;
+let characterFeatureLevelNavFrame = 0;
+
+function getCharacterFeatureLevelNavSections() {
+  const srd = document.getElementById("classFeaturesSrd");
+  const container = srd && !srd.hidden ? srd : document.getElementById("classFeatures");
+  return Array.from(container?.querySelectorAll("section[data-feature-level]") || []);
+}
+
+function getCharacterFeatureLevelNavKey(section) {
+  if (section.hasAttribute("data-subclass")) return "subclass";
+  const level = Number(section.dataset.featureLevel);
+  return Object.keys(CHARACTER_FEATURE_LEVEL_NAV_RANGES)
+    .find(key => level >= CHARACTER_FEATURE_LEVEL_NAV_RANGES[key][0] && level <= CHARACTER_FEATURE_LEVEL_NAV_RANGES[key][1]) || "";
+}
+
+function getCharacterFeatureLevelNavBody() {
+  const panel = document.getElementById("class-abilities-panel");
+  return panel && !panel.hidden ? panel.closest(".app-dialog__body") : null;
+}
+
+function getCharacterFeatureLevelNavTop(body) {
+  return body.getBoundingClientRect().top + parseFloat(getComputedStyle(body).paddingTop);
+}
+
+// 目前所在區段：捲動區頂端以上的最後一個段落；還沒捲到第一個段落時算第一段。
+function getCurrentCharacterFeatureLevelNavKey(sections) {
+  const body = getCharacterFeatureLevelNavBody();
+  const rendered = sections.filter(section => section.getClientRects().length > 0);
+  if (!body || !rendered.length) return "";
+  const pinned = characterFeatureLevelNavPinned;
+  if (pinned && pinned.scrollTop === body.scrollTop && rendered.some(section => getCharacterFeatureLevelNavKey(section) === pinned.key)) return pinned.key;
+  characterFeatureLevelNavPinned = null;
+  const top = getCharacterFeatureLevelNavTop(body) + 2;
+  let current = rendered[0];
+  for (const section of rendered) {
+    if (section.getBoundingClientRect().top > top) break;
+    current = section;
+  }
+  return getCharacterFeatureLevelNavKey(current);
+}
+
+function syncCharacterFeatureLevelNav() {
+  const nav = document.querySelector("#character-features-picker [data-feature-level-nav]");
+  if (!nav || nav.hidden) return;
+  const sections = getCharacterFeatureLevelNavSections();
+  const available = new Set(sections.map(getCharacterFeatureLevelNavKey));
+  const current = getCurrentCharacterFeatureLevelNavKey(sections);
+  const buttons = Array.from(nav.querySelectorAll("[data-level-nav]"));
+  buttons.forEach(button => {
+    button.disabled = !available.has(button.dataset.levelNav);
+    if (button.dataset.levelNav === current) button.setAttribute("aria-current", "location");
+    else button.removeAttribute("aria-current");
+  });
+  const enabled = buttons.filter(button => !button.disabled);
+  const focusTarget = enabled.includes(document.activeElement) ? document.activeElement
+    : enabled.find(button => button.dataset.levelNav === current) || enabled[0];
+  buttons.forEach(button => { button.tabIndex = button === focusTarget ? 0 : -1; });
+}
+
+function queueCharacterFeatureLevelNavSync() {
+  if (characterFeatureLevelNavFrame) return;
+  characterFeatureLevelNavFrame = requestAnimationFrame(() => {
+    characterFeatureLevelNavFrame = 0;
+    syncCharacterFeatureLevelNav();
+  });
+}
+
+// 捲到該區段第一個段落（子職：網站版為目前子職的第一個能力，SRD 版為接在職業能力之後的子職標題）。焦點留在跳轉列。
+function jumpToCharacterFeatureLevel(key) {
+  const body = getCharacterFeatureLevelNavBody();
+  const target = getCharacterFeatureLevelNavSections().find(section => getCharacterFeatureLevelNavKey(section) === key);
+  if (!body || !target) return;
+  body.scrollTop = Math.max(0, body.scrollTop + target.getBoundingClientRect().top - getCharacterFeatureLevelNavTop(body));
+  characterFeatureLevelNavPinned = { key, scrollTop: body.scrollTop };
+  syncCharacterFeatureLevelNav();
+}
+
 function bindCharacterFeaturePicker() {
   const picker = document.getElementById("character-features-picker");
   if (!picker) return;
   renderCharacterFeaturePicker();
   picker.addEventListener("click", event => {
+    const levelButton = event.target.closest("[data-level-nav]");
+    if (levelButton) {
+      if (!levelButton.disabled) jumpToCharacterFeatureLevel(levelButton.dataset.levelNav);
+      return;
+    }
     const button = event.target.closest("[data-picker-value]");
     if (button) chooseCharacterFeaturePickerOption(button);
   });
+  // 捲動事件不冒泡：在 document 以捕捉階段接角色能力視窗內容區的捲動。
+  document.addEventListener("scroll", event => {
+    const body = event.target;
+    if (body instanceof Element && body.matches(".app-dialog__body") && body.contains(document.getElementById("class-abilities-panel"))) queueCharacterFeatureLevelNavSync();
+  }, { capture: true, passive: true });
   picker.addEventListener("keydown", event => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-    const buttons = Array.from(event.target.closest("[data-feature-picker]")?.querySelectorAll("[data-picker-value]:not(:disabled)") || []);
+    const buttons = Array.from(event.target.closest("[data-feature-picker], [data-feature-level-nav]")?.querySelectorAll(".character-features-picker__option:not(:disabled)") || []);
     const current = buttons.indexOf(document.activeElement);
     if (current < 0) return;
     event.preventDefault();
@@ -1754,12 +1853,14 @@ function syncClassContentVersion() {
     else delete panelElement.dataset.contentVersion;
     srd.hidden = classContentVersion !== "srd";
   });
+  syncCharacterFeatureLevelNav();
 }
 
 function setClassContentVersion(version) {
   const className = document.getElementById("class")?.value || "";
   classContentVersion = version === "srd" && hasClassSrdText(className) ? "srd" : "site";
   classContentVersionClass = className;
+  characterFeatureLevelNavPinned = null;
   syncClassContentVersion();
   void renderClassSrdView();
 }
@@ -1795,6 +1896,7 @@ async function renderClassSrdView() {
       className: "spell-version__attribution", textContent: "譯自 SRD 5.2.1（CC BY 4.0）"
     }));
   });
+  syncCharacterFeatureLevelNav();
 }
 
 // 職業能力頁籤：只列到目前等級與目前子職（data-subclass 為子職 ID，特性表的「子職特性」另有 data-subclass-except）；
@@ -1824,6 +1926,7 @@ function updateClassFeature() {
   const metamagicOutput = document.getElementById("metamagicOptions");
   const metamagicSummary = document.getElementById("metamagic-summary");
   captureBardMagicalDiscoverySelectionFromControls();
+  characterFeatureLevelNavPinned = null;
   const preservedControlStates = new Map([output, creationOutput].flatMap(container => Array.from(container.querySelectorAll("input[id], select[id]"))).map(control => [
     control.id,
     control.type === "checkbox" ? control.checked : control.value
