@@ -3945,13 +3945,14 @@ async function verifyMergedActionUi(browser, url) {
   }
 }
 
-// 跑團法術頁：法術位小格的欄數（1–9 環、最後一列撐滿、同列等高）。
+// 跑團法術頁：法術位小格的欄數（1–9 環、最後一列撐滿、同列等高）與「已選法術」各組的收合。
 async function verifyTabletopSpellPanelLayout(browser, url) {
   const context = await browser.newContext({ viewport: { width: 375, height: 800 } });
   const page = await context.newPage();
   await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   const errors = [];
   page.on("pageerror", error => errors.push(String(error)));
+  const KEY = "dnd.tabletopSpellGroupDisclosure.v1";
   const state = { class: "wizard", level: "7", int: "18", "spellcasting-ability": "int",
     __spellManagement: { version: 2, manual: false, entries: [["fire-bolt", 0], ["light", 0], ["magic-missile", 1], ["shield", 1], ["misty-step", 2]]
       .map(([spellId, level]) => ({ spellId, spellClass: "wizard", level })) } };
@@ -4016,6 +4017,73 @@ async function verifyTabletopSpellPanelLayout(browser, url) {
     assert.equal(await page.locator("#spellslot9-1").isChecked(), true, "a ninth-level mirror writes the canonical checkbox");
     await page.evaluate(() => document.querySelectorAll("[data-test-ring]").forEach(row => row.remove()));
     await showRings(4);
+    await page.setViewportSize({ width: 375, height: 800 });
+
+    // 已選法術：各組可以收合，狀態記在裝置上，重新渲染後維持。
+    const group = key => page.locator(`#tabletop-selected-spells .tabletop-spell-level:has([data-spell-group-toggle="${key}"])`);
+    const toggle = key => group(key).locator("[data-spell-group-toggle]");
+    const waitForRender = () => page.evaluate(() => new Promise(resolve => {
+      TabletopSpells.refresh();
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    }));
+    assert.deepEqual(await page.locator("#tabletop-selected-spells h4").allTextContents(), ["戲法", "一環", "二環"], "group titles stay plain text");
+    for (const key of ["cantrips", "1", "2"]) {
+      assert.equal(await toggle(key).getAttribute("aria-expanded"), "true", `${key} starts expanded`);
+      assert.equal(await toggle(key).getAttribute("aria-controls"), await group(key).locator(".tabletop-spell-list").getAttribute("id"));
+    }
+    const dataBefore = await page.evaluate(() => JSON.stringify([collectShareState(), collectStateObject()]));
+    await toggle("1").click();
+    assert.equal(await toggle("1").getAttribute("aria-expanded"), "false");
+    assert.equal(await toggle("1").isVisible(), true, "the group title stays visible when collapsed");
+    assert.equal(await group("1").locator(".tabletop-spell-button").first().isVisible(), false, "collapsed spells are hidden");
+    assert.equal(await group("cantrips").locator(".tabletop-spell-button").first().isVisible(), true, "other groups stay open");
+    assert.deepEqual(await page.evaluate(key => JSON.parse(window.dndStorage.getItem(key)), KEY), { 1: false });
+    assert.equal(await page.evaluate(() => JSON.stringify([collectShareState(), collectStateObject()])), dataBefore, "collapse stays outside character and share data");
+    assert.equal(await page.evaluate(key => APP_STORAGE_KEYS.includes(key), KEY), true, "clear records resets the collapse preference");
+    // 鍵盤：收合的組跳過法術按鈕，焦點直接到下一組的標題。
+    await toggle("1").focus();
+    await page.keyboard.press("Tab");
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.spellGroupToggle), "2", "collapsed spells are skipped by keyboard focus");
+    // 重新渲染（勾掉法術位、切換面板、短休）後仍收合，鍵盤焦點留在標題。
+    await grid.locator("input").first().evaluate(input => input.click());
+    await toggle("1").focus();
+    await waitForRender();
+    assert.equal(await toggle("1").getAttribute("aria-expanded"), "false", "collapse survives a re-render");
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.spellGroupToggle), "1", "focus stays on the group title after a re-render");
+    await page.evaluate(() => { TabletopMode.setPanel("overview"); TabletopMode.setPanel("spells"); });
+    await waitForRender();
+    assert.equal(await page.evaluate(() => TabletopMode.commitRest("shortRest", {}, TabletopMode.getRestContext().token).ok), true);
+    await waitForRender();
+    assert.equal(await toggle("1").getAttribute("aria-expanded"), "false", "collapse survives a panel switch and a rest");
+    assert.equal(await group("1").locator(".tabletop-spell-list").isHidden(), true);
+    await toggle("1").press("Enter");
+    assert.equal(await toggle("1").getAttribute("aria-expanded"), "true", "Enter expands the group again");
+    assert.equal(await group("1").locator(".tabletop-spell-button").first().isVisible(), true);
+    assert.deepEqual(await page.evaluate(key => JSON.parse(window.dndStorage.getItem(key)), KEY), {});
+    // 重新載入後沿用。
+    await toggle("cantrips").click();
+    const hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    await page.reload();
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
+    await toggle("cantrips").waitFor();
+    assert.equal(await toggle("cantrips").getAttribute("aria-expanded"), "false", "collapse is remembered on this device");
+    assert.equal(await toggle("1").getAttribute("aria-expanded"), "true");
+
+    // 分享模式（唯讀、dndStorage 只在頁面記憶體）：不沿用看的人本機的收合，仍可收合，不寫進本機。
+    const share = await context.newPage();
+    share.on("pageerror", error => errors.push(String(error)));
+    await share.goto(`${url}${hash}`);
+    await share.waitForFunction(() => window.SHARE_MODE === true && Boolean(window.TabletopSpells));
+    await share.locator("#legal-ack-btn").click();
+    await share.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
+    const shareToggle = key => share.locator(`#tabletop-selected-spells [data-spell-group-toggle="${key}"]`);
+    await shareToggle("cantrips").waitFor();
+    assert.equal(await shareToggle("cantrips").getAttribute("aria-expanded"), "true", "share pages ignore the viewer's saved collapse");
+    await shareToggle("1").click();
+    assert.equal(await shareToggle("1").getAttribute("aria-expanded"), "false", "share pages can collapse a group");
+    assert.equal(await share.locator('#tabletop-selected-spells button[data-spell-id="magic-missile"]').isVisible(), false);
+    assert.deepEqual(await share.evaluate(key => JSON.parse(localStorage.getItem(key)), KEY), { cantrips: false }, "share pages leave the viewer's preference alone");
+    await share.close();
     assert.deepEqual(errors, []);
   } finally {
     await context.close();

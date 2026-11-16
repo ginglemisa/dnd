@@ -3,8 +3,28 @@
 
   const LEVEL_LABELS = Object.freeze(["戲法", "一環", "二環", "三環", "四環", "五環", "六環", "七環", "八環", "九環"]);
   const DICE_TOKEN_PATTERN = /\d+\s*d\s*(?:100|20|12|10|8|6|4)(?:\s*[+-]\s*(?:\d+\s*d\s*(?:100|20|12|10|8|6|4)|\d+))*/gi;
+  // 已選法術各組（戲法／儀式／各環／物品）的收合：裝置偏好，不進角色 JSON、autosave 與分享；清除紀錄時重置（APP_STORAGE_KEYS）。
+  const SPELL_GROUP_DISCLOSURE_STATE_KEY = "dnd.tabletopSpellGroupDisclosure.v1";
   const elements = {};
   let initialized = false;
+  let spellGroupDisclosure = null;
+
+  // { 組 key: false } 表示收合；沒有記錄的組預設展開。
+  function getSpellGroupDisclosure() {
+    if (!spellGroupDisclosure) {
+      let saved = null;
+      try { saved = JSON.parse(globalScope.dndStorage?.getItem(SPELL_GROUP_DISCLOSURE_STATE_KEY) || "{}"); } catch (_error) {}
+      spellGroupDisclosure = saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+    }
+    return spellGroupDisclosure;
+  }
+
+  function setSpellGroupExpanded(key, expanded) {
+    const state = getSpellGroupDisclosure();
+    if (expanded) delete state[key];
+    else state[key] = false;
+    try { globalScope.dndStorage?.setItem(SPELL_GROUP_DISCLOSURE_STATE_KEY, JSON.stringify(state)); } catch (_error) {}
+  }
   let scheduledRender = 0;
 
   function createElement(tagName, className = "", text = "") {
@@ -226,20 +246,45 @@
     const focused = elements.selectedSpells.contains(document.activeElement) ? document.activeElement : null;
     const focusedUseId = focused?.dataset.spellUseId;
     const focusedSourceKey = focused?.dataset.spellSourceKey;
+    const focusedGroupKey = focused?.dataset.spellGroupToggle;
+    const disclosure = getSpellGroupDisclosure();
     const spellGroups = LEVEL_LABELS.map((label, level) => ({
+      key: level === 0 ? "cantrips" : String(level),
       label,
       spells: entries.filter(entry => entry.spellSource !== "wizard-spellbook" && entry.spell.level === level)
     }));
     spellGroups.splice(1, 0, {
+      key: "ritual",
       label: "儀式",
       spells: entries.filter(entry => entry.spellSource === "wizard-spellbook")
     });
-    spellGroups.push({ label: "物品", spells: itemEntries });
-    const groups = spellGroups.flatMap(({ label, spells }) => {
+    spellGroups.push({ key: "items", label: "物品", spells: itemEntries });
+    const groups = spellGroups.flatMap(({ key, label, spells }) => {
       if (!spells.length) return [];
       const section = createElement("section", "tabletop-spell-level");
-      section.appendChild(createElement("h4", "", label));
       const list = createElement("div", "tabletop-spell-list");
+      list.id = `tabletop-spell-group-${key}`;
+      // 標題是收合按鈕（做法同角色卡法術頁）；箭頭由樣式繪製，標題文字維持只有組名。
+      const heading = createElement("h4");
+      const toggle = createElement("button", "spell-overview-toggle tabletop-spell-level__toggle");
+      toggle.type = "button";
+      toggle.dataset.spellGroupToggle = key;
+      toggle.setAttribute("aria-controls", list.id);
+      const arrow = createElement("span", "spell-overview-arrow");
+      arrow.setAttribute("aria-hidden", "true");
+      toggle.append(arrow, label);
+      const applyExpanded = expanded => {
+        toggle.setAttribute("aria-expanded", String(expanded));
+        list.hidden = !expanded;
+      };
+      applyExpanded(disclosure[key] !== false);
+      toggle.addEventListener("click", () => {
+        const expanded = toggle.getAttribute("aria-expanded") !== "true";
+        applyExpanded(expanded);
+        setSpellGroupExpanded(key, expanded);
+      });
+      heading.appendChild(toggle);
+      section.appendChild(heading);
       spells.forEach(entry => {
         const card = createElement("div", "tabletop-spell-card");
         const button = createElement("button", "tabletop-spell-button");
@@ -282,6 +327,11 @@
       return [section];
     });
     elements.selectedSpells.replaceChildren(...groups);
+    if (focusedGroupKey) {
+      Array.from(elements.selectedSpells.querySelectorAll("button[data-spell-group-toggle]"))
+        .find(button => button.dataset.spellGroupToggle === focusedGroupKey)
+        ?.focus({ preventScroll: true });
+    }
     if (focusedUseId) {
       Array.from(elements.selectedSpells.querySelectorAll("input[data-spell-use-id]"))
         .find(input => input.dataset.spellUseId === focusedUseId && input.dataset.spellSourceKey === focusedSourceKey)

@@ -2267,6 +2267,21 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .app-dialog__button--dange
   display: grid;
 }
 
+/* 已選法術各組的標題是收合按鈕（共用 .spell-overview-toggle 的外觀）；整列都可以點，箭頭由樣式繪製。 */
+button.tabletop-spell-level__toggle {
+  display: flex;
+  width: 100%;
+  min-height: 2rem;
+}
+
+.tabletop-spell-level__toggle > .spell-overview-arrow::before {
+  content: "▸";
+}
+
+.tabletop-spell-level h4:has(+ .tabletop-spell-list[hidden]) {
+  margin-bottom: 0;
+}
+
 .tabletop-spell-card {
   position: relative;
   display: grid;
