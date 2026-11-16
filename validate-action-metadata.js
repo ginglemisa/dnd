@@ -3945,6 +3945,173 @@ async function verifyMergedActionUi(browser, url) {
   }
 }
 
+// 跑團法術頁：法術位小格的排列（1–9 環、勾選框一列、依內容分寬、最後一列撐滿、同列等高）與「已選法術」各組的收合。
+async function verifyTabletopSpellPanelLayout(browser, url) {
+  const context = await browser.newContext({ viewport: { width: 375, height: 800 } });
+  const page = await context.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  const KEY = "dnd.tabletopSpellGroupDisclosure.v1";
+  const state = { class: "wizard", level: "7", int: "18", "spellcasting-ability": "int",
+    __spellManagement: { version: 2, manual: false, entries: [["fire-bolt", 0], ["light", 0], ["magic-missile", 1], ["shield", 1], ["misty-step", 2]]
+      .map(([spellId, level]) => ({ spellId, spellClass: "wizard", level })) } };
+  try {
+    await page.goto(url);
+    await page.locator("#legal-ack-btn").click();
+    await page.evaluate(value => { applyStateObject(value); TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); }, state);
+    const grid = page.locator("#tabletop-spell-slots");
+    // 每列的格數；最後一格沒貼齊右邊、同列不等高、勾選框小於 20px、同一環的勾選框不在同一列，
+    // 或環階、勾選框超出小格（被裁切）時丟錯。
+    const readRows = () => grid.evaluate(node => {
+      const edge = node.getBoundingClientRect().right;
+      const rows = new Map();
+      [...node.children].forEach(cell => {
+        const box = cell.getBoundingClientRect(), top = Math.round(box.top);
+        rows.set(top, [...(rows.get(top) || []), box]);
+        const inputs = [...cell.querySelectorAll("input")].map(input => input.getBoundingClientRect());
+        if (new Set(inputs.map(input => Math.round(input.top))).size > 1) throw new Error("checkboxes of one slot level wrap onto several lines");
+        if ([...cell.children].some(child => child.getBoundingClientRect().left < box.left + 1 || child.getBoundingClientRect().right > box.right - 1)) throw new Error("slot cell content is clipped");
+      });
+      [...node.querySelectorAll("input")].forEach(input => {
+        const box = input.getBoundingClientRect();
+        if (box.width < 20 || box.height < 20) throw new Error(`slot checkbox shrank to ${box.width}x${box.height}`);
+      });
+      return [...rows.values()].map(row => {
+        if (Math.abs(row[row.length - 1].right - edge) > 1.5) throw new Error("the last cell of a row leaves a gap");
+        if (new Set(row.map(box => Math.round(box.height))).size > 1) throw new Error("cells in one row differ in height");
+        return row.length;
+      });
+    });
+    // 規則資料只到四環：暫時在角色卡法術頁補上五到九環的列（canonical 契約 #spellslot{環}-row／#spellslot{環}-{n}），
+    // 只顯示前 count 環，確認跑團不用改程式就會列出來；沒有的列與隱藏的列自動略過。
+    // 勾選框用各環的最大數量（4／3／3／3／3／2／2／1／1）；法師 7 級的四環只有 1 個，暫時補到 3 個。
+    const showRings = async count => {
+      await page.evaluate(total => {
+        const wrap = document.getElementById("spell-picked-grid-wrap");
+        const second = document.getElementById("spellslot4-2");
+        if (second.style.display === "none") { second.dataset.testShown = "true"; second.style.display = ""; }
+        if (!document.getElementById("spellslot4-test")) {
+          const extra = Object.assign(document.createElement("input"), { type: "checkbox", id: "spellslot4-test" });
+          extra.dataset.testRing = "true";
+          second.after(extra);
+        }
+        for (let ring = 1; ring <= 9; ring += 1) {
+          let row = document.getElementById(`spellslot${ring}-row`);
+          if (!row) {
+            row = Object.assign(document.createElement("div"), { id: `spellslot${ring}-row` });
+            row.dataset.testRing = "true";
+            for (let index = 1; index <= [3, 2, 2, 1, 1][ring - 5]; index += 1) {
+              row.appendChild(Object.assign(document.createElement("input"), { type: "checkbox", id: `spellslot${ring}-${index}` }));
+            }
+            wrap.appendChild(row);
+          }
+          row.style.display = ring > total ? "none" : "";
+        }
+      }, count);
+      await page.waitForFunction(total => document.getElementById("tabletop-spell-slots").dataset.slotCount === String(total), count);
+    };
+    await page.waitForFunction(() => document.getElementById("tabletop-spell-slots").dataset.slotCount === "4");
+    assert.deepEqual(await grid.locator(".spell-slot-label").allInnerTexts(), ["一環", "二環", "三環", "四環"]);
+    const narrow = { 1: [1], 2: [2], 3: [3], 4: [2, 2], 5: [3, 2], 6: [3, 3], 7: [3, 4], 8: [3, 3, 2], 9: [3, 3, 3] };
+    const narrower = { ...narrow, 7: [3, 2, 2] };
+    const expected = { 320: narrower, 360: narrower, 375: narrow, 390: narrow,
+      600: { 1: [1], 2: [2], 3: [3], 4: [4], 5: [3, 2], 6: [3, 3], 7: [4, 3], 8: [4, 4], 9: [4, 5] },
+      1280: { 1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [3, 3], 7: [4, 3], 8: [4, 4], 9: [5, 4] } };
+    for (const [width, byCount] of Object.entries(expected)) {
+      await page.setViewportSize({ width: Number(width), height: 800 });
+      for (const [count, rows] of Object.entries(byCount)) {
+        await showRings(Number(count));
+        assert.deepEqual(await readRows(), rows, `${count} slot levels at ${width}px`);
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${count} slot levels at ${width}px do not overflow`);
+      }
+    }
+    // 同一列依內容分寬：4 個勾選框的一環比 3 個的二環寬。
+    await showRings(9);
+    assert.equal(await grid.evaluate(node => node.children[0].getBoundingClientRect().width > node.children[1].getBoundingClientRect().width + 10), true, "cells are sized by their checkbox count");
+    assert.deepEqual(await grid.locator(".spell-slot-label").allInnerTexts(), ["一環", "二環", "三環", "四環", "五環", "六環", "七環", "八環", "九環"]);
+    assert.deepEqual(await page.evaluate(() => TabletopMode.getCanonicalSpellSlotGroups().map(group => group.level)), [1, 2, 3, 4, 5, 6, 7, 8, 9], "cast options read slot levels one to nine");
+    await grid.locator(".tabletop-spell-slot-column").nth(8).locator("input").check();
+    assert.equal(await page.locator("#spellslot9-1").isChecked(), true, "a ninth-level mirror writes the canonical checkbox");
+    await page.evaluate(() => {
+      document.querySelectorAll("[data-test-ring]").forEach(node => node.remove());
+      document.querySelectorAll("[data-test-shown]").forEach(box => { box.style.display = "none"; delete box.dataset.testShown; });
+    });
+    await page.waitForFunction(() => document.getElementById("tabletop-spell-slots").dataset.slotCount === "4"
+      && document.querySelectorAll("#tabletop-spell-slots .tabletop-spell-slot-column:nth-child(4) input").length === 1);
+    await page.setViewportSize({ width: 375, height: 800 });
+
+    // 已選法術：各組可以收合，狀態記在裝置上，重新渲染後維持。
+    const group = key => page.locator(`#tabletop-selected-spells .tabletop-spell-level:has([data-spell-group-toggle="${key}"])`);
+    const toggle = key => group(key).locator("[data-spell-group-toggle]");
+    const waitForRender = () => page.evaluate(() => new Promise(resolve => {
+      TabletopSpells.refresh();
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    }));
+    assert.deepEqual(await page.locator("#tabletop-selected-spells h4").allTextContents(), ["戲法", "一環", "二環"], "group titles stay plain text");
+    for (const key of ["cantrips", "1", "2"]) {
+      assert.equal(await toggle(key).getAttribute("aria-expanded"), "true", `${key} starts expanded`);
+      assert.equal(await toggle(key).getAttribute("aria-controls"), await group(key).locator(".tabletop-spell-list").getAttribute("id"));
+    }
+    const dataBefore = await page.evaluate(() => JSON.stringify([collectShareState(), collectStateObject()]));
+    await toggle("1").click();
+    assert.equal(await toggle("1").getAttribute("aria-expanded"), "false");
+    assert.equal(await toggle("1").isVisible(), true, "the group title stays visible when collapsed");
+    assert.equal(await group("1").locator(".tabletop-spell-button").first().isVisible(), false, "collapsed spells are hidden");
+    assert.equal(await group("cantrips").locator(".tabletop-spell-button").first().isVisible(), true, "other groups stay open");
+    assert.deepEqual(await page.evaluate(key => JSON.parse(window.dndStorage.getItem(key)), KEY), { 1: false });
+    assert.equal(await page.evaluate(() => JSON.stringify([collectShareState(), collectStateObject()])), dataBefore, "collapse stays outside character and share data");
+    assert.equal(await page.evaluate(key => APP_STORAGE_KEYS.includes(key), KEY), true, "clear records resets the collapse preference");
+    // 鍵盤：收合的組跳過法術按鈕，焦點直接到下一組的標題。
+    await toggle("1").focus();
+    await page.keyboard.press("Tab");
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.spellGroupToggle), "2", "collapsed spells are skipped by keyboard focus");
+    // 重新渲染（勾掉法術位、切換面板、短休）後仍收合，鍵盤焦點留在標題。
+    await grid.locator("input").first().evaluate(input => input.click());
+    await toggle("1").focus();
+    await waitForRender();
+    assert.equal(await toggle("1").getAttribute("aria-expanded"), "false", "collapse survives a re-render");
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.spellGroupToggle), "1", "focus stays on the group title after a re-render");
+    await page.evaluate(() => { TabletopMode.setPanel("overview"); TabletopMode.setPanel("spells"); });
+    await waitForRender();
+    assert.equal(await page.evaluate(() => TabletopMode.commitRest("shortRest", {}, TabletopMode.getRestContext().token).ok), true);
+    await waitForRender();
+    assert.equal(await toggle("1").getAttribute("aria-expanded"), "false", "collapse survives a panel switch and a rest");
+    assert.equal(await group("1").locator(".tabletop-spell-list").isHidden(), true);
+    await toggle("1").press("Enter");
+    assert.equal(await toggle("1").getAttribute("aria-expanded"), "true", "Enter expands the group again");
+    assert.equal(await group("1").locator(".tabletop-spell-button").first().isVisible(), true);
+    assert.deepEqual(await page.evaluate(key => JSON.parse(window.dndStorage.getItem(key)), KEY), {});
+    // 重新載入後沿用。
+    await toggle("cantrips").click();
+    const hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    await page.reload();
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
+    await toggle("cantrips").waitFor();
+    assert.equal(await toggle("cantrips").getAttribute("aria-expanded"), "false", "collapse is remembered on this device");
+    assert.equal(await toggle("1").getAttribute("aria-expanded"), "true");
+
+    // 分享模式（唯讀、dndStorage 只在頁面記憶體）：不沿用看的人本機的收合，仍可收合，不寫進本機。
+    const share = await context.newPage();
+    share.on("pageerror", error => errors.push(String(error)));
+    await share.goto(`${url}${hash}`);
+    await share.waitForFunction(() => window.SHARE_MODE === true && Boolean(window.TabletopSpells));
+    await share.locator("#legal-ack-btn").click();
+    await share.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
+    const shareToggle = key => share.locator(`#tabletop-selected-spells [data-spell-group-toggle="${key}"]`);
+    await shareToggle("cantrips").waitFor();
+    assert.equal(await shareToggle("cantrips").getAttribute("aria-expanded"), "true", "share pages ignore the viewer's saved collapse");
+    await shareToggle("1").click();
+    assert.equal(await shareToggle("1").getAttribute("aria-expanded"), "false", "share pages can collapse a group");
+    assert.equal(await share.locator('#tabletop-selected-spells button[data-spell-id="magic-missile"]').isVisible(), false);
+    assert.deepEqual(await share.evaluate(key => JSON.parse(localStorage.getItem(key)), KEY), { cantrips: false }, "share pages leave the viewer's preference alone");
+    await share.close();
+    assert.deepEqual(errors, []);
+  } finally {
+    await context.close();
+  }
+}
+
 async function verifyCustomSpellUi(browser, url) {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
@@ -4183,6 +4350,7 @@ async function main() {
     await page.waitForFunction(() => !!window.ActionPanel && !!window.TabletopMode);
     await verifyMergedActionUi(browser, url);
     await verifyCustomSpellUi(browser, url);
+    await verifyTabletopSpellPanelLayout(browser, url);
     const assertions = await verifyCoverage(page);
     console.log(`Action metadata: ${assertions} coverage assertions passed.`);
     await verifyUiAndPersistence(page, url);

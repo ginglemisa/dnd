@@ -110,12 +110,12 @@
   <link rel="stylesheet" href="css/base.css?v=20261116-features-swipe">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261116-rank-lock">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261116-calculation-tips">
-  <link rel="stylesheet" href="css/sheet-spells.css?v=20261116-ring-layout">
-  <link rel="stylesheet" href="css/utility.css?v=20261116-rank-lock">
+  <link rel="stylesheet" href="css/sheet-spells.css?v=20261116-ring-slot-layout">
+  <link rel="stylesheet" href="css/utility.css?v=20261116-slot-layout">
   <link rel="stylesheet" href="css/dice.css?v=20261115-basic-align">
-  <link rel="stylesheet" href="css/dialogs.css?v=20261116-calculation-tips">
+  <link rel="stylesheet" href="css/dialogs.css?v=20261116-slot-layout">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/tabletop.css?v=20261115-dialog-motion-85">
+  <link rel="stylesheet" href="css/tabletop.css?v=20261116-slot-rows">
   <link rel="stylesheet" href="css/tabletop-hud.css?v=20261113-info-icon">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261116-calculation-tips">
@@ -142,12 +142,12 @@
   <script src="app-dialog.js?v=20261115-dialog-motion" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261115-name-dialog" defer></script>
+  <script src="tabletop-mode.js?v=20261116-slot-layout" defer></script>
   <script src="tabletop-druid.js?v=20261112-merge-main-menu" defer></script>
-  <script src="tabletop-resources.js?v=20261113-info-icon" defer></script>
+  <script src="tabletop-resources.js?v=20261116-slot-layout" defer></script>
   <script src="tabletop-actions.js?v=20261113-champion-names" defer></script>
   <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
-  <script src="tabletop-spells.js?v=20261111-magic-effects-6" defer></script>
+  <script src="tabletop-spells.js?v=20261116-slot-layout" defer></script>
   <script src="legal-modal.js?v=20261111-serif-big5" defer></script>
   <script src="onboarding-tour.js?v=20261115-basic-align" defer></script>
   <script src="quick-build.js?v=20261114-ability-float" defer></script>
@@ -5825,6 +5825,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   FEATURE_CHOICE_DISCLOSURE_STATE_KEY,
   FEAT_DISCLOSURE_STATE_KEY,
   SPELL_OVERVIEW_DISCLOSURE_STATE_KEY,
+  "dnd.tabletopSpellGroupDisclosure.v1",
   CLASS_FEATURE_PROMPT_DISABLED_KEY,
   "dnd.quickBuildDraft.v1",
   POINT_BUY_LAST_APPLIED_KEY,
