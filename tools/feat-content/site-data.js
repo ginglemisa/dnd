@@ -6,7 +6,7 @@
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
-const { ROOT, contentSourceLabel, contentSourceName, contentSourceNotice, featTypeLabel } = require("../content/site-sources");
+const { ROOT, contentSourceLabel, contentSourceName, contentSourceNotice, featTypeLabel, featTypeMinLevel } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { renderInline } = require("../content/markdown");
 const { writeIfChanged, contentVersion, stampScriptVersion } = require("../content/output");
@@ -36,15 +36,15 @@ function featRules(feat) {
   };
 }
 
-// 副標的先決條件：通用專長為「4 級以上」加 prerequisite；戰鬥風格專長須有職業特性。
+// 副標的先決條件：通用專長與傳奇恩惠為類別的等級門檻（「4 級以上」「19 級以上」）加 prerequisite；戰鬥風格專長須有職業特性。
 function prerequisiteText(feat) {
   if (feat.type === "style") return "需具備職業特性「戰鬥風格」";
-  if (feat.type !== "general") return "";
+  const minLevel = featTypeMinLevel(feat.type);
   const prerequisite = feat.prerequisite || {};
   const condition = prerequisite.abilities ? `${prerequisite.abilities.map(id => ABILITY_LABELS[id]).join("或")} 13+`
     : prerequisite.heavyArmor ? "具重甲訓練"
       : prerequisite.spellcasting ? "具施法或契約魔法能力" : "";
-  return ["4 級以上", condition].filter(Boolean).join("；");
+  return [minLevel > 1 ? `${minLevel} 級以上` : "", condition].filter(Boolean).join("；");
 }
 
 const escapeHtml = text => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

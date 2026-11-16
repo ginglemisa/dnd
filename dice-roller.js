@@ -8,6 +8,8 @@
     ? "images/dice-warm-animated.webp" : "images/dice.webp";
   const ROLL_ANIMATION_MS = 1800;
   const ABILITY_ROLL_ANIMATION_MS = 1200;
+  const ABILITY_ROLL_STORAGE_KEY = "dnd.abilityRollLast.v1";
+  const ABILITY_BONUS_PATTERNS = Object.freeze(["1,1,1", "2,1,0"]);
   const REDUCED_MOTION_ROLL_MS = 100;
   const LONG_PRESS_MS = 1300;
   const HISTORY_LIMIT = 66;
@@ -370,6 +372,27 @@
       updateHistoryButton();
     };
 
+    // 上次屬性擲骰的六個數值與表單選擇：裝置上的暫存，重新按骰子才換掉（見 BEHAVIOR.md）。
+    const loadAbilityRoll = abilityKeys => {
+      let stored = null;
+      try { stored = JSON.parse(window.dndStorage?.getItem(ABILITY_ROLL_STORAGE_KEY) || "null"); } catch { return null; }
+      const totals = stored?.totals;
+      if (!Array.isArray(totals) || totals.length !== 6 || !totals.every(total => Number.isInteger(total) && total >= 3 && total <= 18)) return null;
+      const pickDistinct = (values, length, allowed) => {
+        if (!Array.isArray(values) || values.length !== length || !values.every(value => value === "" || allowed.includes(value))) return Array(length).fill("");
+        const chosen = values.filter(Boolean);
+        return new Set(chosen).size === chosen.length ? [...values] : Array(length).fill("");
+      };
+      const pattern = ABILITY_BONUS_PATTERNS.includes(stored.pattern) ? stored.pattern : ABILITY_BONUS_PATTERNS[0];
+      const bonuses = pickDistinct(stored.bonuses, 3, abilityKeys);
+      pattern.split(",").forEach((increment, index) => { if (increment === "0") bonuses[index] = ""; });
+      return { totals, assignments: pickDistinct(stored.assignments, 6, ["0", "1", "2", "3", "4", "5"]), pattern, bonuses };
+    };
+
+    const saveAbilityRoll = record => {
+      try { window.dndStorage?.setItem(ABILITY_ROLL_STORAGE_KEY, JSON.stringify(record)); } catch { /* 存不了時只留在這次視窗。 */ }
+    };
+
     // This dedicated entry uses the shared RNG and history, even when automatic dice are off.
     const rollAbilities = (options = {}) => {
       const abilities = options.abilities;
@@ -380,7 +403,10 @@
       const form = document.createElement("form");
       form.className = "dice-ability-form";
       form.innerHTML = `
-        <p id="dice-ability-instructions" class="dice-ability-hint">六次 4d6 取 3 高，分配給六項屬性。</p>
+        <div class="dice-ability-head">
+          <p id="dice-ability-instructions" class="dice-ability-hint">六次 4d6 取 3 高，分配給六項屬性。</p>
+          <button type="button" class="dice-ability-reroll" hidden>重新擲骰</button>
+        </div>
         <div class="dice-ability-results" aria-label="可用數值"></div>
         <div class="dice-ability-assignments" role="group" aria-label="分配基礎屬性"></div>
         <fieldset class="dice-ability-background">
@@ -394,6 +420,7 @@
         <p class="dice-ability-status" aria-live="polite"></p>
         <button type="submit" class="dice-ability-apply" disabled>套用至角色卡</button>`;
       const results = form.querySelector(".dice-ability-results");
+      const rerollButton = form.querySelector(".dice-ability-reroll");
       const startButton = document.createElement("button");
       startButton.type = "button";
       startButton.className = "dice-ability-start";
@@ -451,8 +478,20 @@
         form.querySelector(".dice-ability-status").textContent = complete
           ? abilities.map(({ key, label }) => `${label} ${scores[key]}`).join(" · ")
           : `分配六個數值，並選擇${activeBonuses.length === 3 ? "三" : "兩"}個不同的背景屬性。`;
+        rerollButton.hidden = rolls.length !== 6;
+        // 重擲動畫期間不寫入，中途關閉時保留上一次的結果。
+        if (rolls.length === 6) saveAbilityRoll({
+          totals: rolls.map(roll => roll.total),
+          assignments: assignments.map(select => select.value),
+          pattern: form.querySelector('input[name="ability-bonus-pattern"]:checked').value,
+          bonuses: bonuses.map(select => select.value)
+        });
       };
-      startButton.addEventListener("click", () => {
+      const showRolls = () => {
+        sortedRolls = [...rolls].sort((a, b) => b.total - a.total);
+        results.replaceChildren(...sortedRolls.map(roll => Object.assign(document.createElement("strong"), { textContent: String(roll.total) })));
+      };
+      const beginRoll = () => {
         if (isRolling || rolls.length) return;
         const session = abilitySession;
         isRolling = true;
@@ -481,12 +520,30 @@
           [...rolls].reverse().forEach(({ id, total, values }) => addHistoryEntry({
             label: `屬性 ${Number(id) + 1}`, expression: "4d6 取 3 高", total, values
           }));
-          sortedRolls = [...rolls].sort((a, b) => b.total - a.total);
-          results.replaceChildren(...sortedRolls.map(roll => Object.assign(document.createElement("strong"), { textContent: String(roll.total) })));
+          showRolls();
           updateForm();
           updateControls();
           assignments[0].focus({ preventScroll: true });
         }, ABILITY_ROLL_ANIMATION_MS);
+      };
+      startButton.addEventListener("click", beginRoll);
+      rerollButton.addEventListener("click", async () => {
+        if (isRolling || rolls.length !== 6) return;
+        const session = abilitySession;
+        const confirmed = window.AppDialog ? await window.AppDialog.requestDecision({
+          title: "重新擲骰？",
+          message: "目前的六個數值會換成新擲出的結果，屬性分配要重選，背景加值保留。舊的數值仍可在擲骰紀錄查看。",
+          cancelLabel: "取消",
+          confirmLabel: "重新擲骰",
+          trigger: rerollButton
+        }) : true;
+        if (!confirmed || abilitySession !== session || !isOpen || isRolling) return;
+        rolls = [];
+        sortedRolls = [];
+        assignments.forEach(select => { select.value = ""; });
+        results.replaceChildren(startButton);
+        updateForm();
+        beginRoll();
       });
       form.addEventListener("change", updateForm);
       form.addEventListener("submit", event => {
@@ -503,6 +560,16 @@
       card.classList.add("is-ability-roll");
       card.querySelector(".dice-roller-controls").hidden = true;
       card.setAttribute("aria-describedby", "dice-ability-instructions");
+      const saved = loadAbilityRoll(abilities.map(ability => ability.key));
+      if (saved) {
+        rolls = saved.totals.map((total, index) => ({ id: String(index), total }));
+        showRolls();
+        form.querySelector(`input[name="ability-bonus-pattern"][value="${saved.pattern}"]`).checked = true;
+        // 先填滿選項才能設定值，設定後再依已選的項目收斂選項。
+        updateForm();
+        assignments.forEach((select, index) => { select.value = saved.assignments[index]; });
+        bonuses.forEach((select, index) => { select.value = saved.bonuses[index]; });
+      }
       updateForm();
       openModal(options.trigger);
       renderAbilitySession();

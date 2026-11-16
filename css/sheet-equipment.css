@@ -354,8 +354,10 @@
 
 .character-features-picker__group--background { --picker-columns: 7; }
 .character-features-picker__group--race { --picker-columns: 9; }
-/* 「特性」頁籤的等級跳轉列：五格只有文字，高度和背景列相同；目前所在區段用 aria-current，外觀同選中的選項。 */
+/* 「特性」頁籤的等級跳轉列：五格只有文字，高度和背景列相同；目前所在區段用 aria-current，外觀同選中的選項。
+   「子職」格是篩選開關（aria-pressed），開著時面板帶 data-subclass-filter，只留子職段落（網站版與 SRD 版都適用）。 */
 .character-features-picker__group--level { --picker-columns: 5; }
+#class-abilities-panel[data-subclass-filter] section[data-feature-level]:not([data-subclass]) { display: none; }
 
 .character-features-picker .character-features-picker__option {
   display: flex;

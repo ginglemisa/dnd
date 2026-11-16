@@ -322,6 +322,36 @@ async function main() {
     await page.locator("#dice-roller-total-view").click();
     assert.equal(await selects.nth(0).inputValue(), "0");
     assert.equal(await bonuses.nth(0).inputValue(), "str");
+    // Leaving the modal keeps the last rolls and choices until the player re-rolls.
+    const openAbilityRoll = async () => {
+      await page.locator("#utility-menu-toggle").click();
+      await page.locator("#set-default-abilities").click();
+      await page.locator("#ability-choice-roll").click();
+      await page.locator(".dice-ability-form").waitFor();
+    };
+    const formState = () => page.evaluate(() => ({
+      results: [...document.querySelectorAll(".dice-ability-results strong")].map(el => el.textContent),
+      assignments: [...document.querySelectorAll(".dice-ability-assignments select")].map(el => el.value),
+      pattern: document.querySelector('input[name="ability-bonus-pattern"]:checked').value,
+      bonuses: [...document.querySelectorAll(".dice-ability-bonuses select")].map(el => el.value),
+      start: document.querySelectorAll(".dice-ability-start").length,
+      reroll: !document.querySelector(".dice-ability-reroll").hidden,
+      status: document.querySelector(".dice-ability-status").textContent
+    }));
+    const rolledState = {
+      results: ["18", "15", "15", "12", "9", "3"], assignments: ["0", "1", "2", "3", "4", "5"], pattern: "2,1,0", bonuses: ["str", "dex", ""],
+      start: 0, reroll: true, status: "力量 20 · 敏捷 16 · 體質 15 · 智力 12 · 感知 9 · 魅力 3"
+    };
+    assert.deepEqual(await formState(), rolledState);
+    await page.keyboard.press("Escape");
+    await openAbilityRoll();
+    assert.deepEqual(await formState(), rolledState, "closing and reopening restores rolls and choices");
+    assert.equal(await page.evaluate(() => APP_STORAGE_KEYS.includes("dnd.abilityRollLast.v1")), true, "clear records resets the remembered ability roll");
+    const rerollBox = await page.locator(".dice-ability-reroll").boundingBox();
+    const hintBox = await page.locator(".dice-ability-hint").boundingBox();
+    const formBox = await page.locator(".dice-ability-form").boundingBox();
+    assert(Math.abs(rerollBox.y + rerollBox.height / 2 - (hintBox.y + hintBox.height / 2)) < 4, "re-roll sits on the hint row");
+    assert(Math.abs(rerollBox.x + rerollBox.width - (formBox.x + formBox.width)) < 2, "re-roll sits at the right edge");
     await page.locator(".dice-ability-apply").click();
     await page.waitForTimeout(750);
     const expected = ["20", "16", "15", "12", "9", "3"];
@@ -341,15 +371,48 @@ async function main() {
     await page.locator("#dice-roller-history-view").click();
     assert.equal(await page.locator(".dice-ability-history-dice .is-dropped").count(), 6, "discard markers survive reload");
     await page.locator("#dice-roller-close").click();
-    await page.locator("#utility-menu-toggle").click();
-    await page.locator("#set-default-abilities").click();
-    await page.locator("#ability-choice-roll").click();
+    await openAbilityRoll();
+    assert.deepEqual(await formState(), rolledState, "applying and reloading keep the last rolls and choices");
     const historyBeforeCancel = await page.evaluate(() => dndStorage.getItem("dnd.diceRollHistory.v1"));
-    await page.locator(".dice-ability-start").click();
+    const rerollDialog = page.locator(".app-dialog");
+    await page.locator(".dice-ability-reroll").click();
+    await rerollDialog.getByRole("button", { name: "取消", exact: true }).click();
+    assert.deepEqual(await formState(), rolledState, "cancelling the re-roll keeps everything");
+    await page.locator(".dice-ability-reroll").click();
+    await rerollDialog.getByRole("button", { name: "重新擲骰", exact: true }).click();
+    assert.equal(await page.locator(".dice-ability-start").count(), 1, "re-roll starts a new roll");
+    assert.equal(await page.locator(".dice-ability-reroll").isHidden(), true, "re-roll hides while rolling");
     await page.keyboard.press("Escape");
     await page.waitForTimeout(1300);
     assert.equal(await page.evaluate(() => dndStorage.getItem("dnd.diceRollHistory.v1")), historyBeforeCancel, "closing during animation cancels the pending roll");
     assert.deepEqual(await sheetValues(), expected, "closing without applying preserves scores");
+    await openAbilityRoll();
+    assert.deepEqual(await formState(), rolledState, "a cancelled re-roll keeps the previous result");
+    await page.evaluate(() => {
+      const original = crypto.getRandomValues.bind(crypto);
+      const dice = [2,2,2,1, 6,6,6,1, 3,3,3,1, 4,4,4,1, 5,5,5,1, 1,1,1,1];
+      crypto.getRandomValues = values => {
+        values[0] = dice.shift() - 1;
+        if (!dice.length) crypto.getRandomValues = original;
+        return values;
+      };
+    });
+    await page.locator(".dice-ability-reroll").click();
+    await rerollDialog.getByRole("button", { name: "重新擲骰", exact: true }).click();
+    await page.waitForFunction(() => document.querySelectorAll(".dice-ability-results strong").length === 6);
+    assert.deepEqual(await formState(), {
+      results: ["18", "15", "12", "9", "6", "3"], assignments: ["", "", "", "", "", ""], pattern: "2,1,0", bonuses: ["str", "dex", ""],
+      start: 0, reroll: true, status: "分配六個數值，並選擇兩個不同的背景屬性。"
+    }, "re-roll replaces the numbers, clears assignments and keeps background bonuses");
+    assert.equal(JSON.parse(await page.evaluate(() => dndStorage.getItem("dnd.diceRollHistory.v1"))).length, JSON.parse(historyBeforeCancel).length + 6, "re-roll adds six history entries");
+    assert.deepEqual(await page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.abilityRollLast.v1"))),
+      { totals: [6, 18, 9, 12, 15, 3], assignments: ["", "", "", "", "", ""], pattern: "2,1,0", bonuses: ["str", "dex", ""] });
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => dndStorage.setItem("dnd.abilityRollLast.v1", JSON.stringify({ totals: [1, 2], assignments: [] })));
+    await openAbilityRoll();
+    assert.equal(await page.locator(".dice-ability-start").count(), 1, "invalid stored rolls fall back to a fresh roll");
+    assert.equal(await page.locator(".dice-ability-reroll").isHidden(), true);
+    await page.keyboard.press("Escape");
     await page.locator("#dice-roller-fab").click();
     assert.equal(await page.locator(".dice-ability-form").count(), 0);
     await page.locator('.dice-roller-die[data-die="6"]').click();

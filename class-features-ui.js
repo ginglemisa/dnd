@@ -1132,14 +1132,16 @@ function chooseCharacterFeaturePickerOption(button) {
   syncCharacterFeaturePicker();
 }
 
-// 「特性」頁籤的等級跳轉列：五格（1–4、5–10、11–16、17–20、子職）只捲動目前顯示的特性內容（網站版或 SRD 版），不改資料，分享模式也可用。
-// 區段看建置加在能力段落上的 data-feature-level／data-subclass（兩個版本都有），不從標題文字反推等級。
-// 子職能力（data-subclass，含 SRD 版的子職標題段落）一律歸「子職」格：網站版子職能力穿插在各等級之間，捲到那裡時亮「子職」。
-// 頁面上沒有段落的區段停用（等級未到、未選子職）；換版本、等級、子職後重新計算。
+// 「特性」頁籤的等級跳轉列：四個等級格（1–4、5–10、11–16、17–20）捲動目前顯示的特性內容（網站版或 SRD 版），
+// 「子職」格是篩選開關：開著時只列子職能力（data-subclass，含 SRD 版的子職標題段落），再按一次或按等級格就回到完整列表。
+// 都只改畫面，不改資料、不存檔，分享模式也可用；關閉視窗或換職業時篩選關掉。
+// 區段看建置加在能力段落上的 data-feature-level／data-subclass（兩個版本都有），不從標題文字反推等級；子職能力照等級算在等級格。
+// 頁面上沒有段落的區段停用（等級未到、等級未到子職、沒選職業）；換版本、等級、子職後重新計算。
 const CHARACTER_FEATURE_LEVEL_NAV_RANGES = Object.freeze({ "1-4": [1, 4], "5-10": [5, 10], "11-16": [11, 16], "17-20": [17, 20] });
 // 點了某格後，捲動位置沒再變動前維持亮那一格（最後幾段捲不到頂端時，依位置會算成前一段）。
 let characterFeatureLevelNavPinned = null;
 let characterFeatureLevelNavFrame = 0;
+let characterFeatureSubclassFilter = false;
 
 function getCharacterFeatureLevelNavSections() {
   const srd = document.getElementById("classFeaturesSrd");
@@ -1148,7 +1150,6 @@ function getCharacterFeatureLevelNavSections() {
 }
 
 function getCharacterFeatureLevelNavKey(section) {
-  if (section.hasAttribute("data-subclass")) return "subclass";
   const level = Number(section.dataset.featureLevel);
   return Object.keys(CHARACTER_FEATURE_LEVEL_NAV_RANGES)
     .find(key => level >= CHARACTER_FEATURE_LEVEL_NAV_RANGES[key][0] && level <= CHARACTER_FEATURE_LEVEL_NAV_RANGES[key][1]) || "";
@@ -1180,21 +1181,38 @@ function getCurrentCharacterFeatureLevelNavKey(sections) {
   return getCharacterFeatureLevelNavKey(current);
 }
 
+// 篩選用 CSS 隱藏非子職段落（見 css/sheet-equipment.css），重畫內容或換版本時不用重套。
+function setCharacterFeatureSubclassFilter(active) {
+  characterFeatureSubclassFilter = Boolean(active);
+  const panel = document.getElementById("class-abilities-panel");
+  if (panel) panel.toggleAttribute("data-subclass-filter", characterFeatureSubclassFilter);
+  characterFeatureLevelNavPinned = null;
+}
+
 function syncCharacterFeatureLevelNav() {
   const nav = document.querySelector("#character-features-picker [data-feature-level-nav]");
   if (!nav || nav.hidden) return;
   const sections = getCharacterFeatureLevelNavSections();
   const available = new Set(sections.map(getCharacterFeatureLevelNavKey));
-  const current = getCurrentCharacterFeatureLevelNavKey(sections);
+  const hasSubclass = sections.some(section => section.hasAttribute("data-subclass"));
+  if (hasSubclass) available.add("subclass");
+  // 內容已畫好卻沒有子職段落（等級降到子職以下）才關掉篩選；SRD 版載入中還沒有段落時維持原狀。
+  if (characterFeatureSubclassFilter && sections.length && !hasSubclass) setCharacterFeatureSubclassFilter(false);
+  const filtering = characterFeatureSubclassFilter && hasSubclass;
+  const current = filtering ? "" : getCurrentCharacterFeatureLevelNavKey(sections);
   const buttons = Array.from(nav.querySelectorAll("[data-level-nav]"));
   buttons.forEach(button => {
     button.disabled = !available.has(button.dataset.levelNav);
+    if (button.dataset.levelNav === "subclass") {
+      button.setAttribute("aria-pressed", String(filtering));
+      return;
+    }
     if (button.dataset.levelNav === current) button.setAttribute("aria-current", "location");
     else button.removeAttribute("aria-current");
   });
   const enabled = buttons.filter(button => !button.disabled);
   const focusTarget = enabled.includes(document.activeElement) ? document.activeElement
-    : enabled.find(button => button.dataset.levelNav === current) || enabled[0];
+    : enabled.find(button => button.dataset.levelNav === (filtering ? "subclass" : current)) || enabled[0];
   buttons.forEach(button => { button.tabIndex = button === focusTarget ? 0 : -1; });
 }
 
@@ -1206,13 +1224,22 @@ function queueCharacterFeatureLevelNavSync() {
   });
 }
 
-// 捲到該區段第一個段落（子職：網站版為目前子職的第一個能力，SRD 版為接在職業能力之後的子職標題）。焦點留在跳轉列。
+// 等級格：先關掉子職篩選，再捲到該區段第一個段落（子職能力照等級算）。焦點留在跳轉列。
 function jumpToCharacterFeatureLevel(key) {
   const body = getCharacterFeatureLevelNavBody();
   const target = getCharacterFeatureLevelNavSections().find(section => getCharacterFeatureLevelNavKey(section) === key);
   if (!body || !target) return;
+  if (characterFeatureSubclassFilter) setCharacterFeatureSubclassFilter(false);
   body.scrollTop = Math.max(0, body.scrollTop + target.getBoundingClientRect().top - getCharacterFeatureLevelNavTop(body));
   characterFeatureLevelNavPinned = { key, scrollTop: body.scrollTop };
+  syncCharacterFeatureLevelNav();
+}
+
+// 「子職」格：切換篩選，內容變短或變長，都從頂端開始看。
+function toggleCharacterFeatureSubclassFilter() {
+  setCharacterFeatureSubclassFilter(!characterFeatureSubclassFilter);
+  const body = getCharacterFeatureLevelNavBody();
+  if (body) body.scrollTop = 0;
   syncCharacterFeatureLevelNav();
 }
 
@@ -1223,7 +1250,9 @@ function bindCharacterFeaturePicker() {
   picker.addEventListener("click", event => {
     const levelButton = event.target.closest("[data-level-nav]");
     if (levelButton) {
-      if (!levelButton.disabled) jumpToCharacterFeatureLevel(levelButton.dataset.levelNav);
+      if (levelButton.disabled) return;
+      if (levelButton.dataset.levelNav === "subclass") toggleCharacterFeatureSubclassFilter();
+      else jumpToCharacterFeatureLevel(levelButton.dataset.levelNav);
       return;
     }
     const button = event.target.closest("[data-picker-value]");
@@ -1245,6 +1274,7 @@ function bindCharacterFeaturePicker() {
     buttons.forEach((button, index) => { button.tabIndex = index === next ? 0 : -1; });
     buttons[next].focus({ preventScroll: true });
   });
+  bindEventById("class", "change", () => setCharacterFeatureSubclassFilter(false));
   ["class", "background", "race"].forEach(id => bindEventById(id, "change", () => { syncCharacterFeaturePicker(); syncCharacterFeatureTitles(); }));
   syncCharacterFeaturePicker();
   syncCharacterFeatureTitles();
@@ -1382,6 +1412,7 @@ function openCharacterFeatures(tab = "class", trigger, options = {}) {
       },
       onClose() {
         removeAdditionalChoices();
+        setCharacterFeatureSubclassFilter(false);
         content.prepend(nav);
         mount.appendChild(content);
         contextPopups.forEach(popup => {

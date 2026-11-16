@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 法術回憶恩惠
+source: srd
+type: epic
+prerequisite: { spellcasting: true }
+effects:
+  - name: 屬性提升
+    text: 智力、感知或魅力擇一 +1（最高 30）。
+  - name: 免費施法
+    text: 用 1–4 環法術位施法時擲 1d4；擲出的數字和這個法術位的環階相同時，不消耗這個法術位。

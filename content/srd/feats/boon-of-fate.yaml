@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 命運恩惠
+source: srd
+type: epic
+effects:
+  - name: 屬性提升
+    text: 自選一項屬性 +1（最高 30）。
+  - name: 改善命運
+    text: 你或你 60 呎內另一個生物的 D20 檢定成功或失敗時，可以擲 2d4，把總和當作加值或減值套用到這次擲骰。用過後要等到你擲先攻，或完成短休或長休，才能再次使用。
