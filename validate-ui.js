@@ -6376,6 +6376,49 @@ async function verifyFieldDetailsIntro(browser, url) {
   } finally { await page.close(); }
 }
 
+// 存檔格式：暫時輸入不進任何一條路；要存但不分享的當下狀態只有分享不帶。
+async function verifySaveFormat(browser, url) {
+  const page = await newUiPage(browser);
+  const transientIds = ["spell-search", "equipment-search", "dice-system-toggle", "money-note", "money-amount", "money-currency",
+    "money-pp", "money-gp", "money-sp", "money-cp", "money-adjust-pp", "money-adjust-gp", "money-adjust-sp", "money-adjust-cp", "money-adjust-note"];
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    const collected = await page.evaluate(async () => {
+      applyStateObject({ class: "fighter", level: "3", race: "human", background: "soldier", lifedicen: "2", "heroic-inspiration": true });
+      const set = (id, value) => { document.getElementById(id).value = value; };
+      set("spell-search", "火球"); set("equipment-search", "長劍"); set("money-note", "旅店"); set("money-amount", "7");
+      set("money-currency", "sp"); set("money-pp", "1"); set("money-adjust-gp", "9"); set("money-adjust-note", "同步");
+      saveAllFields();
+      const share = collectShareState();
+      return { direct: Object.keys(collectStateObject()), autosave: JSON.parse(dndStorage.getItem("dndchar_autosave_v1")),
+        exported: JSON.parse(collectJsonExportText().text), share };
+    });
+    for (const id of transientIds) {
+      assert.equal(collected.direct.includes(id), false, `${id} is not collected`);
+      for (const route of ["autosave", "exported", "share"]) assert.equal(Object.hasOwn(collected[route], id), false, `${id} stays out of ${route}`);
+    }
+    for (const route of ["autosave", "exported"]) {
+      assert.deepEqual([collected[route].lifedicen, collected[route]["heroic-inspiration"], collected[route].class], ["2", true, "fighter"], `${route} keeps live state`);
+    }
+    assert.deepEqual([Object.hasOwn(collected.share, "lifedicen"), Object.hasOwn(collected.share, "heroic-inspiration"), collected.share.class],
+      [false, false, "fighter"], "share omits live state but keeps the character");
+
+    // 舊存檔留下的暫時輸入欄位：讀檔時略過，不填回畫面，其他欄位照常還原。
+    const legacy = { class: "wizard", level: "2", race: "elf", "spell-search": "舊搜尋", "equipment-search": "舊裝備", "dice-system-toggle": false,
+      "money-note": "舊帳", "money-amount": "5", "money-currency": "pp", "money-pp": "3", "money-adjust-cp": "4", "money-adjust-note": "舊調整",
+      "money-balance-gp": "12" };
+    await page.evaluate(raw => dndStorage.setItem("dndchar_autosave_v1", raw), JSON.stringify(legacy));
+    await page.goto(url);
+    await page.waitForFunction(() => document.getElementById("class").value === "wizard");
+    assert.deepEqual(await page.evaluate(() => ["spell-search", "equipment-search", "money-note", "money-amount", "money-currency", "money-pp", "money-adjust-cp", "money-adjust-note", "money-balance-gp", "level"]
+      .map(id => document.getElementById(id).value)), ["", "", "", "0", "gp", "0", "0", "", "12", "2"], "legacy transient fields are ignored on load");
+    assert.equal(await page.evaluate(() => { saveAllFields(); return Object.keys(JSON.parse(dndStorage.getItem("dndchar_autosave_v1"))).some(key => /^(?:spell-search|equipment-search|money-(?:note|amount|currency|pp|adjust-))/.test(key)); }), false,
+      "the next autosave drops the legacy transient fields");
+    console.log("Save format: transient inputs stay out of autosave, JSON and share; legacy transient fields are ignored on load.");
+  } finally { await page.close(); }
+}
+
 async function verifyCharacterDataSafety(browser, url) {
   const page = await newUiPage(browser);
   const sourceTag = '<img src="data:image/png,invalid" onerror="window.__unsafeCharacterScript=true">';
@@ -7129,7 +7172,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldDetailsIntro(browser, url); await verifyFirstLoadDefaults(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifySaveFormat(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldDetailsIntro(browser, url); await verifyFirstLoadDefaults(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
     if (all || sections.has("--data-only") || sections.has("--share-only")) await verifyShareReadonlyMode(browser, url);
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });

@@ -276,7 +276,7 @@
     <div id="spell-tab-toolbar" class="spell-toolbar is-hidden" aria-label="法術搜尋工具列">
       <div class="spell-toolbar-row">
         <form id="spell-search-form" class="spell-search-controls" role="search" novalidate>
-          <input type="text" id="spell-search" inputmode="search" enterkeyhint="search" placeholder="ex:火球 牧師法術 法師三環" aria-label="搜尋全部法術資料">
+          <input type="text" id="spell-search" data-state-transient="true" inputmode="search" enterkeyhint="search" placeholder="ex:火球 牧師法術 法師三環" aria-label="搜尋全部法術資料">
           <button type="submit" id="spell-search-button" class="spell-search-button" aria-label="執行法術搜尋">搜尋</button>
           <button type="button" id="spell-browse-button" class="spell-search-button">查閱</button>
         </form>
@@ -290,7 +290,7 @@
       <div class="equipment-toolbar-row">
         <form id="equipment-search-form" class="spell-search-controls" role="search" novalidate>
           <div class="equipment-search-input-wrap">
-            <input type="text" id="equipment-search" inputmode="search" enterkeyhint="search" placeholder="輸入&quot;短劍&quot;或&quot;聖水&quot;" aria-label="搜尋全部裝備資料">
+            <input type="text" id="equipment-search" data-state-transient="true" inputmode="search" enterkeyhint="search" placeholder="輸入&quot;短劍&quot;或&quot;聖水&quot;" aria-label="搜尋全部裝備資料">
             <button type="button" id="equipment-search-clear" class="equipment-search-clear is-hidden" aria-label="清除裝備搜尋" style="transform:translateY(-50%); transition:none; animation:none;">×</button>
           </div>
           <button type="submit" id="equipment-search-button" class="spell-search-button" aria-label="執行裝備搜尋">搜尋</button>
@@ -1278,13 +1278,13 @@
           <button type="button" class="money-modal-close" aria-label="關閉">×</button>
           <h4 id="money-adjust-title">調整目前財產</h4>
           <div class="money-grid money-adjust-grid">
-            <label>白金幣<input type="number" id="money-adjust-pp" min="0" step="1" inputmode="numeric" value="0"></label>
-            <label>金幣<input type="number" id="money-adjust-gp" min="0" step="1" inputmode="numeric" value="0"></label>
-            <label>銀幣<input type="number" id="money-adjust-sp" min="0" step="1" inputmode="numeric" value="0"></label>
-            <label>銅幣<input type="number" id="money-adjust-cp" min="0" step="1" inputmode="numeric" value="0"></label>
+            <label>白金幣<input type="number" id="money-adjust-pp" data-state-transient="true" min="0" step="1" inputmode="numeric" value="0"></label>
+            <label>金幣<input type="number" id="money-adjust-gp" data-state-transient="true" min="0" step="1" inputmode="numeric" value="0"></label>
+            <label>銀幣<input type="number" id="money-adjust-sp" data-state-transient="true" min="0" step="1" inputmode="numeric" value="0"></label>
+            <label>銅幣<input type="number" id="money-adjust-cp" data-state-transient="true" min="0" step="1" inputmode="numeric" value="0"></label>
           </div>
           <label for="money-adjust-note">說明（選填）</label>
-          <input type="text" id="money-adjust-note" maxlength="40" placeholder="例如：從紙本角色卡同步">
+          <input type="text" id="money-adjust-note" data-state-transient="true" maxlength="40" placeholder="例如：從紙本角色卡同步">
           <div class="money-panel-actions"><button type="button" id="money-adjust-cancel">取消</button><button type="button" id="money-adjust-save">儲存調整</button></div>
         </div>
       </div>
@@ -1294,19 +1294,19 @@
           <button type="button" class="money-modal-close" aria-label="關閉">×</button>
           <h4 id="money-transaction-title">記錄支出</h4>
         <label for="money-note">名稱</label>
-        <input type="text" id="money-note" maxlength="40" placeholder="例如：旅店住宿" autocomplete="off" aria-describedby="money-transaction-error">
+        <input type="text" id="money-note" data-state-transient="true" maxlength="40" placeholder="例如：旅店住宿" autocomplete="off" aria-describedby="money-transaction-error">
         <label for="money-amount">金額</label>
         <div class="money-amount-row">
-          <input type="number" id="money-amount" min="0" step="1" inputmode="numeric" value="0" aria-describedby="money-transaction-error">
-          <select id="money-currency" aria-label="貨幣"><option value="gp">金幣</option><option value="sp">銀幣</option><option value="cp">銅幣</option><option value="pp">白金幣</option></select>
+          <input type="number" id="money-amount" data-state-transient="true" min="0" step="1" inputmode="numeric" value="0" aria-describedby="money-transaction-error">
+          <select id="money-currency" data-state-transient="true" aria-label="貨幣"><option value="gp">金幣</option><option value="sp">銀幣</option><option value="cp">銅幣</option><option value="pp">白金幣</option></select>
         </div>
         <details class="money-mixed-details">
           <summary>＋輸入多種貨幣</summary>
           <div class="money-grid">
-            <label>白金幣<input type="number" id="money-pp" min="0" max="999" step="1" inputmode="numeric" value="0"></label>
-            <label>金幣<input type="number" id="money-gp" min="0" max="999" step="1" inputmode="numeric" value="0"></label>
-            <label>銀幣<input type="number" id="money-sp" min="0" max="999" step="1" inputmode="numeric" value="0"></label>
-            <label>銅幣<input type="number" id="money-cp" min="0" max="999" step="1" inputmode="numeric" value="0"></label>
+            <label>白金幣<input type="number" id="money-pp" data-state-transient="true" min="0" max="999" step="1" inputmode="numeric" value="0"></label>
+            <label>金幣<input type="number" id="money-gp" data-state-transient="true" min="0" max="999" step="1" inputmode="numeric" value="0"></label>
+            <label>銀幣<input type="number" id="money-sp" data-state-transient="true" min="0" max="999" step="1" inputmode="numeric" value="0"></label>
+            <label>銅幣<input type="number" id="money-cp" data-state-transient="true" min="0" max="999" step="1" inputmode="numeric" value="0"></label>
           </div>
           <p>展開並填入後，將取代上方的單一金額。</p>
         </details>
@@ -6076,30 +6076,14 @@ const SHARE_ALWAYS_INCLUDED_IDS = new Set([
   "manual-feat-management",
   "weapon-attack-automation"
 ]);
+// 不進存檔的控制項有兩種登記方式，新增時二選一：
+// 1. 永遠不存的暫時輸入（搜尋框、視窗裡打到一半的字、裝置設定開關）：在控制項上標 data-state-transient="true"，
+//    autosave、JSON 與分享都不收，讀檔時也不套用（舊存檔留下的同名欄位會被略過）。
+// 2. 要存、但不隨分享連結帶出去的當下狀態：列在這裡（跑團狀態另見 SHARE_TABLETOP_STATE_KEYS）。
 const SHARE_OMITTED_IDS = new Set([
-  "dice-system-toggle",
-  "spell-search",
-  "equipment-search",
-
   "lifedicen",
   "heroic-inspiration",
   "druid-natural-recovery-used",
-
-  // 金錢操作視窗暫存資料：分享端不需要
-  "money-note",
-  "money-amount",
-  "money-currency",
-  "money-pp",
-  "money-gp",
-  "money-sp",
-  "money-cp",
-
-  "money-adjust-pp",
-  "money-adjust-gp",
-  "money-adjust-sp",
-  "money-adjust-cp",
-  "money-adjust-note",
-
   "__deletedSpellRowCache"
 ]);
 const SHARE_TABLETOP_STATE_KEYS = new Set([
@@ -6887,11 +6871,10 @@ let autosaveDirty = false;
 let autosaveSuspended = false;
 let autosaveClearing = false;
 let autosaveRestoreBlocked = false;
-const AUTOSAVE_EXCLUDED_IDS = new Set(["spell-search", "equipment-search", "dice-system-toggle"]);
 
 function getAutosaveElements(root = document) {
   return Array.from(root.querySelectorAll("input, select, textarea"))
-    .filter((el) => el.type !== "file" && !AUTOSAVE_EXCLUDED_IDS.has(el.id) && el.dataset.stateTransient !== "true");
+    .filter((el) => el.type !== "file" && el.dataset.stateTransient !== "true");
 }
 
 function saveAllFields() {
@@ -6901,9 +6884,6 @@ function saveAllFields() {
   window.clearTimeout(structureSaveDebounceTimer);
   structureSaveDebounceTimer = null;
   const data = collectStateObject();
-  AUTOSAVE_EXCLUDED_IDS.forEach((id) => {
-    delete data[id];
-  });
   let json;
   try {
     validateCharacterState(data);
