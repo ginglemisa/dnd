@@ -1103,6 +1103,7 @@ async function verifyPreparedRingRange(page) {
     [{ class: "wizard", level: "1" }, ["", "0", "1"], " | 戲法 0 | 1環 0 |", "wizard 1"],
     [{ class: "wizard", level: "5" }, ["", "0", "1", "2", "3"], " | 戲法 0 | 1環 0 | 2環 0 | 3環 0 |", "wizard 5"],
     [{ class: "cleric", level: "8" }, ["", "0", "1", "2", "3", "4"], " | 戲法 0 | 1環 0 | 2環 0 | 3環 0 | 4環 0 |", "cleric 8"],
+    [{ class: "cleric", level: "10" }, ["", "0", "1", "2", "3", "4", "5"], " | 戲法 0 | 1環 0 | 2環 0 | 3環 0 | 4環 0 | 5環 0 |", "cleric 10 counts 5th level"],
     [{ class: "paladin", level: "2" }, ["", "1"], " | 1環 0 |", "paladin without Blessed Warrior"],
     [{ class: "paladin", level: "8" }, ["", "1", "2"], " | 1環 0 | 2環 0 |", "paladin 8 never counts 3rd or 4th level"],
     [{ class: "paladin", level: "2", "paladin-blessed-warrior": true }, ["", "0", "1"], " | 戲法 0 | 1環 0 |", "Blessed Warrior before choosing cantrips"],
@@ -1127,13 +1128,15 @@ async function verifyPreparedRingRange(page) {
   assert.equal(await dialog.locator('.spell-picker-option input[value="fireball"]').isChecked(), true);
   assert.equal(await dialog.locator('.spell-picker-option input[value="ice-storm"]').count(), 0, "automatic candidates stop at the highest slot");
   await close();
-  // Manual management never blocks a ring: every class lists and checks cantrips through 4th level.
+  // Manual management never blocks a ring: every class lists and checks cantrips through the highest playable ring.
+  const playableRings = await page.evaluate(() => Array.from({ length: SpellCatalog.getMaxLevel() }, (_, index) => String(index + 1)));
+  assert.deepEqual(playableRings, ["1", "2", "3", "4", "5"], "playable spells reach 5th level");
   await open({ class: "paladin", level: "1" });
   assert.deepEqual(await rings(), ["", "1"]);
   await dialog.locator("#manual-spell-management").click();
   await page.getByRole("alertdialog", { name: "啟用手動法術管理" }).getByRole("button", { name: "啟用手動管理", exact: true }).click();
-  assert.deepEqual(await rings(), ["", "0", "1", "2", "3", "4"], "manual draft lists every ring");
-  assert.match(await countSuffix(), /^ \| 1環 \d+ \| 2環 \d+ \| 3環 \d+ \| 4環 \d+ \|$/u, "manual count row keeps 1st through 4th level");
+  assert.deepEqual(await rings(), ["", "0", ...playableRings], "manual draft lists every ring");
+  assert.match(await countSuffix(), new RegExp(`^ \\| ${playableRings.map(ring => `${ring}環 \\d+`).join(" \\| ")} \\|$`, "u"), "manual count row lists every playable ring");
   await ringFilter.selectOption("4");
   await dialog.locator("#manual-spell-management").click();
   assert.deepEqual(await rings(), ["", "1"], "returning to the automatic draft restores its rings");
@@ -1142,22 +1145,23 @@ async function verifyPreparedRingRange(page) {
   for (const cls of ["paladin", "ranger", "fighter"]) {
     await apply(page, modern({ class: cls, level: "1", "spellcasting-ability": "cha", "manual-spell-management": true }));
     await page.locator("#spell-prepare").click();
-    assert.deepEqual(await rings(), ["", "0", "1", "2", "3", "4"], `${cls} manual lists every ring`);
-    await selectPicker(page, "light"); await selectPicker(page, "ice-storm");
+    assert.deepEqual(await rings(), ["", "0", ...playableRings], `${cls} manual lists every ring`);
+    await selectPicker(page, "light"); await selectPicker(page, "ice-storm"); await selectPicker(page, "cone-of-cold");
     await dialog.getByRole("button", { name: "儲存", exact: true }).click();
-    assert.deepEqual(await playerIds(page), ["light", "ice-storm"], `${cls} manual keeps cantrips through 4th level`);
+    assert.deepEqual(await playerIds(page), ["light", "ice-storm", "cone-of-cold"], `${cls} manual keeps cantrips through the highest playable ring`);
   }
-  // 只供查閱的 SRD 法術（五至九環）不進準備清單：環階選單與勾選清單照舊，只在「全職業法術查詢」查得到。
+  // 只供查閱的 SRD 法術（六至九環）不進準備清單：環階選單與勾選清單照舊，只在「全職業法術查詢」查得到。
   const candidateIds = () => dialog.locator(".spell-picker-option input").evaluateAll(inputs => inputs.map(input => input.value));
   for (const state of [{ class: "wizard", level: "8", "spellcasting-ability": "int" }, { class: "wizard", level: "8", "spellcasting-ability": "int", "manual-spell-management": true }]) {
     await apply(page, modern(state));
     await page.locator("#spell-prepare").click();
     await dialog.waitFor();
-    assert.equal((await rings()).some(value => Number(value) > 4), false, "the preparation ring menu never lists fifth level or higher");
+    const manualState = Boolean(state["manual-spell-management"]);
+    assert.equal((await rings()).some(value => Number(value) > (manualState ? 5 : 4)), false, "the preparation ring menu stops at the class's slots (automatic) or the highest playable ring (manual)");
     const ids = await candidateIds();
     assert.ok(ids.length > 0);
     assert.deepEqual(await page.evaluate(list => list.filter(id => !SpellCatalog.getSpell(id)), ids), [], "every preparation candidate is a playable spell");
-    assert.equal(ids.includes("wish") || ids.includes("cone-of-cold"), false, "lookup-only SRD spells cannot be checked");
+    assert.equal(ids.includes("wish") || ids.includes("chain-lightning"), false, "lookup-only SRD spells cannot be checked");
     const before = await candidateIds();
     await dialog.locator(".spell-prepared-browse").first().click();
     const lookup = page.getByRole("dialog", { name: "查閱法術", exact: true });
@@ -1525,7 +1529,7 @@ async function verifyWizardBookPicker(page) {
   const visibleIds = () => dialog.locator(".spell-picker-option input").evaluateAll(inputs => inputs.map(input => input.value));
   await page.locator("#spellbook-manage").click();
   assert.equal(await dialog.getByRole("combobox").count(), 1, "book has only the school dropdown");
-  assert.deepEqual(await rings.getByRole("checkbox").evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [["1", true], ["2", true], ["3", true], ["4", true]]);
+  assert.deepEqual(await rings.getByRole("checkbox").evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [["1", true], ["2", true], ["3", true], ["4", true], ["5", true]], "book rings reach the highest playable ring");
   assert.match(await dialog.innerText(), /勾選=新增法術；取消勾選=移出法術書，不影響準備法術清單。/u);
   const browse = dialog.getByRole("button", { name: "全職業法術查詢", exact: true });
   for (const width of [1100, 390, 320]) {
@@ -1562,6 +1566,7 @@ async function verifyWizardBookPicker(page) {
   assert.equal(await dialog.locator(".spell-picker-option").count(), 100);
   await rings.getByRole("checkbox", { name: "2環", exact: true }).uncheck();
   await rings.getByRole("checkbox", { name: "4環", exact: true }).uncheck();
+  await rings.getByRole("checkbox", { name: "5環", exact: true }).uncheck();
   assert.equal(await dialog.locator(".spell-picker-option").evaluateAll(rows => rows.length <= 50), true, "filter changes reset pagination");
   while (await dialog.getByRole("button", { name: "顯示更多法術", exact: true }).isVisible()) await dialog.getByRole("button", { name: "顯示更多法術", exact: true }).click();
   const expectedRings = await page.evaluate(() => SpellCatalog.getAllSpells().filter(spell => [1, 3].includes(spell.level) && SpellCatalog.getClassIds(spell.spellId).includes("wizard")).map(spell => spell.spellId).sort());
