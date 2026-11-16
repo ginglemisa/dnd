@@ -20,6 +20,8 @@ features:
               level: 5
             - id: blight
               level: 7
+            - id: wall-of-stone
+              level: 9
         - value: polar
           name: 極地
           spells:
@@ -30,6 +32,8 @@ features:
               level: 5
             - id: ice-storm
               level: 7
+            - id: cone-of-cold
+              level: 9
         - value: temperate
           name: 溫帶
           spells:
@@ -40,6 +44,8 @@ features:
               level: 5
             - id: freedom-of-movement
               level: 7
+            - id: tree-stride
+              level: 9
         - value: tropical
           name: 熱帶
           spells:
@@ -50,22 +56,24 @@ features:
               level: 5
             - id: polymorph
               level: 7
+            - id: insect-plague
+              level: 9
     text: |
       - **選擇地貌：**每次長休後，從旱地、極地、溫帶或熱帶中選擇 1 種地貌。
       - **始終準備：**你始終準備所選地貌對應、且目前德魯伊等級可用的法術，詳見下表。
 
-      | 地貌 | 等級 3 | 等級 5 | 等級 7 |
-      | --- | --- | --- | --- |
-      | 旱地 | 朦朧術、燃燒之手、火焰箭 | 火球術 | 枯萎術 |
-      | 極地 | 雲霧術、人類定身術、冷凍射線 | 雪雨暴 | 冰風暴 |
-      | 溫帶 | 迷蹤步、電爪、睡眠術 | 閃電束 | 行動自如 |
-      | 熱帶 | 酸液飛濺、致病射線、蛛網術 | 臭雲術 | 變形術 |
+      | 地貌 | 等級 3 | 等級 5 | 等級 7 | 等級 9 |
+      | --- | --- | --- | --- | --- |
+      | 旱地 | 朦朧術、燃燒之手、火焰箭 | 火球術 | 枯萎術 | 石牆術 |
+      | 極地 | 雲霧術、人類定身術、冷凍射線 | 雪雨暴 | 冰風暴 | 寒冰錐 |
+      | 溫帶 | 迷蹤步、電爪、睡眠術 | 閃電束 | 行動自如 | 樹躍術 |
+      | 熱帶 | 酸液飛濺、致病射線、蛛網術 | 臭雲術 | 變形術 | 疫病蟲群 |
     tables:
       - label: 大地結社地貌法術
         style: druid-terrain-spells
         kind: reference
         rowHeaders: true
-        cellLabels: [等級 3, 等級 5, 等級 7]
+        cellLabels: [等級 3, 等級 5, 等級 7, 等級 9]
   - id: druid-lands-aid
     level: 3
     name: 大地之援

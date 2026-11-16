@@ -118,6 +118,9 @@ features:
   - id: warlock-contact-patron
     level: 9
     name: 直謁宗主
+    spells:
+      - id: contact-other-plane
+        freeUses: 1
     text: |
       你可以直接與宗主溝通，並**始終準備**法術「異界探知」。
 

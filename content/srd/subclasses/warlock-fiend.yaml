@@ -28,12 +28,17 @@ features:
         level: 7
       - id: wall-of-fire
         level: 7
+      - id: geas
+        level: 9
+      - id: insect-plague
+        level: 9
     text: |
       達到下列契術師等級後，你始終準備對應法術：
 
       - **3 級：**燃燒之手、命令術、灼熱射線、暗示術。
       - **5 級：**火球術、臭雲術。
       - **7 級：**火焰護盾、火牆術。
+      - **9 級：**指使術、疫病蟲群。
   - id: warlock-dark-ones-own-luck
     level: 6
     name: 黑暗強運
