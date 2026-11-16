@@ -114,12 +114,15 @@
     };
   }
 
+  // 按鈕清單依「職業＋目前子職」建立並快取：子職能力與 append 的段落都只算目前子職的。
   function getClassActionRules(className) {
     const rules = globalScope.getClassRules?.(className);
     if (!rules) return [];
+    const subclassId = globalScope.getSelectedSubclassId?.(className) || "";
     const cached = classActionRuleCache.get(className);
-    if (cached?.rules === rules) return cached.list;
+    if (cached?.rules === rules && cached.subclassId === subclassId) return cached.list;
     const features = globalScope.getClassFeatureRules(className);
+    // append 只接目前職業與目前子職有的能力：其他子職的能力（例如換成私人子職時的妙手「神出鬼沒」）不接。
     const featureLevels = new Map(features.map(feature => [feature.id, feature.level]));
     const subclassNames = new Map(rules.subclasses.map(subclass => [subclass.id, subclass.shortName]));
     const list = [];
@@ -130,7 +133,8 @@
         level: action.level ?? level,
         key: action.key,
         label: getClassActionLabel(action.label, plainLabel ? name : `等級 ${level}：${name}${suffix}`),
-        descriptionIds: Object.freeze([descriptionId, ...(action.append || []).map(id => Object.freeze({ id, level: featureLevels.get(id) }))]),
+        descriptionIds: Object.freeze([descriptionId, ...(action.append || []).filter(id => featureLevels.has(id))
+          .map(id => Object.freeze({ id, level: featureLevels.get(id) }))]),
         source: action.source === "invocation" ? "invocation" : "class",
         ...(action.legacyKeys ? { legacyKeys: Object.freeze([...action.legacyKeys]) } : {}),
         ...(action.resource ? { resourceKey: action.resource } : {}),
@@ -170,7 +174,7 @@
       plainLabel: true,
       extra: action.source === "invocation" ? { invocation: part.name } : {}
     }))));
-    classActionRuleCache.set(className, { rules, list });
+    classActionRuleCache.set(className, { rules, subclassId, list });
     return list;
   }
 

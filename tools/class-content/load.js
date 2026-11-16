@@ -416,6 +416,8 @@ function checkClass(classDef, errors) {
     ...(classDef.appendix || []).flatMap(item => (item.parts || []).map(part => part.id).filter(Boolean))
   ]);
   const appendedIds = new Set(sources.flatMap(({ features }) => features.flatMap(feature => getActions(feature).flatMap(action => action.append || []))));
+  // append 的能力屬於誰：職業能力的動作可接職業或任一子職的能力（網站只接目前子職有的）；子職能力的動作不可接其他子職的能力。
+  const featureOwners = new Map(sources.flatMap(({ owner, features }) => features.filter(feature => feature.id).map(feature => [feature.id, owner])));
   for (const { owner, features } of sources) {
     for (const feature of features) {
       if (feature.tabletop && !feature.actions && !appendedIds.has(feature.id)) {
@@ -425,6 +427,8 @@ function checkClass(classDef, errors) {
       for (const action of getActions(feature)) {
         (action.append || []).forEach(id => {
           if (!featureIds.has(id) || partIds.has(id)) errors.push(`${owner.file}（${feature.name}）：append 的能力「${id}」不存在（子能力不可被 append）`);
+          const target = featureOwners.get(id);
+          if (target && owner !== classDef && target !== classDef && target !== owner) errors.push(`${owner.file}（${feature.name}）：append 的能力「${id}」屬於其他子職`);
         });
         if (action.resource && !resourceKeys.has(action.resource)) errors.push(`${owner.file}（${feature.name}）：動作消耗的資源「${action.resource}」沒有定義`);
       }

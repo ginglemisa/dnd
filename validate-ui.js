@@ -5782,6 +5782,49 @@ function createSubclassFixture() {
   return renderPrivateData(classes);
 }
 
+// 職業按鈕的 append 只接目前子職有的能力：盜賊偷襲接妙手「神出鬼沒」、武僧聚氣凝神接散打「散打技巧」，換成別的子職時不接。
+async function verifySubclassAppend(browser, url) {
+  const { loadContent } = require("./tools/class-content/load");
+  const { renderPrivateData } = require("./tools/class-content/site-data");
+  const { classes } = loadContent({ packs: ["srd"] });
+  for (const [className, id] of [["rogue", "rogue-test-feature"], ["monk", "monk-test-feature"]]) {
+    classes.get(className).subclasses.push({ id: "test", class: className, name: "測試子職", shortName: "測試", pack: "test", file: "test",
+      features: [{ id, level: 3, name: "測試能力", text: "測試。\n" }] });
+  }
+  const fixture = renderPrivateData(classes);
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
+  await page.route("**/class-content.private.generated.js*", route => route.fulfill({ contentType: "text/javascript; charset=utf-8", body: fixture }));
+  const description = (mode, key) => page.evaluate(([mode, key]) => ActionPanel.getTabletopOptions(mode).find(option => option.key === key)?.description || "", [mode, key]);
+  const choose = (id, value) => page.evaluate(([id, value]) => {
+    const select = document.getElementById(id);
+    select.value = value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }, [id, value]);
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode && window.ActionPanel);
+    await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
+    await page.evaluate(() => applyStateObject({ class: "rogue", level: "9", background: "soldier", race: "human" }));
+    const sneak = ["action", "dynamic-action-rogue-curated-sneak-attack"];
+    assert.match(await description(...sneak), /伏擊/u, "the Thief's Supreme Sneak joins Sneak Attack");
+    await choose("subclass", "test");
+    assert.doesNotMatch(await description(...sneak), /伏擊/u, "another rogue subclass never gets Supreme Sneak");
+    assert.match(await description(...sneak), /靈巧打擊/u, "class features still join Sneak Attack");
+    await choose("subclass", "thief");
+    assert.match(await description(...sneak), /伏擊/u, "switching back restores Supreme Sneak");
+    await page.evaluate(() => applyStateObject({ class: "monk", level: "10", background: "soldier", race: "human" }));
+    const focus = ["bonus", "dynamic-bonus-monk-curated-focused-aim"];
+    assert.match(await description(...focus), /散打技巧/u, "Open Hand Technique joins Monk's Focus");
+    await choose("subclass", "test");
+    const testFocus = await description(...focus);
+    assert.doesNotMatch(testFocus, /散打技巧/u, "another monk subclass never gets Open Hand Technique");
+    assert.match(testFocus, /凝神入微/u, "the class feature Heightened Focus still joins");
+    console.log("Subclass append: subclass features join class buttons only for their own subclass, class features always, and switching subclasses rebuilds the buttons passed.");
+  } finally {
+    await page.close();
+  }
+}
+
 async function verifySubclassSelection(browser, url) {
   const fixture = createSubclassFixture();
   const withFixture = async page => page.route("**/class-content.private.generated.js*", route => route.fulfill({ contentType: "text/javascript; charset=utf-8", body: fixture }));
@@ -7528,7 +7571,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifySaveFormat(browser, url); await verifyLevelTenPersistence(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldDetailsIntro(browser, url); await verifyFirstLoadDefaults(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifySaveFormat(browser, url); await verifyLevelTenPersistence(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldDetailsIntro(browser, url); await verifyFirstLoadDefaults(browser, url); await verifySubclassSelection(browser, url); await verifySubclassAppend(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
     if (all || sections.has("--data-only") || sections.has("--share-only")) await verifyShareReadonlyMode(browser, url);
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
