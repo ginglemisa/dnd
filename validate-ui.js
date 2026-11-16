@@ -2894,6 +2894,13 @@ async function verifyClassSrdVersion(browser, url) {
   const switches = () => modal.locator('.character-feature-panel > [data-feature-title="class"] .class-version-switch');
   const pressed = panel => modal.locator(`${panels[panel]} .class-version-switch [aria-pressed="true"]`).getAttribute("data-spell-version");
   const showTab = tab => modal.locator(`[data-feature-tab="${tab}"]`).click();
+  // 職業圖示列只在「職業」頁籤（「特性」頁籤是等級跳轉列）：切過去點職業，再回到原本的頁籤。
+  const pickClass = async value => {
+    const tab = await modal.locator('.character-features-tabs [aria-selected="true"]').getAttribute("data-feature-tab");
+    if (tab !== "creation") await showTab("creation");
+    await modal.locator(`#character-features-picker [data-feature-picker="class"] [data-picker-value="${value}"]`).click();
+    if (tab !== "creation") await showTab(tab);
+  };
   const chooseSrd = async panel => {
     await modal.locator(`${panels[panel]} .class-version-switch [data-spell-version="srd"]`).click();
     await modal.locator(`${panel === "class" ? "#classFeaturesSrd" : "#classCreationSrd"} .spell-version__attribution`).waitFor();
@@ -2991,7 +2998,7 @@ async function verifyClassSrdVersion(browser, url) {
     assert.deepEqual(await page.evaluate(() => collectStateObject()), state, "switching versions keeps character data");
 
     // 施法職業（吟遊詩人）：特性表的「各環階法術位」是兩列表頭（跨欄＋跨列），法術列表以文字表格接在「職業」頁籤尾端。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="bard"]').click();
+    await pickClass("bard");
     await showTab("creation");
     await chooseSrd("creation");
     const bardTable = modal.locator("#classCreationSrd .class-feature-table").first();
@@ -3012,7 +3019,7 @@ async function verifyClassSrdVersion(browser, url) {
     }
 
     // 牧師：換職業回到網站版；SRD 版有 20 級能力、生命領域與法術列表。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="cleric"]').click();
+    await pickClass("cleric");
     assert.equal(await pressed("class"), "site", "changing to cleric returns to 網站版");
     await chooseSrd("class");
     const clericHeadings = await srdHeadings();
@@ -3026,7 +3033,7 @@ async function verifyClassSrdVersion(browser, url) {
     await showTab("class");
 
     // 德魯伊：能力內文的表格（野獸形態、四種地貌法術、自然守護）照常顯示。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="druid"]').click();
+    await pickClass("druid");
     assert.equal(await pressed("class"), "site", "changing to druid returns to 網站版");
     await chooseSrd("class");
     const druidHeadings = await srdHeadings();
@@ -3040,7 +3047,7 @@ async function verifyClassSrdVersion(browser, url) {
     await showTab("class");
 
     // 戰士：沒有法術列表；9 級以後與勇士 10–18 級只在 SRD 版。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="fighter"]').click();
+    await pickClass("fighter");
     assert.equal(await pressed("class"), "site", "changing to fighter returns to 網站版");
     await chooseSrd("class");
     const fighterHeadings = await srdHeadings();
@@ -3052,7 +3059,7 @@ async function verifyClassSrdVersion(browser, url) {
     await showTab("class");
 
     // 武僧：沒有法術列表；9 級以後與散打鬥士 11–17 級只在 SRD 版。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="monk"]').click();
+    await pickClass("monk");
     assert.equal(await pressed("class"), "site", "changing to monk returns to 網站版");
     await chooseSrd("class");
     const monkHeadings = await srdHeadings();
@@ -3064,7 +3071,7 @@ async function verifyClassSrdVersion(browser, url) {
     await showTab("class");
 
     // 聖騎士：半施法職業，法術位只到 5 環、法術列表五個環階；原文的側欄（違背誓言）是有外框的區塊，放在引導神力內文最後。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="paladin"]').click();
+    await pickClass("paladin");
     assert.equal(await pressed("class"), "site", "changing to paladin returns to 網站版");
     await chooseSrd("class");
     const paladinHeadings = await srdHeadings();
@@ -3116,7 +3123,7 @@ async function verifyClassSrdVersion(browser, url) {
     await showTab("class");
 
     // 遊俠：半施法職業；能力內文沒有表格，法術列表五個環階。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="ranger"]').click();
+    await pickClass("ranger");
     assert.equal(await pressed("class"), "site", "changing to ranger returns to 網站版");
     await chooseSrd("class");
     const rangerHeadings = await srdHeadings();
@@ -3131,7 +3138,7 @@ async function verifyClassSrdVersion(browser, url) {
     await showTab("class");
 
     // 盜賊：沒有法術列表；11 級以後與妙手 3 級高來高去、9–17 級只在 SRD 版，能力內文沒有表格。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="rogue"]').click();
+    await pickClass("rogue");
     assert.equal(await pressed("class"), "site", "changing to rogue returns to 網站版");
     await chooseSrd("class");
     const rogueHeadings = await srdHeadings();
@@ -3147,7 +3154,7 @@ async function verifyClassSrdVersion(browser, url) {
 
     // 術士：全施法職業；能力內文有「生成法術位」「龍族法術」兩張表與緊接段落的清單；
     // 原文寫在能力之後的「超魔法選項」是「超魔」頁籤的 SRD 版（內容檔的 srd.appendix）。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="sorcerer"]').click();
+    await pickClass("sorcerer");
     assert.equal(await pressed("class"), "site", "changing to sorcerer returns to 網站版");
     await chooseSrd("class");
     const sorcererHeadings = await srdHeadings();
@@ -3186,7 +3193,7 @@ async function verifyClassSrdVersion(browser, url) {
 
     // 契術師：等級表只有一列表頭（魔能祈喚、法術位、法術位環階）；能力內文只有「邪魔法術」一張表；
     // 原文寫在能力之後的「魔能祈喚選項」是「魔祈」頁籤的 SRD 版（內容檔的 srd.appendix），含網站版沒有的 9 級以上祈喚。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="warlock"]').click();
+    await pickClass("warlock");
     assert.equal(await pressed("class"), "site", "changing to warlock returns to 網站版");
     await chooseSrd("class");
     const warlockHeadings = await srdHeadings();
@@ -3230,7 +3237,7 @@ async function verifyClassSrdVersion(browser, url) {
 
     // 法師：全施法職業；能力內文沒有表格，原文的側欄（擴充與替換法術書，粗體標題）放在 3 級法師子職內文最後；
     // 法術列表 2 環補上原文漏列的魅影之力，克敵機先的特殊欄是 M。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="wizard"]').click();
+    await pickClass("wizard");
     assert.equal(await pressed("class"), "site", "changing to wizard returns to 網站版");
     await chooseSrd("class");
     const wizardHeadings = await srdHeadings();
@@ -3260,15 +3267,15 @@ async function verifyClassSrdVersion(browser, url) {
 
     // 換職業回到網站版、沒有 SRD 的職業移除開關；重新開啟視窗也回到網站版。
     // 先換到契術師並切到 SRD 版，再把法師從頁面上的清單拿掉、換成法師。
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="warlock"]').click();
+    await pickClass("warlock");
     await chooseSrd("class");
     await setSrdClasses(srdClassList.filter(id => id !== "wizard"));
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="wizard"]').click();
+    await pickClass("wizard");
     assert.equal(await switches().count(), 0, "wizard has no switch after a class with SRD text");
     assert.equal(await modal.locator("#classFeatures").isVisible(), true);
     assert.equal(await modal.locator("#classFeaturesSrd").isVisible(), false);
     await setSrdClasses(srdClassList);
-    await modal.locator('#character-features-picker [data-feature-picker="class"] [data-picker-value="barbarian"]').click();
+    await pickClass("barbarian");
     assert.equal(await pressed("class"), "site", "changing class returns to 網站版");
     await chooseSrd("class");
     await modal.locator(".app-dialog__close").click();
@@ -3287,6 +3294,11 @@ async function verifyClassSrdVersion(browser, url) {
     await page.evaluate(() => openCharacterFeatures("class"));
     await chooseSrd("class");
     assert.deepEqual(await levels("#classFeaturesSrd"), [1, 2, 3, 4], "share mode filters SRD 版 by the shared level");
+    // 等級跳轉列只是捲動，分享模式也能用。
+    const shareNav = modal.locator("#character-features-picker [data-feature-level-nav]");
+    assert.deepEqual(await shareNav.locator("[data-level-nav]:not(:disabled)").evaluateAll(items => items.map(item => item.dataset.levelNav)), ["1-4", "subclass"], "share mode keeps the level jump bar usable");
+    await shareNav.locator('[data-level-nav="subclass"]').click();
+    assert.equal(await shareNav.locator('[aria-current="location"]').getAttribute("data-level-nav"), "subclass");
     assert.deepEqual(await page.evaluate(() => collectStateObject()), shared, "share mode switching keeps the shared data");
     console.log("Class SRD version: switch only for classes with SRD text, title placement on desktop/narrow, lazy load, unchanged 網站版, level/subclass filtering, reset on reopen/class change and share mode passed.");
   } finally {
@@ -3410,6 +3422,120 @@ async function verifyDruidTerrainTable(browser, url) {
     assert.deepEqual(layout.rowHeader, ["center", "middle"], "terrain names are centered in their cells");
     assert.deepEqual([layout.scrolls, layout.pageOverflow], [true, false], "the table scrolls sideways inside its frame on phones");
     console.log("Druid terrain table: one spell per line, unwrapped headers, centered terrain and sideways scrolling on phones passed.");
+  } finally {
+    await page.close();
+  }
+}
+
+// 「特性」頁籤的等級跳轉列：五格依頁面上的段落啟用，點了捲到該區段第一個段落，捲動時亮目前區段；網站版與 SRD 版共用。
+async function verifyCharacterFeatureLevelNav(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
+  const modal = page.locator("#character-features-modal");
+  const nav = modal.locator("#character-features-picker [data-feature-level-nav]");
+  const button = key => nav.locator(`[data-level-nav="${key}"]`);
+  const set = (id, value) => page.evaluate(([id, value]) => {
+    const select = document.getElementById(id);
+    select.value = value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }, [id, value]);
+  const navState = () => nav.evaluate(group => ({
+    enabled: Array.from(group.querySelectorAll("[data-level-nav]:not(:disabled)"), item => item.dataset.levelNav),
+    current: group.querySelector('[aria-current="location"]')?.dataset.levelNav || null
+  }));
+  const landed = containerId => page.evaluate(containerId => {
+    const body = document.querySelector("#character-features-modal .app-dialog__body");
+    const top = body.getBoundingClientRect().top + parseFloat(getComputedStyle(body).paddingTop);
+    const section = Array.from(document.querySelectorAll(`#${containerId} section[data-feature-level]`))
+      .find(element => Math.abs(element.getBoundingClientRect().top - top) < 1.5);
+    return section ? { level: Number(section.dataset.featureLevel), subclass: section.dataset.subclass || null, srdTitle: section.classList.contains("class-srd-subclass") } : null;
+  }, containerId);
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
+    await set("class", "fighter");
+    await set("level", "8");
+    const state = await page.evaluate(() => collectStateObject());
+    await page.evaluate(() => openCharacterFeatures("class"));
+    assert.deepEqual(await nav.locator("[data-level-nav]").allTextContents(), ["1–4", "5–10", "11–16", "17–20", "子職"]);
+    assert.equal(await nav.isVisible(), true, "特性 tab shows the level jump bar");
+    assert.equal(await modal.locator('#character-features-picker [data-feature-picker="class"]').isVisible(), false, "特性 tab no longer shows the class icons");
+    assert.equal(await nav.evaluate(group => group.closest(".app-dialog__body") === null), true, "the bar sits in the header, outside the swipe surface");
+    // 高度不超過「職業」頁籤的職業圖示列，手機寬度每格夠大好按。
+    const navBox = await nav.boundingBox();
+    const buttonBox = await button("5-10").boundingBox();
+    assert(buttonBox.width >= 44 && buttonBox.height >= 44, "each jump button is a comfortable touch target on phones");
+    await modal.locator('[data-feature-tab="creation"]').click();
+    assert.equal(await nav.isVisible(), false, "職業 tab keeps the class picker");
+    const classBox = await modal.locator('#character-features-picker [data-feature-picker="class"]').boundingBox();
+    assert(navBox.height <= classBox.height + 0.5, "the jump bar is no taller than the class picker");
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const wideClassHeight = (await modal.locator('#character-features-picker [data-feature-picker="class"]').boundingBox()).height;
+    await modal.locator('[data-feature-tab="class"]').click();
+    assert((await nav.boundingBox()).height <= wideClassHeight + 0.5, "the jump bar is no taller than the class picker on desktop");
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    // 8 級戰士（網站版）：11–16、17–20 沒有內容；點一格捲到該區段第一個能力，子職捲到目前子職的第一個能力。
+    assert.deepEqual(await navState(), { enabled: ["1-4", "5-10", "subclass"], current: "1-4" });
+    await button("5-10").click();
+    assert.deepEqual(await landed("classFeatures"), { level: 5, subclass: null, srdTitle: false }, "5–10 jumps to the first level-5 feature");
+    assert.equal((await navState()).current, "5-10");
+    await button("subclass").click();
+    const subclassLanding = await landed("classFeatures");
+    assert.deepEqual([subclassLanding.level, Boolean(subclassLanding.subclass)], [3, true], "子職 jumps to the current subclass's first feature");
+    assert.equal((await navState()).current, "subclass");
+    // 捲動時亮目前所在區段。
+    await page.evaluate(() => {
+      const body = document.querySelector("#character-features-modal .app-dialog__body");
+      const target = Array.from(document.querySelectorAll("#classFeatures section[data-feature-level='6']"))[0];
+      body.scrollTop += target.getBoundingClientRect().top - body.getBoundingClientRect().top - parseFloat(getComputedStyle(body).paddingTop) + 4;
+    });
+    await page.waitForFunction(() => document.querySelector('[data-feature-level-nav] [aria-current="location"]')?.dataset.levelNav === "5-10");
+    await page.evaluate(() => { document.querySelector("#character-features-modal .app-dialog__body").scrollTop = 0; });
+    await page.waitForFunction(() => document.querySelector('[data-feature-level-nav] [aria-current="location"]')?.dataset.levelNav === "1-4");
+    // 鍵盤：左右鍵、Home、End 只移動焦點並跳過停用的格子。
+    await button("1-4").focus();
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await nav.locator(":focus").getAttribute("data-level-nav"), "5-10");
+    await page.keyboard.press("End");
+    assert.equal(await nav.locator(":focus").getAttribute("data-level-nav"), "subclass", "End skips disabled ranges");
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await nav.locator(":focus").getAttribute("data-level-nav"), "1-4");
+    await page.keyboard.press("Enter");
+    assert.equal((await navState()).current, "1-4");
+    // 等級未到子職：「子職」停用。
+    await set("level", "2");
+    assert.deepEqual(await navState(), { enabled: ["1-4"], current: "1-4" }, "level 2 has no subclass features yet");
+
+    // SRD 版、未選等級：列出 1–20 級，五格都啟用；子職捲到接在職業能力之後的子職標題。
+    await set("level", "");
+    assert.deepEqual((await navState()).enabled, ["1-4", "5-10", "subclass"], "網站版 has no content above level 10");
+    await modal.locator('#class-abilities-panel .class-version-switch [data-spell-version="srd"]').click();
+    await modal.locator("#classFeaturesSrd .spell-version__attribution").waitFor();
+    assert.deepEqual((await navState()).enabled, ["1-4", "5-10", "11-16", "17-20", "subclass"], "SRD 版 without a level enables every range");
+    await button("11-16").click();
+    assert.deepEqual(await landed("classFeaturesSrd"), { level: 11, subclass: null, srdTitle: false }, "11–16 jumps to the first level-11 SRD feature");
+    await button("subclass").click();
+    assert.equal((await navState()).current, "subclass", "the clicked range stays lit even when the last section cannot reach the top");
+    assert.equal(await page.evaluate(() => {
+      const body = document.querySelector("#character-features-modal .app-dialog__body");
+      const title = document.querySelector("#classFeaturesSrd .class-srd-subclass");
+      const top = body.getBoundingClientRect().top + parseFloat(getComputedStyle(body).paddingTop);
+      return Math.abs(title.getBoundingClientRect().top - top) < 1.5 || body.scrollTop + body.clientHeight >= body.scrollHeight - 1;
+    }), true, "子職 in SRD 版 jumps to the subclass title");
+    await set("level", "8");
+    await modal.locator("#classFeaturesSrd .spell-version__attribution").waitFor();
+    assert.deepEqual((await navState()).enabled, ["1-4", "5-10", "subclass"], "SRD 版 follows the chosen level");
+    await modal.locator('#class-abilities-panel .class-version-switch [data-spell-version="site"]').click();
+    assert.deepEqual((await navState()).enabled, ["1-4", "5-10", "subclass"]);
+    // 沒選職業：五格都停用。
+    await set("class", "");
+    assert.deepEqual((await navState()).enabled, [], "no class means nothing to jump to");
+    await set("class", "fighter");
+    await set("level", "8");
+    await page.keyboard.press("Escape");
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), state, "jumping never changes character data");
+    console.log("Character feature level nav: five ranges, header placement and height, enabled ranges per level/subclass/version, click jumps, scroll highlight, keyboard and SRD 版 passed.");
   } finally {
     await page.close();
   }
@@ -3868,9 +3994,15 @@ async function verifyClassFeatureSupplementalChoices(browser, url) {
     assert.equal(await classLand.inputValue(), "polar", "the class dialog shows the current terrain");
     await classLand.selectOption("arid");
     assert.equal(await page.inputValue("#druid-land"), "arid");
-    await classModal.locator('#character-features-picker [data-picker-value="cleric"]').click();
+    // 職業圖示列在「職業」頁籤（「特性」頁籤是等級跳轉列）。
+    const pickClassIn = async value => {
+      await classModal.locator('[data-feature-tab="creation"]').click();
+      await classModal.locator(`#character-features-picker [data-picker-value="${value}"]`).click();
+      await classModal.locator('[data-feature-tab="class"]').click();
+    };
+    await pickClassIn("cleric");
     assert.equal(await classModal.locator('[data-class-feature-additional="druid-land"]').count(), 0, "other classes have no terrain field");
-    await classModal.locator('#character-features-picker [data-picker-value="druid"]').click();
+    await pickClassIn("druid");
     assert.equal(await classLand.inputValue(), "arid", "the terrain field remounts after the class dialog rerenders");
     await page.keyboard.press("Escape");
     await classModal.waitFor({ state: "detached" });
@@ -7416,6 +7548,7 @@ async function main() {
       await verifyClassSrdVersion(browser, url);
       await verifyClassFeatureTableJumps(browser, url);
       await verifyDruidTerrainTable(browser, url);
+      await verifyCharacterFeatureLevelNav(browser, url);
       await verifyChoiceReminderHighlights(browser, url);
       await verifyClassFeatureChoicePrompt(browser, url);
       await verifyClassFeatureSupplementalChoices(browser, url);

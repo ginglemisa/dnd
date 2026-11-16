@@ -109,7 +109,7 @@
   <link rel="stylesheet" href="css/tokens.css?v=20261115-auto-value">
   <link rel="stylesheet" href="css/base.css?v=20261117-level-10b">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261116-rank-lock">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261116-calculation-tips">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261116-level-nav">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261116-ring-slot-layout">
   <link rel="stylesheet" href="css/utility.css?v=20261116-slot-layout">
   <link rel="stylesheet" href="css/dice.css?v=20261115-basic-align">
@@ -943,6 +943,13 @@
     <div class="character-features-picker__group character-features-picker__group--class" role="toolbar" aria-label="選擇職業" data-feature-picker="class" hidden></div>
     <div class="character-features-picker__group character-features-picker__group--background" role="toolbar" aria-label="選擇背景" data-feature-picker="background" hidden></div>
     <div class="character-features-picker__group character-features-picker__group--race" role="toolbar" aria-label="選擇種族" data-feature-picker="race" hidden></div>
+    <div class="character-features-picker__group character-features-picker__group--level" role="toolbar" aria-label="跳到等級區段" data-feature-level-nav hidden>
+      <button type="button" class="character-features-picker__option" data-level-nav="1-4" aria-label="跳到 1–4 級" tabindex="-1"><span class="character-features-picker__label">1–4</span></button>
+      <button type="button" class="character-features-picker__option" data-level-nav="5-10" aria-label="跳到 5–10 級" tabindex="-1"><span class="character-features-picker__label">5–10</span></button>
+      <button type="button" class="character-features-picker__option" data-level-nav="11-16" aria-label="跳到 11–16 級" tabindex="-1"><span class="character-features-picker__label">11–16</span></button>
+      <button type="button" class="character-features-picker__option" data-level-nav="17-20" aria-label="跳到 17–20 級" tabindex="-1"><span class="character-features-picker__label">17–20</span></button>
+      <button type="button" class="character-features-picker__option" data-level-nav="subclass" aria-label="跳到子職" tabindex="-1"><span class="character-features-picker__label">子職</span></button>
+    </div>
   </div>
   </div>
 <div class="section character-feature-panel" id="class-creation-panel" role="tabpanel" aria-labelledby="character-features-tab-creation" data-feature-panel="creation" hidden inert>
@@ -1426,7 +1433,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261113-lessons-rename"></script>
   <script src="spell-sources.js?v=20261113-blessed-warrior"></script>
-  <script src="class-features-ui.js?v=20261117-level-10b"></script>
+  <script src="class-features-ui.js?v=20261117-level-10c"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
