@@ -1223,16 +1223,28 @@ body.utility-menu-open #equipment-search-fab {
 /* ===== 分頁滑動換頁（page-swipe.js） ===== */
 /* 水平滑動交給換頁手勢（內容不滿一頁時，下方空白處也要能滑）；
    垂直捲動與雙指縮放仍由瀏覽器處理，內層的橫向捲動區不受影響。
-   body 與 textarea 本身是捲動容器，各自都要指定，否則瀏覽器會把上面的水平滑動收走。
+   body、textarea 與角色能力視窗的內容區本身是捲動容器，各自都要指定，否則瀏覽器會把上面的水平滑動收走。
    雙指放大檢視時（page-swipe-zoomed）取消限制，才能單指左右平移畫面。 */
 html:not(.page-swipe-zoomed),
 html:not(.page-swipe-zoomed) body,
-html:not(.page-swipe-zoomed) textarea {
+html:not(.page-swipe-zoomed) textarea,
+html:not(.page-swipe-zoomed) #character-features-modal .app-dialog__body {
+  touch-action: pan-y pinch-zoom;
+}
+
+/* 角色能力視窗各頁籤的說明區（.output）為了防溢出設了 overflow-x: auto，本身也是捲動容器；
+   內容不會比視窗寬（寬表格另有自己的捲動外框），所以一樣把水平滑動留給換頁，否則整頁內容都無法起手。 */
+html:not(.page-swipe-zoomed) #character-features-modal .output {
   touch-action: pan-y pinch-zoom;
 }
 
 .page-swipe-host {
   position: relative;
+}
+
+/* 角色能力視窗的內容區：鄰頁畫在左右時不撐出橫向捲軸。 */
+.app-dialog__body.page-swipe-clip {
+  overflow-x: hidden;
 }
 
 .page-swipe-current,
@@ -1547,6 +1559,16 @@ details > summary::-webkit-details-marker,
 .class-feature-table td:nth-child(3) {
   text-align: left;
   line-height: 1.5;
+}
+
+/* 能力名稱點了跳到「特性」頁籤的該能力（class-features-ui.js）；外觀維持一般文字。 */
+.class-feature-jump {
+  cursor: pointer;
+}
+
+.class-feature-jump:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
 }
 
 /* 野蠻人的三個數值欄標題維持單行，搭配專屬欄寬避免表頭拉高。 */

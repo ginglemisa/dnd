@@ -1,5 +1,5 @@
-// 上層分頁的滑動換頁與點按轉場（一般模式與跑團模式）。
-// 只負責畫面：實際切換仍走 showTab()／TabletopMode.setPanel()，不讀寫角色資料。
+// 上層分頁的滑動換頁與點按轉場（一般模式、跑團模式與角色能力視窗）。
+// 只負責畫面：實際切換仍走 showTab()／TabletopMode.setPanel()／showCharacterFeatureTab()，不讀寫角色資料。
 // 行為決定見 BEHAVIOR.md「分頁滑動換頁」。
 (function attachPageSwipe(globalScope) {
   if (typeof document === "undefined") return;
@@ -50,29 +50,69 @@
     })).filter(entry => entry.key && entry.panel);
   }
 
-  // 兩種模式的差異都收在這裡：分頁按鈕的順序就是換頁順序（一般模式的面板 DOM 順序不同）。
+  // 角色卡內容區（含頁尾與內容下方的空白）才能起手。
+  const pageSurface = target => (target === document.body || target === document.documentElement)
+    ? target : target.closest("#main-content, .site-footer");
+  const pageScrollTop = () => globalScope.scrollY;
+  const pageScrollTo = top => globalScope.scrollTo(0, top);
+  const featuresBody = () => document.querySelector("#character-features-modal .app-dialog__body");
+
+  // 各模式的差異都收在這裡：分頁按鈕的順序就是換頁順序（一般模式的面板 DOM 順序不同）。
+  // surface 是能起手的區域，scrollTop／scrollTo 是頁面所在的捲動容器。
   const MODES = {
     sheet: {
       host: () => document.getElementById("main-content"),
       clip: () => document.body,
+      surface: pageSurface,
       tabs: () => tabEntries("#sheet-tabs-row .tab-button", button => (button.getAttribute("aria-controls") || "").replace(/^tab-/, "")),
       activePanel: () => document.querySelector("#main-content > .tab-content.active"),
       go: entry => globalScope.showTab?.(entry.key, entry.button),
       savedScroll: key => Number(globalScope.getSheetTabScroll?.(key)) || 0,
+      scrollTop: pageScrollTop,
+      scrollTo: pageScrollTo,
       maxScroll: () => Math.max(0, document.body.scrollHeight - globalScope.innerHeight)
     },
     tabletop: {
       host: () => document.querySelector("#tabletop-mode .tabletop-sheet"),
       clip: () => document.querySelector("#tabletop-mode .tabletop-sheet"),
+      surface: pageSurface,
       tabs: () => tabEntries(".tabletop-primary-tabs [data-tabletop-tab]", button => button.dataset.tabletopTab),
       activePanel: () => document.getElementById(`tabletop-panel-${globalScope.TabletopMode?.getPanel?.() || ""}`),
       go: entry => globalScope.TabletopMode?.setPanel?.(entry.key),
       savedScroll: key => Number(globalScope.TabletopMode?.getPanelScroll?.(key)) || 0,
+      scrollTop: pageScrollTop,
+      scrollTo: pageScrollTo,
       maxScroll: () => Math.max(0, document.documentElement.scrollHeight - globalScope.innerHeight)
+    },
+    // 角色能力視窗：頁面在視窗內容區裡捲動，換頁一律回到頂端（同點分頁按鈕）。
+    features: {
+      host: () => document.getElementById("character-features"),
+      clip: featuresBody,
+      surface: target => target.closest("#character-features-modal .app-dialog__body"),
+      tabs: () => tabEntries(".character-features-tabs [data-feature-tab]", button => button.dataset.featureTab),
+      activePanel: () => document.querySelector("#character-features [data-feature-panel]:not([hidden])"),
+      go: entry => globalScope.showCharacterFeatureTab?.(entry.key),
+      savedScroll: () => 0,
+      scrollTop: () => featuresBody()?.scrollTop || 0,
+      scrollTo: top => {
+        const body = featuresBody();
+        if (body) body.scrollTop = top;
+      },
+      maxScroll: () => {
+        const body = featuresBody();
+        return body ? Math.max(0, body.scrollHeight - body.clientHeight) : 0;
+      }
     }
   };
 
+  // 角色能力視窗開著、上面沒有疊其他視窗時，滑動換的是視窗裡的分頁。
+  function featuresDialogActive() {
+    const modal = document.getElementById("character-features-modal");
+    return Boolean(modal) && !modal.closest("[inert]");
+  }
+
   function currentMode() {
+    if (featuresDialogActive()) return "features";
     return document.documentElement.dataset.viewMode === "tabletop" ? "tabletop" : "sheet";
   }
 
@@ -97,6 +137,7 @@
     const clip = adapter.clip();
     if (!host || !clip || !tabs.current) return null;
     host.classList.add("page-swipe-host");
+    clip.classList.add("page-swipe-clip");
     tabs.current.panel.classList.remove("page-swipe-rest");
     tabs.current.panel.classList.add("page-swipe-current");
     session = {
@@ -124,6 +165,7 @@
     // 還在作用中的角色卡分頁不重播進場動畫。
     if (panel.matches(".tab-content.active")) panel.classList.add("page-swipe-rest");
     session.host.classList.remove("page-swipe-host");
+    session.clip.classList.remove("page-swipe-clip");
     session = null;
   }
 
@@ -153,6 +195,8 @@
     const style = panel.style;
     panel.classList.remove("page-swipe-rest");
     panel.classList.add("page-swipe-side");
+    // 頁面原本就有的行內樣式（例如超魔、魔祈區塊的 display）收起時要還原。
+    const saved = SIDE_STYLE_PROPERTIES.map(property => [property, style.getPropertyValue(property), style.getPropertyPriority(property)]);
     style.setProperty("display", "block", "important");
     style.left = `${rest.left - hostRect.left - host.clientLeft}px`;
     style.width = `${rest.width}px`;
@@ -161,7 +205,7 @@
     let top = viewportTop;
     if (top === null) {
       const scrollAfter = Math.min(adapter.savedScroll(entry.key), Math.max(0, maxScrollNow + fullHeight - rest.height));
-      top = rest.top + globalScope.scrollY - scrollAfter;
+      top = rest.top + adapter.scrollTop() - scrollAfter;
     }
     style.top = `${top - hostRect.top - host.clientTop}px`;
     // 不超出容器底部，避免撐大可捲動範圍；高於目前頁面頂端的部分不畫（那裡是頁首或分頁列）。
@@ -173,14 +217,18 @@
     }
     const cutTop = rest.top - top;
     if (cutTop > 0.5) style.clipPath = `inset(${cutTop}px 0 0 0)`;
-    session.sides[side] = { entry, panel };
+    session.sides[side] = { entry, panel, saved };
   }
 
   function unmountSide(side) {
     const mounted = session.sides[side];
     if (!mounted) return;
     mounted.panel.classList.remove("page-swipe-side");
-    SIDE_STYLE_PROPERTIES.forEach(property => mounted.panel.style.removeProperty(property));
+    const { style } = mounted.panel;
+    mounted.saved.forEach(([property, value, priority]) => {
+      if (value) style.setProperty(property, value, priority);
+      else style.removeProperty(property);
+    });
     session.sides[side] = null;
   }
 
@@ -212,6 +260,11 @@
   function tick(now) {
     if (!session) return;
     session.frame = 0;
+    // 滑動途中開關了角色能力視窗：直接回到定位。
+    if (session.mode !== currentMode()) {
+      reset();
+      return;
+    }
     if (session.phase === "settle") session.x = springPosition(now);
     draw(now);
     const resting = Math.abs(session.x) < 0.5 && Math.abs(session.drawnY) < 0.5;
@@ -256,8 +309,7 @@
       from: { panel: current.panel, rect: current.panel.getBoundingClientRect() },
       toRect: mounted.panel.getBoundingClientRect(),
       direction: side === "next" ? 1 : -1,
-      velocity,
-      expires: performance.now() + 100
+      velocity
     };
     adapter.go(mounted.entry);
     if (armed) {
@@ -282,7 +334,7 @@
     const active = tabs.current;
     active.panel.classList.add("page-swipe-current");
     // 先還原捲動位置（與切換入口稍後做的相同），才能量到新頁的最終位置。
-    globalScope.scrollTo(0, Math.min(adapter.savedScroll(active.key), adapter.maxScroll()));
+    adapter.scrollTo(Math.min(adapter.savedScroll(active.key), adapter.maxScroll()));
     if (!openSession(mode, adapter, tabs)) return;
     const now = performance.now();
     const finalRect = active.panel.getBoundingClientRect();
@@ -304,7 +356,7 @@
     releaseRest(false);
     const adapter = MODES[mode];
     const animate = intent && intent.mode === mode && currentMode() === mode
-      && performance.now() <= intent.expires && !prefersReducedMotion() && intent.from.panel.isConnected;
+      && !prefersReducedMotion() && intent.from.panel.isConnected;
     const tabs = animate ? describeTabs(adapter) : null;
     if (!tabs?.current || tabs.current.panel === intent.from.panel) {
       // 程式切換、切回同一頁或被導回其他頁：不做轉場，也結束進行中的滑動。
@@ -322,12 +374,11 @@
       || (element instanceof HTMLInputElement && !["checkbox", "radio", "button", "submit", "reset", "file", "color"].includes(element.type));
   }
 
-  // 內容區（含頁尾與內容下方的空白）裡不屬於其他手勢的地方才能起手：橫向捲動區、內層分頁列、
+  // 起手區（各模式的 surface）裡不屬於其他手勢的地方才能起手：橫向捲動區、內層分頁列、
   // 拖曳元件、自己處理觸控的元件、浮在頁面上的視窗與正在輸入的欄位都排除。
-  function isSwipeSurface(target) {
+  function isSwipeSurface(target, adapter) {
     if (!(target instanceof Element)) return false;
-    if (target === document.body || target === document.documentElement) return true;
-    const surface = target.closest("#main-content, .site-footer");
+    const surface = adapter.surface(target);
     if (!surface) return false;
     for (let element = target; element && element !== surface; element = element.parentElement) {
       if (element.matches(BLOCKED_SELECTOR) || isEditing(element)) return false;
@@ -350,11 +401,13 @@
 
   function canStart(event) {
     if (isZoomed()) return false;
-    if (document.documentElement.classList.contains("app-dialog-open")
+    const mode = currentMode();
+    // 對話框裡只有角色能力視窗可以滑動換頁。
+    if ((mode !== "features" && document.documentElement.classList.contains("app-dialog-open"))
       || document.body.classList.contains("utility-menu-open")
       || globalScope.onboardingTour?.active) return false;
     if (event.clientX < EDGE_GUARD || event.clientX > globalScope.innerWidth - EDGE_GUARD) return false;
-    return isSwipeSurface(event.target);
+    return isSwipeSurface(event.target, MODES[mode]);
   }
 
   // 放開追蹤中的手指；頁面若停在半路就回到定位。
@@ -496,24 +549,29 @@
     }
     // 觸控點分頁按鈕：記下切換前的頁面，切換後用同一套滑動轉場。滑鼠與鍵盤維持原本的切換。
     const button = event.target instanceof Element
-      ? event.target.closest("#sheet-tabs-row .tab-button, .tabletop-primary-tabs [data-tabletop-tab]")
+      ? event.target.closest("#sheet-tabs-row .tab-button, .tabletop-primary-tabs [data-tabletop-tab], .character-features-tabs [data-feature-tab]")
       : null;
     // 導覽進行中會量測新頁上的元素位置，不做轉場。
     if (!button || prefersReducedMotion() || globalScope.onboardingTour?.active) return;
     const fromTouch = event.pointerType ? event.pointerType !== "mouse" : performance.now() - lastTouchEnd < 700;
     if (!fromTouch) return;
-    const mode = button.matches(".tab-button") ? "sheet" : "tabletop";
+    const mode = button.matches(".tab-button") ? "sheet" : button.matches("[data-feature-tab]") ? "features" : "tabletop";
     if (currentMode() !== mode) return;
     const panel = MODES[mode].activePanel();
     if (!panel) return;
-    armed = {
+    const intent = {
       mode,
       from: { panel, rect: panel.getBoundingClientRect() },
       toRect: null,
       direction: 0,
-      velocity: 0,
-      expires: performance.now() + 100
+      velocity: 0
     };
+    armed = intent;
+    // 只認這次點擊引起的切換：點擊事件派送完（含切換頁面的處理）就作廢。不用固定時限，
+    // 因為切到內容很長的頁面時，版面計算可能就超過一百毫秒。
+    globalScope.setTimeout(() => {
+      if (armed === intent) armed = null;
+    }, 0);
   }
 
   const listening = { capture: true, passive: true };
@@ -524,6 +582,7 @@
   globalScope.addEventListener("click", onClickCapture, true);
   globalScope.addEventListener("tabchange", () => handleSwitch("sheet"));
   globalScope.addEventListener("tabletop-panelchange", () => handleSwitch("tabletop"));
+  globalScope.addEventListener("character-features-tabchange", () => handleSwitch("features"));
   globalScope.addEventListener("modechange", event => {
     armed = null;
     reset();

@@ -1181,6 +1181,70 @@ function selectCharacterFeatureTab(tab) {
   }
 }
 
+// 玩家切換角色能力分頁（點分頁按鈕、滑動換頁）：換頁後回到頂端，再通知 page-swipe.js 接手轉場。
+function showCharacterFeatureTab(tab) {
+  selectCharacterFeatureTab(tab);
+  const body = document.querySelector(".character-features-tabs")?.closest(".app-dialog")?.querySelector(".app-dialog__body");
+  if (body) body.scrollTop = 0;
+  window.dispatchEvent(new CustomEvent("character-features-tabchange"));
+}
+
+// 「職業」頁籤特性表（網站版）的能力名稱：點了切到「特性」頁籤並捲到該能力。標記由建置加上（.class-feature-jump），
+// 有能力 ID 的找 data-feature-id；「子職特性」找目前子職在該等級的第一個能力。特性頁只列到目前等級與目前子職，找不到時以 toast 說明。
+function findClassFeatureJumpTarget(link) {
+  const output = document.getElementById("classFeatures");
+  const id = link.dataset.featureJump;
+  const level = link.dataset.featureJumpLevel;
+  return id
+    ? Array.from(output.querySelectorAll("section[data-feature-id]")).find(section => section.dataset.featureId === id) || null
+    : output.querySelector(`section[data-feature-level="${Number(level)}"][data-subclass]`);
+}
+
+function jumpToClassFeature(link) {
+  const target = findClassFeatureJumpTarget(link);
+  if (!target) {
+    const level = Number(link.dataset.featureJumpLevel);
+    const characterLevel = Number(document.getElementById("level")?.value);
+    window.AppDialog?.notify(characterLevel > 0 && characterLevel < level
+      ? `角色等級 ${level} 才會在「特性」頁列出這項能力。`
+      : "選擇子職後才會在「特性」頁列出子職特性。");
+    return;
+  }
+  showCharacterFeatureTab("class");
+  const body = target.closest(".app-dialog__body");
+  if (body) {
+    const offset = target.getBoundingClientRect().top - body.getBoundingClientRect().top - parseFloat(getComputedStyle(body).paddingTop);
+    body.scrollTop = Math.max(0, body.scrollTop + offset);
+  }
+  const heading = target.querySelector(":scope > h3");
+  if (heading) {
+    heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
+  }
+}
+
+function bindClassFeatureTableJumps() {
+  const creation = document.getElementById("classCreationInfo");
+  if (!creation) return;
+  const linkFrom = target => {
+    const link = target instanceof Element ? target.closest(".class-feature-jump") : null;
+    // 表格文字裡若另有法術或規則提示按鈕，交給它們自己處理。
+    if (!link || target.closest(".spell-highlight-action, .feature-rule-tip, button")) return null;
+    return link;
+  };
+  creation.addEventListener("click", event => {
+    const link = linkFrom(event.target);
+    if (link) jumpToClassFeature(link);
+  });
+  creation.addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+    const link = linkFrom(event.target);
+    if (!link) return;
+    event.preventDefault();
+    jumpToClassFeature(link);
+  });
+}
+
 function syncCharacterFeatureTabs() {
   const tabs = document.querySelector(".character-features-tabs");
   if (!tabs) return;
@@ -1305,9 +1369,7 @@ function bindCharacterFeatureDialog() {
   tabs.addEventListener("click", event => {
     const button = event.target.closest("[data-feature-tab]");
     if (!button) return;
-    selectCharacterFeatureTab(button.dataset.featureTab);
-    const body = tabs.closest(".app-dialog")?.querySelector(".app-dialog__body");
-    if (body) body.scrollTop = 0;
+    showCharacterFeatureTab(button.dataset.featureTab);
   });
   tabs.addEventListener("keydown", event => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
@@ -1320,6 +1382,7 @@ function bindCharacterFeatureDialog() {
     buttons[next].click();
     buttons[next].focus({ preventScroll: true });
   });
+  bindClassFeatureTableJumps();
   bindCharacterFeaturePicker();
   syncCharacterFeatureTabs();
 }
@@ -1643,6 +1706,8 @@ function createClassContentVersionSwitch() {
   tabs.className = "spell-version__tabs class-version-switch";
   tabs.setAttribute("role", "group");
   tabs.setAttribute("aria-label", "職業說明版本");
+  // 版本切換鈕上起手不滑動換頁，以免切版本時誤換分頁。
+  tabs.dataset.pageSwipe = "off";
   const buttons = [["site", "網站版"], ["srd", "SRD 版"]].map(([version, label]) => {
     const button = document.createElement("button");
     button.type = "button";
