@@ -98,16 +98,23 @@ function renderCreation(context) {
   const progression = Object.values(classDef.progression || {});
   // 有子職能力的等級：只有子職能力時顯示「子職特性」；另有職業能力、但不是選擇子職的等級，接在職業能力之後。
   // 只有部分子職在該等級有能力時，「子職特性」包在 data-subclass（子職 ID 以空白分隔）裡，網站只留目前子職的文字。
+  // 能力名稱包成 .class-feature-jump：網站點了跳到「特性」頁籤的該能力（data-feature-jump 是能力 ID；
+  // 「子職特性」沒有 ID，網站以 data-feature-jump-level 找目前子職在該等級的能力）。SRD 版的特性表另由 srd 區塊產生，不加。
+  const jump = (level, text, id = "") => `<span class="class-feature-jump" role="link" tabindex="0"${id ? ` data-feature-jump="${id}"` : ""} data-feature-jump-level="${level}">${text}</span>`;
   const featureNames = level => {
     const own = classDef.features.filter(feature => feature.level === level && feature.name);
     const withFeature = context.subclasses.filter(subclass => subclass.features.some(feature => feature.level === level));
-    const names = own.map(feature => escapeHtml(feature.tableName || feature.name));
+    const names = own.map(feature => {
+      const text = escapeHtml(feature.tableName || feature.name);
+      return feature.id ? jump(level, text, feature.id) : text;
+    });
+    const subclassFeatures = jump(level, "子職特性");
     if (!withFeature.length || own.some(feature => feature.type === "subclass")) return names.length ? names.join("，") : "-";
-    if (withFeature.length === context.subclasses.length) return [...names, "子職特性"].join("，");
+    if (withFeature.length === context.subclasses.length) return [...names, subclassFeatures].join("，");
     const ids = withFeature.map(subclass => subclass.id).join(" ");
     return names.length
-      ? `${names.join("，")}<span data-subclass="${ids}">，子職特性</span>`
-      : `<span data-subclass="${ids}">子職特性</span><span data-subclass-except="${ids}">-</span>`;
+      ? `${names.join("，")}<span data-subclass="${ids}">，${subclassFeatures}</span>`
+      : `<span data-subclass="${ids}">${subclassFeatures}</span><span data-subclass-except="${ids}">-</span>`;
   };
   const tableRows = Array.from({ length: classDef.maxLevel }, (unused, index) => {
     const level = index + 1;

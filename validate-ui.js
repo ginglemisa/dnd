@@ -1331,7 +1331,7 @@ async function verifyPageSwipe(browser, url) {
           const entry = `${side.id}>${current}`;
           if (!window.pageSwipeLog.includes(entry)) window.pageSwipeLog.push(entry);
         });
-      }).observe(document.getElementById("main-content"), { subtree: true, attributes: true, attributeFilter: ["class"] });
+      }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
     });
     return page;
   };
@@ -1349,8 +1349,10 @@ async function verifyPageSwipe(browser, url) {
   });
   const settle = async page => {
     await page.waitForFunction(() => !document.querySelector(".page-swipe-host, .page-swipe-current, .page-swipe-side"));
-    assert.equal(await page.evaluate(() => [...document.querySelectorAll(".tab-content, .tabletop-panel")]
-      .filter(panel => ["display", "position", "left", "top", "width", "height", "transform", "clipPath", "overflow"].some(key => panel.style[key])).length), 0,
+    // 超魔、魔祈區塊本來就有行內 display（非 important），滑動畫鄰頁時加的是 important，收起後要還原。
+    assert.equal(await page.evaluate(() => [...document.querySelectorAll(".tab-content, .tabletop-panel, .character-feature-panel")]
+      .filter(panel => panel.style.getPropertyPriority("display") === "important"
+        || ["position", "left", "top", "width", "height", "transform", "clipPath", "overflow"].some(key => panel.style[key])).length), 0,
     "a finished swipe leaves no inline layout styles on any page");
   };
   const log = page => page.evaluate(() => window.pageSwipeLog.splice(0));
@@ -1544,6 +1546,129 @@ async function verifyPageSwipe(browser, url) {
     await touch.close();
   } finally { await page.close(); }
 
+  // 角色能力視窗：內容區滑動換分頁（照按鈕順序、跳過隱藏的分頁），換頁回到頂端；點分頁按鈕也滑動。
+  page = await open();
+  try {
+    await page.selectOption("#class", "sorcerer");
+    // 視窗開著時匯出內容本來就與關著時不同（與滑動無關），所以在開視窗前取基準、關掉後比對。
+    const exported = await page.evaluate(() => collectJsonExportText().text);
+    await page.evaluate(() => openCharacterFeatures("class"));
+    // 等視窗的開啟動畫跑完，量到的位置才是定位後的位置。
+    await page.waitForFunction(() => document.getElementById("character-features-modal")?.dataset.entering === undefined);
+    const feature = () => page.evaluate(() => {
+      const body = document.querySelector("#character-features-modal .app-dialog__body");
+      return {
+        tab: document.querySelector('.character-features-tabs [aria-selected="true"]').dataset.featureTab,
+        scrollTop: Math.round(body.scrollTop),
+        bodyTop: body.getBoundingClientRect().top + parseFloat(getComputedStyle(body).paddingTop),
+        activeTop: document.querySelector("#character-features [data-feature-panel]:not([hidden])").getBoundingClientRect().top,
+        current: document.querySelector("#character-features .page-swipe-current")?.id || null,
+        sides: [...document.querySelectorAll("#character-features .page-swipe-side")].map(side => ({ id: side.id, top: side.getBoundingClientRect().top })),
+        clipped: body.classList.contains("page-swipe-clip"),
+        overflowX: getComputedStyle(body).overflowX,
+        scrollLeft: body.scrollLeft,
+        touchAction: getComputedStyle(body).touchAction
+      };
+    });
+    const body = await page.locator("#character-features-modal .app-dialog__body").boundingBox();
+    const [right, left] = [body.x + body.width - 40, body.x + 40];
+    // 起手點：兩端都落在一般文字上（不在橫向捲動的表格或按鈕上）的高度。
+    const startY = () => page.evaluate(([x0, x1]) => {
+      const surface = document.querySelector("#character-features-modal .app-dialog__body");
+      const rect = surface.getBoundingClientRect();
+      const plain = (x, y) => {
+        for (let el = document.elementFromPoint(x, y); el && el !== surface; el = el.parentElement) {
+          if (!el.closest("#character-features")) return false;
+          if (el.matches("button, input, select, textarea, [data-page-swipe], [role=\"tablist\"], [role=\"toolbar\"], [role=\"group\"]")) return false;
+          const style = getComputedStyle(el);
+          if (/auto|scroll/.test(style.overflowX) && el.scrollWidth > el.clientWidth + 1) return false;
+        }
+        return true;
+      };
+      // 內容短的頁籤（例如還沒選背景）視窗也會變矮，所以只留一點邊距。
+      for (let y = rect.top + 12; y < rect.bottom - 12; y += 6) if (plain(x0, y) && plain(x1, y)) return y;
+      return null;
+    }, [right, left]);
+    assert.equal((await feature()).touchAction, "pan-y pinch-zoom", "the dialog body leaves horizontal drags to the swipe");
+
+    // 觸控點分頁按鈕：同一套滑動轉場（先測，之後的甩動會讓模擬器吞掉下一次點擊）。
+    await log(page);
+    await page.locator('.character-features-tabs [data-feature-tab="creation"]').tap();
+    await settle(page);
+    assert.equal((await feature()).tab, "creation");
+    assert.deepEqual(await log(page), ["class-abilities-panel>class-creation-panel"], "a feature tab tap slides the old page out");
+
+    // 捲到下面再滑：鄰頁畫在內容區頂端、不撐出橫向捲軸；放手過半頁才換，換頁後回到頂端。
+    const touch = await openTouch(page);
+    await touch.drag([body.x + body.width / 2, body.y + body.height - 80], [body.x + body.width / 2, body.y + 80], { hold: 150 });
+    await page.waitForTimeout(300);
+    assert((await feature()).scrollTop > 100, "vertical drags still scroll the dialog");
+    let y = await startY();
+    assert(y, "the creation page has plain text to start a swipe on");
+    await touch.drag([right, y], [left, y], { release: false });
+    await page.waitForFunction(() => document.querySelector("#character-features .page-swipe-side"), null, { timeout: 2000 })
+      .catch(() => assert.fail("the next feature page peeks in"));
+    let state = await feature();
+    assert.deepEqual([state.tab, state.current, state.sides.map(side => side.id)], ["creation", "class-creation-panel", ["class-abilities-panel"]],
+      "dragging draws the next page beside the current one without switching");
+    assert(Math.abs(state.sides[0].top - state.bodyTop) < 1.5, `the incoming page starts at the top of the dialog: ${state.sides[0].top} vs ${state.bodyTop}`);
+    assert.deepEqual([state.clipped, state.overflowX, state.scrollLeft], [true, "hidden", 0], "the dialog body never scrolls sideways while a page is drawn beside it");
+    await page.waitForTimeout(150);
+    await touch.end();
+    await settle(page);
+    state = await feature();
+    assert.deepEqual([state.tab, state.scrollTop, state.clipped], ["class", 0, false], "the switch lands at the top");
+    assert(Math.abs(state.activeTop - state.bodyTop) < 1.5, "the new page sits at the top of the dialog");
+
+    // 超魔之後是背景：沒顯示的魔祈跳過；最後一頁往左沒有下一頁。
+    const swipeTo = async (expected, label) => {
+      y = await startY();
+      assert(y, `${expected}: plain text to start on`);
+      await touch.drag([right, y], [left, y], { stepMs: 30, hold: 150 });
+      await settle(page);
+      assert.equal((await feature()).tab, expected, label);
+    };
+    await swipeTo("metamagic", "swipes follow the feature tab order");
+    await swipeTo("background", "hidden feature tabs are skipped");
+    assert.equal(await page.evaluate(() => document.getElementById("metamagic-options-section").style.display), "block",
+      "a page drawn beside the current one gets its own inline display back");
+    await swipeTo("race", "the race tab follows background");
+    await swipeTo("race", "the last feature tab has no next page");
+
+    // 不換頁：標題列（分頁與快速選擇列在內容區外）、版本切換鈕、有選取文字時、上面疊了其他視窗時。
+    const stays = async (label, gesture) => {
+      const before = (await feature()).tab;
+      await log(page);
+      await gesture();
+      await page.waitForTimeout(250);
+      await settle(page);
+      assert.equal((await feature()).tab, before, `${label} must not change the feature tab`);
+      assert.deepEqual(await log(page), [], `${label} never starts a page drag`);
+    };
+    const tabsBox = await page.locator(".character-features-tabs").boundingBox();
+    await stays("a swipe on the dialog header", () => touch.drag([right, tabsBox.y + tabsBox.height / 2], [left, tabsBox.y + tabsBox.height / 2], { steps: 4, stepMs: 0 }));
+    await page.locator('.character-features-tabs [data-feature-tab="creation"]').click();
+    const versionSwitch = await page.locator("#class-creation-panel .class-version-switch").boundingBox();
+    assert(versionSwitch, "the class page shows the site/SRD switch");
+    const switchY = versionSwitch.y + versionSwitch.height / 2;
+    await stays("a swipe from the site/SRD switch", () => touch.drag([versionSwitch.x + versionSwitch.width / 2, switchY], [left, switchY], { steps: 4, stepMs: 0 }));
+    await page.evaluate(() => window.getSelection().selectAllChildren(document.querySelector("#classCreationInfo p")));
+    y = await startY();
+    await stays("a swipe while text is selected", () => touch.drag([right, y], [left, y], { stepMs: 30, hold: 150 }));
+    await page.evaluate(() => window.getSelection().removeAllRanges());
+    await page.evaluate(() => { AppDialog.showMessage({ title: "滑動測試", message: "上面疊了視窗時不換頁" }); });
+    await stays("a swipe under a nested dialog", () => touch.drag([right, y], [left, y], { steps: 4, stepMs: 0 }));
+    await page.keyboard.press("Escape");
+    await swipeTo("class", "the dialog swipes again once the nested dialog closes");
+
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => !document.getElementById("character-features-modal"));
+    await settle(page);
+    assert.equal(await page.evaluate(() => document.querySelectorAll("[class*='page-swipe']").length), 0, "closing the dialog leaves no swipe state");
+    assert.equal(await page.evaluate(() => collectJsonExportText().text), exported, "swiping feature tabs never changes character data");
+    await touch.close();
+  } finally { await page.close(); }
+
   // 減少動態效果：一樣能滑動換頁，但不跟手、不滑動。
   page = await open({ reducedMotion: "reduce" });
   try {
@@ -1593,7 +1718,7 @@ async function verifyPageSwipe(browser, url) {
     assert.deepEqual([dragging, await page.evaluate(() => document.querySelector(".tab-content.active").id)], [0, "tab-basic"], "mouse drags never swipe pages");
   } finally { await page.close(); }
 
-  console.log("Page swipe: finger tracking, cancel, flick, tab order, scroll memory, edge resistance, catch, exclusions, zoom, tabletop, reduced motion, share mode, mouse and tab taps passed.");
+  console.log("Page swipe: finger tracking, cancel, flick, tab order, scroll memory, edge resistance, catch, exclusions, zoom, tabletop, character features dialog, reduced motion, share mode, mouse and tab taps passed.");
 }
 
 // Share methods are whole choice cards; short URLs fail visibly and never retry.
@@ -3163,6 +3288,90 @@ async function verifyClassSrdVersion(browser, url) {
     assert.deepEqual(await levels("#classFeaturesSrd"), [1, 2, 3, 4], "share mode filters SRD 版 by the shared level");
     assert.deepEqual(await page.evaluate(() => collectStateObject()), shared, "share mode switching keeps the shared data");
     console.log("Class SRD version: switch only for classes with SRD text, title placement on desktop/narrow, lazy load, unchanged 網站版, level/subclass filtering, reset on reopen/class change and share mode passed.");
+  } finally {
+    await page.close();
+  }
+}
+
+// 「職業」頁籤特性表（網站版）的能力名稱：點了跳到「特性」頁籤的該能力，子職特性跳到目前子職；
+// 特性頁沒列出（等級未到）時以 toast 說明；外觀維持一般文字；SRD 版的表格沒有跳轉。
+async function verifyClassFeatureTableJumps(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
+  const modal = page.locator("#character-features-modal");
+  const set = (id, value) => page.evaluate(([id, value]) => {
+    const select = document.getElementById(id);
+    select.value = value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }, [id, value]);
+  const link = text => modal.locator("#classCreationInfo .class-feature-jump", { hasText: text }).first();
+  const landed = () => page.evaluate(() => {
+    const body = document.querySelector("#character-features-modal .app-dialog__body");
+    const top = body.getBoundingClientRect().top + parseFloat(getComputedStyle(body).paddingTop);
+    const section = Array.from(document.querySelectorAll("#classFeatures section[data-feature-level]"))
+      .find(element => Math.abs(element.getBoundingClientRect().top - top) < 1.5);
+    return {
+      tab: document.querySelector('.character-features-tabs [aria-selected="true"]').dataset.featureTab,
+      id: section?.dataset.featureId || null,
+      level: section ? Number(section.dataset.featureLevel) : null,
+      subclass: section?.dataset.subclass || null,
+      focused: document.activeElement === section?.querySelector(":scope > h3")
+    };
+  });
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
+
+    // 十二個職業：未選等級時，表格裡每個能力名稱（含子職特性）都找得到「特性」頁籤的段落。
+    for (const className of await page.evaluate(() => Array.from(document.getElementById("class").options, option => option.value).filter(Boolean))) {
+      await set("class", className);
+      await set("level", "");
+      const unresolved = await page.evaluate(() => Array.from(document.querySelectorAll("#classCreationInfo .class-feature-jump"))
+        .filter(element => !findClassFeatureJumpTarget(element)).map(element => element.textContent));
+      assert.deepEqual(unresolved, [], `${className}: every table feature name has a section to jump to`);
+      assert(await page.locator("#classCreationInfo .class-feature-jump").count() > 0, `${className}: the table has jump links`);
+    }
+
+    // 牧師 8 級：點能力名稱跳到該能力、子職特性跳到目前子職在該等級的能力。
+    await set("class", "cleric");
+    await set("level", "8");
+    const state = await page.evaluate(() => collectStateObject());
+    await page.evaluate(() => openCharacterFeatures("creation"));
+    const looks = await link("引導神力").evaluate(element => {
+      const own = getComputedStyle(element);
+      const cell = getComputedStyle(element.closest("td"));
+      return [own.color === cell.color, own.fontWeight === cell.fontWeight, own.textDecorationLine, own.cursor];
+    });
+    assert.deepEqual(looks, [true, true, "none", "pointer"], "table feature names keep the plain cell text look");
+    await link("引導神力").click();
+    assert.deepEqual(await landed(), { tab: "class", id: "cleric-channel-divinity", level: 2, subclass: null, focused: true }, "a feature name jumps to its section");
+    await modal.locator('[data-feature-tab="creation"]').click();
+    const subclassLink = modal.locator('#classCreationInfo tr:nth-child(6) .class-feature-jump', { hasText: "子職特性" });
+    await subclassLink.click();
+    const state6 = await landed();
+    assert.deepEqual([state6.tab, state6.level, Boolean(state6.subclass)], ["class", 6, true], "子職特性 jumps to the current subclass feature at that level");
+    // 鍵盤：Enter 也能跳。
+    await modal.locator('[data-feature-tab="creation"]').click();
+    await link("神聖使命").focus();
+    await page.keyboard.press("Enter");
+    assert.deepEqual(await landed(), { tab: "class", id: "cleric-divine-order", level: 1, subclass: null, focused: true }, "Enter on a feature name jumps too");
+
+    // 等級未到：留在「職業」頁籤，以 toast 說明。
+    await set("level", "4");
+    await modal.locator('[data-feature-tab="creation"]').click();
+    await link("焚燒不死生物").click();
+    assert.equal((await landed()).tab, "creation", "a feature above the character level does not switch tabs");
+    await page.locator("#app-toast .app-toast__message", { hasText: "角色等級 5 才會在「特性」頁列出這項能力。" }).waitFor()
+      .catch(() => assert.fail("the toast explains the level gate"));
+
+    // SRD 版的特性表沒有跳轉。
+    await modal.locator('#class-creation-panel .class-version-switch [data-spell-version="srd"]').click();
+    await modal.locator("#classCreationSrd .spell-version__attribution").waitFor();
+    assert.equal(await modal.locator("#classCreationSrd .class-feature-jump").count(), 0, "SRD 版 tables have no jump links");
+    await modal.locator('#class-creation-panel .class-version-switch [data-spell-version="site"]').click();
+    await set("level", "8");
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), state, "jumping never changes character data");
+    console.log("Class feature table jumps: all twelve classes resolve, plain look, click/Enter jumps, subclass features, level-gated toast and no links in SRD 版 passed.");
   } finally {
     await page.close();
   }
@@ -6938,6 +7147,7 @@ async function main() {
       await verifyCustomBackground(browser, url);
       await verifyCharacterFeatures(browser, url);
       await verifyClassSrdVersion(browser, url);
+      await verifyClassFeatureTableJumps(browser, url);
       await verifyChoiceReminderHighlights(browser, url);
       await verifyClassFeatureChoicePrompt(browser, url);
       await verifyClassFeatureSupplementalChoices(browser, url);
