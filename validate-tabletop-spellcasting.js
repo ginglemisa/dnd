@@ -37,13 +37,14 @@ for (let level = 1; level <= 9; level += 1) {
 }
 const spells = [...catalog.getAllSpells()];
 const spellIds = spells.map(spell => spell.spellId);
-const spellsByLevel = Object.fromEntries([0, 1, 2, 3, 4].map(level => [
+const spellsByLevel = Object.fromEntries([0, 1, 2, 3, 4, 5].map(level => [
   level,
   spells.filter(spell => spell.level === level).length
 ]));
 
-assert.equal(spells.length, 217, "法術總數應為 217");
-assert.deepEqual(spellsByLevel, { 0: 27, 1: 57, 2: 57, 3: 42, 4: 34 });
+assert.equal(spells.length, 255, "法術總數應為 255");
+assert.deepEqual(spellsByLevel, { 0: 27, 1: 57, 2: 57, 3: 42, 4: 34, 5: 38 });
+assert.equal(catalog.getMaxLevel(), 5, "角色可用法術的最高環階是五環");
 assert.equal(new Set(spellIds).size, spellIds.length, "spellId 不得重複");
 
 const spellClasses = Object.keys(catalog.compatSpellList);
@@ -57,7 +58,7 @@ assert.deepEqual([...catalog.getClassIds("eldritch-blast")], ["warlock"], "專�
   assert.ok(catalog.getClassIds(spellId).includes("wizard"), `${spellId} 應在法師法表`);
 });
 spellClasses.forEach(classId => {
-  [0, 1, 2, 3, 4].forEach(level => {
+  [0, 1, 2, 3, 4, 5].forEach(level => {
     const ids = [...catalog.getSpellIds(classId, level)];
     assert.deepEqual(ids, [...ids].sort(), `${classId} ${level} 環法表應依 spellId 字母排序`);
   });
@@ -97,7 +98,7 @@ assertSameValues(catalog.tabletopDamageCantripIds, expectedCantripIds, "戲法�
 assertSameValues(castableCantripIds, [...expectedCantripIds, "true-strike"], "傷害戲法與克敵機先可顯示施法按鈕");
 assert.equal(
   spells.filter(spell => spell.level > 0 && catalog.canCastFromTabletop(spell.spellId)).length,
-  190,
+  228,
   "所有 1 環以上法術都必須可進入施法流程"
 );
 expectedCantripIds.forEach(spellId => {
@@ -114,8 +115,8 @@ assert.equal(catalog.resolveCastOutcomes("produce-flame")[0].autoOnCast, true, "
 assert.equal(catalog.resolveCastOutcomes("sorcerous-burst", { characterLevel: 5 }).length, 1, "術法衝擊只產生基礎傷害結果");
 
 // 儀式、升環、專注與施法時間是內容檔的結構化欄位（建置核對升環與網站版說明）；網站讀欄位，不解析說明文字。
-assert.equal(spells.filter(spell => catalog.isRitual(spell)).length, 23, "儀式法術應為 23 個");
-assert.equal(spells.filter(spell => catalog.hasUpcastEffect(spell)).length, 79, "有升環效果的法術應為 79 個");
+assert.equal(spells.filter(spell => catalog.isRitual(spell)).length, 27, "儀式法術應為 27 個");
+assert.equal(spells.filter(spell => catalog.hasUpcastEffect(spell)).length, 94, "有升環效果的法術應為 94 個");
 assert.deepEqual([...catalog.getCastingTimes("plant-growth")].map(time => JSON.stringify(time)), ["\"action\"", "{\"hours\":8}"], "植物滋長有動作與 8 小時兩種施法時間");
 assert.deepEqual([...catalog.getCastingTimes("shield")], ["reaction"], "護盾術以反應動作施放");
 assert.equal(catalog.getSpellHeader("shield").castingTime, "反應動作，當你被攻擊檢定命中或成為魔法飛彈的目標時", "觸發條件接在施法時間後");
@@ -178,7 +179,7 @@ assertSameValues(
   spells
     .filter(spell => catalog.hasCastOutcomeTag(spell.spellId, "can-restore-other-creature-hit-points"))
     .map(spell => spell.spellId),
-  ["cure-wounds", "healing-word", "prayer-of-healing", "mass-healing-word"],
+  ["cure-wounds", "healing-word", "prayer-of-healing", "mass-healing-word", "mass-cure-wounds"],
   "只有能在施法時實際治療其他生物的法術可觸發神佑醫者"
 );
 
@@ -195,7 +196,10 @@ assertSameValues(candidatesWithoutOutcome, [
   "bless",
   "blink",
   "ray-of-enfeeblement",
-  "confusion"
+  "confusion",
+  // 石牆術的數字是牆板的生命值；轉生術的 1d10 是種族表，都不是傷害或治療。
+  "wall-of-stone",
+  "reincarnate"
 ], "只有明確排除或非傷害／治療結果的數字法術可沒有 outcome metadata");
 
 require("./tabletop-mode.js");
@@ -501,9 +505,10 @@ assert.deepEqual(buildRolls("ice-knife", 2).map(roll => roll.expression), ["1d20
   assert(!buildRolls(spellId).some(roll => roll.expression.startsWith("1d20")), `${spellId} 不應在施法時新增命中檢定`);
 });
 assert.deepEqual(buildRolls("true-strike").map(roll => roll.expression), ["1d20+6"], "克敵機先使用施法屬性加熟練，而非法術命中加值");
-// 只有 SRD 版的法術：srd.outcomes 只供從魔法物品施放，不能變成角色可用的法術。
-const itemOnlySpellIds = ["chain-lightning", "cone-of-cold", "conjure-elemental", "disintegrate", "fire-storm", "heal", "insect-plague",
-  "mass-cure-wounds", "prismatic-spray", "tsunami", "wall-of-ice", "wall-of-thorns"];
+// 只有 SRD 版的法術（六環以上）：srd.outcomes 只供從魔法物品施放，不能變成角色可用的法術。
+// 寒冰錐、元素召喚術、疫病蟲群、群體療傷術在 10 級擴充時補上網站版，改由下方的物品施法檢查涵蓋。
+const itemOnlySpellIds = ["chain-lightning", "disintegrate", "fire-storm", "heal",
+  "prismatic-spray", "tsunami", "wall-of-ice", "wall-of-thorns"];
 itemOnlySpellIds.forEach(spellId => {
   assert.equal(catalog.getSpell(spellId), undefined, `${spellId} 只有 SRD 版，不是角色可用的法術`);
   assert.equal(catalog.getReferenceSpell(spellId).playable, false);
