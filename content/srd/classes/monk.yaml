@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/class.schema.json
 id: monk
 name: 武僧
-maxLevel: 8
+maxLevel: 10
 subclassLevel: 3
 defaultSubclass: open-hand
 tagline: 武僧以高速移動、徒手或武器連擊制敵。
@@ -34,10 +34,10 @@ progression:
     format: 1d{}
   focusPoints:
     label: 專注點
-    byLevel: {1: null, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8}
+    byLevel: {1: null, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10}
   unarmoredMovement:
     label: 無甲移動
-    byLevel: {1: null, 2: 10, 6: 15}
+    byLevel: {1: null, 2: 10, 6: 15, 10: 20}
     format: +{}呎
 values:
   martialArtsDieText: {formula: "{martialArtsDie}", format: "目前為 1d{}"}
@@ -52,6 +52,7 @@ values:
   slowFallReduction: {formula: "{level} * 5", format: " {} "}
   wholenessHealing: {formula: "1d{martialArtsDie} + {wisModifier}", format: " {} "}
   wholenessUses: max(1, {wisModifier})
+  heightenedFocusTempHp: {formula: "2d{martialArtsDie}", format: " {} "}
 features:
   - id: monk-martial-arts
     level: 1
@@ -89,7 +90,7 @@ features:
       - mode: bonus
         key: dynamic-bonus-monk-curated-focused-aim
         legacyKeys: [dynamic-bonus-class-ricpmu]
-        append: [monk-open-hand-technique]
+        append: [monk-open-hand-technique, monk-heightened-focus]
     text: |
       你可以消耗「專注點」施展武僧技巧，起始可使用下列 3 種用法。
 
@@ -215,6 +216,38 @@ features:
     feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: monk-acrobatic-movement
+    level: 9
+    name: 飛簷走壁
+    hint: {panels: [overview]}
+    actions:
+      - mode: movement
+        key: dynamic-movement-monk-curated-acrobatic-movement
+    text: |
+      你**未穿護甲、未持盾**時，可以在自己的回合中沿著垂直表面移動、橫越液體表面，且這段移動期間不會墜落。
+  - id: monk-heightened-focus
+    level: 10
+    name: 凝神入微
+    pdfMerge: true
+    text: |
+      你的疾風連擊、閃轉騰挪與疾步如風獲得下列強化。
+
+      - **疾風連擊：**消耗 1 點專注點使用時，改為進行 **3 次**徒手打擊。
+      - **閃轉騰挪：**消耗 1 點專注點使用時，你獲得等同{heightenedFocusTempHp|「擲 2 枚武藝骰」}的臨時生命值。
+      - **疾步如風：**消耗 1 點專注點使用時，可選擇你 5 呎內 1 名大型或更小的自願生物，直到你的回合結束前帶著它一起移動；它的移動不會引發[[藉機攻擊]]。
+  - id: monk-self-restoration
+    level: 10
+    name: 返本歸元
+    pdfMerge: true
+    hint: {panels: [overview]}
+    summary: 你的每個回合結束時，可移除自己身上的魅惑、恐慌或中毒其中 1 種狀態；不吃不喝也不會因此獲得力竭。
+    text: |
+      你可以在自己的每個回合結束時，移除自己身上的下列 1 種狀態：[[魅惑]]、[[恐慌]]或[[中毒]]。
+
+      - **不吃不喝：**你即使不吃不喝，也不會因此獲得[[力竭]]等級。
+  - level: 10
+    text: |
+      **無甲移動補充：**武僧達到 10 級時，無甲移動的速度加值提升為 20 呎，詳見「武僧特性」表。
 srd:
   overview: |
     **武僧核心特質**
