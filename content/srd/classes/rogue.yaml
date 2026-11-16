@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/class.schema.json
 id: rogue
 name: 盜賊
-maxLevel: 8
+maxLevel: 10
 subclassLevel: 3
 defaultSubclass: thief
 tagline: 盜賊以技巧、機動與偷襲抓住破綻，是各種難題的專家。
@@ -30,7 +30,7 @@ equipment:
 progression:
   sneakAttackDice:
     label: 偷襲
-    byLevel: {1: 1, 3: 2, 5: 3, 7: 4}
+    byLevel: {1: 1, 3: 2, 5: 3, 7: 4, 9: 5}
     format: "{}d6"
 values:
   cunningStrikeDc: 8 + {proficiencyBonus} + {dexModifier}
@@ -51,7 +51,7 @@ features:
     actions:
       - mode: action
         key: dynamic-action-rogue-curated-sneak-attack
-        append: [rogue-cunning-strike]
+        append: [rogue-cunning-strike, rogue-supreme-sneak]
     tabletop: |
       **每回合 1 次**，以靈巧武器或遠程武器命中時，若符合下列任一條件，可額外造成 {sneakAttackDice|1d6} 傷害（與武器傷害類型相同）。
 
@@ -168,6 +168,12 @@ features:
       使用**有熟練的技能或工具**進行屬性檢定時，可將 d20 擲出 9 或以下的結果視為 10。
   - id: rogue-ability-score-improvement-8
     level: 8
+    name: 屬性值提升
+    feat: level
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: rogue-ability-score-improvement-10
+    level: 10
     name: 屬性值提升
     feat: level
     text: |
