@@ -5,7 +5,7 @@ nameEn: Dispel Evil and Good
 source: srd
 level: 5
 school: abjuration
-classes: [ cleric, paladin ]
+classes: [ cleric ]
 castingTime: [ action ]
 range: self
 components: [ V, S, M ]
@@ -20,6 +20,7 @@ site:
       - 遣返：以魔法動作指定你5呎內一個你能看見、屬於上述類型的生物；目標須進行魅力豁免，失敗時若它不在原生位面，就被送回原生位面
     - 遣返時，若目標不在原生位面，不死生物會被送往暗影界，精類會被送往精類荒野
 srd:
+  classes: [ cleric, paladin ]
   material: 銀粉與鐵粉
   body: |-
     在持續時間內，天界生物、元素生物、精類、邪魔與不死生物對你進行的攻擊檢定具有劣勢。你可以使用下列任一特殊功能提前結束法術。

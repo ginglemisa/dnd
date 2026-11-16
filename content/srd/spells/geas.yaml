@@ -5,7 +5,7 @@ nameEn: Geas
 source: srd
 level: 5
 school: enchantment
-classes: [ bard, cleric, druid, paladin, wizard ]
+classes: [ bard, cleric, druid, wizard ]
 castingTime: [ { minutes: 1 } ]
 range: { feet: 60 }
 components: [ V ]
@@ -22,6 +22,7 @@ site:
     - 移除詛咒、高等復原術或祈願術可以結束此法術
     - 使用更高環階法術位：以7環或8環法術位施放時，持續時間為365天；以9環法術位施放時，法術持續到被上述任一法術結束為止
 srd:
+  classes: [ bard, cleric, druid, paladin, wizard ]
   body: |-
     你對射程內一個你能看見的生物下達口頭命令，依你的決定命令它執行某項任務，或避免某個行動或某種行為。目標必須通過一次感知豁免，否則在持續時間內陷入魅惑狀態。若目標無法理解你的命令，則自動成功通過豁免。
 

@@ -5,7 +5,7 @@ nameEn: Greater Restoration
 source: srd
 level: 5
 school: abjuration
-classes: [ bard, cleric, druid, paladin, ranger ]
+classes: [ bard, cleric, druid ]
 castingTime: [ action ]
 range: touch
 components: [ V, S, M ]
@@ -20,6 +20,7 @@ site:
       - 目標任一屬性值的降低
       - 目標生命值上限的降低
 srd:
+  classes: [ bard, cleric, druid, paladin, ranger ]
   material: 價值100 GP以上的鑽石粉末，法術會將其耗盡
   body: |-
     你接觸一個生物，並以魔法移除其身上下列效果之一：

@@ -5,7 +5,7 @@ nameEn: Raise Dead
 source: srd
 level: 5
 school: necromancy
-classes: [ bard, cleric, paladin ]
+classes: [ bard, cleric ]
 castingTime: [ { hours: 1 } ]
 range: touch
 components: [ V, S, M ]
@@ -21,6 +21,7 @@ site:
     - 若該生物缺少存活不可或缺的身體部位或器官（例如頭部），法術自動失敗
     - 死而復生是一段艱辛的經歷：目標的D20檢定（攻擊檢定、屬性檢定與豁免）受到−4減值；目標每完成一次長休，減值減少1，直到變為0
 srd:
+  classes: [ bard, cleric, paladin ]
   material: 價值500+ GP的鑽石，法術會將其消耗
   body: |-
     透過觸碰，你使一個死亡不超過10天且死亡時不是不死生物的生物復活。
