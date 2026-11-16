@@ -881,6 +881,7 @@
       else if (methodId === "slot") resource = slot ? `${slot.level} 環法術位（剩餘 ${slot.available}）` : "沒有可用法術位";
       else if (methodId === "ritual") resource = `不消耗法術位；${metadata.ritualExtraTime}`;
       else if (methodId === "scroll") resource = "1 張卷軸（施法後消失）";
+      else if (methodId.startsWith("feature-")) resource = getMethod()?.resourceLabel || "能力次數";
       else if (methodId === "item") resource = item.pool
         ? `${itemCost} 次${item.pool.label}${item.alsoPool ? `與 1 次${item.alsoPool.label}` : ""}（剩餘 ${item.pool.left}/${item.pool.max}）`
         : "不消耗次數";

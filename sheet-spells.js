@@ -192,7 +192,10 @@ function getAvailableSpellSourceClasses(level, options = {}) {
   const characterClass = document.getElementById("class")?.value || "";
   const characterLevel = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
   const spellLevel = level === "cantrips" ? 0 : Number(level);
-  return classOptions.filter(option => option.value === characterClass && classCanAccessSpellLevel(option.value, characterLevel, spellLevel));
+  // 環階看角色職業的法術位；一環以上另列能力開放的其他法表（吟遊詩人「魔法奧祕」），戲法只有自己的職業。
+  if (!classCanAccessSpellLevel(characterClass, characterLevel, spellLevel)) return [];
+  const lists = spellLevel > 0 ? window.getClassSpellListIds?.(characterClass, characterLevel) || [characterClass] : [characterClass];
+  return classOptions.filter(option => lists.includes(option.value));
 }
 
 function getSpellLevelLabel(level) {

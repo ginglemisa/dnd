@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/class.schema.json
 id: bard
 name: 吟遊詩人
-maxLevel: 8
+maxLevel: 10
 subclassLevel: 3
 defaultSubclass: lore
 tagline: 吟遊詩人能施法、激勵同伴，又善於交涉，是隊伍裡的萬金油。
@@ -30,14 +30,14 @@ equipment:
 progression:
   inspirationDie:
     label: 激勵骰
-    byLevel: {1: 6, 5: 8}
+    byLevel: {1: 6, 5: 8, 10: 10}
     format: D{}
   cantrips:
     label: 戲法
-    byLevel: {1: 2, 4: 3}
+    byLevel: {1: 2, 4: 3, 10: 4}
   preparedSpells:
     label: 準備法術
-    byLevel: {1: 4, 2: 5, 3: 6, 4: 7, 5: 9, 6: 10, 7: 11, 8: 12}
+    byLevel: {1: 4, 2: 5, 3: 6, 4: 7, 5: 9, 6: 10, 7: 11, 8: 12, 9: 14, 10: 15}
   spellSlots1:
     label: １環
     byLevel: {1: 2, 2: 3, 3: 4}
@@ -49,7 +49,10 @@ progression:
     byLevel: {1: null, 5: 2, 6: 3}
   spellSlots4:
     label: ４環
-    byLevel: {1: null, 7: 1, 8: 2}
+    byLevel: {1: null, 7: 1, 8: 2, 9: 3}
+  spellSlots5:
+    label: ５環
+    byLevel: {1: null, 9: 1, 10: 2}
 values:
   inspirationDieText: {formula: "{inspirationDie}", format: "目前為 d{}"}
   inspirationUses: max(1, {chaModifier})
@@ -155,6 +158,30 @@ features:
     feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: bard-expertise-9
+    level: 9
+    name: 專精
+    picks:
+      - { kind: expertise, count: 2, from: proficient }
+    text: |
+      再選擇 2 項你已熟練、但還沒有專精的技能，獲得**專精**。
+  - id: bard-magical-secrets
+    level: 10
+    name: 魔法奧祕
+    extraSpellLists: [cleric, druid, wizard]
+    hint: {panels: [spells]}
+    summary: 準備法術（1 環以上）也可以從牧師、德魯伊與法師法術列表挑選，選到的法術視為吟遊詩人法術。
+    text: |
+      你從各種魔法傳統中學到了奧祕。準備 **1 環以上**的法術時，除了吟遊詩人法術列表，也可以從**牧師、德魯伊與法師**法術列表挑選；選到的法術對你而言視為吟遊詩人法術。
+
+      - **適用範圍：**準備法術數量增加時補選的法術，以及升級時替換的法術，都可以從上述列表挑選。戲法仍只能選吟遊詩人戲法。
+      - **環階限制：**和其他準備法術一樣，只能準備你有對應環階法術位的法術。
+  - level: 10
+    text: |
+      **吟遊詩人激勵補充：**吟遊詩人達到 10 級時，激勵骰提升為 d10，詳見「吟遊詩人特性」表。
+  - level: 10
+    text: |
+      **施法補充：**吟遊詩人達到 10 級時，你也會透過「施法」特性額外學會 1 個吟遊詩人戲法，詳見「吟遊詩人特性」表。
 
 srd:
   overview: |

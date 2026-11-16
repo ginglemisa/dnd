@@ -116,6 +116,33 @@
           "description": "此能力給予的法術（始終準備等）。法術 ID 須存在於 spell-id-baseline.json。"
         },
         "spellsByChoice": { "$ref": "#/definitions/spellsByChoice" },
+        "extraSpellLists": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"] },
+          "description": "取得此能力後，本職業的準備法術（一環以上，不含戲法）也可從這些職業法表挑選，仍算本職業的法術（例如吟遊詩人「魔法奧祕」）。"
+        },
+        "freeCast": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["resource", "maxLevel"],
+          "properties": {
+            "resource": { "type": "string", "description": "每次施放消耗的資源 key（本職業某能力的 resource.key）。" },
+            "maxLevel": { "type": "integer", "minimum": 1, "maximum": 9, "description": "可施放的最高法術環階。" },
+            "lists": {
+              "type": "array", "minItems": 1, "uniqueItems": true,
+              "items": { "enum": ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"] },
+              "description": "法術須在這些職業法表上；省略為本職業。"
+            },
+            "excludeCastingTimes": {
+              "type": "array", "minItems": 1, "uniqueItems": true,
+              "items": { "enum": ["action", "bonus-action", "reaction"] },
+              "description": "施法時間只有這些時不可用（例如神聖干預排除反應）。"
+            }
+          },
+          "description": "不消耗法術位的施法方式（例如牧師「神聖干預」）：跑團施法視窗列為一種施法方式，扣 resource 的次數、以法術原本的環階施放。"
+        },
         "picks": {
           "type": "array",
           "minItems": 1,

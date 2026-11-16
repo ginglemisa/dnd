@@ -300,6 +300,18 @@
       resourceLabel: String(freeControl.label || "免費施法次數")
     }));
 
+    // 能力的不耗法術位施法（freeCast，例如神聖干預）：扣該能力的跑團資源（resourceId 為「builtin:資源 key」），以法術原本的環階施放。
+    if (!atWill && !ritualOnly) (Array.isArray(spec.featureMethods) ? spec.featureMethods : []).forEach(feature => {
+      if (!feature?.resource || !(feature.remaining > 0)) return;
+      methods.push(freezeCastOption({
+        id: `feature-${feature.resource}`,
+        label: String(feature.label || "能力"),
+        effectiveLevel: baseLevel,
+        resourceId: `builtin:${feature.resource}`,
+        resourceLabel: `1 次${feature.label}（剩餘 ${feature.remaining}）；不消耗法術位`
+      }));
+    });
+
     if (atWill) methods.push(freezeCastOption({
       id: "at-will",
       label: "隨意施法",
@@ -381,6 +393,24 @@
     });
   }
 
+  // 目前角色可用的能力施法方式（character-rules.js 的 getClassFreeCastFeatures）：法術環階、法表、施法時間都符合，且資源還有剩。
+  function getBuiltInResourceRemaining(key) {
+    const spec = getRestContext().specs.find(item => item.key === key && item.target?.type === "builtIn");
+    return spec ? Math.max(0, spec.maximum - getBuiltInResourceSpent(key)) : 0;
+  }
+
+  function getFreeCastFeatureMethods(spell) {
+    if (typeof document === "undefined" || !spell) return [];
+    const features = globalScope.getClassFreeCastFeatures?.(document.getElementById("class")?.value || "",
+      Number(document.getElementById("level")?.value) || 0) || [];
+    const lists = globalScope.SpellCatalog?.getClassIds?.(spell.spellId) || [];
+    const times = (globalScope.SpellCatalog?.getCastingTimes?.(spell.spellId) || []).map(time => typeof time === "string" ? time : time?.unit || "");
+    return features.filter(feature => spell.level <= feature.maxLevel
+      && feature.lists.some(list => lists.includes(list))
+      && !(times.length && times.every(time => feature.excludeCastingTimes.includes(time))))
+      .map(feature => ({ resource: feature.resource, label: feature.label, remaining: getBuiltInResourceRemaining(feature.resource) }));
+  }
+
   function getSpellCastOptions(entry = {}) {
     if (entry.spellSource === "wizard-spellbook") {
       const current = globalScope.Spellbook?.getRitualEntries().find(item => item.sourceKey === entry.sourceKey);
@@ -409,6 +439,7 @@
       : Array.isArray(entry.freeUseControls) ? entry.freeUseControls : [];
     const fiendishVigorLevel = getCurrentFiendishVigorCastLevel(entry);
     return buildSpellCastOptions({
+      featureMethods: manualSpell ? [] : getFreeCastFeatureMethods(spell),
       baseLevel: spell.level,
       castMode: fiendishVigorLevel ? "at-will" : manualSpell && !["at-will", "ritual-only"].includes(entry.castMode) ? "slot" : entry.castMode,
       fixedCastLevel: fiendishVigorLevel || entry.fixedCastLevel,
@@ -471,7 +502,13 @@
     const validated = validateSpellCastSelection(getSpellCastOptions(entry), selection);
     if (!validated.ok) return validated;
 
-    if (validated.resourceId) {
+    if (validated.resourceId.startsWith("builtin:")) {
+      const key = validated.resourceId.slice("builtin:".length);
+      const spec = getRestContext().specs.find(item => item.key === key && item.target?.type === "builtIn");
+      const spent = getBuiltInResourceSpent(key);
+      if (!spec || spent >= spec.maximum) return Object.freeze({ ok: false, reason: "resource-changed" });
+      setBuiltInResourceSpent(key, spent + 1, spec.maximum);
+    } else if (validated.resourceId) {
       const resourceId = validated.resourceId;
       const canonical = typeof document !== "undefined" ? document.getElementById(resourceId) : null;
       const isCheckbox = typeof HTMLInputElement !== "undefined"
