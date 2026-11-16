@@ -673,7 +673,9 @@ async function verifySpellRingLayout(page) {
     saveAllFields();
     return [collectStateObject(), JSON.parse(dndStorage.getItem("dndchar_autosave_v1"))].map(state => [Object.keys(state).filter(key => /^spellslot/.test(key)), state.__spellSlotsUsed]);
   });
-  assert.deepEqual(await savedSlotState(), [[[], {}], [[], {}]], "slot usage is saved as used counts per ring, never as per-box fields");
+  const usedOnPage = await page.evaluate(() => Object.fromEntries(getSpellSlotBoxGroups().map(([ring, boxes]) => [ring, boxes.filter(box => box.checked).length]).filter(([, used]) => used)));
+  assert.deepEqual(await savedSlotState(), [[[], usedOnPage], [[], usedOnPage]], "slot usage is saved as used counts per ring, never as per-box fields");
+  assert.deepEqual(Object.keys(usedOnPage).filter(ring => Number(ring) > 3), [], "a level 5 wizard saves nothing for rings it does not have");
   const shareOmitsSlots = () => page.evaluate(() => Object.keys(collectShareState()).some(key => /^spellslot/.test(key) || key === "__spellSlotsUsed"));
   assert.equal(await shareOmitsSlots(), false, "share links still omit slot usage");
   // 規則資料目前只到四環：暫時覆寫法術位數量，確認五到九環不用再改版面就能顯示。
@@ -706,7 +708,7 @@ async function verifySpellRingLayout(page) {
   }
   await page.setViewportSize({ width: 1100, height: 850 });
   await apply(page, wizard(5, threeRings));
-  assert.deepEqual(await savedSlotIds(), [legacySlotIds, legacySlotIds], "saved slot fields return to the original set once higher slots are gone");
+  assert.deepEqual(await savedSlotState(), [[[], {}], [[], {}]], "no slot usage is left in the save once higher slots are gone");
 }
 
 async function verifySpellManagement(page) {

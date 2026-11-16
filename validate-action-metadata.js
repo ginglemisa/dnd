@@ -3983,29 +3983,20 @@ async function verifyTabletopSpellPanelLayout(browser, url) {
         return row.length;
       });
     });
-    // 規則資料只到四環：暫時在角色卡法術頁補上五到九環的列（canonical 契約 #spellslot{環}-row／#spellslot{環}-{n}），
-    // 只顯示前 count 環，確認跑團不用改程式就會列出來；沒有的列與隱藏的列自動略過。
-    // 勾選框用各環的最大數量（4／3／3／3／3／2／2／1／1）；法師 7 級的四環只有 1 個，暫時補到 3 個。
+    // 規則資料只到四環：暫時把角色卡法術頁五到九環的列（canonical 契約 #spellslot{環}-row／#spellslot{環}-{n}）顯示出來，
+    // 只顯示前 count 環，確認跑團不用改程式就會列出來；隱藏的列自動略過。
+    // 勾選框用各環的最大數量（4／3／3／3／3／2／2／1／1）；法師 7 級的四環只有 1 個，暫時開到 3 個。
     const showRings = async count => {
       await page.evaluate(total => {
-        const wrap = document.getElementById("spell-picked-grid-wrap");
-        const second = document.getElementById("spellslot4-2");
-        if (second.style.display === "none") { second.dataset.testShown = "true"; second.style.display = ""; }
-        if (!document.getElementById("spellslot4-test")) {
-          const extra = Object.assign(document.createElement("input"), { type: "checkbox", id: "spellslot4-test" });
-          extra.dataset.testRing = "true";
-          second.after(extra);
-        }
         for (let ring = 1; ring <= 9; ring += 1) {
-          let row = document.getElementById(`spellslot${ring}-row`);
-          if (!row) {
-            row = Object.assign(document.createElement("div"), { id: `spellslot${ring}-row` });
-            row.dataset.testRing = "true";
-            for (let index = 1; index <= [3, 2, 2, 1, 1][ring - 5]; index += 1) {
-              row.appendChild(Object.assign(document.createElement("input"), { type: "checkbox", id: `spellslot${ring}-${index}` }));
-            }
-            wrap.appendChild(row);
-          }
+          const row = document.getElementById(`spellslot${ring}-row`);
+          if (ring >= 4) row.querySelectorAll('input[type="checkbox"]').forEach(box => {
+            if (box.style.display !== "none" && !box.disabled) return;
+            box.dataset.testShown = "true";
+            box.style.display = "";
+            box.disabled = false;
+          });
+          if (ring > 4) row.dataset.testRing = "true";
           row.style.display = ring > total ? "none" : "";
         }
       }, count);
@@ -4034,8 +4025,8 @@ async function verifyTabletopSpellPanelLayout(browser, url) {
     await grid.locator(".tabletop-spell-slot-column").nth(8).locator("input").check();
     assert.equal(await page.locator("#spellslot9-1").isChecked(), true, "a ninth-level mirror writes the canonical checkbox");
     await page.evaluate(() => {
-      document.querySelectorAll("[data-test-ring]").forEach(node => node.remove());
-      document.querySelectorAll("[data-test-shown]").forEach(box => { box.style.display = "none"; delete box.dataset.testShown; });
+      document.querySelectorAll("[data-test-ring]").forEach(row => { row.style.display = "none"; delete row.dataset.testRing; });
+      document.querySelectorAll("[data-test-shown]").forEach(box => { box.style.display = "none"; box.disabled = true; box.checked = false; delete box.dataset.testShown; });
     });
     await page.waitForFunction(() => document.getElementById("tabletop-spell-slots").dataset.slotCount === "4"
       && document.querySelectorAll("#tabletop-spell-slots .tabletop-spell-slot-column:nth-child(4) input").length === 1);
