@@ -177,6 +177,37 @@
     return getClassFeatureRules(className, subclassId).some(feature => feature.id === featureId && numericLevel >= feature.level);
   }
 
+  /**
+   * 準備法術（一環以上）可以挑選的職業法表：自己的職業，加上已取得能力的 extraSpellLists（例如吟遊詩人 10 級「魔法奧祕」）。
+   * 戲法不受影響，仍只用自己的職業法表。從其他法表準備的法術仍算本職業的法術（spellClass 是本職業）。
+   */
+  function getClassSpellListIds(className, level, subclassId) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    if (!className) return [];
+    const extra = getClassFeatureRules(className, subclassId)
+      .filter(feature => numericLevel >= feature.level && Array.isArray(feature.extraSpellLists))
+      .flatMap(feature => feature.extraSpellLists);
+    return [...new Set([className, ...extra])];
+  }
+
+  /**
+   * 不消耗法術位的施法方式（能力的 freeCast，例如牧師 10 級「神聖干預」）：已取得能力時回傳
+   * { featureId, label, resource, maxLevel, lists, excludeCastingTimes }，由跑團施法視窗列為一種施法方式，扣該能力的資源。
+   */
+  function getClassFreeCastFeatures(className, level, subclassId) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    return getClassFeatureRules(className, subclassId)
+      .filter(feature => numericLevel >= feature.level && feature.freeCast)
+      .map(feature => Object.freeze({
+        featureId: feature.id,
+        label: feature.name,
+        resource: feature.freeCast.resource,
+        maxLevel: feature.freeCast.maxLevel,
+        lists: Object.freeze([...(feature.freeCast.lists || [className])]),
+        excludeCastingTimes: Object.freeze([...(feature.freeCast.excludeCastingTimes || [])])
+      }));
+  }
+
   /** 職業的熟練機制資料（proficiencies：武器類別、護甲訓練、職業工具）；沒有時回傳 null。 */
   function getClassProficiencies(className) {
     return getClassRules(className)?.proficiencies || null;
@@ -1405,6 +1436,8 @@
     getSelectedSubclassId,
     getSelectedSubclass,
     hasClassFeature,
+    getClassSpellListIds,
+    getClassFreeCastFeatures,
     getClassProficiencies,
     getClassPickCount,
     getClassPicks,

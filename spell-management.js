@@ -87,7 +87,9 @@
     const automatic = state?.__spellManagement?.entries || sources;
     if (automatic.some(item => item.spellSource && item.spellId === entry.spellId)) return "已由來源準備此法術；原玩家選擇仍保留。";
     const cls = state?.class ?? currentClass(), level = Number(state?.level ?? currentLevel());
-    if (!catalog().getClassIds(entry.spellId).includes(cls)) return "目前職業法表不包含此法術。";
+    // 一環以上可用 extraSpellLists 的法表（吟遊詩人「魔法奧祕」）；戲法只看自己的職業法表。
+    const lists = spell.level > 0 ? globalScope.getClassSpellListIds?.(cls, level) || [cls] : [cls];
+    if (!catalog().getClassIds(entry.spellId).some(id => lists.includes(id))) return "目前職業法表不包含此法術。";
     const accessible = globalScope.CharacterRules?.classCanAccessSpellLevel || globalScope.classCanAccessSpellLevel;
     if (!level || !accessible?.(cls, level, spell.level)) return "目前等級尚未開放此法術環階。";
     return "";
