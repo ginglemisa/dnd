@@ -6434,12 +6434,50 @@ async function verifySaveFormat(browser, url) {
     assert.deepEqual(versions.rejected, ["newer", true, true, true, true], "newer or malformed versions are rejected");
     assert.deepEqual(versions.accepted, [false, false]);
 
-    const legacyFile = { class: "druid", level: "4", race: "dwarf", background: "sage", "spellslot1-1": true };
+    // 計數類：存檔只記每組勾了幾格；逐格布林的舊資料（第 0、1 版）載入時數出已用數，從左邊填回。
+    const counts = await page.evaluate(() => {
+      const [raceId, raceRules] = Object.entries(getAllRaceRules()).find(([, rules]) => rules.traits.some(trait => trait.resource?.kind === "checkboxes"));
+      const resource = raceRules.traits.find(trait => trait.resource?.kind === "checkboxes").resource;
+      const old = Object.freeze({ class: "wizard", level: "5", race: raceId, "spellslot1-1": true, "spellslot1-2": false, "spellslot1-4": true, "spellslot2-1": false, "spellslot3-2": true,
+        [`${resource.checkbox}1`]: false, [`${resource.checkbox}2`]: true, "free-spell-use-x-2": true,
+        __spellManagement: Object.freeze({ version: 2, manual: false, entries: [], freeUses: Object.freeze({ x: [false, true], y: [false, false] }) }) });
+      const pick = data => ({ version: data.__saveVersion, slots: data.__spellSlotsUsed, race: data.__raceResourcesUsed, free: data.__spellManagement?.freeUses,
+        oldKeys: Object.keys(data).filter(key => /^(?:spellslot\d|free-spell-use-)/.test(key) || key.startsWith(resource.checkbox)) });
+      const rejects = data => { try { validateCharacterState(data); return false; } catch (_error) { return true; } };
+      applyStateObject(old);
+      const boxes = () => ["spellslot1-1", "spellslot1-2", "spellslot1-3", "spellslot1-4", "spellslot3-1", "spellslot3-2", `${resource.checkbox}1`, `${resource.checkbox}2`]
+        .map(id => document.getElementById(id).checked);
+      const restored = boxes(), collected = collectStateObject();
+      applyStateObject({ class: "wizard", level: "5", race: raceId, __spellSlotsUsed: {}, __raceResourcesUsed: {} });
+      const cleared = boxes();
+      applyStateObject(collected);
+      return { key: resource.key, fromV0: pick(migrateCharacterState(old)), fromV1: pick(migrateCharacterState({ ...old, __saveVersion: 1 })),
+        untouched: old["spellslot1-1"] === true && Array.isArray(old.__spellManagement.freeUses.x),
+        legacySpells: pick(migrateCharacterState({ class: "wizard", "free-spell-use-x-1": true })), partial: pick(migrateCharacterState({ class: "wizard" })),
+        restored, cleared, roundTrip: boxes(), collected: pick(collected), share: pick(collectShareState()),
+        rejected: [{ __spellSlotsUsed: [] }, { __spellSlotsUsed: { 1: -1 } }, { __spellSlotsUsed: { 1: 1.5 } }, { __raceResourcesUsed: { a: 100 } }, { __raceResourcesUsed: "1" },
+          { __spellManagement: { freeUses: { x: 65 } } }, { __spellManagement: { freeUses: { x: "1" } } }].map(rejects) };
+    });
+    const migratedCounts = { version, slots: { 1: 2, 3: 1 }, race: { [counts.key]: 1 }, free: { x: 1 }, oldKeys: [] };
+    assert.deepEqual(counts.fromV0, migratedCounts, "version 0 per-box booleans become used counts");
+    assert.deepEqual(counts.fromV1, migratedCounts, "version 1 per-box booleans become used counts");
+    assert.equal(counts.untouched, true, "migration does not mutate the loaded data");
+    assert.deepEqual(counts.legacySpells, { version, slots: undefined, race: undefined, free: undefined, oldKeys: ["free-spell-use-x-1"] }, "pre-spell-management free uses stay for the legacy restore");
+    assert.deepEqual(counts.partial, { version, slots: undefined, race: undefined, free: undefined, oldKeys: [] }, "data without those fields gets no count block");
+    assert.deepEqual(counts.restored, [true, true, false, false, true, false, true, false], "legacy ticks are refilled from the first box");
+    assert.deepEqual(counts.collected, { version, slots: { 1: 2, 3: 1 }, race: { [counts.key]: 1 }, free: {}, oldKeys: [] }, "the state stores counts and no per-box fields");
+    assert.deepEqual(counts.cleared, Array(8).fill(false), "an empty count block clears the boxes");
+    assert.deepEqual(counts.roundTrip, counts.restored, "counts round-trip");
+    assert.deepEqual([counts.share.slots, counts.share.race, counts.share.oldKeys], [undefined, undefined, []], "used counts stay out of share links");
+    assert.deepEqual(counts.rejected, Array(7).fill(true), "malformed count blocks are rejected");
+
+    const legacyFile = { class: "druid", level: "4", race: "dwarf", background: "sage", "spellslot1-1": false, "spellslot1-2": true };
     await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
     await Promise.all([page.waitForEvent("load"), page.locator("#import-json-file").setInputFiles({ name: "v0.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(legacyFile)) })]);
     await page.waitForFunction(() => document.getElementById("class").value === "druid" && !autosaveRestoreBlocked);
-    assert.deepEqual(await page.evaluate(() => { const saved = JSON.parse(dndStorage.getItem("dndchar_autosave_v1")); return [saved.__saveVersion, saved.level, saved.race]; }),
-      [version, "4", "dwarf"], "version 0 JSON imports and is saved as the current version");
+    assert.deepEqual(await page.evaluate(() => { const saved = JSON.parse(dndStorage.getItem("dndchar_autosave_v1"));
+      return [saved.__saveVersion, saved.level, saved.race, saved.__spellSlotsUsed, Object.hasOwn(saved, "spellslot1-2"), document.getElementById("spellslot1-1").checked, document.getElementById("spellslot1-2").checked]; }),
+      [version, "4", "dwarf", { 1: 1 }, false, true, false], "version 0 JSON imports and is saved as the current version with used counts");
 
     // 較新版本的資料不載入：原本的存檔與畫面不動，並說明原因。
     const beforeNewer = await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1"));
@@ -6472,7 +6510,7 @@ async function verifySaveFormat(browser, url) {
     await page.waitForFunction(() => document.querySelector(".app-toast")?.textContent?.includes("較新版本"));
     assert.deepEqual(await page.evaluate(() => [saveAllFields(), document.getElementById("class").value, dndStorage.getItem("dndchar_autosave_v1")]), [false, "", newerRaw],
       "a newer autosave is neither applied nor overwritten");
-    console.log("Save format: transient inputs stay out of autosave, JSON and share; version written on every route, version 0 restores, newer versions are refused.");
+    console.log("Save format: transient inputs stay out of autosave, JSON and share; version written on every route, version 0 restores, per-box ticks become used counts, newer versions are refused.");
   } finally { await page.close(); }
 }
 

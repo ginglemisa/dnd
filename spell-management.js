@@ -372,7 +372,9 @@
     const saved = data.__spellManagement;
     manual = saved?.version >= VERSION ? saved.manual === true : false;
     players = saved?.version >= VERSION ? normalizeEntries(saved.entries).filter(entry => manual || !entry.spellSource) : normalizeEntries(hooks.parseLegacyEntries?.(data) || []);
-    sources = []; freeUses = saved?.freeUses && typeof saved.freeUses === "object" ? clone(saved.freeUses) : {};
+    // 存檔每個來源只記已用次數，這裡換回逐格的勾選狀態（從第一格填起）；第 1 版以前的布林陣列照用。
+    sources = []; freeUses = saved?.freeUses && typeof saved.freeUses === "object" ? Object.fromEntries(Object.entries(saved.freeUses)
+      .map(([key, uses]) => [key, Array.isArray(uses) ? clone(uses) : Array.from({ length: Math.max(0, Math.min(64, Number(uses) || 0)) }, () => true)])) : {};
     applyClassFeatureChoices(saved?.classFeatureCantrips || data.__classFeatureCantrips || {});
     (Array.isArray(data.__retainedSpells) ? data.__retainedSpells : []).forEach(item => {
       const input = getClassFeatureCantripControl(item?.key);
@@ -462,7 +464,9 @@
   function getState() {
     syncFreeUsesFromControls();
     return { version: VERSION, manual, entries: getEntries().map(entry => ({ ...entry, unavailable: !isEntryAvailable(entry) })),
-      freeUses: currentFreeUses(), classFeatureCantrips: collectClassFeatureCantrips() };
+      // 已用次數（0 省略）；頁面上與本機職業記憶仍是逐格的勾選狀態。
+      freeUses: Object.fromEntries(Object.entries(currentFreeUses()).map(([key, uses]) => [key, uses.filter(used => used === true).length]).filter(([, used]) => used > 0)),
+      classFeatureCantrips: collectClassFeatureCantrips() };
   }
   function refreshVisibility() {
     globalScope.syncManualSpellSourceControls?.();
@@ -491,7 +495,7 @@
     configure(options = {}) { hooks = { ...hooks, ...options }; }, isManual: () => manual, isSwitching: () => switching, canManage, getLimits,
     normalizeEntry, normalizeEntries, entryKey, getEntries, getCustomEntries, getSheetEntries, getPreparationCounts,
     getPlayerEntries: () => clone(players), getSourceEntries: () => manual ? [] : clone(sources),
-    setPlayerEntries, replaceSources, addPlayerSpell, removePlayerSpell, getAvailabilityReason, isEntryAvailable, getFreeUse, setFreeUse,
+    setPlayerEntries, replaceSources, addPlayerSpell, removePlayerSpell, getAvailabilityReason, isEntryAvailable, getFreeUse, setFreeUse, getFreeUseFlags: () => currentFreeUses(),
     getState, beforeApplyState, restoreState, finishRestore, clearMemories, setManual, confirmManual, previewMode, showMigrationNotice,
     canPersistCurrentState: () => !migrationPending,
     beginRestoreBatch, endRestoreBatch, withRestoreBatch, collectClassFeatureCantrips, getClassFeatureCantripControl, refreshVisibility });

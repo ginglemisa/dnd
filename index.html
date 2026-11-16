@@ -152,7 +152,7 @@
   <script src="onboarding-tour.js?v=20261115-basic-align" defer></script>
   <script src="quick-build.js?v=20261114-ability-float" defer></script>
   <script src="spellbook.js?v=20261107-share-readonly" defer></script>
-  <script src="spell-management.js?v=20261107-share-readonly" defer></script>
+  <script src="spell-management.js?v=20261116-used-counts" defer></script>
   <script src="share-readonly.js?v=20261116-calculation-tips" defer></script>
   <script src="class-option-memory.js?v=20261106-background-memory" defer></script>
   <script src="page-swipe.js?v=20261116-features-swipe" defer></script>
@@ -1473,7 +1473,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261113-lessons-rename"></script>
   <script src="spell-sources.js?v=20261113-blessed-warrior"></script>
-  <script src="class-features-ui.js?v=20261116-features-swipe"></script>
+  <script src="class-features-ui.js?v=20261116-used-counts"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -5715,12 +5715,81 @@ const CHARACTER_DATA_LIMITS = Object.freeze({ bytes: 2 * 1024 * 1024, rows: 100,
 // 單純新增欄位（舊資料沒有就用預設值）不用加。比目前還新的版本不載入，避免舊版網頁讀錯後覆寫存檔。
 // 各區塊自己的 version（__inventory、__spellManagement 等）與分享專用的 __shareStateVersion 照舊，各管各的。
 const CHARACTER_STATE_VERSION_KEY = "__saveVersion";
-const CHARACTER_STATE_VERSION = 1;
+const CHARACTER_STATE_VERSION = 2;
+// 計數類的勾選框（法術位、種族的次數資源、免費施法次數）：畫面是一格一個勾選框，存檔只記每一組勾了幾格（0 省略），
+// 讀檔時從左邊填回，所以加減格子不影響存檔格式。勾選框的 id 與結構不變，只有收集與還原這一層換算。
+const SPELL_SLOTS_USED_STATE_KEY = "__spellSlotsUsed";       // { "環階": 已用格數 }
+const RACE_RESOURCES_USED_STATE_KEY = "__raceResourcesUsed"; // { 種族資源 key: 已用次數 }
+const USED_COUNT_MAX = 99;
+function isUsedCountMap(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const fields = Object.entries(value);
+  return fields.length <= 64 && fields.every(([key, used]) => key.length <= 80 && Number.isInteger(used) && used >= 0 && used <= USED_COUNT_MAX);
+}
+function getRaceResourceOfCheckboxId(id) {
+  return getRaceCheckboxResources().find(resource => id.startsWith(resource.checkbox) && /^\d+$/.test(id.slice(resource.checkbox.length))) || null;
+}
+// 第 1 版以前逐格存布林（spellslot1-1: true…）：數出每組勾了幾格。那一組的欄位一個都沒有時不產生對應的區塊，還原時就不動畫面。
+function migrateCheckboxUsesToCounts(data) {
+  const result = { ...data };
+  const slots = {}, raceUses = {};
+  let hasSlots = false, hasRaceUses = false;
+  Object.keys(data).forEach(id => {
+    const slot = /^spellslot(\d+)-\d+$/.exec(id);
+    const resource = slot ? null : getRaceResourceOfCheckboxId(id);
+    if (!slot && !resource) return;
+    delete result[id];
+    if (slot) {
+      hasSlots = true;
+      if (data[id] === true) slots[slot[1]] = (slots[slot[1]] || 0) + 1;
+    } else {
+      hasRaceUses = true;
+      if (data[id] === true) raceUses[resource.key] = (raceUses[resource.key] || 0) + 1;
+    }
+  });
+  if (hasSlots && !Object.hasOwn(data, SPELL_SLOTS_USED_STATE_KEY)) result[SPELL_SLOTS_USED_STATE_KEY] = slots;
+  if (hasRaceUses && !Object.hasOwn(data, RACE_RESOURCES_USED_STATE_KEY)) result[RACE_RESOURCES_USED_STATE_KEY] = raceUses;
+  // 免費施法次數：新版法術資料（version 2 以上）原本同時存布林陣列與頂層勾選框兩份，只留陣列換成的數字；
+  // 更舊的資料只有頂層勾選框，留給 SpellManagement.restoreState() 照原本的方式讀。
+  const management = data.__spellManagement;
+  if (management && typeof management === "object" && Number(management.version) >= 2) {
+    Object.keys(result).filter(id => id.startsWith("free-spell-use-")).forEach(id => { delete result[id]; });
+    if (management.freeUses && typeof management.freeUses === "object") {
+      result.__spellManagement = { ...management, freeUses: Object.fromEntries(Object.entries(management.freeUses)
+        .map(([key, uses]) => [key, Array.isArray(uses) ? uses.filter(used => used === true).length : uses]).filter(([, used]) => used !== 0)) };
+    }
+  }
+  return result;
+}
 // 第 n 項把第 n 版轉成第 n+1 版：回傳新物件，不改傳入的資料。
 const CHARACTER_STATE_MIGRATIONS = Object.freeze([
   // 0 → 1：只多了版本號，內容不變。
-  data => data
+  data => data,
+  // 1 → 2：計數類的勾選框由逐格布林改成已用數。
+  migrateCheckboxUsesToCounts
 ]);
+function isUsedCountCheckbox(el) {
+  return el.type === "checkbox" && (/^(?:spellslot\d+-\d+|free-spell-use-.+)$/.test(el.id) || Boolean(getRaceResourceOfCheckboxId(el.id)));
+}
+function getSpellSlotBoxGroups() {
+  return Array.from(document.querySelectorAll('[id^="spellslot"][id$="-row"]')).flatMap(row => {
+    const ring = /^spellslot(\d+)-row$/.exec(row.id)?.[1];
+    return ring ? [[ring, Array.from(row.querySelectorAll(`input[type="checkbox"][id^="spellslot${ring}-"]`))]] : [];
+  });
+}
+function getRaceResourceBoxGroups() {
+  const number = (resource, box) => Number(box.id.slice(resource.checkbox.length));
+  return getRaceCheckboxResources().map(resource => [resource.key, Array.from(document.querySelectorAll(`input[type="checkbox"][id^="${resource.checkbox}"]`))
+    .filter(box => getRaceResourceOfCheckboxId(box.id) === resource).sort((a, b) => number(resource, a) - number(resource, b))]);
+}
+function collectUsedCounts(groups) {
+  return Object.fromEntries(groups.map(([key, boxes]) => [key, boxes.filter(box => box.checked).length]).filter(([, used]) => used > 0));
+}
+// 區塊存在才還原（沒列到的組是 0）；區塊不存在時不動畫面，和以前「沒有那個欄位就不動」相同。
+function restoreUsedCounts(groups, counts) {
+  if (!isUsedCountMap(counts)) return;
+  groups.forEach(([key, boxes]) => boxes.forEach((box, index) => { box.checked = index < (counts[key] || 0); }));
+}
 function getCharacterStateVersion(data) {
   if (!Object.hasOwn(data, CHARACTER_STATE_VERSION_KEY)) return 0;
   const version = data[CHARACTER_STATE_VERSION_KEY];
@@ -5837,6 +5906,7 @@ function validateCharacterState(data) {
         if (depth === 0 && key === "__inventory" && !isValidInventoryState(child)) throw new TypeError("物品欄格式不正確或物品過多");
         if (depth === 0 && key === "magic-item-acquire" && typeof child !== "boolean") throw new TypeError("魔法物品開關格式不正確");
         if (depth === 0 && key === "droppedHands" && !isValidDroppedHands(child)) throw new TypeError("昏迷掉落紀錄格式不正確");
+        if (depth === 0 && (key === SPELL_SLOTS_USED_STATE_KEY || key === RACE_RESOURCES_USED_STATE_KEY) && !isUsedCountMap(child)) throw new TypeError("已用次數格式不正確");
         if (key === "sourceTag" && (typeof child !== "string" || child.length > 256)) throw new TypeError("法術來源標籤格式不正確");
         if (key === "entries" && Array.isArray(child)) {
           if (child.length > CHARACTER_DATA_LIMITS.entries) throw new RangeError("角色清單項目過多");
@@ -5849,9 +5919,11 @@ function validateCharacterState(data) {
           if (child && typeof child === "object") {
             if (Array.isArray(child)) throw new TypeError("法術使用次數格式不正確");
             let controls = 0;
+            // 每個來源是已用次數；第 1 版以前是逐格的布林陣列。
             for (const uses of Object.values(child)) {
-              if (!Array.isArray(uses) || uses.length > CHARACTER_DATA_LIMITS.freeUses) throw new RangeError("法術使用次數超過安全限制");
-              controls += uses.length;
+              const count = Array.isArray(uses) ? uses.length : uses;
+              if (!Number.isInteger(count) || count < 0 || count > CHARACTER_DATA_LIMITS.freeUses) throw new RangeError("法術使用次數超過安全限制");
+              controls += count;
             }
             if (controls > CHARACTER_DATA_LIMITS.freeUseControls) throw new RangeError("法術使用次數控制項過多");
           } else if (child !== "proficiency") assertCharacterDataCount(child, CHARACTER_DATA_LIMITS.freeUses);
@@ -6073,8 +6145,11 @@ function collectStateObject(options = {}) {
     if (el.dataset.stateTransient === "true") return;
     if (!includeMoneyLogs && skippedShareFields.has(el.id)) return;
     if (isSpellRowStateKey(el.id)) return;
+    if (isUsedCountCheckbox(el)) return;
     data[el.id] = el.type === "checkbox" ? el.checked : el.value;
   });
+  data[SPELL_SLOTS_USED_STATE_KEY] = collectUsedCounts(getSpellSlotBoxGroups());
+  data[RACE_RESOURCES_USED_STATE_KEY] = collectUsedCounts(getRaceResourceBoxGroups());
   data[CHARACTER_STATE_VERSION_KEY] = CHARACTER_STATE_VERSION;
   data[CHARACTER_SIZE_STATE_KEY] = characterSize;
   // 標記存在代表這份資料已經過自動計算判斷；判斷前（例如匯入途中先存檔）不寫，留給下次載入判斷。
@@ -6118,6 +6193,8 @@ const SHARE_OMITTED_IDS = new Set([
   "lifedicen",
   "heroic-inspiration",
   "druid-natural-recovery-used",
+  SPELL_SLOTS_USED_STATE_KEY,
+  RACE_RESOURCES_USED_STATE_KEY,
   "__deletedSpellRowCache"
 ]);
 const SHARE_TABLETOP_STATE_KEYS = new Set([
@@ -6193,16 +6270,10 @@ function collectShareState() {
   const actionPreferences = window.TabletopMode?.getTabletopActionPreferences?.();
   const hasActionPreferences = Boolean(actionPreferences && (actionPreferences.customActions.length || actionPreferences.customSpells?.length
     || actionPreferences.hiddenKeys.length || actionPreferences.notes));
-  // 種族勾選框資源（吐息元素等）的使用狀態不進分享網址。
-  const raceCheckboxPrefixes = getRaceCheckboxResources().map(resource => resource.checkbox);
 
   Object.keys(data).forEach((id) => {
     if (SHARE_ALWAYS_INCLUDED_IDS.has(id)) return;
     if (SHARE_OMITTED_IDS.has(id) || SHARE_TABLETOP_STATE_KEYS.has(id)) {
-      delete data[id];
-      return;
-    }
-    if (/^(?:spellslot\d+-|free-spell-use-)/.test(id) || raceCheckboxPrefixes.some(prefix => id.startsWith(prefix))) {
       delete data[id];
       return;
     }
@@ -6459,6 +6530,8 @@ function applyStateObjectNow(data) {
       const control = document.getElementById(id);
       if (control?.type === "checkbox") control.checked = !!value;
     });
+    restoreUsedCounts(getSpellSlotBoxGroups(), data[SPELL_SLOTS_USED_STATE_KEY]);
+    restoreUsedCounts(getRaceResourceBoxGroups(), data[RACE_RESOURCES_USED_STATE_KEY]);
     window.SpellManagement?.restoreState(data);
     updatePickedSpellBoxes();
     flushCharacterUpdates();

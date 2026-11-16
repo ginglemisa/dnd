@@ -138,7 +138,7 @@ async function verifyMigrationRules(browser, url) {
     await page.evaluate(async () => { SpellManagement.clearMemories(); await SpellManagement.setManual(true, { confirm: false }); });
     const manualState = await page.evaluate(() => collectStateObject());
     manualState.__spellManagement.entries.push({ ...free.entry, sourceKey: "second-source", freeUses: 2 });
-    manualState.__spellManagement.freeUses["second-source"] = [false, true];
+    manualState.__spellManagement.freeUses["second-source"] = 1;
     await apply(page, manualState);
     assert.equal((await activeIds(page)).filter(id => id === "cure-wounds").length, 1, "manual spells deduplicate across sources");
     assert.equal(await page.locator(".free-spell-use-check").count(), 0);
@@ -153,7 +153,7 @@ async function verifyMigrationRules(browser, url) {
     }, free.key);
     assert(!result.methods.includes("free")); assert(result.methods.includes("slot"));
     assert.equal(result.rejected, true); assert.equal(result.unchanged, true); assert.equal(result.used, true);
-    assert.deepEqual(result.archived, [false, true]);
+    assert.equal(result.archived, 1, "manual mode keeps the archived used count");
     assert.equal(await page.locator(".tabletop-spell-card__uses").count(), 0);
     await page.evaluate(() => SpellManagement.setManual(false, { confirm: false }));
     assert(await page.locator(".free-spell-use-check").count() > 0, "automatic mode restores source controls");
@@ -301,15 +301,16 @@ async function verifySynchronousRestore(browser, url) {
     await apply(page, state);
     const result = await page.evaluate(() => {
       document.getElementById("spellslot1-1").checked = true;
-      document.getElementById("spellslot3-3").checked = true;
+      // 存檔只記每組勾了幾格、讀檔從左邊填回，所以這裡勾的都是每組的第一格。
+      document.getElementById("spellslot3-1").checked = true;
       const free = document.querySelector(".free-spell-use-check");
       if (free) free.checked = true;
       const state = collectStateObject();
-      const ids = Object.keys(state).filter(id => id.startsWith("free-spell-use-"));
+      const ids = Array.from(document.querySelectorAll(".free-spell-use-check"), box => box.id);
       const read = () => ({
         attacks: ["atk-main-name", "atk-main-hit", "atk-main-dmg"].map(id => document.getElementById(id).value),
         spells: SpellManagement.getEntries().map(entry => [entry.sourceKey, entry.spellId, entry.spellClass]),
-        slots: ["spellslot1-1", "spellslot3-3"].map(id => document.getElementById(id).checked),
+        slots: ["spellslot1-1", "spellslot3-1"].map(id => document.getElementById(id).checked),
         uses: ids.map(id => [id, document.getElementById(id)?.checked])
       });
       const expected = read();
@@ -317,12 +318,11 @@ async function verifySynchronousRestore(browser, url) {
         __spellManagement: { version: 2, manual: false, entries: [] } });
       const missing = ids.filter(id => !document.getElementById(id));
       const reversed = Object.entries(state).reverse().filter(([id]) => !/^atk-(?:main|off)-(?:name|hit|dmg)$/.test(id));
-      applyStateObject(Object.fromEntries([...reversed.filter(([id]) => id.startsWith("free-spell-use-")),
-        ...reversed.filter(([id]) => !id.startsWith("free-spell-use-"))]));
+      applyStateObject(Object.fromEntries(reversed));
       const immediate = read(), collected = collectStateObject(); saveAllFields();
       const saved = JSON.parse(dndStorage.getItem("dndchar_autosave_v1"));
       const pick = data => ({ management: data.__spellManagement,
-        fields: Object.fromEntries([...ids, "spellslot1-1", "spellslot3-3", "mainHand", "str", "dex", "atk-main-name", "atk-main-hit", "atk-main-dmg"].map(id => [id, data[id]])) });
+        fields: Object.fromEntries(["__spellSlotsUsed", "__raceResourcesUsed", "mainHand", "str", "dex", "atk-main-name", "atk-main-hit", "atk-main-dmg"].map(id => [id, data[id]])) });
       const nested = withCharacterUpdateBatch(() => withCharacterUpdateBatch(() => {
         applyStateObject({ class: "wizard", level: "1", background: "soldier", race: "human",
           __spellManagement: { version: 2, manual: false, entries: [] } });
@@ -400,7 +400,8 @@ async function verifyClearPreparedSpells(page) {
     __wizardSpellbook: { version: 2, wizardSpellIds: ["detect-magic", "mage-armor"], manualSpellIds: [] }
   }, ["mending", "cure-wounds", "lesser-restoration", "dispel-magic", "blight"].map(id => player(id, "druid"))));
   await page.evaluate(() => {
-    document.getElementById("spellslot1-1").checked = true; document.getElementById("spellslot3-3").checked = true;
+    // 存檔只記每組勾了幾格、讀檔從左邊填回：勾每組的第一格，匯出再匯入後畫面才會完全相同。
+    document.getElementById("spellslot1-1").checked = true; document.getElementById("spellslot3-1").checked = true;
     const use = document.querySelector(".free-spell-use-check"); if (use) use.checked = true;
   });
   const snapshot = () => page.evaluate(() => ({ entries: SpellManagement.getEntries(), book: Spellbook.getState(),
@@ -409,7 +410,7 @@ async function verifyClearPreparedSpells(page) {
   const original = await snapshot();
   for (const source of ["race", "class", "subclass", "magic-initiate"]) assert(original.entries.some(entry => entry.spellSource === source), `${source} fixed spells exist`);
   assert.deepEqual(await page.evaluate(() => TabletopMode.getCanonicalSpellSlotGroups().find(group => group.level === 3)?.controls.map(control => [control.id, control.checked, control.disabled])),
-    [["spellslot3-1", false, false], ["spellslot3-2", false, false], ["spellslot3-3", true, false]]);
+    [["spellslot3-1", true, false], ["spellslot3-2", false, false], ["spellslot3-3", false, false]]);
   const button = page.locator("#spell-prepare"), dialog = pickerDialog(page);
   await button.focus(); await page.keyboard.press("Enter");
   assert.equal(await dialog.locator('.app-dialog__actions').getByRole("button", { name: "清空準備", exact: true }).count(), 1);
@@ -491,7 +492,7 @@ async function verifySpellOverview(browser, url) {
       const entry = SpellManagement.getEntries({ availableOnly: true }).find(entry => getFreeSpellUseSpec(entry));
       const spec = getFreeSpellUseSpec(entry);
       SpellManagement.setFreeUse(spec.key, 0, true);
-      return getSpellFreeUseControls(entry)[0].canonical.checked && collectStateObject().__spellManagement.freeUses[spec.key][0];
+      return getSpellFreeUseControls(entry)[0].canonical.checked && collectStateObject().__spellManagement.freeUses[spec.key] === 1;
     }), true, "hidden free-use controls retain canonical operations and saved consumption");
     const slotGroups = await page.evaluate(() => TabletopMode.getCanonicalSpellSlotGroups());
     await toggle("1").click();
