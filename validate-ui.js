@@ -910,7 +910,8 @@ async function verifyPdf(page, fieldsOnly) {
       const componentLine = spell.desc.split("\n").find(line => line.startsWith("成分:"));
       if (!componentLine || /^材料: (?:null|無)\s*$/mu.test(spell.desc)) throw new Error(`Spell components/empty materials: ${spell.spellId}`);
       const needsMaterial = componentLine.slice(3).trim().split(/[、,\s]+/u).includes("M");
-      for (const legacy of [false, true]) {
+      // 舊格式法術區（levelNspells-area）只有戲法到四環，五環以上只測目前的格式。
+      for (const legacy of spell.level <= 4 ? [false, true] : [false]) {
         if (materialFlag(spell, legacy) !== needsMaterial) throw new Error(`PDF material component: ${spell.spellId}/legacy=${legacy}`);
       }
     }
@@ -1019,7 +1020,7 @@ async function verifyPdf(page, fieldsOnly) {
     const longSpellPayload = buildPdfFieldPayload({ class: "wizard", level: "1" }, { customSpells: [{ spellId: "custom-spell-long", level: 1, nameZh: longSpellName, desc: "學派：塑能" }] });
     if (!Object.entries(longSpellPayload).some(([key, value]) => /^sp-name-\d+$/.test(key) && value === longSpellName)) throw new Error("PDF keeps a long spell name on one line");
   });
-  console.log("PDF fields: 217 spell material flags (current/legacy), component field isolation, class tools/shields, lineage levels and official sheet field names passed.");
+  console.log("PDF fields: 255 spell material flags (current; legacy through 4th level), component field isolation, class tools/shields, lineage levels and official sheet field names passed.");
   if (fieldsOnly) return;
   await page.addScriptTag({ url: "/pdf-lib.custom.min.js" });
   await page.addScriptTag({ url: "/fontkit.custom.min.js" });
