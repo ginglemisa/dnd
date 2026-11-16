@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/class.schema.json
 id: paladin
 name: 聖騎士
-maxLevel: 8
+maxLevel: 10
 subclassLevel: 3
 defaultSubclass: devotion
 tagline: 聖騎士以神聖之力守護同伴，以斬技重創敵人。
@@ -32,16 +32,23 @@ progression:
     byLevel: {1: null, 3: 2}
   preparedSpells:
     label: 準備法術
-    byLevel: {1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 7: 7}
+    byLevel: {1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 7: 7, 9: 9}
   spellSlots1:
     label: １環
     byLevel: {1: 2, 3: 3, 5: 4}
   spellSlots2:
     label: ２環
     byLevel: {1: null, 5: 2, 7: 3}
+  spellSlots3:
+    label: ３環
+    byLevel: {1: null, 9: 2}
 values:
   layOnHandsPool: {formula: "{level} * 5", format: "「{}」點"}
   channelDivinityUsesText: {formula: "{channelDivinityUses}", format: "{} 次"}
+  spellSaveDc:
+    formula: 8 + {proficiencyBonus} + {chaModifier}
+    format: （DC {}）
+  abjureFoesTargets: {formula: "max(1, {chaModifier})", format: " {} 個"}
 features:
   - id: paladin-lay-on-hands
     level: 1
@@ -191,6 +198,28 @@ features:
     feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: paladin-abjure-foes
+    level: 9
+    name: 聖威懾敵
+    actions:
+      - mode: action
+        key: dynamic-action-paladin-curated-abjure-foes
+        resource: paladin-channel-divinity
+    text: |
+      你可以用**魔法動作**消耗 1 次引導神力，亮出聖徽或武器，讓敵人被敬畏之情壓倒。
+
+      - **目標：**60 呎內你看得見的生物，數量最多{abjureFoesTargets|等同你的**魅力調整值**（至少 1 個）}。
+      - **豁免：**每個目標進行**感知豁免**{spellSaveDc|}，失敗時陷入[[恐慌]]狀態，持續 1 分鐘，或直到它受到任何傷害。
+      - **行動受限：**以此方式陷入恐慌的目標，在自己的每個回合只能做下列其中一件事：移動、執行 1 個動作，或執行 1 個附贈動作。
+  - id: paladin-aura-of-courage
+    level: 10
+    name: 無畏靈氣
+    hint: {panels: [overview], hideWhenIncapacitated: true}
+    summary: 你和守護靈氣內的盟友免疫恐慌；正陷入恐慌的盟友進入靈氣後，該狀態暫時失效。
+    text: |
+      你的守護靈氣使你和其中的盟友**免疫**[[恐慌]]狀態。
+
+      - **已受恐慌：**若正陷入[[恐慌]]的盟友進入靈氣範圍，該狀態會暫時失效。
 srd:
   overview: |
     **聖騎士核心特質**
