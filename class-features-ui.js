@@ -2095,8 +2095,17 @@ function collectClassOptionSnapshot(className, level) {
     captureBardMagicalDiscoverySelectionFromControls();
     Object.entries(getBardMagicalDiscoveryMemoryValues(getBardMagicalDiscoverySelection())).forEach(([id, value]) => put(id, value));
   }
+  // 降級時超出數量上限而被取消的選擇（魔能祈喚、超魔法）：目前的勾選都在先前的記憶裡、且已勾滿這個等級的上限時，
+  // 沿用先前較多的那份，升回去時還原；玩家在低等級改選了別的就以目前為準。
+  const previous = window.ClassOptionMemory?.get(className) || null;
+  const keepPrevious = (current, before, limit) => current.length >= limit && before.length > current.length
+    && current.every(item => before.includes(item));
   if (className === "warlock") {
-    document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]:not(:disabled)").forEach(input => put(input.id, input.checked));
+    const invocationInputs = Array.from(document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]:not(:disabled)"));
+    const checkedIds = invocationInputs.filter(input => input.checked).map(input => input.id);
+    const previousIds = Object.entries(previous?.values || {}).filter(([id, value]) => isEldritchInvocationCheckboxId(id) && value === true).map(([id]) => id);
+    const restoreIds = keepPrevious(checkedIds, previousIds, calculateWarlockInvocationSelectionLimit(className, level)) ? previousIds : checkedIds;
+    invocationInputs.forEach(input => put(input.id, restoreIds.includes(input.id)));
     document.querySelectorAll("#eldritch-invocations-output select[id]").forEach(select => put(select.id, select.value));
     put("pact-tome-invocation", pactTomeInvocationRemembered);
     const tome = getPactTomeSpellSelection();
@@ -2104,7 +2113,11 @@ function collectClassOptionSnapshot(className, level) {
     lists["pact-tome-rituals"] = tome.rituals;
   }
   const metamagicInputs = Array.from(document.querySelectorAll("#metamagicOptions input[data-metamagic-name]"));
-  if (className === "sorcerer" && metamagicInputs.some(input => !input.disabled)) lists.metamagic = getCheckedMetamagicNames();
+  if (className === "sorcerer" && metamagicInputs.some(input => !input.disabled)) {
+    const checked = getCheckedMetamagicNames();
+    const before = Array.isArray(previous?.lists?.metamagic) ? previous.lists.metamagic : [];
+    lists.metamagic = keepPrevious(checked, before, getMetamagicSelectionLimit(level)) ? before : checked;
+  }
   document.querySelectorAll("#extra-language-container select:not(:disabled)").forEach(select => put(select.id, select.value));
   getClassOptionToolSelects().forEach(select => put(select.id, select.value));
   return { level, values, lists };
