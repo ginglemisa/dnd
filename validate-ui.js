@@ -508,6 +508,13 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await screenshot(`${family}-${mode}-skills`);
+    // 上一輪結尾鎖住技能熟練：本機偏好在重新整理後仍鎖著，解鎖後才進行下面的點擊檢查。
+    const skillRankLock = page.locator('.skill-rank-lock[data-rank-lock="skills"]');
+    const saveRankLock = page.locator('.skill-rank-lock[data-rank-lock="saves"]');
+    const firstAppearance = family === "classic" && mode === "light";
+    assert.deepEqual([await skillRankLock.getAttribute("aria-pressed"), await saveRankLock.getAttribute("aria-pressed")],
+      [firstAppearance ? "false" : "true", "false"], "the skill lock starts unlocked and survives reload");
+    if (!firstAppearance) await skillRankLock.click();
     // 單一切換區走真實勾選框：可專精 ○→●→◆→○，不能專精 ○→●→○；圖示跟著勾選狀態。
     const rankControl = page.locator(".skill-rank-controls").filter({ has: page.locator("#prof-運動") });
     const rankState = () => page.evaluate(() => {
@@ -553,6 +560,57 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     assert.deepEqual(await saveState(), [true, "●"], "keyboard reaches the real save checkbox");
     await page.keyboard.press("Space");
     assert.notEqual(await page.locator("#prof-wis").evaluate(el => getComputedStyle(el).opacity), "0", "reminder jumps skip controls with zero opacity");
+    // 熟練鎖：標題列最右側、和標題同一列；解鎖淡色開口鎖，鎖住一般字色實心鎖身。
+    const rankLockLook = () => page.evaluate(() => [...document.querySelectorAll(".skill-rank-lock")].map(button => {
+      const heading = button.closest(".skill-section-heading");
+      const probe = token => { const span = document.createElement("span"); span.style.color = `var(${token})`; document.body.append(span); const color = getComputedStyle(span).color; span.remove(); return color; };
+      const box = button.getBoundingClientRect(), headingBox = heading.getBoundingClientRect(), titleBox = heading.querySelector("h3").getBoundingClientRect();
+      const centerY = box.top + box.height / 2;
+      return {
+        tone: getComputedStyle(button).color === probe("--text") ? "text" : getComputedStyle(button).color === probe("--text-muted") ? "muted" : getComputedStyle(button).color,
+        shackle: getComputedStyle(button.querySelector(".skill-rank-lock__shackle-closed")).display !== "none" ? "closed" : "open",
+        filled: getComputedStyle(button.querySelector(".skill-rank-lock__body")).fill !== "none",
+        atRight: box.right >= headingBox.right - 1 && box.right <= headingBox.right + 6,
+        titleRow: centerY >= titleBox.top && centerY <= titleBox.bottom,
+        size: box.width >= 32 && box.height >= 32
+      };
+    }));
+    for (const width of [390, 1200]) {
+      await page.setViewportSize({ width, height: 844 });
+      // 剛改視窗寬時 container query 可能還沒套用到標題列，等兩個畫格再量。
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      assert.deepEqual(await rankLockLook(), Array(2).fill({ tone: "muted", shackle: "open", filled: false, atRight: true, titleRow: true, size: true }), `unlocked look at ${width}`);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await skillRankLock.click();
+    assert.deepEqual((await rankLockLook()).map(look => [look.tone, look.shackle, look.filled]), [["muted", "open", false], ["text", "closed", true]], "only the skill lock closes");
+    assert.deepEqual(await page.evaluate(() => [dndStorage.getItem("dnd.skillRanksLocked.v1"), dndStorage.getItem("dnd.saveRanksLocked.v1") === "true"]), ["true", false]);
+    // 鎖住時滑鼠、空白鍵、直接 click() 都改不動，鎖頭晃一下；技能說明照常開；程式改勾選照常；豁免各自獨立。
+    const lockedBefore = await rankState();
+    await rankControl.click();
+    await page.locator("#prof-運動").focus();
+    await page.keyboard.press("Space");
+    assert.deepEqual(await rankState(), lockedBefore, "locked skill ranks ignore clicks and Space");
+    assert.deepEqual(await page.evaluate(() => {
+      document.getElementById("exp-運動").click();
+      return [document.getElementById("exp-運動").checked, document.querySelector('.skill-rank-lock[data-rank-lock="skills"]').classList.contains("is-nudged")];
+    }), [false, true], "a blocked click nudges the lock");
+    await page.locator('#skill-bonus-section span.skill-tip[data-skill="運動"]').click();
+    assert.equal(await page.locator("#skillPopup").isVisible(), true, "skill names still open their tip");
+    await page.keyboard.press("Escape");
+    assert.equal(await page.evaluate(() => { const box = document.getElementById("prof-運動"); box.checked = !box.checked; const result = box.checked; box.checked = !box.checked; return result !== box.checked; }), true);
+    await page.locator('.save-name[for="prof-wis"]').click();
+    assert.deepEqual(await saveState(), [true, "●"], "saves keep their own lock");
+    await saveRankLock.click();
+    await page.locator('.save-name[for="prof-wis"]').click();
+    assert.deepEqual(await saveState(), [true, "●"], "locked saves ignore clicks");
+    await saveRankLock.click();
+    await page.locator('.save-name[for="prof-wis"]').click();
+    assert.deepEqual(await saveState(), [false, "○"]);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await screenshot(`${family}-${mode}-skills-locked`);
+    // 留著技能鎖給下一輪檢查重新整理後的狀態；最後一輪解開。
+    if (family === "warm" && mode === "dark") await skillRankLock.click();
     // 分組標題的調整值隨屬性更新，屬性空白時不顯示。
     await page.evaluate(() => showTab("basic"));
     await page.locator("#dex").fill("16");
@@ -6312,6 +6370,7 @@ async function verifyShareReadonlyMode(browser, url) {
       document.getElementById("character-size-select").focus();
       return [document.getElementById("prof-int").checked, document.getElementById("prof-運動").checked, document.activeElement?.id === "character-size-select"];
     }), [false, false, false], "locked controls ignore label clicks and focus");
+    assert.deepEqual(await page.locator(".skill-rank-lock").evaluateAll(buttons => buttons.map(button => getComputedStyle(button).display)), ["none", "none"], "share mode hides the rank locks");
     assert.equal((await page.evaluate(() => JSON.parse(collectJsonExportText().text)))["spellcasting-ability"], "int", "locked values stay in the export");
     // 陣營開放：實際從畫面改得動，也會進匯出。
     await page.locator("#alignment").selectOption("CG");
