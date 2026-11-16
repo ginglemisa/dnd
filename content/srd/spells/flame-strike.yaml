@@ -17,8 +17,7 @@ site:
     - { kind: damage, formula: 5d6, upcastDice: 1d6, damageType: fire, autoOnCast: true, context: 區域火焰傷害擲一次；豁免依規則處理 }
     - { kind: damage, formula: 5d6, upcastDice: 1d6, damageType: radiant, autoOnCast: true, context: 同一次區域光耀傷害；豁免依規則處理 }
   body: |-
-    - 一道耀眼的火焰光柱從上方垂直落下，範圍是以射程內一點為中心、半徑10呎、高40呎的圓柱形區域
-    - 區域內每個生物須進行敏捷豁免；失敗時受到5d6火焰傷害與5d6光耀傷害，成功時傷害減半
+    - 以射程內一點為中心、半徑10呎、高40呎的圓柱形區域內，每個生物須進行敏捷豁免；失敗時受到5d6火焰傷害與5d6光耀傷害，成功時傷害減半
     - 使用更高環階法術位：每比5環高一環，火焰傷害與光耀傷害各增加1d6
 srd:
   material: 一小撮硫磺

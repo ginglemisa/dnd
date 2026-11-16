@@ -161,7 +161,7 @@ features:
       再選擇 2 項你已熟練但尚未專精的技能，改為**專精**。
   - level: 9
     text: |
-      **宿敵補充：**遊俠達到 9 級時，宿敵的免費施放次數提升為 4 次，詳見「遊俠特性」表。
+      **宿敵補充：**9 級起，宿敵可免費施放 4 次。
   - id: ranger-tireless
     level: 10
     name: 不知疲倦
@@ -177,9 +177,7 @@ features:
         key: dynamic-action-ranger-curated-tireless
         resource: ranger-tireless
     text: |
-      原初力量在旅途中為你補充精力，獲得以下能力：
-
-      - **臨時生命值：**使用**魔法動作**使自己獲得{tirelessTempHp|「1d8 + 感知調整值」}的臨時 HP，總數至少為 1。
+      - **臨時生命值：**以**魔法動作**獲得{tirelessTempHp|「1d8 + 感知調整值」}的臨時生命值（至少 1 點）。
       - **使用次數：**{tirelessUsesText|等同感知調整值（至少 1 次）}，**長休後全部恢復**。
       - **減少力竭：**每次完成**短休**，你的[[力竭]]等級（如果有）減少 1。
 srd:

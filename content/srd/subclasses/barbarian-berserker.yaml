@@ -31,7 +31,7 @@ features:
       - mode: reaction
         key: dynamic-reaction-barbarian-curated-retaliation
     text: |
-      你受到 **5 呎內**某個生物造成的傷害時，可以用**反應**對該生物進行 1 次近戰攻擊（使用武器或徒手打擊）。
+      受到 **5 呎內**生物的傷害時，可以用**反應**對它進行 1 次近戰攻擊。
 srd:
   title: "野蠻人子職：狂戰士道途 Path of the Berserker"
   intro: |

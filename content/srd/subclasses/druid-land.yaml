@@ -114,12 +114,7 @@ features:
         - {value: temperate, resistances: [lightning]}
         - {value: tropical, resistances: [poison]}
     text: |
-      你免疫[[中毒]]狀態，並依「大地結社法術」目前所選的地貌，對 1 種傷害具有[[抗性]]：
-
-      - **旱地：**火焰傷害。
-      - **極地：**冷凍傷害。
-      - **溫帶：**閃電傷害。
-      - **熱帶：**毒素傷害。
+      你免疫[[中毒]]狀態，並依「大地結社法術」目前所選的地貌獲得 1 種傷害[[抗性]]：旱地火焰、極地冷凍、溫帶閃電、熱帶毒素。
 srd:
   title: "德魯伊子職：大地結社 Circle of the Land"
   intro: |
