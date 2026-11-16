@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/class.schema.json
 id: sorcerer
 name: 術士
-maxLevel: 8
+maxLevel: 10
 subclassLevel: 3
 defaultSubclass: draconic
 tagline: 術士以天生魔力施法，並能直接塑造法術。
@@ -29,13 +29,13 @@ equipment:
 progression:
   sorceryPoints:
     label: 術法點
-    byLevel: {1: null, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8}
+    byLevel: {1: null, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10}
   cantrips:
     label: 戲法
-    byLevel: {1: 4, 4: 5}
+    byLevel: {1: 4, 4: 5, 10: 6}
   preparedSpells:
     label: 準備法術
-    byLevel: {1: 2, 2: 4, 3: 6, 4: 7, 5: 9, 6: 10, 7: 11, 8: 12}
+    byLevel: {1: 2, 2: 4, 3: 6, 4: 7, 5: 9, 6: 10, 7: 11, 8: 12, 9: 14, 10: 15}
   spellSlots1:
     label: １環
     byLevel: {1: 2, 2: 3, 3: 4}
@@ -47,10 +47,14 @@ progression:
     byLevel: {1: null, 5: 2, 6: 3}
   spellSlots4:
     label: ４環
-    byLevel: {1: null, 7: 1, 8: 2}
+    byLevel: {1: null, 7: 1, 8: 2, 9: 3}
+  spellSlots5:
+    label: ５環
+    byLevel: {1: null, 9: 1, 10: 2}
 values:
   sorcerousRestorationBudget: floor({level} / 2)
   sorceryPointsText: {formula: "{sorceryPoints}", format: "目前上限 {} 點"}
+  metamagicKnown: 2 + 2 * min(1, floor({level} / 10))
   slotCreationCosts:
     fromTable: {feature: sorcerer-font-of-magic, row: "{1} 環消耗 {2} 點（術士等級 {3} 起）", join: "；", end: "。"}
 features:
@@ -116,6 +120,7 @@ features:
       | 2 | 3 | 3 |
       | 3 | 5 | 5 |
       | 4 | 6 | 7 |
+      | 5 | 7 | 9 |
 
       {slotCreationCosts|}
     tables:
@@ -174,6 +179,14 @@ features:
     feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: sorcerer-metamagic-10
+    level: 10
+    name: 超魔法
+    text: |
+      再選擇 2 個超魔法選項，已知的超魔法選項增加為 4 個。完整內容請見「超魔」頁籤的「超魔法選項」。
+  - level: 10
+    text: |
+      **施法補充：**術士達到 10 級時，你也會透過「施法」特性額外學會 1 個術士戲法，詳見「術士特性」表。
 appendix:
   - name: 超魔法選項
     kind: metamagic
