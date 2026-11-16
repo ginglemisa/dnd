@@ -11,6 +11,17 @@ range: { feet: 300 }
 components: [ V, S, M ]
 duration: { minutes: 10 }
 concentration: true
+upcast: true
+site:
+  material: 一隻蝗蟲
+  outcomes:
+    - { kind: damage, formula: 4d10, upcastDice: 1d10, damageType: piercing, autoOnCast: true, context: 蟲群出現時的區域傷害擲一次；豁免依規則處理 }
+    - { kind: damage, formula: 4d10, upcastDice: 1d10, damageType: piercing, autoOnCast: false, context: 之後進入區域或在其中結束回合時 }
+  body: |-
+    - 成群的蝗蟲填滿以射程內你選擇的一點為中心、半徑20呎的球形區域，持續到法術結束；區域為輕度遮蔽，也是困難地形
+    - 蟲群出現時，區域內每個生物須進行體質豁免；失敗時受到4d10穿刺傷害，成功時傷害減半
+    - 生物在一個回合中首次進入法術區域，或在其中結束回合時，也須進行此豁免；每個生物每回合只進行一次此豁免
+    - 使用更高環階法術位：每比5環高一環，傷害增加1d10
 srd:
   material: 一隻蝗蟲
   body: |-
@@ -19,9 +30,6 @@ srd:
     蟲群出現時，其中的每個生物都要進行一次體質豁免；豁免失敗時，受到4d10穿刺傷害，豁免成功則受到一半傷害。生物在某回合第一次進入法術區域，或在該區域內結束其回合時，也要進行此豁免。生物每回合只需進行一次此豁免。
 
     _使用更高環階法術位。_ 所用法術位的環階每比5環高一環，傷害增加1d10。
-  outcomes:
-    - { kind: damage, formula: 4d10, damageType: piercing, autoOnCast: true, context: 蟲群出現時的區域傷害擲一次；豁免依規則處理 }
-    - { kind: damage, formula: 4d10, damageType: piercing, autoOnCast: false, context: 之後進入區域或在其中結束回合時 }
 en:
   material: a locust
   body: |-
