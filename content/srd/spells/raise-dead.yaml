@@ -10,6 +10,16 @@ castingTime: [ { hours: 1 } ]
 range: touch
 components: [ V, S, M ]
 duration: instantaneous
+site:
+  material: 一顆價值至少500 GP的鑽石（施法時消耗）
+  outcomes:
+    - { kind: healing, fixed: 1, autoOnCast: true, context: 目標以 1 點生命值復活；不直接修改角色 HP }
+  body: |-
+    - 觸碰一個死亡不超過10天的生物使它復活；若它死亡時是不死生物，此法術無法使它復活
+    - 該生物以1點生命值復活；它死亡時受到的任何毒素也會被中和
+    - 此法術會癒合所有致命傷口，但不會恢復缺失的身體部位
+    - 若該生物缺少存活不可或缺的身體部位或器官（例如頭部），法術自動失敗
+    - 死而復生是一段艱辛的經歷：目標的D20檢定（攻擊檢定、屬性檢定與豁免）受到−4減值；目標每完成一次長休，減值減少1，直到變為0
 srd:
   material: 價值500+ GP的鑽石，法術會將其消耗
   body: |-

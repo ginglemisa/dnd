@@ -10,6 +10,13 @@ castingTime: [ action ]
 range: { feet: 30 }
 components: [ V, S, M ]
 duration: { hours: 1 }
+site:
+  material: 一撮芝麻
+  body: |-
+    - 在射程內你能看見的木製、灰泥或石製表面（例如牆壁、天花板或地板）上的一點開出一條通道，持續到法術結束
+    - 你決定開口的尺寸：最寬5呎、最高8呎、最深20呎
+    - 通道不會讓周圍的結構變得不穩定
+    - 開口消失時，仍在通道中的生物或物體會被安全地推出到最靠近施法表面的未被佔據空間
 srd:
   material: 一撮芝麻
   body: |-
