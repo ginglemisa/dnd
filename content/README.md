@@ -408,15 +408,15 @@ pdf: [擒抱者(通用), 拳打抱/打抱優]
 | --- | --- |
 | `id` | 專長 ID（中文名），也是畫面上的專長名稱。檔名與 ID 無關：只用小寫英文、數字與連字號，SRD 專長用 SRD 5.2.1 的英文名（例如 `magic-initiate`），擴充專長依中文字義另取。會寫進存檔、JSON、分享網址與快速創角草稿，不可改字（列在 `feat-id-baseline.json`）；網站程式判斷特定專長時也用 ID（例如 `hasSelectedFeat("警覺")`）。 |
 | `source` | 內容來源（`srd`／`extended`，同背景）。`extended` 的選單文字與說明副標加上來源標籤，說明最後加上來源說明；字樣由 `character-rules.js` 的 `getContentSourceLabel`、`getContentSourceNotice` 決定；選單文字「醫療兵(起源・擴充)」由 `formatContentSourceName` 產生（半形括號，類別與來源以「・」連接）。 |
-| `type` | 類別：`origin` 起源專長、`general` 通用專長、`style` 戰鬥風格專長。決定哪些專長選擇列出它（背景與種族的起源專長、屬性值提升的等級專長、戰鬥風格，以及自行管理專長的分類選單），選單文字「擒抱者(通用)」與說明副標由此產生；類別字樣由 `character-rules.js` 的 `getFeatTypeLabel` 決定，新增類別時須一併加上字樣，否則建置失敗。 |
-| `prerequisite` | 通用專長的先決條件，擇一：`abilities`（其中一項屬性值達 13）、`heavyArmor: true`（具重甲訓練）、`spellcasting: true`（具施法能力）。不符合時專長列顯示警示；副標的條件文字（例如「4 級以上；力量或敏捷 13+」）由此產生。 |
+| `type` | 類別：`origin` 起源專長、`general` 通用專長、`style` 戰鬥風格專長、`epic` 傳奇恩惠。決定哪些專長選擇列出它（背景與種族的起源專長、屬性值提升的等級專長（通用與傳奇恩惠）、戰鬥風格，以及自行管理專長的分類選單），選單文字「擒抱者(通用)」與說明副標由此產生；類別字樣由 `character-rules.js` 的 `getFeatTypeLabel` 決定，新增類別時須一併加上字樣，否則建置失敗。 |
+| `prerequisite` | 通用專長與傳奇恩惠的先決條件，擇一：`abilities`（其中一項屬性值達 13）、`heavyArmor: true`（具重甲訓練）、`spellcasting: true`（具施法能力）。不符合時專長列顯示警示；副標的條件文字（例如「4 級以上；力量或敏捷 13+」）由此產生，前面的等級門檻是類別決定的（通用 4 級、傳奇恩惠 19 級，`character-rules.js` 的 `getFeatTypeMinLevel`）。角色等級未達 19 級時，傳奇恩惠在專長選單上停用（自動與自行管理都是），已選的值保留。 |
 | `repeatable` | `true` 時可多次選擇。 |
 | `grantsSpellcasting` | `true`：此專長提供施法來源（例如魔法學徒）。自訂背景選了這個起源專長時，角色視為有施法來源（顯示施法屬性欄、可選須具施法能力的專長）。 |
 | `effects` | 效果，依說明順序，顯示為粗體「名稱：內容」。`text` 是一行文字，可用 `[[提示]]`（技能、規則或狀態名稱，例如 `[[優勢]]`、`[[擒抱]]`）；`list` 是接在後面的「·」清單；`after` 是清單之後空一行的補充段落。 |
 | `actions` | 跑團按鈕：`mode`（`action`／`bonus`／`reaction`／`movement`）、`label`、`key`（進跑團隱藏偏好，不可改字，列在基準檔）、`level`（達到才出現，省略為 1）。說明預設是與 `label` 同名的效果內容，`effects` 可改列多個效果；需要另寫時用 `tabletop`（純文字，可換行）。`proficiencyValue: true` 時，已選等級就把說明中的「熟練加值」換成數值。 |
 | `pdf` | PDF 專長欄的各行，第一行是空間不夠時只列的標題。省略時只有一行「名稱(類別)」。魔法學徒選了法表後，PDF 改列「法師表2戲1環」這樣的一行，這裡的行是還沒選法表時的提示。 |
 
-- 建置檢查檔名與 `feat-order.yaml`、只有通用專長可寫 `prerequisite`、效果名稱不重複、動作的效果存在、動作 key 的分頁與 `mode` 相同且不重複、`[[提示]]` 是已知名稱；背景的起源專長須是 `type: origin`。
+- 建置檢查檔名與 `feat-order.yaml`、只有通用專長與傳奇恩惠可寫 `prerequisite`、效果名稱不重複、動作的效果存在、動作 key 的分頁與 `mode` 相同且不重複、`[[提示]]` 是已知名稱；背景的起源專長須是 `type: origin`。
 - `feat-id-baseline.json` 列出專長 ID、專長選擇的存檔欄位（`feat-choice-<來源>`、`derived-feat-<來源>`）、快速創角草稿的專長名稱（含背景的「魔法學徒（牧師）」）與跑團動作 key。
 - `npm run build` 產生根目錄的 `feat-content.generated.js`：`featRules` 是結構化規則（類別、來源、可否重複、先決條件、跑團動作），`featText` 是組好的顯示文字（選單文字、說明 HTML、純文字說明、PDF 行、跑團說明）。網站經 `character-rules.js` 的 `getFeatRules`、`getFeatText`、`getAllFeatRules` 讀取，不從顯示文字反推規則。
 - 跑團提示（例如警覺、醫療兵在總覽與法術頁的提醒）與依專長計算的數值（強韌體魄的 HP、迅捷步法的速度等）仍寫在網站程式，以專長 ID 判斷。

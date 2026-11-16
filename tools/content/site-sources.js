@@ -108,6 +108,8 @@ const damageTypeLabel = id => loadCharacterRules().getDamageTypeLabel(id);
 
 // 專長類別的顯示名稱（character-rules.js 的 getFeatTypeLabel，例如 origin →「起源」／「起源專長」）。
 const featTypeLabel = type => loadCharacterRules().getFeatTypeLabel(type);
+// 專長類別的等級門檻（character-rules.js 的 getFeatTypeMinLevel，例如 epic → 19）。
+const featTypeMinLevel = type => loadCharacterRules().getFeatTypeMinLevel(type);
 
 // 法術目錄（spell-list.js 的 SpellCatalog）：種族法術的 ID、環階與中文名。
 // 資料來自建置中的法術內容檔：建置先以 useSpellContent 指定 spell-content.generated.js 的原始碼（不必先寫檔）。
@@ -165,4 +167,4 @@ function loadMagicItemCatalog(rules, baseLists) {
   return globals.MagicItemCatalog;
 }
 
-module.exports = { ROOT, loadMagicItemCatalog, loadEquipmentData, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadReferenceOnlyBeasts, loadSkillAbilities, loadRollModeTargets, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };
+module.exports = { ROOT, loadMagicItemCatalog, loadEquipmentData, useMonsterContent, loadTipTables, loadWildShapeBeasts, loadReferenceOnlyBeasts, loadSkillAbilities, loadRollModeTargets, loadConditionLabels, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, featTypeMinLevel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };

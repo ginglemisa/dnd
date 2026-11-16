@@ -2482,7 +2482,9 @@ async function verifyCharacterFeatures(browser, url) {
     // 種族延伸選單：右緣與種族欄對齊；高等精靈戲法在左、傳承在右（同背景｜種族欄線），選單只顯示中文並可「查看」；生命骰三欄等寬。
     for (const width of [1280, 375, 320]) {
       await page.setViewportSize({ width, height: 900 });
-      const edges = selector => page.locator(selector).evaluate(el => {
+      // 減少動態效果時每個屬性都有 0.01ms 的過渡（css/dialogs.css），剛換選項時 gap 等可能還是舊值；等過渡結束再量。
+      const edges = selector => page.locator(selector).evaluate(async el => {
+        await Promise.all(document.getAnimations().filter(animation => animation instanceof CSSTransition).map(animation => animation.finished.catch(() => {})));
         const rect = el.getBoundingClientRect();
         return [Math.round(rect.left), Math.round(rect.right)];
       });
@@ -3294,11 +3296,11 @@ async function verifyClassSrdVersion(browser, url) {
     await page.evaluate(() => openCharacterFeatures("class"));
     await chooseSrd("class");
     assert.deepEqual(await levels("#classFeaturesSrd"), [1, 2, 3, 4], "share mode filters SRD 版 by the shared level");
-    // 等級跳轉列只是捲動，分享模式也能用。
+    // 等級跳轉列與子職篩選只改畫面，分享模式也能用。
     const shareNav = modal.locator("#character-features-picker [data-feature-level-nav]");
     assert.deepEqual(await shareNav.locator("[data-level-nav]:not(:disabled)").evaluateAll(items => items.map(item => item.dataset.levelNav)), ["1-4", "subclass"], "share mode keeps the level jump bar usable");
     await shareNav.locator('[data-level-nav="subclass"]').click();
-    assert.equal(await shareNav.locator('[aria-current="location"]').getAttribute("data-level-nav"), "subclass");
+    assert.equal(await shareNav.locator('[data-level-nav="subclass"]').getAttribute("aria-pressed"), "true", "share mode can filter to the subclass");
     assert.deepEqual(await page.evaluate(() => collectStateObject()), shared, "share mode switching keeps the shared data");
     console.log("Class SRD version: switch only for classes with SRD text, title placement on desktop/narrow, lazy load, unchanged 網站版, level/subclass filtering, reset on reopen/class change and share mode passed.");
   } finally {
@@ -3427,7 +3429,7 @@ async function verifyDruidTerrainTable(browser, url) {
   }
 }
 
-// 「特性」頁籤的等級跳轉列：五格依頁面上的段落啟用，點了捲到該區段第一個段落，捲動時亮目前區段；網站版與 SRD 版共用。
+// 「特性」頁籤的等級跳轉列：五格依頁面上的段落啟用；等級格點了捲到該區段第一個段落，捲動時亮目前區段；「子職」是只列子職能力的篩選開關；網站版與 SRD 版共用。
 async function verifyCharacterFeatureLevelNav(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
   const modal = page.locator("#character-features-modal");
@@ -3440,8 +3442,22 @@ async function verifyCharacterFeatureLevelNav(browser, url) {
   }, [id, value]);
   const navState = () => nav.evaluate(group => ({
     enabled: Array.from(group.querySelectorAll("[data-level-nav]:not(:disabled)"), item => item.dataset.levelNav),
-    current: group.querySelector('[aria-current="location"]')?.dataset.levelNav || null
+    current: group.querySelector('[aria-current="location"]')?.dataset.levelNav || null,
+    filter: group.querySelector('[data-level-nav="subclass"]').getAttribute("aria-pressed") === "true"
   }));
+  // 目前版本內容裡看得到的段落：全部都看得到回傳 "all"，只看得到全部子職段落回傳 "subclass"。
+  const shown = containerId => page.evaluate(containerId => {
+    const sections = Array.from(document.querySelectorAll(`#${containerId} section[data-feature-level]`));
+    const visible = sections.filter(section => section.getClientRects().length > 0);
+    const subclass = sections.filter(section => section.hasAttribute("data-subclass"));
+    if (visible.length === sections.length) return "all";
+    return subclass.length > 0 && visible.length === subclass.length && visible.every(section => section.hasAttribute("data-subclass")) ? "subclass" : "mixed";
+  }, containerId);
+  const scrollTop = () => page.evaluate(() => document.querySelector("#character-features-modal .app-dialog__body").scrollTop);
+  const firstShown = containerId => page.evaluate(containerId => {
+    const section = Array.from(document.querySelectorAll(`#${containerId} section[data-feature-level]`)).find(element => element.getClientRects().length > 0);
+    return section ? { level: Number(section.dataset.featureLevel), subclass: section.dataset.subclass || null, srdTitle: section.classList.contains("class-srd-subclass") } : null;
+  }, containerId);
   const landed = containerId => page.evaluate(containerId => {
     const body = document.querySelector("#character-features-modal .app-dialog__body");
     const top = body.getBoundingClientRect().top + parseFloat(getComputedStyle(body).paddingTop);
@@ -3475,15 +3491,34 @@ async function verifyCharacterFeatureLevelNav(browser, url) {
     assert((await nav.boundingBox()).height <= wideClassHeight + 0.5, "the jump bar is no taller than the class picker on desktop");
     await page.setViewportSize({ width: 390, height: 844 });
 
-    // 8 級戰士（網站版）：11–16、17–20 沒有內容；點一格捲到該區段第一個能力，子職捲到目前子職的第一個能力。
-    assert.deepEqual(await navState(), { enabled: ["1-4", "5-10", "subclass"], current: "1-4" });
+    // 8 級戰士（網站版）：11–16、17–20 沒有內容；點一格捲到該區段第一個能力。
+    assert.deepEqual(await navState(), { enabled: ["1-4", "5-10", "subclass"], current: "1-4", filter: false });
     await button("5-10").click();
     assert.deepEqual(await landed("classFeatures"), { level: 5, subclass: null, srdTitle: false }, "5–10 jumps to the first level-5 feature");
     assert.equal((await navState()).current, "5-10");
+    // 「子職」是篩選開關：只列子職能力、從頂端開始，等級格不亮；再按一次回到完整列表。
     await button("subclass").click();
-    const subclassLanding = await landed("classFeatures");
-    assert.deepEqual([subclassLanding.level, Boolean(subclassLanding.subclass)], [3, true], "子職 jumps to the current subclass's first feature");
-    assert.equal((await navState()).current, "subclass");
+    assert.deepEqual(await navState(), { enabled: ["1-4", "5-10", "subclass"], current: null, filter: true }, "子職 turns on the subclass filter");
+    assert.equal(await shown("classFeatures"), "subclass", "the filter shows only the current subclass's features");
+    assert.equal(await scrollTop(), 0, "the filtered list starts at the top");
+    const filteredLanding = await firstShown("classFeatures");
+    assert.deepEqual([filteredLanding.level, Boolean(filteredLanding.subclass)], [3, true], "the filtered list starts with the subclass's first feature");
+    await button("subclass").click();
+    assert.equal((await navState()).filter, false, "pressing 子職 again turns the filter off");
+    assert.equal(await shown("classFeatures"), "all");
+    // 篩選開著時按等級格：先關掉篩選，再捲到那一段。
+    await button("subclass").click();
+    await button("5-10").click();
+    assert.deepEqual(await navState(), { enabled: ["1-4", "5-10", "subclass"], current: "5-10", filter: false }, "a range button turns the filter off");
+    assert.equal(await shown("classFeatures"), "all");
+    assert.deepEqual(await landed("classFeatures"), { level: 5, subclass: null, srdTitle: false }, "then jumps to that range");
+    // 子職能力照等級算在等級格：捲到 7 級的子職能力時亮 5–10。
+    await page.evaluate(() => {
+      const body = document.querySelector("#character-features-modal .app-dialog__body");
+      const target = document.querySelector("#classFeatures section[data-feature-level='7'][data-subclass]");
+      body.scrollTop += target.getBoundingClientRect().top - body.getBoundingClientRect().top - parseFloat(getComputedStyle(body).paddingTop) + 4;
+    });
+    await page.waitForFunction(() => document.querySelector('[data-feature-level-nav] [aria-current="location"]')?.dataset.levelNav === "5-10");
     // 捲動時亮目前所在區段。
     await page.evaluate(() => {
       const body = document.querySelector("#character-features-modal .app-dialog__body");
@@ -3503,26 +3538,37 @@ async function verifyCharacterFeatureLevelNav(browser, url) {
     assert.equal(await nav.locator(":focus").getAttribute("data-level-nav"), "1-4");
     await page.keyboard.press("Enter");
     assert.equal((await navState()).current, "1-4");
-    // 等級未到子職：「子職」停用。
+    // 等級未到子職：「子職」停用，開著的篩選自動關掉。
+    await button("subclass").click();
     await set("level", "2");
-    assert.deepEqual(await navState(), { enabled: ["1-4"], current: "1-4" }, "level 2 has no subclass features yet");
+    assert.deepEqual(await navState(), { enabled: ["1-4"], current: "1-4", filter: false }, "level 2 has no subclass features yet and drops the filter");
+    assert.equal(await page.evaluate(() => document.getElementById("class-abilities-panel").hasAttribute("data-subclass-filter")), false);
+    await set("level", "8");
+    assert.equal((await navState()).filter, false, "the filter stays off when the level comes back");
 
     // SRD 版、未選等級：列出 1–20 級，五格都啟用；子職捲到接在職業能力之後的子職標題。
     await set("level", "");
-    assert.deepEqual((await navState()).enabled, ["1-4", "5-10", "subclass"], "網站版 has no content above level 10");
+    assert.deepEqual((await navState()).enabled, ["1-4", "5-10", "subclass"], "網站版 has no content above level 10; 子職 stays usable with a blank level");
     await modal.locator('#class-abilities-panel .class-version-switch [data-spell-version="srd"]').click();
     await modal.locator("#classFeaturesSrd .spell-version__attribution").waitFor();
     assert.deepEqual((await navState()).enabled, ["1-4", "5-10", "11-16", "17-20", "subclass"], "SRD 版 without a level enables every range");
     await button("11-16").click();
     assert.deepEqual(await landed("classFeaturesSrd"), { level: 11, subclass: null, srdTitle: false }, "11–16 jumps to the first level-11 SRD feature");
+    await button("17-20").click();
+    assert.equal((await navState()).current, "17-20", "the clicked range stays lit even when the last section cannot reach the top");
+    // SRD 版的篩選：從子職標題開始，只列子職段落；換回網站版、再換回 SRD 版時都維持篩選。
     await button("subclass").click();
-    assert.equal((await navState()).current, "subclass", "the clicked range stays lit even when the last section cannot reach the top");
-    assert.equal(await page.evaluate(() => {
-      const body = document.querySelector("#character-features-modal .app-dialog__body");
-      const title = document.querySelector("#classFeaturesSrd .class-srd-subclass");
-      const top = body.getBoundingClientRect().top + parseFloat(getComputedStyle(body).paddingTop);
-      return Math.abs(title.getBoundingClientRect().top - top) < 1.5 || body.scrollTop + body.clientHeight >= body.scrollHeight - 1;
-    }), true, "子職 in SRD 版 jumps to the subclass title");
+    assert.equal(await shown("classFeaturesSrd"), "subclass", "SRD 版 filter shows only the subclass sections");
+    assert.deepEqual(await firstShown("classFeaturesSrd"), { level: 3, subclass: "champion", srdTitle: true }, "SRD 版 filter starts with the subclass title");
+    assert.equal(await scrollTop(), 0);
+    await modal.locator('#class-abilities-panel .class-version-switch [data-spell-version="site"]').click();
+    assert.equal((await navState()).filter, true, "switching version keeps the filter");
+    assert.equal(await shown("classFeatures"), "subclass");
+    await modal.locator('#class-abilities-panel .class-version-switch [data-spell-version="srd"]').click();
+    await modal.locator("#classFeaturesSrd .spell-version__attribution").waitFor();
+    assert.equal((await navState()).filter, true, "the filter survives the SRD 版 reload");
+    assert.equal(await shown("classFeaturesSrd"), "subclass");
+    await button("subclass").click();
     await set("level", "8");
     await modal.locator("#classFeaturesSrd .spell-version__attribution").waitFor();
     assert.deepEqual((await navState()).enabled, ["1-4", "5-10", "subclass"], "SRD 版 follows the chosen level");
@@ -3533,9 +3579,20 @@ async function verifyCharacterFeatureLevelNav(browser, url) {
     assert.deepEqual((await navState()).enabled, [], "no class means nothing to jump to");
     await set("class", "fighter");
     await set("level", "8");
+    // 換職業與關閉視窗都會關掉篩選。
+    await button("subclass").click();
+    await set("class", "wizard");
+    assert.equal((await navState()).filter, false, "changing class turns the filter off");
+    await set("class", "fighter");
+    await set("level", "8");
+    await button("subclass").click();
     await page.keyboard.press("Escape");
-    assert.deepEqual(await page.evaluate(() => collectStateObject()), state, "jumping never changes character data");
-    console.log("Character feature level nav: five ranges, header placement and height, enabled ranges per level/subclass/version, click jumps, scroll highlight, keyboard and SRD 版 passed.");
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), state, "jumping and filtering never change character data");
+    await page.evaluate(() => openCharacterFeatures("class"));
+    assert.equal((await navState()).filter, false, "reopening the dialog shows the full list");
+    assert.equal(await shown("classFeatures"), "all");
+    await page.keyboard.press("Escape");
+    console.log("Character feature level nav: five ranges, header placement and height, enabled ranges per level/subclass/version, click jumps, subclass filter, scroll highlight, keyboard and SRD 版 passed.");
   } finally {
     await page.close();
   }
@@ -4117,7 +4174,7 @@ async function verifyFeatureReferences(browser, url) {
         const raw = getFeatText(name).plain;
         const template = document.createElement("template");
         template.innerHTML = getFeatDescriptionHtml(name);
-        const expected = name === "警覺" ? 1 : name === "擒抱者" ? 3 : 0;
+        const expected = name === "警覺" ? 1 : name === "擒抱者" ? 3 : name === "暗夜精魂恩惠" ? 1 : 0;
         if (template.content.querySelectorAll("button.condition-tip").length !== expected) failures.push(`${name}: feat condition coverage`);
         if (template.content.querySelector("strong .feature-rule-tip, .feat-desc-title .feature-rule-tip, .feat-desc-subtitle .feature-rule-tip")) failures.push(`${name}: linked feat heading`);
         if (/<[^>]+>/.test(raw)) failures.push(`${name}: feat source must remain plain text`);

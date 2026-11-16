@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 暗夜精魂恩惠
+source: srd
+type: epic
+effects:
+  - name: 屬性提升
+    text: 自選一項屬性 +1（最高 30）。
+  - name: 融入陰影
+    text: 位於微光或黑暗中時，可以用附贈動作讓自己陷入[[隱形]]狀態；執行動作、附贈動作或反應動作後，這個隱形立即結束。
+  - name: 陰影形體
+    text: 位於微光或黑暗中時，對心靈與光耀以外的所有傷害具有[[抗性]]。

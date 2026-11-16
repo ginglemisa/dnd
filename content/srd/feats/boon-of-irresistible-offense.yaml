@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 勢不可擋恩惠
+source: srd
+type: epic
+effects:
+  - name: 屬性提升
+    text: 力量或敏捷擇一 +1（最高 30）。
+  - name: 突破防禦
+    text: 你造成的鈍擊、穿刺與揮砍傷害一律無視[[抗性]]。
+  - name: 壓倒性打擊
+    text: 攻擊檢定的 d20 擲出 20 時，可以對目標造成額外傷害，數值等於這個專長提高的那項屬性值，傷害類型與這次攻擊相同。

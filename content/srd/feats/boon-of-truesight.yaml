@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 真實視覺恩惠
+source: srd
+type: epic
+effects:
+  - name: 屬性提升
+    text: 自選一項屬性 +1（最高 30）。
+  - name: 真實視覺
+    text: 你擁有範圍 60 呎的真實視覺。

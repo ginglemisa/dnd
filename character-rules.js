@@ -68,12 +68,21 @@
   const FEAT_TYPE_LABELS = Object.freeze({
     origin: Object.freeze({ short: "起源", full: "起源專長" }),
     general: Object.freeze({ short: "通用", full: "通用專長" }),
-    style: Object.freeze({ short: "戰鬥風格", full: "戰鬥風格專長" })
+    style: Object.freeze({ short: "戰鬥風格", full: "戰鬥風格專長" }),
+    epic: Object.freeze({ short: "傳奇恩惠", full: "傳奇恩惠專長" })
   });
 
   /** 專長類別的顯示名稱（{ short, full }）；不認得時為 null。 */
   function getFeatTypeLabel(type) {
     return Object.hasOwn(FEAT_TYPE_LABELS, type) ? FEAT_TYPE_LABELS[type] : null;
+  }
+
+  // 專長類別的等級門檻（角色等級）：說明副標的「N 級以上」由此產生；傳奇恩惠未達等級時在專長選單上停用。
+  const FEAT_TYPE_MIN_LEVELS = Object.freeze({ general: 4, epic: 19 });
+
+  /** 專長類別的等級門檻；沒有門檻時為 1。 */
+  function getFeatTypeMinLevel(type) {
+    return Object.hasOwn(FEAT_TYPE_MIN_LEVELS, type) ? FEAT_TYPE_MIN_LEVELS[type] : 1;
   }
 
   /** 全部專長類別，依分類選單順序。 */
@@ -1453,6 +1462,7 @@
     getFeatText,
     getAllFeatRules,
     getFeatTypeLabel,
+    getFeatTypeMinLevel,
     getFeatTypes,
     getDamageTypeLabel,
     getCharacterResourceSpecs,

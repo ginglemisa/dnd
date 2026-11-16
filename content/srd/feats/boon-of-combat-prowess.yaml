@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 戰鬥造詣恩惠
+source: srd
+type: epic
+effects:
+  - name: 屬性提升
+    text: 自選一項屬性 +1（最高 30）。
+  - name: 無雙瞄準
+    text: 攻擊檢定未命中時，可以改為命中。用過後要等到你的下個回合開始，才能再次使用。

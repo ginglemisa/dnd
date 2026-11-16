@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 次元旅行恩惠
+source: srd
+type: epic
+effects:
+  - name: 屬性提升
+    text: 自選一項屬性 +1（最高 30）。
+  - name: 閃現步
+    text: 執行攻擊動作或魔法動作後，可以立即傳送最遠 30 呎，到一處你看得見、沒有被佔據的空間。

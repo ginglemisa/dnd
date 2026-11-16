@@ -12,9 +12,19 @@ function getFeatMenuOptions(filter = () => true) {
   return Object.entries(window.getAllFeatRules?.() || {}).filter(([, rule]) => filter(rule)).map(([id]) => ({ value: id, label: window.getFeatText(id).label }));
 }
 
+// 傳奇恩惠（type: epic）角色等級未達門檻（19 級）時，在自動與自行管理的專長選單上都停用；已選的值保留，自動管理另顯示資格警示。
+// 其他類別的先決條件照舊不在選單上阻擋。
+function isFeatLevelLocked(featId) {
+  const rule = window.getFeatRules?.(featId);
+  if (rule?.type !== "epic") return false;
+  return Number(document.getElementById("level")?.value || 0) < window.getFeatTypeMinLevel(rule.type);
+}
+
+const featOptionDisabledAttr = featId => isFeatLevelLocked(featId) ? " disabled" : "";
+
 function getFeatOptionsHtml() {
   return `<option value="">-- 請選擇 --</option>` +
-    getFeatMenuOptions().map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("");
+    getFeatMenuOptions().map(opt => `<option value="${opt.value}"${featOptionDisabledAttr(opt.value)}>${opt.label}</option>`).join("");
 }
 
 function isManualFeatManagementEnabled() {
@@ -109,7 +119,7 @@ function getManualFeatCategoryOptionsHtml(includeOther) {
 function getManualFeatOptionsHtml(category) {
   if (!category) return '<option value="">請先選擇分類</option>';
   return '<option value="">-- 請選擇 --</option>' + Object.entries(window.getAllFeatRules?.() || {}).filter(([, rule]) => rule.type === category)
-    .map(([id, rule]) => `<option value="${escapeHtml(id)}">${escapeHtml(window.formatContentSourceName(id, rule.source))}</option>`).join("");
+    .map(([id, rule]) => `<option value="${escapeHtml(id)}"${featOptionDisabledAttr(id)}>${escapeHtml(window.formatContentSourceName(id, rule.source))}</option>`).join("");
 }
 
 function collectFeatRowEntries(rows) {
@@ -394,7 +404,7 @@ function appendFeatChoice(container, spec, previousValue = "") {
   label.textContent = spec.label;
   const select = document.createElement("select");
   select.id = label.htmlFor;
-  select.innerHTML = '<option value="">-- 請選擇專長 --</option>' + getFeatChoiceOptions(spec).map(option => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join("");
+  select.innerHTML = '<option value="">-- 請選擇專長 --</option>' + getFeatChoiceOptions(spec).map(option => `<option value="${escapeHtml(option.value)}"${featOptionDisabledAttr(option.value)}>${escapeHtml(option.label)}</option>`).join("");
   select.value = previousValue;
   select.addEventListener("change", () => {
     const hadAlertFeat = hasSelectedFeat(ALERT_FEAT_NAME);
@@ -454,6 +464,7 @@ function isFeatChoiceEligible(value, spec) {
   if (spec.type === "level") {
     if (rule.type === "style") return false;
   } else if (rule.type !== spec.type) return false;
+  if (Number(document.getElementById("level")?.value || 0) < window.getFeatTypeMinLevel(rule.type)) return false;
   // 專長門檻看屬性欄的原值（不含魔法物品的有效值）。
   if (rule.abilities && !rule.abilities.some(id => Number(document.getElementById(id)?.value || 0) >= 13)) return false;
   const cls = document.getElementById("class")?.value || "";
@@ -482,9 +493,9 @@ function syncFeatChoiceOptions() {
     if (!select) return;
     select.disabled = !spec.active;
     if (!autosaveSuspended && !spec.active) select.value = "";
-    // 保留選擇；資格由共用判斷控制警示及計算，不在選單上阻擋。
+    // 保留選擇；資格由共用判斷控制警示及計算，不在選單上阻擋（只有等級未到的傳奇恩惠停用）。
     Array.from(select.options).forEach(option => {
-      option.disabled = false;
+      option.disabled = isFeatLevelLocked(option.value);
     });
   });
   syncFeatChoiceViewButtons();

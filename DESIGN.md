@@ -157,7 +157,7 @@
 
 ### 角色能力視窗的選擇列
 
-- 頁籤列下方、延伸到關閉鈕下方的一排（`#character-features-picker`）：「職業」頁籤是十二個職業圖示（窄螢幕 6＋6 兩列），「背景」「種族」是文字快選，「特性」頁籤是等級跳轉列（`.character-features-picker__group--level`，`1–4`、`5–10`、`11–16`、`17–20`、`子職` 五格等寬、只有文字）。共用 `.character-features-picker__option` 的格子外觀：選中的選項（`aria-pressed`）與跳轉列的目前區段（`aria-current="location"`）都是 `--accent-soft` 底加底部 3px `--accent` 線；停用的格子半透明。跳轉列高度和文字快選相同（至少 2.75rem），不高於職業圖示列，手機寬度每格約 70px 寬。行為見 BEHAVIOR.md「角色能力視窗」。
+- 頁籤列下方、延伸到關閉鈕下方的一排（`#character-features-picker`）：「職業」頁籤是十二個職業圖示（窄螢幕 6＋6 兩列），「背景」「種族」是文字快選，「特性」頁籤是等級跳轉列（`.character-features-picker__group--level`，`1–4`、`5–10`、`11–16`、`17–20`、`子職` 五格等寬、只有文字）。共用 `.character-features-picker__option` 的格子外觀：選中的選項（`aria-pressed`）、跳轉列的目前區段（`aria-current="location"`）與開著的「子職」篩選（`aria-pressed`）都是 `--accent-soft` 底加底部 3px `--accent` 線；停用的格子半透明。跳轉列高度和文字快選相同（至少 2.75rem），不高於職業圖示列，手機寬度每格約 70px 寬。行為見 BEHAVIOR.md「角色能力視窗」。
 
 ### 網站版｜SRD 版
 

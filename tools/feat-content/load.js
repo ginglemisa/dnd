@@ -59,7 +59,7 @@ function readOrder(byId, errors) {
 
 function checkFeat(feat, errors) {
   const where = feat.file;
-  if (feat.prerequisite && feat.type !== "general") errors.push(`${where}：只有通用專長（type: general）可寫 prerequisite`);
+  if (feat.prerequisite && !["general", "epic"].includes(feat.type)) errors.push(`${where}：只有通用專長與傳奇恩惠（type: general、epic）可寫 prerequisite`);
   const names = new Set();
   feat.effects.forEach(effect => {
     if (names.has(effect.name)) errors.push(`${where}：效果名稱「${effect.name}」重複`);
