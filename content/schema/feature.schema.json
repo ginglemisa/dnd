@@ -358,7 +358,8 @@
           },
           "description": "可選的值。"
         },
-        "text": { "$ref": "#/definitions/text", "description": "卡片說明（不可使用「#### 」小節）。" }
+        "text": { "$ref": "#/definitions/text", "description": "卡片說明（不可使用「#### 」小節）。" },
+        "restChange": { "enum": ["shortRest", "longRest", "either"], "description": "可在休息時改選：跑團休息視窗列出這個下拉選單（either＝短休或長休，例如邪魔淬體）。" }
       }
     },
     "collapsible": {

@@ -109,6 +109,9 @@ features:
   - level: 5
     text: |
       **魔能祈喚補充：**契術師達到 5 級時，可選擇的魔能祈喚數量增加至 5 個，詳見「契術師特性」表。
+  - level: 7
+    text: |
+      **魔能祈喚補充：**契術師達到 7 級時，可選擇的魔能祈喚數量增加至 6 個，詳見「契術師特性」表。
   - id: warlock-ability-score-improvement-8
     level: 8
     name: 屬性值提升

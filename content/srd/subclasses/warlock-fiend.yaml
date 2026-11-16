@@ -58,72 +58,41 @@ features:
   - id: warlock-fiendish-resilience
     level: 10
     name: 邪魔淬體
-    choose: 1
-    changeOn: rest
     choiceName: 邪魔淬體傷害類型
+    resistancesByChoice:
+      control: warlock-fiendish-resilience-damage-type
+      choices:
+        - {value: acid, resistances: [acid]}
+        - {value: bludgeoning, resistances: [bludgeoning]}
+        - {value: cold, resistances: [cold]}
+        - {value: fire, resistances: [fire]}
+        - {value: lightning, resistances: [lightning]}
+        - {value: necrotic, resistances: [necrotic]}
+        - {value: piercing, resistances: [piercing]}
+        - {value: poison, resistances: [poison]}
+        - {value: psychic, resistances: [psychic]}
+        - {value: radiant, resistances: [radiant]}
+        - {value: slashing, resistances: [slashing]}
+        - {value: thunder, resistances: [thunder]}
     text: |
-      選擇 1 種力場以外的傷害類型，你對該類型傷害具有[[抗性]]。**每次短休或長休後**可改選。
-    options:
-      - id: warlock-fiendish-resilience-acid
-        name: 強酸
-        resistances: [acid]
-        text: |
-          你對**強酸**傷害具有[[抗性]]。
-      - id: warlock-fiendish-resilience-bludgeoning
-        name: 鈍擊
-        resistances: [bludgeoning]
-        text: |
-          你對**鈍擊**傷害具有[[抗性]]。
-      - id: warlock-fiendish-resilience-cold
-        name: 冷凍
-        resistances: [cold]
-        text: |
-          你對**冷凍**傷害具有[[抗性]]。
-      - id: warlock-fiendish-resilience-fire
-        name: 火焰
-        resistances: [fire]
-        text: |
-          你對**火焰**傷害具有[[抗性]]。
-      - id: warlock-fiendish-resilience-lightning
-        name: 閃電
-        resistances: [lightning]
-        text: |
-          你對**閃電**傷害具有[[抗性]]。
-      - id: warlock-fiendish-resilience-necrotic
-        name: 黯蝕
-        resistances: [necrotic]
-        text: |
-          你對**黯蝕**傷害具有[[抗性]]。
-      - id: warlock-fiendish-resilience-piercing
-        name: 穿刺
-        resistances: [piercing]
-        text: |
-          你對**穿刺**傷害具有[[抗性]]。
-      - id: warlock-fiendish-resilience-poison
-        name: 毒素
-        resistances: [poison]
-        text: |
-          你對**毒素**傷害具有[[抗性]]。
-      - id: warlock-fiendish-resilience-psychic
-        name: 心靈
-        resistances: [psychic]
-        text: |
-          你對**心靈**傷害具有[[抗性]]。
-      - id: warlock-fiendish-resilience-radiant
-        name: 光耀
-        resistances: [radiant]
-        text: |
-          你對**光耀**傷害具有[[抗性]]。
-      - id: warlock-fiendish-resilience-slashing
-        name: 揮砍
-        resistances: [slashing]
-        text: |
-          你對**揮砍**傷害具有[[抗性]]。
-      - id: warlock-fiendish-resilience-thunder
-        name: 雷鳴
-        resistances: [thunder]
-        text: |
-          你對**雷鳴**傷害具有[[抗性]]。
+      選擇 1 種力場以外的傷害類型，你對該類型傷害具有[[抗性]]，直到你用這項特性改選為止。**每次短休或長休後**可改選。
+    select:
+      id: warlock-fiendish-resilience-damage-type
+      placeholder: --請選擇傷害類型--
+      restChange: either
+      choices:
+        - {value: acid, name: 強酸}
+        - {value: bludgeoning, name: 鈍擊}
+        - {value: cold, name: 冷凍}
+        - {value: fire, name: 火焰}
+        - {value: lightning, name: 閃電}
+        - {value: necrotic, name: 黯蝕}
+        - {value: piercing, name: 穿刺}
+        - {value: poison, name: 毒素}
+        - {value: psychic, name: 心靈}
+        - {value: radiant, name: 光耀}
+        - {value: slashing, name: 揮砍}
+        - {value: thunder, name: 雷鳴}
 srd:
   title: "契術師子職：邪魔宗主 Fiend Patron"
   intro: |

@@ -43,19 +43,7 @@
     "ranger-druidic-warrior",
     "ranger-fighting-style",
     "ranger-hunters-prey-colossus-slayer",
-    "ranger-hunters-prey-horde-breaker",
-    "warlock-fiendish-resilience-acid",
-    "warlock-fiendish-resilience-bludgeoning",
-    "warlock-fiendish-resilience-cold",
-    "warlock-fiendish-resilience-fire",
-    "warlock-fiendish-resilience-lightning",
-    "warlock-fiendish-resilience-necrotic",
-    "warlock-fiendish-resilience-piercing",
-    "warlock-fiendish-resilience-poison",
-    "warlock-fiendish-resilience-psychic",
-    "warlock-fiendish-resilience-radiant",
-    "warlock-fiendish-resilience-slashing",
-    "warlock-fiendish-resilience-thunder"
+    "ranger-hunters-prey-horde-breaker"
   ],
   "actionKeys": [
     "dynamic-action-barbarian-113ebtz",
@@ -166,14 +154,27 @@
     "wizard-arcane-recovery"
   ],
   "selects": [
-    "sorcerer-elemental-affinity-damage-type"
+    "sorcerer-elemental-affinity-damage-type",
+    "warlock-fiendish-resilience-damage-type"
   ],
   "selectValues": [
     "sorcerer-elemental-affinity-damage-type=acid",
     "sorcerer-elemental-affinity-damage-type=cold",
     "sorcerer-elemental-affinity-damage-type=fire",
     "sorcerer-elemental-affinity-damage-type=lightning",
-    "sorcerer-elemental-affinity-damage-type=poison"
+    "sorcerer-elemental-affinity-damage-type=poison",
+    "warlock-fiendish-resilience-damage-type=acid",
+    "warlock-fiendish-resilience-damage-type=bludgeoning",
+    "warlock-fiendish-resilience-damage-type=cold",
+    "warlock-fiendish-resilience-damage-type=fire",
+    "warlock-fiendish-resilience-damage-type=lightning",
+    "warlock-fiendish-resilience-damage-type=necrotic",
+    "warlock-fiendish-resilience-damage-type=piercing",
+    "warlock-fiendish-resilience-damage-type=poison",
+    "warlock-fiendish-resilience-damage-type=psychic",
+    "warlock-fiendish-resilience-damage-type=radiant",
+    "warlock-fiendish-resilience-damage-type=slashing",
+    "warlock-fiendish-resilience-damage-type=thunder"
   ],
   "attackNotes": [
     "+1d8光/黯傷害",

@@ -176,11 +176,15 @@ async function main() {
       check(overviewText().includes("毒素傷害減半"), "the tabletop overview lists the terrain resistance");
       prepare("warlock", 10);
       check(getClassResistances("warlock", 10).length === 0, "Fiendish Resilience needs a chosen type");
-      const thunder = document.getElementById("warlock-fiendish-resilience-thunder");
-      thunder.checked = true;
-      thunder.dispatchEvent(new Event("change", { bubbles: true }));
+      field("warlock-fiendish-resilience-damage-type", "thunder");
       check(JSON.stringify(getClassResistances("warlock", 10)) === JSON.stringify(["thunder"]), "Fiendish Resilience resists the chosen type");
       check(overviewText().includes("雷鳴傷害減半"), "the tabletop overview lists the chosen resistance");
+      // 邪魔淬體是下拉選單，短休或長休都可改選（data-rest-change="either"）。
+      check(context().optionGroups.some(group => group.key === "warlock-fiendish-resilience-damage-type" && group.when === "either" && group.choices.length === 13),
+        "Fiendish Resilience is offered on rests");
+      check(rest("shortRest", { options: { "warlock-fiendish-resilience-damage-type": "fire" } }).ok
+        && document.getElementById("warlock-fiendish-resilience-damage-type").value === "fire"
+        && JSON.stringify(getClassResistances("warlock", 10)) === JSON.stringify(["fire"]), "a short rest changes the Fiendish Resilience type");
       for (const [race, lineageId, lineage] of [
         ["dragonborn"], ["dwarf"], ["goliath", "goliath-ancestry", "cloud"], ["orc"], ["halfling"],
         ["elf", "elf-lineage", "drow"], ["elf", "elf-lineage", "high_elf"], ["elf", "elf-lineage", "wood_elf"],

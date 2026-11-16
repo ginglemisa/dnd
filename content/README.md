@@ -164,6 +164,7 @@ advantage: [運動, 先攻]
 | `placeholder` | 是 | 未選擇時的提示文字（空值選項）。 |
 | `choices` | 是 | 可選的值，每項 `{ value: acid, name: 強酸 }`；`value` 會寫進存檔，不可改名。 |
 | `text` | 否 | 卡片說明，寫法同 `text`，但不可用 `####`。 |
+| `restChange` | 否 | 休息時可改選：`shortRest`、`longRest` 或 `either`（例如邪魔淬體）。跑團休息視窗會列出這個選單，標題用能力的 `choiceName`（沒有時用能力名稱）。 |
 
 跑團說明與總覽照舊讀取整段（含卡片說明），所以有 `select` 的能力不可寫 `tabletop`／`summary`。
 
@@ -355,8 +356,8 @@ resource:
 
 ## 抗性與休息
 
-- `resistances: [poison]`：達到能力等級就有的傷害抗性；寫在選項上時勾選該選項才有（例如邪魔淬體的 12 個選項）。
-- `resistancesByChoice: { control: druid-land, choices: [{ value: arid, resistances: [fire] }, …] }`：依下拉選單目前的值給予抗性（例如自然守護）。
+- `resistances: [poison]`：達到能力等級就有的傷害抗性；寫在選項上時勾選該選項才有。
+- `resistancesByChoice: { control: druid-land, choices: [{ value: arid, resistances: [fire] }, …] }`：依下拉選單目前的值給予抗性（例如自然守護看地貌選單，邪魔淬體看自己的 `select`）。
 - 以上都列在跑團總覽的「抗性」（`getClassResistances()`），不要再另寫內容相同的 `hint`。
 - `exhaustionRecovery: { shortRest: 1 }`：完成短休時減少的力竭等級（例如不知疲倦），跑團短休自動套用。長休減 1 是通則，不用寫。
 
