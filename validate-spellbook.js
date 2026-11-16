@@ -138,7 +138,7 @@ async function verifyMigrationRules(browser, url) {
     await page.evaluate(async () => { SpellManagement.clearMemories(); await SpellManagement.setManual(true, { confirm: false }); });
     const manualState = await page.evaluate(() => collectStateObject());
     manualState.__spellManagement.entries.push({ ...free.entry, sourceKey: "second-source", freeUses: 2 });
-    manualState.__spellManagement.freeUses["second-source"] = [false, true];
+    manualState.__spellManagement.freeUses["second-source"] = 1;
     await apply(page, manualState);
     assert.equal((await activeIds(page)).filter(id => id === "cure-wounds").length, 1, "manual spells deduplicate across sources");
     assert.equal(await page.locator(".free-spell-use-check").count(), 0);
@@ -153,7 +153,7 @@ async function verifyMigrationRules(browser, url) {
     }, free.key);
     assert(!result.methods.includes("free")); assert(result.methods.includes("slot"));
     assert.equal(result.rejected, true); assert.equal(result.unchanged, true); assert.equal(result.used, true);
-    assert.deepEqual(result.archived, [false, true]);
+    assert.equal(result.archived, 1, "manual mode keeps the archived used count");
     assert.equal(await page.locator(".tabletop-spell-card__uses").count(), 0);
     await page.evaluate(() => SpellManagement.setManual(false, { confirm: false }));
     assert(await page.locator(".free-spell-use-check").count() > 0, "automatic mode restores source controls");
@@ -301,15 +301,16 @@ async function verifySynchronousRestore(browser, url) {
     await apply(page, state);
     const result = await page.evaluate(() => {
       document.getElementById("spellslot1-1").checked = true;
-      document.getElementById("spellslot3-3").checked = true;
+      // 存檔只記每組勾了幾格、讀檔從左邊填回，所以這裡勾的都是每組的第一格。
+      document.getElementById("spellslot3-1").checked = true;
       const free = document.querySelector(".free-spell-use-check");
       if (free) free.checked = true;
       const state = collectStateObject();
-      const ids = Object.keys(state).filter(id => id.startsWith("free-spell-use-"));
+      const ids = Array.from(document.querySelectorAll(".free-spell-use-check"), box => box.id);
       const read = () => ({
         attacks: ["atk-main-name", "atk-main-hit", "atk-main-dmg"].map(id => document.getElementById(id).value),
         spells: SpellManagement.getEntries().map(entry => [entry.sourceKey, entry.spellId, entry.spellClass]),
-        slots: ["spellslot1-1", "spellslot3-3"].map(id => document.getElementById(id).checked),
+        slots: ["spellslot1-1", "spellslot3-1"].map(id => document.getElementById(id).checked),
         uses: ids.map(id => [id, document.getElementById(id)?.checked])
       });
       const expected = read();
@@ -317,12 +318,11 @@ async function verifySynchronousRestore(browser, url) {
         __spellManagement: { version: 2, manual: false, entries: [] } });
       const missing = ids.filter(id => !document.getElementById(id));
       const reversed = Object.entries(state).reverse().filter(([id]) => !/^atk-(?:main|off)-(?:name|hit|dmg)$/.test(id));
-      applyStateObject(Object.fromEntries([...reversed.filter(([id]) => id.startsWith("free-spell-use-")),
-        ...reversed.filter(([id]) => !id.startsWith("free-spell-use-"))]));
+      applyStateObject(Object.fromEntries(reversed));
       const immediate = read(), collected = collectStateObject(); saveAllFields();
       const saved = JSON.parse(dndStorage.getItem("dndchar_autosave_v1"));
       const pick = data => ({ management: data.__spellManagement,
-        fields: Object.fromEntries([...ids, "spellslot1-1", "spellslot3-3", "mainHand", "str", "dex", "atk-main-name", "atk-main-hit", "atk-main-dmg"].map(id => [id, data[id]])) });
+        fields: Object.fromEntries(["__spellSlotsUsed", "__raceResourcesUsed", "mainHand", "str", "dex", "atk-main-name", "atk-main-hit", "atk-main-dmg"].map(id => [id, data[id]])) });
       const nested = withCharacterUpdateBatch(() => withCharacterUpdateBatch(() => {
         applyStateObject({ class: "wizard", level: "1", background: "soldier", race: "human",
           __spellManagement: { version: 2, manual: false, entries: [] } });
@@ -400,7 +400,8 @@ async function verifyClearPreparedSpells(page) {
     __wizardSpellbook: { version: 2, wizardSpellIds: ["detect-magic", "mage-armor"], manualSpellIds: [] }
   }, ["mending", "cure-wounds", "lesser-restoration", "dispel-magic", "blight"].map(id => player(id, "druid"))));
   await page.evaluate(() => {
-    document.getElementById("spellslot1-1").checked = true; document.getElementById("spellslot3-3").checked = true;
+    // 存檔只記每組勾了幾格、讀檔從左邊填回：勾每組的第一格，匯出再匯入後畫面才會完全相同。
+    document.getElementById("spellslot1-1").checked = true; document.getElementById("spellslot3-1").checked = true;
     const use = document.querySelector(".free-spell-use-check"); if (use) use.checked = true;
   });
   const snapshot = () => page.evaluate(() => ({ entries: SpellManagement.getEntries(), book: Spellbook.getState(),
@@ -409,7 +410,7 @@ async function verifyClearPreparedSpells(page) {
   const original = await snapshot();
   for (const source of ["race", "class", "subclass", "magic-initiate"]) assert(original.entries.some(entry => entry.spellSource === source), `${source} fixed spells exist`);
   assert.deepEqual(await page.evaluate(() => TabletopMode.getCanonicalSpellSlotGroups().find(group => group.level === 3)?.controls.map(control => [control.id, control.checked, control.disabled])),
-    [["spellslot3-1", false, false], ["spellslot3-2", false, false], ["spellslot3-3", true, false]]);
+    [["spellslot3-1", true, false], ["spellslot3-2", false, false], ["spellslot3-3", false, false]]);
   const button = page.locator("#spell-prepare"), dialog = pickerDialog(page);
   await button.focus(); await page.keyboard.press("Enter");
   assert.equal(await dialog.locator('.app-dialog__actions').getByRole("button", { name: "清空準備", exact: true }).count(), 1);
@@ -469,8 +470,9 @@ async function verifySpellOverview(browser, url) {
       assert.equal(await toggle(ring).getAttribute("aria-expanded"), "true");
     }
     await page.waitForFunction(() => getComputedStyle(document.getElementById("picked-cantrips")).gridTemplateColumns.split(" ").length > 1);
-    assert.equal(await page.evaluate(() => [...document.querySelectorAll("#spell-picked-grid-wrap .spell-picked-content")].every(list =>
-      getComputedStyle(list).gridTemplateColumns.split(" ").length === 1)), true, "leveled spells remain one per line");
+    // 各環清單的欄數是量出來的（依卡片寬度），格線欄數要與量到的一致。
+    await page.waitForFunction(() => [...document.querySelectorAll("#spell-picked-grid-wrap .spell-picked-box:not([hidden]) .spell-picked-content")].every(list =>
+      getComputedStyle(list).gridTemplateColumns.split(" ").length === Number(list.dataset.spellColumns)));
     assert.equal(await page.locator("#picked-cantrips .spell-picked-jump").first().evaluate(el => getComputedStyle(el).textDecorationStyle), "solid", "sheet spell links use a solid underline");
     assert.equal(await page.locator("#main-content .weapon-rule-link").first().evaluate(el => getComputedStyle(el).textDecorationStyle), "solid");
     assert.equal(await page.locator("#atk-main-hit").evaluate(el => getComputedStyle(el).textDecorationStyle), "solid");
@@ -491,7 +493,7 @@ async function verifySpellOverview(browser, url) {
       const entry = SpellManagement.getEntries({ availableOnly: true }).find(entry => getFreeSpellUseSpec(entry));
       const spec = getFreeSpellUseSpec(entry);
       SpellManagement.setFreeUse(spec.key, 0, true);
-      return getSpellFreeUseControls(entry)[0].canonical.checked && collectStateObject().__spellManagement.freeUses[spec.key][0];
+      return getSpellFreeUseControls(entry)[0].canonical.checked && collectStateObject().__spellManagement.freeUses[spec.key] === 1;
     }), true, "hidden free-use controls retain canonical operations and saved consumption");
     const slotGroups = await page.evaluate(() => TabletopMode.getCanonicalSpellSlotGroups());
     await toggle("1").click();
@@ -524,13 +526,12 @@ async function verifySpellOverview(browser, url) {
       for (const [width, columns] of [[1100, 4], [720, 4], [719, 2], [600, 2], [400, 2], [399, 1], [360, 1], [320, 1]]) {
         await page.setViewportSize({ width, height: 850 });
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-        assert.equal(await page.locator("#spell-picked-grid-wrap").evaluate(el => getComputedStyle(el).gridTemplateColumns.split(" ").length), columns);
+        assert.equal((await ringCardRows(page))[0].length, columns, `${width}px puts ${columns} ring cards in the first row`);
         assert.equal(await page.locator("#spell-overview-management-wrap").evaluate(el => el.scrollWidth <= el.clientWidth + 1), true, `${uiTheme}/${theme}/${width} fits`);
         assert.equal(await page.locator("#spellslot1-1").evaluate(el => el.getBoundingClientRect().width), 20);
         assert.equal(await page.evaluate(() => [...document.querySelectorAll(".spell-picked-content")].every(list => {
           if (!list.children.length) return true;
           const style = getComputedStyle(list), columns = style.gridTemplateColumns.split(" ").length;
-          if (list.id !== "picked-cantrips" && columns > (innerWidth >= 720 ? 1 : 2)) return false;
           const items = [...list.children], positions = items.map(item => item.getBoundingClientRect());
           if (Math.abs(parseFloat(style.columnGap) / parseFloat(style.fontSize) - 1.2) > 0.01) return false;
           return items.every((item, index) => item.scrollWidth <= item.clientWidth + 1
@@ -540,6 +541,7 @@ async function verifySpellOverview(browser, url) {
       }
     }
     await verifyPackedSpellNames(page);
+    await verifySpellRingLayout(page);
     await apply(page, modern({ class: "fighter", level: "1", background: "acolyte",
       "derived-feat-background-magic-initiate-cantrip-1": "light",
       "derived-feat-background-magic-initiate-cantrip-2": "guidance",
@@ -597,7 +599,7 @@ async function verifyPackedSpellNames(page) {
   }), true, "a long later-row name reduces the entire list to one column and wraps without overflow");
   await page.setViewportSize({ width: 600, height: 850 });
   await apply(page, state([...cantrips, ...leveled]));
-  await waitColumns("picked-level1", 2); await waitColumns("picked-level2", 2);
+  await waitColumns("picked-level1", 3); await waitColumns("picked-level2", 2);
   const longLeveled = leveled.map(entry => ({ ...entry }));
   longLeveled[3].sourceTag = "這是較長的來源標籤".repeat(3);
   await apply(page, state([...cantrips, ...longLeveled]));
@@ -606,17 +608,107 @@ async function verifyPackedSpellNames(page) {
   await waitColumns("picked-level2", 1);
   await page.setViewportSize({ width: 399, height: 850 });
   await apply(page, state([...cantrips, ...leveled]));
-  await waitColumns("picked-level1", 2);
+  await waitColumns("picked-level1", 4);
   await page.locator('[data-spell-disclosure="1"] .spell-overview-toggle').click();
   await page.setViewportSize({ width: 720, height: 850 });
   await page.locator('[data-spell-disclosure="1"] .spell-overview-toggle').click();
-  await waitColumns("picked-level1", 1);
+  await waitColumns("picked-level1", 2);
   await page.evaluate(() => {
     const original = SpellManagement.getPlayerEntries();
     SpellManagement.setPlayerEntries(original.filter(entry => entry.level !== 1));
   });
   assert.equal(await page.locator("#picked-level1").getAttribute("data-spell-columns"), "1");
   assert.equal(await page.locator("#picked-level1").innerText(), "未準備此環法術");
+}
+
+// 可見的法術位卡片依列分組：每張的環階、位置大小與清單欄數。
+async function ringCardRows(page) {
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  return page.evaluate(() => {
+    const rows = [];
+    document.querySelectorAll("#spell-picked-grid-wrap .spell-picked-box:not([hidden])").forEach(card => {
+      const rect = card.getBoundingClientRect();
+      const item = { ring: Number(card.dataset.spellDisclosure), left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom,
+        columns: Number(card.querySelector(".spell-picked-content").dataset.spellColumns) };
+      const row = rows.find(row => Math.abs(row[0].top - item.top) < 1);
+      if (row) row.push(item); else rows.push([item]);
+    });
+    return rows;
+  });
+}
+
+async function verifySpellRingLayout(page) {
+  const gridBox = () => page.locator("#spell-picked-grid-wrap").evaluate(el => { const rect = el.getBoundingClientRect(); return { left: rect.left, right: rect.right }; });
+  const assertRows = async (expected, label) => {
+    const rows = await ringCardRows(page), grid = await gridBox();
+    assert.deepEqual(rows.map(row => row.length), expected, `${label}: cards per row`);
+    rows.forEach((row, index) => {
+      assert.ok(Math.abs(row[0].left - grid.left) < 1 && Math.abs(row[row.length - 1].right - grid.right) < 1, `${label}: row ${index + 1} fills the full width`);
+      assert.ok(row.every(card => Math.abs(card.bottom - row[0].bottom) < 1), `${label}: row ${index + 1} cards share one height`);
+      assert.ok(row.every(card => Math.abs((card.right - card.left) - (row[0].right - row[0].left)) < 1), `${label}: row ${index + 1} cards share one width`);
+    });
+    return rows;
+  };
+  const wizard = (level, entries, extra = {}) => modern({ class: "wizard", level: String(level), "manual-spell-management": true,
+    __wizardSpellbook: { version: 1, spellIds: [] }, ...extra }, entries);
+  // 三環角色（真實規則資料）：窄螢幕第三張撐滿整列並橫排多欄；同列等高，留白在卡片內。
+  const threeRings = ["cure-wounds", "bless", "shield", "detect-magic", "aid", "fireball", "counterspell", "dispel-magic"].map(id => player(id, "wizard"));
+  await page.setViewportSize({ width: 600, height: 850 });
+  await apply(page, wizard(5, threeRings));
+  await page.waitForFunction(() => document.getElementById("picked-level3").dataset.spellColumns === "3");
+  let rows = await assertRows([2, 1], "3 rings at 600px");
+  assert.ok(rows[0][0].columns < 4, "the half-width card wraps its four names instead of truncating them");
+  assert.equal(await page.locator("#picked-level3").evaluate(el => {
+    const tops = [...el.children].map(item => Math.round(item.getBoundingClientRect().top));
+    return new Set(tops).size === 1 && [...el.children].every(item => item.scrollWidth <= item.clientWidth + 1);
+  }), true, "the full-row card lays its spells out side by side without truncation");
+  await page.locator('[data-spell-disclosure="2"] .spell-overview-toggle').click();
+  await assertRows([2, 1], "collapsed neighbour at 600px");
+  await page.locator('[data-spell-disclosure="2"] .spell-overview-toggle').click();
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await assertRows([3], "3 rings at 1100px");
+  await page.setViewportSize({ width: 390, height: 850 });
+  await assertRows([1, 1, 1], "3 rings at 390px");
+  const savedSlotState = () => page.evaluate(() => {
+    saveAllFields();
+    return [collectStateObject(), JSON.parse(dndStorage.getItem("dndchar_autosave_v1"))].map(state => [Object.keys(state).filter(key => /^spellslot/.test(key)), state.__spellSlotsUsed]);
+  });
+  const usedOnPage = await page.evaluate(() => Object.fromEntries(getSpellSlotBoxGroups().map(([ring, boxes]) => [ring, boxes.filter(box => box.checked).length]).filter(([, used]) => used)));
+  assert.deepEqual(await savedSlotState(), [[[], usedOnPage], [[], usedOnPage]], "slot usage is saved as used counts per ring, never as per-box fields");
+  assert.deepEqual(Object.keys(usedOnPage).filter(ring => Number(ring) > 3), [], "a level 5 wizard saves nothing for rings it does not have");
+  const shareOmitsSlots = () => page.evaluate(() => Object.keys(collectShareState()).some(key => /^spellslot/.test(key) || key === "__spellSlotsUsed"));
+  assert.equal(await shareOmitsSlots(), false, "share links still omit slot usage");
+  // 規則資料目前只到四環：暫時覆寫法術位數量，確認五到九環不用再改版面就能顯示。
+  await page.evaluate(() => {
+    window.__ringLayoutSlotCounts = window.getSpellSlotCounts;
+    window.__ringLayoutRings = 0;
+    window.getSpellSlotCounts = () => [4, 3, 3, 3, 3, 2, 2, 1, 1].map((count, index) => index < window.__ringLayoutRings ? count : 0);
+  });
+  try {
+    const desktop = [[1], [2], [3], [4], [3, 2], [3, 3], [4, 3], [4, 4], [3, 3, 3]];
+    for (let rings = 1; rings <= 9; rings += 1) {
+      await page.evaluate(rings => { window.__ringLayoutRings = rings; }, rings);
+      await apply(page, wizard(8, [], { "spellslot5-1": true, "spellslot9-1": true }));
+      for (const [width, expected] of [[1100, desktop[rings - 1]], [600, [...Array(Math.floor(rings / 2)).fill(2), ...(rings % 2 ? [1] : [])]], [390, Array(rings).fill(1)]]) {
+        await page.setViewportSize({ width, height: 850 });
+        rows = await assertRows(expected, `${rings} rings at ${width}px`);
+        assert.deepEqual(rows.flat().map(card => card.ring), Array.from({ length: rings }, (_, index) => index + 1));
+      }
+      assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll("#spell-picked-grid-wrap .spell-picked-box:not([hidden])")].map(card =>
+        [...card.querySelectorAll(".spell-overview-slot-checks input")].filter(box => box.offsetParent && !box.disabled).length)),
+        [4, 3, 3, 3, 3, 2, 2, 1, 1].slice(0, rings), `${rings} rings show their slot boxes`);
+      assert.equal(await page.evaluate(() => [...document.querySelectorAll("#spell-picked-grid-wrap .spell-picked-box:not([hidden]) .spell-overview-toggle")].pop().textContent),
+        `▸${"一二三四五六七八九"[rings - 1]}環`);
+      const saved = await page.evaluate(() => { const state = collectStateObject(); return [Object.keys(state).filter(key => /^spellslot/.test(key)), state.__spellSlotsUsed]; });
+      assert.deepEqual(saved, [[], { ...(rings >= 5 ? { 5: 1 } : {}), ...(rings >= 9 ? { 9: 1 } : {}) }], `${rings} rings save used counts only for the higher slots the character has, and restore their usage`);
+    }
+    assert.equal(await shareOmitsSlots(), false, "higher slot usage stays out of share links");
+  } finally {
+    await page.evaluate(() => { window.getSpellSlotCounts = window.__ringLayoutSlotCounts; delete window.__ringLayoutSlotCounts; delete window.__ringLayoutRings; });
+  }
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await apply(page, wizard(5, threeRings));
+  assert.deepEqual(await savedSlotState(), [[[], {}], [[], {}]], "no slot usage is left in the save once higher slots are gone");
 }
 
 async function verifySpellManagement(page) {

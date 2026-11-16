@@ -146,20 +146,45 @@ const classOptions = [
   {value: "wizard", text: "法師"},
   // ... 其他職業 ...
 ];
-const SPELL_RING_CONFIGS = Object.freeze([
-  Object.freeze({ ring: 1, areaId: "level1spells-area", pickedId: "picked-level1", slotRowId: "spellslot1-row" }),
-  Object.freeze({ ring: 2, areaId: "level2spells-area", pickedId: "picked-level2", slotRowId: "spellslot2-row" }),
-  Object.freeze({ ring: 3, areaId: "level3spells-area", pickedId: "picked-level3", slotRowId: "spellslot3-row" }),
-  Object.freeze({ ring: 4, areaId: "level4spells-area", pickedId: "picked-level4", slotRowId: "spellslot4-row" })
-]);
+// 法術環階的唯一來源：一到九環的名稱與每環勾選框容量（SRD 全施法者表的最大值）。
+// 實際顯示幾格由 getSpellSlotCounts() 決定；規則資料開放更高環階時，這裡與版面都不用再改。
+const SPELL_RING_NAMES = Object.freeze(["一", "二", "三", "四", "五", "六", "七", "八", "九"]);
+const SPELL_RING_SLOT_CAPACITY = Object.freeze([4, 3, 3, 3, 3, 2, 2, 1, 1]);
+// 存檔只記每環已用幾格（index.html 的 __spellSlotsUsed），所以這裡加減格子不影響存檔格式。
+const SPELL_RING_CONFIGS = Object.freeze(SPELL_RING_SLOT_CAPACITY.map((maxSlots, index) => {
+  const ring = index + 1;
+  return Object.freeze({ ring, name: `${SPELL_RING_NAMES[index]}環`, maxSlots,
+    areaId: `level${ring}spells-area`, pickedId: `picked-level${ring}`, slotRowId: `spellslot${ring}-row` });
+}));
+// 舊版一環一區的法術列（levelNspells-area）只有一到四環，舊存檔的轉換仍照這個範圍。
 const SPELL_AREA_CONFIGS = Object.freeze([
   Object.freeze({ level: "cantrips", areaId: "cantrips-area", pickedId: "picked-cantrips" }),
-  ...SPELL_RING_CONFIGS.map(config => Object.freeze({
+  ...SPELL_RING_CONFIGS.filter(config => config.ring <= 4).map(config => Object.freeze({
     level: config.ring,
     areaId: config.areaId,
     pickedId: config.pickedId
   }))
 ]);
+const SPELL_PICKED_CONFIGS = Object.freeze([
+  Object.freeze({ level: "cantrips", pickedId: "picked-cantrips" }),
+  ...SPELL_RING_CONFIGS.map(config => Object.freeze({ level: config.ring, pickedId: config.pickedId }))
+]);
+
+// 法術位卡片由設定產生；這個檔案同步載入，產生時 #spell-picked-grid-wrap 已解析，後面的頂層綁定都看得到卡片。
+(function buildSpellRingCards() {
+  const grid = document.getElementById("spell-picked-grid-wrap");
+  if (!grid || grid.querySelector("[data-spell-disclosure]")) return;
+  grid.innerHTML = SPELL_RING_CONFIGS.map(({ ring, name, maxSlots, pickedId, slotRowId }) => `
+    <section class="spell-picked-box spell-overview-card" data-spell-disclosure="${ring}" hidden>
+    <div class="spell-overview-card-heading">
+      <h4 class="spell-picked-heading"><button type="button" class="spell-overview-toggle" aria-expanded="true" aria-controls="${pickedId}"><span class="spell-overview-arrow" aria-hidden="true">▸</span>${name}</button></h4>
+    <div id="${slotRowId}" class="spell-overview-slot-checks" role="group" aria-label="${name}法術位；勾選表示已消耗">
+      ${Array.from({ length: maxSlots }, (_, index) => `<input type="checkbox" id="spellslot${ring}-${index + 1}">`).join("")}
+    </div>
+    </div>
+    <div id="${pickedId}" class="spell-picked-content">未準備此環法術</div>
+    </section>`).join("");
+})();
 
 // options.manual 供準備法術視窗依草稿模式列出候選。
 function getAvailableSpellSourceClasses(level, options = {}) {
@@ -199,6 +224,17 @@ function renderFreeSpellUseChecks(spec, checkedState) {
     return `<input type="checkbox" id="${id}" class="free-spell-use-check" aria-label="${escapeHtml(spec.label)} ${index + 1}/${spec.count}" title="${escapeHtml(spec.label)}"${checked}>`;
   }).join("");
   return `<span class="free-spell-use-checks" aria-label="免費施法次數" hidden>${boxes}</span>`;
+}
+
+// 法術頁卡片上的來源標籤只顯示一個字，完整來源放在 title；動作頁與跑團仍用完整的標籤。
+// 對照表以外的標籤（例如存檔帶來的自訂文字）照原樣顯示。
+const SPELL_SOURCE_TAG_SHORT = Object.freeze({ "職業": "職", "子職": "子", "種族": "族", "專長": "專", "背景": "背", "隨意": "隨", "書契": "書", "自創": "創" });
+function renderPickedSpellSourceTag(sourceTag) {
+  if (!sourceTag) return "";
+  const short = Object.hasOwn(SPELL_SOURCE_TAG_SHORT, sourceTag) ? SPELL_SOURCE_TAG_SHORT[sourceTag] : "";
+  return short
+    ? `<span class="spell-picked-source-tag" title="來源：${escapeHtml(sourceTag)}">[${short}]</span>`
+    : `<span class="spell-picked-source-tag">[${escapeHtml(sourceTag)}]</span>`;
 }
 
 function getPickedSpellSourceTag(entry) {
@@ -341,9 +377,8 @@ function schedulePickedSpellLayout() {
       list.classList.add("is-measuring-spells");
       const widths = items.map(item => Math.ceil(item.getBoundingClientRect().width));
       list.classList.remove("is-measuring-spells");
-      const unrestricted = list.id === "picked-cantrips" || list.classList.contains("spell-prepared-source-options");
-      const limit = unrestricted ? items.length : window.matchMedia("(min-width: 720px)").matches ? 1 : 2;
-      const maximum = Math.min(limit, items.length, Math.floor((width + gap) / (Math.min(...widths) + gap)));
+      // 欄數只看清單（卡片）實際寬度：撐滿整列的寬卡片可以橫排多欄，窄卡片排得下才分欄。
+      const maximum = Math.min(items.length, Math.floor((width + gap) / (Math.min(...widths) + gap)));
       let columns = 1, tracks = "minmax(0, 1fr)";
       for (let count = maximum; count > 1; count -= 1) {
         const columnWidths = Array(count).fill(0);
@@ -416,7 +451,7 @@ function updatePickedSpellBoxes() {
 function renderPickedSpellBoxes() {
   const entries = window.SpellManagement?.getSheetEntries({ availableOnly: true }) || [];
   const checkedState = new Map(Array.from(document.querySelectorAll(".free-spell-use-check"), box => [box.id, box.checked]));
-  SPELL_AREA_CONFIGS.forEach(({ level, pickedId }) => {
+  SPELL_PICKED_CONFIGS.forEach(({ level, pickedId }) => {
     const target = document.getElementById(pickedId);
     if (!target) return;
     const ring = level === "cantrips" ? 0 : Number(level);
@@ -439,7 +474,7 @@ function renderPickedSpellBoxes() {
         if (!checkedState.has(id)) checkedState.set(id, window.SpellManagement.getFreeUse(entry.sourceKey, index));
       }
       const sourceTag = getPickedSpellSourceTag(entry);
-      return `<span class="spell-picked-item"><button type="button" class="spell-picked-jump" data-spell-read="${escapeHtml(entry.spellId)}">${escapeHtml(spell?.nameZh || `未知法術（${entry.spellId}）`)}</button>${sourceTag ? `<span class="spell-picked-source-tag">[${escapeHtml(sourceTag)}]</span>` : ""}${spec ? renderFreeSpellUseChecks(spec, checkedState) : ""}</span>`;
+      return `<span class="spell-picked-item"><button type="button" class="spell-picked-jump" data-spell-read="${escapeHtml(entry.spellId)}">${escapeHtml(spell?.nameZh || `未知法術（${entry.spellId}）`)}</button>${renderPickedSpellSourceTag(sourceTag)}${spec ? renderFreeSpellUseChecks(spec, checkedState) : ""}</span>`;
     }).join("\n");
     target.querySelectorAll(".free-spell-use-check").forEach(input => input.addEventListener("change", () => {
       const entry = spells.find(item => getFreeSpellUseSpec(item) && Array.from({ length: getFreeSpellUseSpec(item).count }, (_, i) => getFreeSpellUseInputId(getFreeSpellUseSpec(item), i)).includes(input.id));
@@ -489,8 +524,13 @@ function updateSpellOverviewManagementVisibility() {
     const card = document.getElementById(pickedId)?.closest(".spell-picked-box");
     if (card) card.hidden = !slots[ring - 1] && !entries.some(entry => entry.level === ring);
   });
-  const hasVisibleRings = Boolean(grid?.querySelector(".spell-picked-box:not([hidden])"));
-  if (grid) grid.hidden = !hasVisibleRings;
+  const visibleRings = grid ? grid.querySelectorAll(".spell-picked-box:not([hidden])").length : 0;
+  const hasVisibleRings = visibleRings > 0;
+  if (grid) {
+    grid.hidden = !hasVisibleRings;
+    // 桌機欄數依可見卡片數決定（css/sheet-spells.css 的 .spell-overview-grid）。
+    grid.dataset.ringCount = String(visibleRings);
+  }
   const hasNoSlotsMessage = document.getElementById("no-spell-slots-message")?.classList.contains("is-hidden") === false;
   slotManagement?.classList.toggle("is-hidden", !hasVisibleRings && !hasNoSlotsMessage);
   overview.classList.remove("is-hidden");
@@ -510,7 +550,7 @@ function resetSpellSlotsAfterCharacterChange() {
 }
 
 function updateSpellSlotRows(slotCounts) {
-  SPELL_RING_CONFIGS.forEach(({ ring, slotRowId }) => {
+  SPELL_RING_CONFIGS.forEach(({ ring, name, slotRowId }) => {
     const row = document.getElementById(slotRowId);
     if (!row) return;
     const count = slotCounts[ring - 1] || 0;
@@ -521,10 +561,9 @@ function updateSpellSlotRows(slotCounts) {
       const visible = index < count;
       box.style.display = visible ? "" : "none";
       box.disabled = !visible;
-      box.setAttribute("aria-label", `${["一", "二", "三", "四"][ring - 1]}環法術位 ${index + 1} 已消耗`);
+      box.setAttribute("aria-label", `${name}法術位 ${index + 1} 已消耗`);
       if (!visible) box.checked = false;
     });
-    row.querySelectorAll(".spell-slot-placeholder").forEach(box => { box.style.display = "none"; });
   });
 }
 

@@ -2367,7 +2367,7 @@ function collectBackgroundChoices(backgroundId) {
   const choices = { magic: rules?.feat?.id === MAGIC_INITIATE_FEAT_NAME ? collectDerivedFeatMagicValues(["background"]) : {} };
   if (rules?.tool?.chooseFrom) choices.tool = document.getElementById("tool-proficiency-0")?.value || "";
   if (window.SpellManagement && !window.SpellManagement.isManual()) {
-    choices.freeUses = Object.fromEntries(Object.entries(window.SpellManagement.getState().freeUses)
+    choices.freeUses = Object.fromEntries(Object.entries(window.SpellManagement.getFreeUseFlags())
       .filter(([key]) => key.startsWith(BACKGROUND_FEAT_KEY_PREFIX)));
   }
   return choices;
