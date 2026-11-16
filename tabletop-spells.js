@@ -586,6 +586,18 @@
       });
     }
 
+    // 塑能師 10 級「強效塑能」：施放塑能學派的法師法術時，一次傷害擲骰加智力調整值。
+    if (
+      hasSubclassFeature(className, "wizard-empowered-evocation", level, "wizard", 10)
+      && entry.spellClass === "wizard"
+      && globalScope.SpellCatalog.getSchool?.(entry.spellId) === "evocation"
+    ) modifiers.push({
+      id: "wizard-empowered-evocation",
+      label: "強效塑能",
+      value: getAbilityModifier("int"),
+      frequency: "once"
+    });
+
     const agonizingCantrips = globalScope.getAgonizingBlastSelections?.() || [];
     if (
       isDamageCantrip

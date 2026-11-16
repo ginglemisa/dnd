@@ -31,6 +31,13 @@ features:
     feat: style
     text: |
       你再獲得 1 個自選的「戰鬥風格」專長。
+  - id: fighter-heroic-warrior
+    level: 10
+    name: 戰場英雄
+    hint: {panels: [overview]}
+    summary: 戰鬥中，若你在自己的回合開始時沒有英雄激勵，可以給自己英雄激勵。
+    text: |
+      **戰鬥中**，每當你在自己的回合開始時**沒有英雄激勵**，都可以給自己英雄激勵。
 srd:
   title: "戰士子職：勇士 Champion"
   intro: |
