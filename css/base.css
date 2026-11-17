@@ -538,7 +538,7 @@ html[data-theme="dark"] .utility-menu {
   border: 0;
 }
 
-/* 四個開關分左右兩欄；中間的直線上接分隔線、下接主題列的上框線（各隔 0.65rem）。 */
+/* 四個開關分左右兩欄；中間的直線從「設定」標題下方開始，下接主題列的上框線（隔 0.65rem）。 */
 .utility-menu__settings-row {
   position: relative;
   display: grid;
@@ -550,7 +550,7 @@ html[data-theme="dark"] .utility-menu {
 .utility-menu__settings-row::before {
   content: "";
   position: absolute;
-  top: -0.65rem;
+  top: 0;
   bottom: -0.65rem;
   left: 50%;
   width: 1px;
