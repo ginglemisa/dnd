@@ -933,16 +933,6 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   width: min(100%, 34rem);
 }
 
-/* 圖片上方的操作提示：讀 --accent，四種外觀各用自己的強調色（藍、黃銅、磚紅、暖紅）。
-   加上 .app-dialog__body 才蓋得過下方 .app-dialog__body p 的一般字色。 */
-.app-dialog__body .sheet-download__hint {
-  margin: 0 auto 0.75rem;
-  color: var(--accent);
-  font-weight: 700;
-  font-size: 1.05rem;
-  text-align: center;
-}
-
 .sheet-download {
   position: relative;
   width: min(100%, 30rem);
