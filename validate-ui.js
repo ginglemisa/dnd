@@ -625,6 +625,27 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     await screenshot(`${family}-${mode}-quick-build`);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.keyboard.press("Escape");
+    // 角色紙下載海報四種外觀各一張，開啟時只載入目前外觀那一張。
+    await page.evaluate(() => document.getElementById("open-sheet-download-btn").click());
+    const sheetDialog = page.locator('.app-dialog[data-variant="sheet-download"]');
+    const sheetPoster = sheetDialog.locator(".sheet-download__image");
+    assert.equal(await sheetPoster.count(), 1);
+    assert.equal(await sheetPoster.getAttribute("src"), `images/sheet_dl_qr${family === "warm" ? "_warm" : ""}${mode === "dark" ? "_dark" : ""}.webp`);
+    await sheetPoster.evaluate(img => img.decode());
+    assert.equal(await sheetPoster.evaluate(img => img.naturalWidth), 960);
+    assert.equal(await sheetDialog.locator(".app-dialog__header .sheet-download__hint").textContent(), "點按 QR CODE 或網址連結即可下載");
+    assert.equal(await sheetDialog.locator(".app-dialog__body .sheet-download__hint").count(), 0, "the hint sits in the header, above its divider");
+    // 連結熱區要蓋住海報上的整行文字（「非官方中翻｜原版直式」在圖寬的 15.1%–42.3%）。
+    const officialSpan = await sheetDialog.locator(".sheet-download__link--official").evaluate(link => {
+      const image = link.parentElement.querySelector(".sheet-download__image").getBoundingClientRect();
+      const box = link.getBoundingClientRect();
+      return [(box.left - image.left) / image.width, (box.right - image.left) / image.width];
+    });
+    assert(officialSpan[0] <= 0.151 && officialSpan[1] >= 0.423, JSON.stringify({ family, mode, officialSpan }));
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await screenshot(`${family}-${mode}-sheet-download`);
+    await sheetDialog.locator(".app-dialog__button--primary").click();
+    await sheetDialog.waitFor({ state: "hidden" });
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.evaluate(() => {
       const toggle = document.getElementById("dice-system-toggle");

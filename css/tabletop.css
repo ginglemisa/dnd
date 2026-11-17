@@ -933,6 +933,16 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   width: min(100%, 34rem);
 }
 
+.sheet-download__heading {
+  min-width: 0;
+}
+
+.sheet-download__hint {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
 .sheet-download {
   position: relative;
   width: min(100%, 30rem);
@@ -960,6 +970,15 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   background: rgba(168, 47, 40, 0.12);
 }
 
+/* 暗色海報是深底，懸停改用各自的淺色強調色才看得出來。 */
+html[data-theme="dark"] .sheet-download__link:hover {
+  background: rgba(223, 196, 143, 0.2);
+}
+
+html[data-theme="dark"]:where([data-ui-theme="warm"]) .sheet-download__link:hover {
+  background: rgba(227, 167, 147, 0.2);
+}
+
 .sheet-download__link:focus-visible {
   outline: 2px solid var(--accent-strong);
   outline-offset: 1px;
@@ -967,7 +986,7 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 
 .sheet-download__link--official-qr { left: 14.8%; top: 45.3%; width: 27.8%; height: 27.8%; }
 .sheet-download__link--akaa-qr { left: 57.4%; top: 45.3%; width: 27.8%; height: 27.8%; }
-.sheet-download__link--official { left: 17.8%; top: 77.6%; width: 21.3%; height: 7.4%; }
+.sheet-download__link--official { left: 14.3%; top: 77.6%; width: 28.8%; height: 7.4%; }
 .sheet-download__link--akaa { left: 57.6%; top: 77.6%; width: 27.4%; height: 7.4%; }
 .sheet-download__link--dndbeyond { left: 37.5%; top: 92.6%; width: 20%; height: 3.9%; }
 .sheet-download__link--wotc { left: 71.2%; top: 92.6%; width: 9.5%; height: 3.9%; }

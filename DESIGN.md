@@ -60,6 +60,7 @@
 
 - 圖片放在 `images/`、字型放在 `fonts/`（`og-image.jpg` 例外，留在根目錄：短網址 Worker 以固定網址引用）。
 - 經典主題使用 `images/logo-classic-light.webp`／`images/logo-classic-dark.webp` 與 `images/dice.webp`；暖紙主題使用 `images/logo-warm-light.webp`／`images/logo-warm-dark.webp` 與 `images/dice-warm-animated.webp`。歡迎視窗顯示目前主題的 logo，依明暗切換；技能頁不放 logo，避免隔開分組清單。
+- 角色紙下載視窗的海報四種外觀各一張（960×960）：經典 `images/sheet_dl_qr.webp`／`images/sheet_dl_qr_dark.webp`，暖紙 `images/sheet_dl_qr_warm.webp`／`images/sheet_dl_qr_warm_dark.webp`。開啟視窗時只留下目前外觀那一張，其餘不載入；四張的 QR 與文字位置相同，共用同一組連結熱區。
 - 經典 Logo 為 1080×350 原尺寸，整張顯示不裁切。
 - 暖紙 Logo 保留完整圖面（等比縮為 1419px 寬），以 CSS 依比例裁切原 1774px 座標 x=350、y=45、寬 1080、高 350 的字樣與底線區域，依明暗切換並固定比例避免高度跳動。
 - 骰子素材由 `DiceRoller` 建立動畫時依目前主題選取；屬性擲骰開始前以 canvas 顯示靜態預覽。亂數、計時與歷史紀錄維持共用入口。
