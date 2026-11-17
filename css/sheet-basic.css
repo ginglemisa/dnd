@@ -962,6 +962,9 @@ button.roll-mode-badge:focus-visible {
   font-size: var(--fs-sm);
   order: 3;
   flex-basis: 100%;
+  /* 減少動態效果時全站的轉場是 0.01ms（dialogs.css），order 也會跟著轉場：寬度跨過下方門檻的那一格，
+     圖例會先排到鎖頭右邊、把鎖頭擠離右緣，下一格才歸位。排版屬性不做轉場。 */
+  transition: none;
 }
 
 /* 職業與專長都沒有可專精的技能時，圖例不列專精。 */

@@ -577,8 +577,7 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     }));
     for (const width of [390, 1200]) {
       await page.setViewportSize({ width, height: 844 });
-      // 剛改視窗寬時 container query 可能還沒套用到標題列，等兩個畫格再量。
-      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      // 改完視窗寬馬上量、不等畫格：圖例的 order 若有轉場（減少動態效果時全站是 0.01ms），這一格鎖頭會被擠離右緣。
       assert.deepEqual(await rankLockLook(), Array(2).fill({ tone: "muted", shackle: "open", filled: false, atRight: true, titleRow: true, size: true }), `unlocked look at ${width}`);
     }
     await page.setViewportSize({ width: 390, height: 844 });
@@ -592,8 +591,12 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     await page.keyboard.press("Space");
     assert.deepEqual(await rankState(), lockedBefore, "locked skill ranks ignore clicks and Space");
     assert.deepEqual(await page.evaluate(() => {
-      document.getElementById("exp-運動").click();
-      return [document.getElementById("exp-運動").checked, document.querySelector('.skill-rank-lock[data-rank-lock="skills"]').classList.contains("is-nudged")];
+      // 這時是戰士，專精格停用、click() 不會送出事件，所以點熟練格；先拿掉前面點擊留下的晃動標記，確認是這一次加上的。
+      const lockButton = document.querySelector('.skill-rank-lock[data-rank-lock="skills"]');
+      const box = document.getElementById("prof-運動");
+      lockButton.classList.remove("is-nudged");
+      box.click();
+      return [box.checked, lockButton.classList.contains("is-nudged")];
     }), [false, true], "a blocked click nudges the lock");
     await page.locator('#skill-bonus-section span.skill-tip[data-skill="運動"]').click();
     assert.equal(await page.locator("#skillPopup").isVisible(), true, "skill names still open their tip");
@@ -622,6 +625,27 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     await screenshot(`${family}-${mode}-quick-build`);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.keyboard.press("Escape");
+    // 角色紙下載海報四種外觀各一張，開啟時只載入目前外觀那一張。
+    await page.evaluate(() => document.getElementById("open-sheet-download-btn").click());
+    const sheetDialog = page.locator('.app-dialog[data-variant="sheet-download"]');
+    const sheetPoster = sheetDialog.locator(".sheet-download__image");
+    assert.equal(await sheetPoster.count(), 1);
+    assert.equal(await sheetPoster.getAttribute("src"), `images/sheet_dl_qr${family === "warm" ? "_warm" : ""}${mode === "dark" ? "_dark" : ""}.webp`);
+    await sheetPoster.evaluate(img => img.decode());
+    assert.equal(await sheetPoster.evaluate(img => img.naturalWidth), 960);
+    assert.equal(await sheetDialog.locator(".app-dialog__header .sheet-download__hint").textContent(), "點按 QR CODE 或網址連結即可下載");
+    assert.equal(await sheetDialog.locator(".app-dialog__body .sheet-download__hint").count(), 0, "the hint sits in the header, above its divider");
+    // 連結熱區要蓋住海報上的整行文字（「非官方中翻｜原版直式」在圖寬的 15.1%–42.3%）。
+    const officialSpan = await sheetDialog.locator(".sheet-download__link--official").evaluate(link => {
+      const image = link.parentElement.querySelector(".sheet-download__image").getBoundingClientRect();
+      const box = link.getBoundingClientRect();
+      return [(box.left - image.left) / image.width, (box.right - image.left) / image.width];
+    });
+    assert(officialSpan[0] <= 0.151 && officialSpan[1] >= 0.423, JSON.stringify({ family, mode, officialSpan }));
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await screenshot(`${family}-${mode}-sheet-download`);
+    await sheetDialog.locator(".app-dialog__button--primary").click();
+    await sheetDialog.waitFor({ state: "hidden" });
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.evaluate(() => {
       const toggle = document.getElementById("dice-system-toggle");

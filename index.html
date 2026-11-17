@@ -108,14 +108,14 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261115-auto-value">
   <link rel="stylesheet" href="css/base.css?v=20261117-level-10b">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261116-rank-lock">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261118-legend-order">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261116-subclass-filter">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261116-ring-slot-layout">
   <link rel="stylesheet" href="css/utility.css?v=20261116-slot-layout">
   <link rel="stylesheet" href="css/dice.css?v=20261117-ability-reroll">
   <link rel="stylesheet" href="css/dialogs.css?v=20261116-slot-layout">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
-  <link rel="stylesheet" href="css/tabletop.css?v=20261116-slot-rows">
+  <link rel="stylesheet" href="css/tabletop.css?v=20261118-sheet-dark">
   <link rel="stylesheet" href="css/tabletop-hud.css?v=20261113-info-icon">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261116-calculation-tips">
@@ -5483,12 +5483,14 @@ function setupSheetDownloadDialog() {
   if (!openBtn || !template) return;
 
   openBtn.addEventListener("click", () => {
-    // Drop the other theme's image before it joins the page, so only one loads.
+    // Drop the other appearances' images before they join the page, so only one loads.
     const content = template.content.cloneNode(true);
     const uiTheme = document.documentElement.dataset.uiTheme === "warm" ? "warm" : "classic";
+    const colorMode = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
     content.querySelectorAll("[data-ui-theme-image]").forEach((image) => {
-      if (image.dataset.uiThemeImage !== uiTheme) image.remove();
+      if (image.dataset.uiThemeImage !== uiTheme || image.dataset.themeImage !== colorMode) image.remove();
     });
+    const hint = content.querySelector(".sheet-download__hint");
     window.AppDialog?.showContent({
       title: "角色紙下載",
       variant: "sheet-download",
@@ -5496,6 +5498,16 @@ function setupSheetDownloadDialog() {
       confirmLabel: "關閉",
       trigger: document.getElementById("utility-menu-toggle") || openBtn
     });
+    // The hint sits under the title, above the header's divider; without a header it stays above the image.
+    const surface = hint?.closest(".app-dialog__surface");
+    const title = surface?.querySelector(".app-dialog__header h2");
+    if (title) {
+      const heading = document.createElement("div");
+      heading.className = "sheet-download__heading";
+      title.replaceWith(heading);
+      heading.append(title, hint);
+      surface.setAttribute("aria-describedby", hint.id);
+    }
   });
 }
 
@@ -7936,9 +7948,12 @@ window.addEventListener("DOMContentLoaded", async function() {
 </div>
 
 <template id="sheet-download-template">
+  <p class="sheet-download__hint" id="sheet-download-hint">點按 QR CODE 或網址連結即可下載</p>
   <figure class="sheet-download">
-    <img class="sheet-download__image" data-ui-theme-image="classic" src="images/sheet_dl_qr.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
-    <img class="sheet-download__image" data-ui-theme-image="warm" src="images/sheet_dl_qr_warm.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
+    <img class="sheet-download__image" data-ui-theme-image="classic" data-theme-image="light" src="images/sheet_dl_qr.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
+    <img class="sheet-download__image" data-ui-theme-image="classic" data-theme-image="dark" src="images/sheet_dl_qr_dark.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
+    <img class="sheet-download__image" data-ui-theme-image="warm" data-theme-image="light" src="images/sheet_dl_qr_warm.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
+    <img class="sheet-download__image" data-ui-theme-image="warm" data-theme-image="dark" src="images/sheet_dl_qr_warm_dark.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
     <!-- QR areas open the Drive page the QR encodes (the labels below link the short download URLs instead). -->
     <a class="sheet-download__link sheet-download__link--official-qr" data-analytics-event="blank_character_sheet_download" href="https://drive.google.com/file/d/1wUIh4xYY492I7htCnYAdNsYwyt7zJJbR/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版 QR Code：Google Drive 檔案頁" title="Google Drive：官方直式中文版"></a>
     <a class="sheet-download__link sheet-download__link--akaa-qr" data-analytics-event="blank_character_sheet_download" href="https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版 QR Code：Google Drive 檔案頁" title="Google Drive：赤赤AkaA設計橫版"></a>
