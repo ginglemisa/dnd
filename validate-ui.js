@@ -138,6 +138,7 @@ async function verifyUtilityMenuLayout(page) {
         themeRow: rect(".utility-menu__theme-row"),
         segments: [...document.querySelectorAll(".utility-menu__segment")].map(el => el.getBoundingClientRect().toJSON()),
         divider: document.querySelector("#utility-menu > .utility-menu__divider").getBoundingClientRect().toJSON(),
+        settingsTitle: (() => { const el = document.querySelector(".utility-menu__settings > legend"); return { text: el.textContent.trim(), ...el.getBoundingClientRect().toJSON() }; })(),
         line: { top: parseFloat(line.top), bottom: parseFloat(line.bottom), width: line.width, content: line.content },
         backdrop: backdrop.content,
         // 選單外的點：遮罩開著時點到的是頁首的遮罩，不是底下的頁面。
@@ -169,7 +170,7 @@ async function verifyUtilityMenuLayout(page) {
       layout.settings.forEach(setting => { assert.equal(setting.left, layout.row.left); assert.equal(setting.right, layout.row.right); });
       assert.equal(layout.line.content, "none");
     } else {
-      // 開關分左右兩欄：自動計算｜擲骰功能、捲動按鈕｜暗色模式；直線上接分隔線、下接主題列的上框線。
+      // 開關分左右兩欄：自動計算｜擲骰功能、捲動按鈕｜暗色模式；直線從「設定」標題下方開始、下接主題列的上框線。
       const [auto, dice, scroll, dark] = layout.settings;
       assert.equal(auto.top, dice.top, `first settings row at ${width}`);
       assert.equal(scroll.top, dark.top, `second settings row at ${width}`);
@@ -183,9 +184,12 @@ async function verifyUtilityMenuLayout(page) {
       assert(auto.right < dice.left, `settings columns do not overlap at ${width}`);
       assert.equal(layout.line.content, '""');
       assert.equal(layout.line.width, "1px");
-      assert(Math.abs((layout.row.top + layout.line.top) - layout.divider.bottom) < 1, `divider line reaches the upper rule at ${width}`);
+      assert.equal(layout.line.top, 0, `divider line starts below the settings title at ${width}`);
       assert(Math.abs((layout.row.bottom - layout.line.bottom) - layout.themeRow.top) < 1, `divider line reaches the theme row at ${width}`);
     }
+    // 四個開關上方有「設定」標題，位在分隔線與開關之間。
+    assert.equal(layout.settingsTitle.text, "設定");
+    assert(layout.settingsTitle.top >= layout.divider.bottom && layout.settingsTitle.bottom <= layout.row.top, `settings title sits above the switches at ${width}`);
     // 主題：通欄一列，經典｜暖紙並排。
     assert.equal(layout.themeRow.left, layout.row.left);
     assert.equal(layout.themeRow.right, layout.row.right);
@@ -213,9 +217,16 @@ async function verifyUtilityMenuLayout(page) {
     fs.mkdirSync(process.env.DND_UI_SCREENSHOT_DIR, { recursive: true });
     await page.screenshot({ path: path.join(process.env.DND_UI_SCREENSHOT_DIR, "menu.png") });
   }
-  // 點遮罩關閉選單，點擊不穿透到底下的骰子按鈕。
-  await page.waitForFunction(() => innerWidth === 390 && getComputedStyle(document.querySelector(".site-header"), "::before").content !== "none");
-  await page.mouse.click(20, 830);
+  // 點遮罩關閉選單，點擊不穿透到底下的骰子按鈕。畫面拉高一點，讓骰子按鈕露在選單下方，點它的位置。
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.waitForFunction(() => innerWidth === 390 && innerHeight === 900 && getComputedStyle(document.querySelector(".site-header"), "::before").content !== "none");
+  const fabTap = await page.evaluate(() => {
+    const fab = document.getElementById("dice-roller-fab").getBoundingClientRect();
+    const menu = document.getElementById("utility-menu").getBoundingClientRect();
+    return { x: fab.left + fab.width / 2, y: fab.top + fab.height / 2, outside: fab.top > menu.bottom };
+  });
+  assert(fabTap.outside, "the dice button sits below the open menu");
+  await page.mouse.click(fabTap.x, fabTap.y);
   assert.equal(await page.locator("#dice-roller-modal").evaluate(el => el.classList.contains("is-open")), false, "the backdrop tap does not reach the page");
   assert.equal(await page.locator("#utility-menu-toggle").getAttribute("aria-expanded"), "false", "tapping the backdrop closes the menu");
   assert.equal(await page.locator("#utility-menu").getAttribute("aria-hidden"), "true");
