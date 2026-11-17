@@ -5483,9 +5483,10 @@ function setupSheetDownloadDialog() {
   if (!openBtn || !template) return;
 
   openBtn.addEventListener("click", () => {
-    // Drop the other theme's image before it joins the page, so only one loads.
+    // Drop the other appearances' images before they join the page, so only one loads.
     const content = template.content.cloneNode(true);
-    const uiTheme = document.documentElement.dataset.uiTheme === "warm" ? "warm" : "classic";
+    const root = document.documentElement.dataset;
+    const uiTheme = `${root.uiTheme === "warm" ? "warm" : "classic"}${root.theme === "dark" ? "-dark" : ""}`;
     content.querySelectorAll("[data-ui-theme-image]").forEach((image) => {
       if (image.dataset.uiThemeImage !== uiTheme) image.remove();
     });
@@ -7940,6 +7941,8 @@ window.addEventListener("DOMContentLoaded", async function() {
   <figure class="sheet-download">
     <img class="sheet-download__image" data-ui-theme-image="classic" src="images/sheet_dl_qr.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
     <img class="sheet-download__image" data-ui-theme-image="warm" src="images/sheet_dl_qr_warm.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
+    <img class="sheet-download__image" data-ui-theme-image="classic-dark" src="images/sheet_dl_qr_dark.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
+    <img class="sheet-download__image" data-ui-theme-image="warm-dark" src="images/sheet_dl_qr_warm_dark.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
     <!-- QR areas open the Drive page the QR encodes (the labels below link the short download URLs instead). -->
     <a class="sheet-download__link sheet-download__link--official-qr" data-analytics-event="blank_character_sheet_download" href="https://drive.google.com/file/d/1wUIh4xYY492I7htCnYAdNsYwyt7zJJbR/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版 QR Code：Google Drive 檔案頁" title="Google Drive：官方直式中文版"></a>
     <a class="sheet-download__link sheet-download__link--akaa-qr" data-analytics-event="blank_character_sheet_download" href="https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版 QR Code：Google Drive 檔案頁" title="Google Drive：赤赤AkaA設計橫版"></a>
