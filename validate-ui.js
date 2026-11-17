@@ -693,6 +693,133 @@ async function verifyAppearanceAndLayout(browser, page, url) {
   console.log("Appearance: four themes, persistence, keyboard, blocked storage, menu, skill layouts, tabletop and Quick Build passed.");
 }
 
+// 工具選單「捲動按鈕」：有視窗開著時改捲最上層視窗的內容區，按鈕貼在內容區右下角、不蓋住底部操作列；
+// 最上層視窗沒有可捲的內容時不顯示，關掉視窗後回到捲整頁。
+async function verifyScrollButtonsInModals(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 390, height: 700 }, reducedMotion: "reduce" });
+  try {
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    const state = scrollSelector => page.evaluate(selector => {
+      const [top, bottom] = ["scrollToTopBtn", "scrollToBottomBtn"].map(id => document.getElementById(id));
+      const rect = element => { const r = element.getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; };
+      const hit = element => { const r = element.getBoundingClientRect(); return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === element; };
+      const visible = [top, bottom].every(button => getComputedStyle(button).display !== "none");
+      const target = selector ? document.querySelector(selector) : null;
+      return {
+        visible,
+        inModal: document.getElementById("scroll-buttons").classList.contains("is-in-modal"),
+        inert: Boolean(top.closest("[inert]")),
+        inline: [top, bottom].map(button => [button.style.right, button.style.bottom, button.style.zIndex].join("|")),
+        hit: visible ? [hit(top), hit(bottom)] : null,
+        buttons: visible ? [rect(top), rect(bottom)] : null,
+        target: target ? rect(target) : null,
+        scrollTop: target ? target.scrollTop : window.scrollY,
+        maxScroll: target ? target.scrollHeight - target.clientHeight : document.documentElement.scrollHeight - window.innerHeight
+      };
+    }, scrollSelector);
+    const settled = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const assertInside = (current, label) => {
+      assert.equal(current.visible, true, `${label}: buttons show`);
+      assert.equal(current.inModal, true, `${label}: buttons follow the modal`);
+      assert.equal(current.inert, false, `${label}: buttons stay usable`);
+      assert.deepEqual(current.hit, [true, true], `${label}: buttons sit above the modal`);
+      current.buttons.forEach(button => {
+        assert(button.left >= current.target.left - 1 && button.right <= current.target.right + 1
+          && button.top >= current.target.top - 1 && button.bottom <= current.target.bottom + 1, `${label}: buttons stay inside the scroll area ${JSON.stringify([button, current.target])}`);
+      });
+    };
+    const scrollBothWays = async (selector, label) => {
+      await settled();
+      const before = await state(selector);
+      assertInside(before, label);
+      assert(before.maxScroll > 8, `${label}: content scrolls`);
+      await page.locator("#scrollToBottomBtn").click();
+      await page.waitForFunction(target => { const el = document.querySelector(target); return el.scrollHeight - el.clientHeight - el.scrollTop < 2; }, selector);
+      assert.equal(await page.evaluate(() => window.scrollY), 0, `${label}: the page behind stays put`);
+      assert.equal(await page.evaluate(() => Boolean(document.activeElement?.closest("#scroll-buttons"))), false, `${label}: buttons do not take focus`);
+      await page.locator("#scrollToTopBtn").click();
+      await page.waitForFunction(target => document.querySelector(target).scrollTop === 0, selector);
+    };
+    const openMenuButton = async id => {
+      if (!await page.locator(`#${id}`).isVisible()) await page.locator("#utility-menu-toggle").click();
+      await page.locator(`#${id}`).click();
+    };
+
+    assert.equal((await state()).visible, false, "scroll buttons start hidden");
+    await page.evaluate(() => document.getElementById("scroll-buttons-toggle").click());
+    const onPage = await state();
+    assert.deepEqual([onPage.visible, onPage.inModal, onPage.inline], [true, false, ["||", "||"]], "on the page the buttons keep the stylesheet position");
+
+    // 角色能力視窗（職業／特性／背景／種族共用），沒有底部操作列。
+    await page.locator("#class").selectOption("druid");
+    await page.locator("#level").selectOption("8");
+    await page.locator("#background").selectOption("seeker");
+    await page.locator("#race").selectOption("dwarf");
+    for (const tab of ["creation", "class", "background", "race"]) {
+      await page.locator(`.mini-stat-label[data-character-features-tab="${tab}"]`).click();
+      await page.locator("#character-features-modal").waitFor();
+      const selector = "#character-features-modal .app-dialog__body";
+      await settled();
+      const current = await state(selector);
+      if (tab === "class") await scrollBothWays(selector, "class features");
+      else if (current.maxScroll > 8) assertInside(current, `features ${tab}`);
+      else assert.equal(current.visible, false, `features ${tab}: nothing to scroll hides the buttons`);
+      if (tab === "class") {
+        // 上面再開一個不用捲的對話框：按鈕不顯示；關掉後回到下面的視窗。
+        await page.evaluate(() => { void AppDialog.showMessage({ title: "短訊息", message: "一句話" }); });
+        await settled();
+        assert.equal((await state()).visible, false, "a short dialog on top hides the buttons");
+        await page.keyboard.press("Escape");
+        await settled();
+        assertInside(await state(selector), "class features after the short dialog");
+      }
+      await page.keyboard.press("Escape");
+      await page.locator("#character-features-modal").waitFor({ state: "detached" });
+    }
+    await settled();
+    const afterDialog = await state();
+    assert.deepEqual([afterDialog.visible, afterDialog.inModal, afterDialog.inline], [true, false, ["||", "||"]], "closing the modal returns the buttons to the page");
+
+    // 有底部操作列的 AppDialog：按鈕在內容區裡，不蓋住操作列。
+    await page.evaluate(() => { void AppDialog.showMessage({ title: "長內容", message: "一行\n".repeat(200) }); });
+    await scrollBothWays(".app-dialog__body", "dialog with footer");
+    const footerTop = await page.locator(".app-dialog__actions").evaluate(el => el.getBoundingClientRect().top);
+    assert((await state(".app-dialog__body")).buttons[1].bottom <= footerTop + 1, "buttons stay above the dialog actions");
+    await page.keyboard.press("Escape");
+
+    // 認識神祇。
+    await openMenuButton("reference-deities-btn");
+    await scrollBothWays(".deity-info-content", "deities");
+    await page.keyboard.press("Escape");
+    await settled();
+    assert.equal((await state()).inModal, false, "closing deities returns the buttons to the page");
+
+    // 冒險日誌：內容區在標頭與頁尾之間。先放一頁舊格式的日誌（開啟時搬進 IndexedDB），矮視窗確保要捲。
+    await page.evaluate(() => dndStorage.setItem("dnd.adventureJournal.v1", JSON.stringify({ kind: "twd20-adventure-journal", version: 1, entries: [{ id: "scroll", characterName: "角色甲", classLevel: "遊俠 3 級", race: "精靈", adventureDate: "2026-10-01", adventureName: "森林調查", dmName: "DM", notes: "一行\n".repeat(40), gold: 1, downtime: 1, magicItems: "" }] })));
+    await openMenuButton("adventure-journal-btn");
+    await page.waitForFunction(() => document.querySelector("#adventure-journal")?.getAttribute("aria-busy") === "false");
+    await page.setViewportSize({ width: 390, height: 420 });
+    await scrollBothWays("#adventure-journal .journal-body", "journal");
+    const journalFooterTop = await page.locator("#adventure-journal .journal-footer").evaluate(el => el.getBoundingClientRect().top);
+    assert((await state("#adventure-journal .journal-body")).buttons[1].bottom <= journalFooterTop + 1, "buttons stay above the journal footer");
+    await page.locator('#adventure-journal [data-journal-action="close"]').click();
+    await page.setViewportSize({ width: 390, height: 700 });
+
+    // 快速創角：整頁被固定住，只捲精靈的內容區；按鈕不蓋住「下一步」。
+    await openMenuButton("help-quick-build-btn");
+    await page.locator("#quick-build-wizard.open").waitFor();
+    await scrollBothWays("#quick-build-wizard .quick-build-body", "quick build");
+    const wizardFooterTop = await page.locator("#quick-build-wizard .quick-build-footer:not([hidden])").evaluate(el => el.getBoundingClientRect().top);
+    assert((await state("#quick-build-wizard .quick-build-body")).buttons[1].bottom <= wizardFooterTop + 1, "buttons stay above the quick build footer");
+
+    // 關掉開關後，視窗裡也不顯示。
+    await page.evaluate(() => document.getElementById("scroll-buttons-toggle").click());
+    assert.equal((await state()).visible, false, "the toggle hides the buttons inside modals too");
+    console.log("Scroll buttons: page, character features tabs, nested short dialog, dialog footer, deities, journal, quick build and toggle passed.");
+  } finally { await page.close(); }
+}
+
 async function verifyAboutRoutes(browser, url) {
   const aboutPage = await newUiPage(browser, { viewport: { width: 320, height: 640 } });
   await aboutPage.route("**/legal-about.js?*", route => route.abort());
@@ -7675,6 +7802,7 @@ async function main() {
     if (all || sections.has("--dialogs-only")) {
       await verifyToasts(browser);
       await verifyShareDialog(browser, url);
+      await verifyScrollButtonsInModals(browser, url);
       await verifyAboutRoutes(browser, url);
       await verifyAdventurersLeagueRules(browser, url);
       await verifyFeatureChoiceDisclosures(browser, url);

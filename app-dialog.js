@@ -29,7 +29,7 @@
   function setBackgroundInert(dialogRoot) {
     const changed = new Set();
     document.querySelectorAll("body > *").forEach((element) => {
-      if (!(element instanceof HTMLElement) || element === dialogRoot || element.id === "app-toast" || element.inert) return;
+      if (!(element instanceof HTMLElement) || element === dialogRoot || element.id === "app-toast" || element.id === "scroll-buttons" || element.inert) return;
       element.inert = true;
       changed.add(element);
     });

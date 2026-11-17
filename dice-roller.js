@@ -1032,7 +1032,7 @@
     const setBackgroundInert = () => {
       backgroundInertStates = new Map();
       Array.from(document.body.children).forEach(element => {
-        if (element === modal || element.id === "app-toast" || ["SCRIPT", "STYLE"].includes(element.tagName)) return;
+        if (element === modal || element.id === "app-toast" || element.id === "scroll-buttons" || ["SCRIPT", "STYLE"].includes(element.tagName)) return;
         backgroundInertStates.set(element, element.inert);
         element.inert = true;
       });

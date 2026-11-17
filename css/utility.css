@@ -630,6 +630,11 @@ html[data-theme="dark"] .feat-icon-btn--add {
   transition: bottom 120ms ease;
 }
 
+/* 有視窗開著時，位置與層級由 scroll-to-top.js 依視窗的內容區寫在按鈕上；換位置不做轉場。 */
+#scroll-buttons.is-in-modal > button {
+  transition: none;
+}
+
 html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scrollToBottomBtn) {
   color: var(--text-muted);
 }

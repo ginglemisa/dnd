@@ -4239,6 +4239,7 @@
         if (
           !(element instanceof HTMLElement)
           || element.id === "app-toast"
+          || element.id === "scroll-buttons"
           || element
             === elements.conditionModal
         ) {
