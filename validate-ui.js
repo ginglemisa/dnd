@@ -577,8 +577,7 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     }));
     for (const width of [390, 1200]) {
       await page.setViewportSize({ width, height: 844 });
-      // 剛改視窗寬時 container query 可能還沒套用到標題列，等兩個畫格再量。
-      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      // 改完視窗寬馬上量、不等畫格：圖例的 order 若有轉場（減少動態效果時全站是 0.01ms），這一格鎖頭會被擠離右緣。
       assert.deepEqual(await rankLockLook(), Array(2).fill({ tone: "muted", shackle: "open", filled: false, atRight: true, titleRow: true, size: true }), `unlocked look at ${width}`);
     }
     await page.setViewportSize({ width: 390, height: 844 });
@@ -592,8 +591,12 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     await page.keyboard.press("Space");
     assert.deepEqual(await rankState(), lockedBefore, "locked skill ranks ignore clicks and Space");
     assert.deepEqual(await page.evaluate(() => {
-      document.getElementById("exp-運動").click();
-      return [document.getElementById("exp-運動").checked, document.querySelector('.skill-rank-lock[data-rank-lock="skills"]').classList.contains("is-nudged")];
+      // 這時是戰士，專精格停用、click() 不會送出事件，所以點熟練格；先拿掉前面點擊留下的晃動標記，確認是這一次加上的。
+      const lockButton = document.querySelector('.skill-rank-lock[data-rank-lock="skills"]');
+      const box = document.getElementById("prof-運動");
+      lockButton.classList.remove("is-nudged");
+      box.click();
+      return [box.checked, lockButton.classList.contains("is-nudged")];
     }), [false, true], "a blocked click nudges the lock");
     await page.locator('#skill-bonus-section span.skill-tip[data-skill="運動"]').click();
     assert.equal(await page.locator("#skillPopup").isVisible(), true, "skill names still open their tip");
