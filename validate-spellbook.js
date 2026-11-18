@@ -1559,6 +1559,8 @@ async function verifyWizardBookPicker(page) {
   const rings = dialog.getByRole("group", { name: "篩選環階", exact: true });
   const visibleIds = () => dialog.locator(".spell-picker-option input").evaluateAll(inputs => inputs.map(input => input.value));
   await page.locator("#spellbook-manage").click();
+  // Measure once the open motion has brought the window to its place.
+  await page.waitForFunction(() => !document.querySelector(".app-dialog[data-entering]"));
   assert.equal(await dialog.getByRole("combobox").count(), 1, "book has only the school dropdown");
   assert.deepEqual(await rings.getByRole("checkbox").evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [["1", true], ["2", true], ["3", true], ["4", true], ["5", true]], "book rings reach the highest playable ring");
   assert.match(await dialog.innerText(), /勾選=新增法術；取消勾選=移出法術書，不影響準備法術清單。/u);
