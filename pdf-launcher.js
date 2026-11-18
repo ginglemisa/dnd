@@ -49,7 +49,7 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261117-level-10");
+      await loadScriptOnce("pdf-field-map.js?v=20261118-sheet-naming");
       await loadScriptOnce("pdf-export.js?v=20261112-merge-main-menu");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
@@ -225,7 +225,7 @@ function getSavedAvatarForPdf() {
   return typeof isValidTabletopAvatar === "function" && isValidTabletopAvatar(value) ? value : "";
 }
 
-// 這兩個檔案只在部署時放上網站（見 site.yml），路徑與 pdf-export.js 的官方角色卡設定相同。
+// 這兩個檔案只在部署時放上網站（見 site.yml），路徑與 pdf-export.js 的直式角色卡（程式裡的 official）設定相同。
 const OFFICIAL_SHEET_ASSET_PATHS = ['5e_char_sheet_of.pdf', 'fonts/AdobeFanHeitiStd-Bold.otf'];
 
 // 確定找不到（404）才算缺檔；網路錯誤維持顯示，交給匯出時的錯誤畫面處理。
@@ -381,8 +381,8 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       else if(step==='sheet'){
         const choices=document.createElement('div'); choices.className='pdf-export-choice-options';
         [
-          ['third-party','第三方角色卡','橫式雙頁版面；可編輯表單版約 6 MB，美觀易讀版約 1 MB。'],
-          ['official','官方角色卡','直式雙頁官方版面；可編輯版約 6 MB，不可編輯版約 1 MB。']
+          ['third-party','赤赤AkaA 橫式角色卡','橫式雙頁版面；可編輯表單版約 6 MB，美觀易讀版約 1 MB。'],
+          ['official','原版直式角色卡（非官方中翻）','直式雙頁，D&D 2024 原版版面的非官方中文翻譯；可編輯版約 6 MB，不可編輯版約 1 MB。']
         ].filter(([value])=>value!=='official'||!officialSheetMissing).forEach(([value,title,description])=>{
           const button=document.createElement('button'); button.type='button'; button.className='pdf-export-choice-option';
           const strong=document.createElement('strong'); strong.textContent=title;
@@ -395,13 +395,20 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
               // while the player finishes the remaining steps.
               ensurePdfExportReady()
                 .then(() => window.preloadPdfExportAssets?.({ outputMode: 'editable', sheetTemplate: 'official' }))
-                .catch((error) => console.warn('官方角色卡資源背景載入失敗：', error));
+                .catch((error) => console.warn('直式角色卡資源背景載入失敗：', error));
             }
             idx++; render();
           };
           choices.appendChild(button);
         });
-        d.appendChild(choices); choices.querySelector('button')?.focus(); a.hidden=true;
+        d.appendChild(choices);
+        if(!officialSheetMissing){
+          // 直式角色卡是原版版面的中譯，選之前先標明它不是官方出品（Fan Content Policy 要求標示）。
+          const notice=document.createElement('p'); notice.className='pdf-export-format-note';
+          notice.textContent='直式角色卡是 D&D 原版角色卡的非官方中文翻譯，依 Wizards of the Coast 的 Fan Content Policy 分享，未經 Wizards 核准或背書。';
+          d.appendChild(notice);
+        }
+        choices.querySelector('button')?.focus(); a.hidden=true;
       }
       else if(step==='name'){
         const createNameField=(id,labelText,placeholder,value,hintText)=>{
@@ -522,7 +529,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           return button;
         };
         if(result.sheetTemplate==='official'){
-          const officialLoadNote='官方角色卡首次輸出需載入約 6 MB 範本與字型資源。';
+          const officialLoadNote='直式角色卡首次輸出需載入約 6 MB 範本與字型資源。';
           options.append(
             createOption('editable','可編輯版','約 6 MB','使用 Adobe 繁黑體；保留文字輸入區，下載後仍可填寫或修改。',officialLoadNote),
             createOption('compact','不可編輯版','約 1 MB','使用 Adobe 繁黑體，文字固定、下載後無法編輯。',officialLoadNote)
@@ -537,7 +544,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         const blankSheetUrl=result.sheetTemplate==='official'
           ? 'https://drive.google.com/file/d/1g_t-5WBbZPvCWXFo4gM0s6ZoDQR7Djf1/view?usp=sharing'
           : 'https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view';
-        note.append(result.sheetTemplate==='official' ? '想下載可填寫的空白官方角色卡 PDF？請 ' : '想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:blankSheetUrl,target:'_blank',rel:'noopener noreferrer',textContent:'點此下載',onclick:()=>{window.twAnalytics?.track?.('blank_character_sheet_download');}}));
+        note.append(result.sheetTemplate==='official' ? '想下載可填寫的空白直式角色卡（非官方中翻）PDF？請 ' : '想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:blankSheetUrl,target:'_blank',rel:'noopener noreferrer',textContent:'點此下載',onclick:()=>{window.twAnalytics?.track?.('blank_character_sheet_download');}}));
         d.append(wait,options,note);
         if(formatError){
           const back=document.createElement('button');back.type='button';back.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--secondary';back.textContent='返回修改名稱';back.onclick=()=>{formatError='';idx=steps.indexOf('name');render();};a.append(back);a.hidden=false;back.focus();
@@ -568,7 +575,7 @@ async function downloadQuickBuildCompactPdf() {
   const currentName = window.TabletopMode?.getCharacterName?.() || "";
   const characterName = await window.AppDialog.showContent({
     title: "下載角色卡 PDF",
-    message: "輸入角色名稱後，將直接下載官方角色卡不可編輯版 PDF（約 1 MB）。",
+    message: "輸入角色名稱後，將直接下載原版直式角色卡（非官方中翻）的不可編輯版 PDF（約 1 MB）。",
     confirmLabel: "下載 PDF",
     cancelLabel: "取消",
     initialFocus: "content",

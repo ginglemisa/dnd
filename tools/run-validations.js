@@ -1,6 +1,6 @@
 // npm test：先 npm run build 產生職業資料（package.json），再依序執行全部既有回歸腳本（與 AGENTS.md「驗證」的腳本表相同），任一失敗即結束碼 1。
 // 用法：npm test，或 npm test -- validate-ui.js validate-spellbook.js 只跑指定腳本。
-// 沒有私人 repo（例如 fork）時加 --no-private-assets，只略過需要官方角色卡檔案的檢查（見 tools/copy-private-assets.js）。
+// 沒有私人 repo（例如 fork）時加 --no-private-assets，只略過需要直式角色卡檔案的檢查（見 tools/copy-private-assets.js）。
 "use strict";
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -32,7 +32,7 @@ try {
   if (copied.length) console.log(`已從私人 repo 補上：${copied.join("、")}`);
 } catch (error) {
   if (!noPrivateAssets) {
-    console.error(`官方角色卡的測試需要私人 repo 的檔案。${error.message}\n\n${privateAssets.MISSING_HELP}`);
+    console.error(`直式角色卡的測試需要私人 repo 的檔案。${error.message}\n\n${privateAssets.MISSING_HELP}`);
     process.exit(1);
   }
 }
@@ -42,9 +42,9 @@ if (noPrivateAssets) {
   const missing = privateAssets.missingPrivateAssets();
   if (missing.length) {
     env[privateAssets.SKIP_ENV] = "1";
-    console.log(`沒有私人 repo 的檔案（${missing.join("、")}），略過需要官方角色卡檔案的檢查；其他測試照常執行。`);
+    console.log(`沒有私人 repo 的檔案（${missing.join("、")}），略過需要直式角色卡檔案的檢查；其他測試照常執行。`);
   } else {
-    console.log(`官方角色卡的檔案都在，${privateAssets.SKIP_FLAG} 不生效，照常執行全部檢查。`);
+    console.log(`直式角色卡的檔案都在，${privateAssets.SKIP_FLAG} 不生效，照常執行全部檢查。`);
   }
 }
 const results = [];
@@ -56,5 +56,5 @@ for (const script of selected.length ? selected : SCRIPTS) {
 }
 console.log("\n結果：");
 results.forEach(({ script, ok, seconds }) => console.log(`  ${ok ? "✔" : "✘"} ${script}（${seconds} 秒）`));
-if (env[privateAssets.SKIP_ENV]) console.log("\n略過（沒有私人 repo 的檔案）：validate-ui.js 的官方角色卡 PDF 匯出；validate-spellbook.js 的官方角色卡選項改用模擬的檔案存在回應。");
+if (env[privateAssets.SKIP_ENV]) console.log("\n略過（沒有私人 repo 的檔案）：validate-ui.js 的直式角色卡 PDF 匯出；validate-spellbook.js 的直式角色卡選項改用模擬的檔案存在回應。");
 process.exitCode = results.every(result => result.ok) ? 0 : 1;
