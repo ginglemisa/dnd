@@ -1432,9 +1432,9 @@
   </div>
 
   <script src="sheet-utils.js?v=20261024-index-split"></script>
-  <script src="feat-ui.js?v=20261117-epic-boon"></script>
+  <script src="feat-ui.js?v=20261119-epic-boon-hidden"></script>
   <script src="spell-sources.js?v=20261113-blessed-warrior"></script>
-  <script src="class-features-ui.js?v=20261117-subclass-filter"></script>
+  <script src="class-features-ui.js?v=20261119-epic-boon-hidden"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -6477,6 +6477,8 @@ function applyStateObjectNow(data) {
       const select = document.getElementById(getFeatChoiceId(spec.key));
       if (!select) return;
       const value = data[select.id] ?? data[`derived-feat-${spec.key}`] ?? (restoringFullFeatState ? "" : select.value);
+      // 未達等級而沒列出的傳奇恩惠（等級調降前選的）先補回選項再還原。
+      if (typeof value === "string") syncFeatChoiceSelectOptions(select, value, spec);
       select.value = value;
     });
     syncDerivedFeatRows();

@@ -77,7 +77,7 @@
     return Object.hasOwn(FEAT_TYPE_LABELS, type) ? FEAT_TYPE_LABELS[type] : null;
   }
 
-  // 專長類別的等級門檻（角色等級）：說明副標的「N 級以上」由此產生；傳奇恩惠未達等級時在專長選單上停用。
+  // 專長類別的等級門檻（角色等級）：說明副標的「N 級以上」由此產生；傳奇恩惠未達等級時不列在專長選單上。
   const FEAT_TYPE_MIN_LEVELS = Object.freeze({ general: 4, epic: 19 });
 
   /** 專長類別的等級門檻；沒有門檻時為 1。 */

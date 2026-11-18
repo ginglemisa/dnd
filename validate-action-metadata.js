@@ -2996,8 +2996,8 @@ async function verifyManualFeatCategories(browser, url) {
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] },
       class: "fighter", level: "4", race: "human", background: "soldier", "manual-feat-management": true, __managedFeatRows: [] }));
     await page.locator("#feat-add-empty").click();
-    assert.deepEqual(await options("feat-0-category"), [["", "-- 請選擇分類 --"], ["origin", "起源"], ["general", "通用"], ["style", "戰鬥風格"], ["epic", "傳奇恩惠"]],
-      "categories come from feat types; 其他 is not offered for new rows");
+    assert.deepEqual(await options("feat-0-category"), [["", "-- 請選擇分類 --"], ["origin", "起源"], ["general", "通用"], ["style", "戰鬥風格"]],
+      "categories come from feat types; 其他 is not offered for new rows; 傳奇恩惠 is not listed below level 19");
     assert.deepEqual([await page.locator("#feat-0").isDisabled(), await options("feat-0")], [true, [["", "請先選擇分類"]]], "feat waits for a category");
     await page.selectOption("#feat-0-category", "origin");
     const originOptions = await options("feat-0");
@@ -3067,9 +3067,10 @@ async function verifyManualFeatCategories(browser, url) {
     assert.equal(await page.locator('#feat-0-category option[value="other"]').count(), 0, "after saving a replacement the legacy name is gone");
     assert.equal(await page.inputValue("#feat-0"), "屬性值提升");
 
-    // 傳奇恩惠：未滿 19 級時，自行管理的分類與自動管理的等級專長選單都停用；已選的值保留，自動管理顯示資格警示。
+    // 傳奇恩惠：未滿 19 級時，自行管理的分類與自動管理的等級專長選單都不列出（不是列出但停用）；已選的值保留並照常列出，自動管理顯示資格警示。
     const epicBoons = ["戰鬥造詣恩惠", "次元旅行恩惠", "命運恩惠", "勢不可擋恩惠", "法術回憶恩惠", "暗夜精魂恩惠", "真實視覺恩惠"];
     const optionStates = id => page.locator(`#${id} option`).evaluateAll(options => options.slice(1).map(option => [option.value, option.disabled]));
+    const listedEpicBoons = async id => (await optionStates(id)).filter(([value]) => epicBoons.includes(value));
     const setTestLevel = level => page.evaluate(level => {
       const select = document.getElementById("level");
       if (!Array.from(select.options).some(option => option.value === level)) select.add(new Option(level, level));
@@ -3078,26 +3079,36 @@ async function verifyManualFeatCategories(browser, url) {
     }, level);
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] },
       class: "fighter", level: "4", "manual-feat-management": true, __managedFeatRows: [{ type: "epic", value: "" }] }));
-    assert.deepEqual(await optionStates("feat-0"), epicBoons.map(id => [id, true]), "manual epic boons are listed but locked below level 19");
+    assert.equal(await page.inputValue("#feat-0-category"), "epic", "a row's current epic category is kept below level 19");
+    assert.deepEqual(await optionStates("feat-0"), [], "manual epic boons are not listed below level 19");
+    await page.selectOption("#feat-0-category", "general");
+    assert.equal(await page.locator('#feat-0-category option[value="epic"]').count(), 0, "the epic category disappears once the row leaves it below level 19");
     assert.equal(await page.evaluate(() => getFeatText("法術回憶恩惠").plain.split(/\r?\n/u)[1]), "傳奇恩惠專長（19 級以上；具施法或契約魔法能力）");
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] },
       class: "fighter", level: "4", race: "human", background: "soldier", "manual-feat-management": false, "feat-choice-fighter-level-4": "真實視覺恩惠" }));
     const levelOptions = await optionStates("feat-choice-fighter-level-4");
-    assert.deepEqual(levelOptions.filter(([id]) => epicBoons.includes(id)), epicBoons.map(id => [id, true]), "level feat menus lock epic boons below level 19");
+    assert.deepEqual(levelOptions.filter(([id]) => epicBoons.includes(id)), [["真實視覺恩惠", false]], "level feat menus list only the selected epic boon below level 19");
     assert.equal(levelOptions.find(([id]) => id === "屬性值提升")[1], false, "other feats stay open");
-    assert.deepEqual((await optionStates("derived-feat-fighter-level-4")).filter(([id]) => epicBoons.includes(id)), epicBoons.map(id => [id, true]),
-      "the feat list row copies the locked options");
+    assert.deepEqual(await listedEpicBoons("derived-feat-fighter-level-4"), [["真實視覺恩惠", false]], "the feat list row copies the same options");
     assert.deepEqual([await page.inputValue("#feat-choice-fighter-level-4"), await page.inputValue("#derived-feat-fighter-level-4")], ["真實視覺恩惠", "真實視覺恩惠"],
       "a saved epic boon below level 19 is kept");
     assert.match(await page.locator("#derived-feat-fighter-level-4-desc").innerText(), /角色未達專長使用條件/, "a kept epic boon below level 19 shows the eligibility warning");
     await setTestLevel("19");
-    assert.deepEqual((await optionStates("feat-choice-fighter-level-4")).filter(([id]) => epicBoons.includes(id)), epicBoons.map(id => [id, false]), "level 19 unlocks epic boons");
+    assert.deepEqual(await listedEpicBoons("feat-choice-fighter-level-4"), epicBoons.map(id => [id, false]), "level 19 lists all epic boons");
+    assert.deepEqual(await listedEpicBoons("derived-feat-fighter-level-4"), epicBoons.map(id => [id, false]), "level 19 lists all epic boons in the feat list row");
     assert.doesNotMatch(await page.locator("#derived-feat-fighter-level-4-desc").innerText(), /角色未達專長使用條件/, "level 19 clears the warning");
+    await setTestLevel("4");
+    assert.deepEqual(await listedEpicBoons("feat-choice-fighter-level-4"), [["真實視覺恩惠", false]], "lowering the level hides the unselected epic boons again");
+    await page.selectOption("#derived-feat-fighter-level-4", "屬性值提升");
+    assert.deepEqual(await listedEpicBoons("feat-choice-fighter-level-4"), [], "an epic boon chosen away from below level 19 is no longer listed");
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] },
       class: "fighter", level: "4", "manual-feat-management": true, __managedFeatRows: [{ type: "epic", value: "命運恩惠" }] }));
     assert.equal(await page.inputValue("#feat-0"), "命運恩惠", "a manual epic boon below level 19 is kept");
+    assert.deepEqual(await optionStates("feat-0"), [["命運恩惠", false]], "the manual menu lists only the kept epic boon below level 19");
     await setTestLevel("19");
-    assert.deepEqual(await optionStates("feat-0"), epicBoons.map(id => [id, false]), "level 19 unlocks manual epic boons");
+    assert.deepEqual(await optionStates("feat-0"), epicBoons.map(id => [id, false]), "level 19 lists all manual epic boons");
+    await page.evaluate(() => createSingleFeatRow());
+    assert.equal(await page.locator('#feat-1-category option[value="epic"]').count(), 1, "level 19 lists the epic category for new rows");
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "4", "manual-feat-management": true,
       __managedFeatRows: [{ type: "general", value: "屬性值提升" }] }));
 

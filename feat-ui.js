@@ -12,19 +12,24 @@ function getFeatMenuOptions(filter = () => true) {
   return Object.entries(window.getAllFeatRules?.() || {}).filter(([, rule]) => filter(rule)).map(([id]) => ({ value: id, label: window.getFeatText(id).label }));
 }
 
-// 傳奇恩惠（type: epic）角色等級未達門檻（19 級）時，在自動與自行管理的專長選單上都停用；已選的值保留，自動管理另顯示資格警示。
-// 其他類別的先決條件照舊不在選單上阻擋。
-function isFeatLevelLocked(featId) {
-  const rule = window.getFeatRules?.(featId);
-  if (rule?.type !== "epic") return false;
-  return Number(document.getElementById("level")?.value || 0) < window.getFeatTypeMinLevel(rule.type);
+// 傳奇恩惠（type: epic）角色等級未達門檻（19 級）時，不列在自動與自行管理的專長選單上（自行管理連「傳奇恩惠」分類也不列）；
+// 專長資料照常存在，升到 19 級就出現。已選的值保留並照常列出，由資格警示提醒。其他類別的先決條件照舊不在選單上阻擋。
+function isFeatTypeLevelLocked(type) {
+  if (type !== "epic") return false;
+  return Number(document.getElementById("level")?.value || 0) < window.getFeatTypeMinLevel(type);
 }
 
-const featOptionDisabledAttr = featId => isFeatLevelLocked(featId) ? " disabled" : "";
+function isFeatLevelLocked(featId) {
+  return isFeatTypeLevelLocked(window.getFeatRules?.(featId)?.type);
+}
 
-function getFeatOptionsHtml() {
+// keepValue：目前已選的專長，即使未達等級也照常列出。
+const isFeatHiddenFromMenu = (featId, keepValue = "") => featId !== keepValue && isFeatLevelLocked(featId);
+
+function getFeatOptionsHtml(keepValue = "") {
   return `<option value="">-- 請選擇 --</option>` +
-    getFeatMenuOptions().map(opt => `<option value="${opt.value}"${featOptionDisabledAttr(opt.value)}>${opt.label}</option>`).join("");
+    getFeatMenuOptions().filter(opt => !isFeatHiddenFromMenu(opt.value, keepValue))
+      .map(opt => `<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`).join("");
 }
 
 function isManualFeatManagementEnabled() {
@@ -109,17 +114,38 @@ function getManualFeatCategory(value, savedType) {
   return window.getFeatTypes?.().includes(savedType) ? savedType : "";
 }
 
-function getManualFeatCategoryOptionsHtml(includeOther) {
+// keepCategory：列上目前的分類，即使未達等級也照常列出。
+function getManualFeatCategoryValues(includeOther, keepCategory = "") {
+  return (window.getFeatTypes?.() || []).filter(type => type === keepCategory || !isFeatTypeLevelLocked(type))
+    .concat(includeOther ? [OTHER_FEAT_CATEGORY] : []);
+}
+
+function getManualFeatCategoryOptionsHtml(includeOther, keepCategory = "") {
   return '<option value="">-- 請選擇分類 --</option>'
-    + (window.getFeatTypes?.() || []).map(type => `<option value="${escapeHtml(type)}">${escapeHtml(window.getFeatTypeLabel(type).short)}</option>`).join("")
-    + (includeOther ? `<option value="${OTHER_FEAT_CATEGORY}">其他</option>` : "");
+    + getManualFeatCategoryValues(includeOther, keepCategory).map(type => type === OTHER_FEAT_CATEGORY
+      ? `<option value="${OTHER_FEAT_CATEGORY}">其他</option>`
+      : `<option value="${escapeHtml(type)}">${escapeHtml(window.getFeatTypeLabel(type).short)}</option>`).join("");
+}
+
+// 等級改變後重列自行管理列的分類選單（例如升到 19 級出現「傳奇恩惠」）；選項沒變時不動 DOM。
+function syncManualFeatCategoryOptions(row) {
+  const category = getManualFeatCategorySelect(row);
+  if (!category) return;
+  const value = category.value;
+  const includeOther = Array.from(category.options).some(option => option.value === OTHER_FEAT_CATEGORY);
+  const desired = getManualFeatCategoryValues(includeOther, value);
+  const current = Array.from(category.options).slice(1).map(option => option.value);
+  if (current.length === desired.length && current.every((type, index) => type === desired[index])) return;
+  category.innerHTML = getManualFeatCategoryOptionsHtml(includeOther, value);
+  category.value = value;
 }
 
 // 自行管理的專長選單只列該分類的專長，選項不加類別字樣；「其他」只有列上的舊專長名稱（由 restoreFeatSelectValue 加入）。
-function getManualFeatOptionsHtml(category) {
+function getManualFeatOptionsHtml(category, keepValue = "") {
   if (!category) return '<option value="">請先選擇分類</option>';
-  return '<option value="">-- 請選擇 --</option>' + Object.entries(window.getAllFeatRules?.() || {}).filter(([, rule]) => rule.type === category)
-    .map(([id, rule]) => `<option value="${escapeHtml(id)}"${featOptionDisabledAttr(id)}>${escapeHtml(window.formatContentSourceName(id, rule.source))}</option>`).join("");
+  return '<option value="">-- 請選擇 --</option>' + Object.entries(window.getAllFeatRules?.() || {})
+    .filter(([id, rule]) => rule.type === category && !isFeatHiddenFromMenu(id, keepValue))
+    .map(([id, rule]) => `<option value="${escapeHtml(id)}">${escapeHtml(window.formatContentSourceName(id, rule.source))}</option>`).join("");
 }
 
 function collectFeatRowEntries(rows) {
@@ -244,11 +270,11 @@ function restoreManagedFeatRows(entries, memories = []) {
     if (entry.type === OTHER_FEAT_CATEGORY && !memory.otherValue) memory.otherValue = entry.value;
     manualFeatRowMemory.set(row, memory);
     const category = getManualFeatCategorySelect(row);
-    category.innerHTML = getManualFeatCategoryOptionsHtml(Boolean(memory.otherValue));
+    category.innerHTML = getManualFeatCategoryOptionsHtml(Boolean(memory.otherValue), entry.type);
     category.value = entry.type;
     category.dataset.previousCategory = category.value;
     const select = getFeatSelectFromRow(row);
-    setCharacterHtml(select, getManualFeatOptionsHtml(category.value));
+    setCharacterHtml(select, getManualFeatOptionsHtml(category.value, entry.value));
     restoreFeatSelectValue(select, entry.value);
     select.dataset.previousValue = select.value;
     updateMagicInitiateControlsForRow(row, { sync: false });
@@ -290,8 +316,10 @@ function applyManualFeatCategory(row) {
   const previousValue = select.dataset.previousValue || "";
   if (category.dataset.previousCategory) memory.categories[category.dataset.previousCategory] = select.value;
   category.dataset.previousCategory = category.value;
-  setCharacterHtml(select, getManualFeatOptionsHtml(category.value));
+  // 離開未達等級的「傳奇恩惠」分類後就不再列出。
+  syncManualFeatCategoryOptions(row);
   const next = category.value === OTHER_FEAT_CATEGORY ? memory.otherValue : memory.categories[category.value] || "";
+  setCharacterHtml(select, getManualFeatOptionsHtml(category.value, next));
   if (category.value === OTHER_FEAT_CATEGORY) restoreFeatSelectValue(select, next);
   else select.value = Array.from(select.options).some(option => option.value === next) ? next : "";
   select.disabled = !category.value;
@@ -394,6 +422,20 @@ function getFeatChoiceOptions(spec) {
   return getFeatMenuOptions(rule => spec.type === "level" ? rule.type !== "style" : rule.type === spec.type);
 }
 
+// 重列來源專長選單（第一個空白選項之外）；keepValue（目前或即將還原的選擇）即使未達等級也列出。選項沒變時不動 DOM。
+// 還原存檔或記憶的選擇前先呼叫，讓等級調降前選的傳奇恩惠能選回來；spec 省略時依選單 ID 找。
+function syncFeatChoiceSelectOptions(select, keepValue = select?.value || "", spec = null) {
+  spec ||= getFeatChoiceSpecs().find(candidate => getFeatChoiceId(candidate.key) === select?.id);
+  if (!select || !spec) return;
+  const value = select.value;
+  const desired = getFeatChoiceOptions(spec).filter(option => !isFeatHiddenFromMenu(option.value, keepValue));
+  const current = Array.from(select.options).slice(1).map(option => option.value);
+  if (current.length === desired.length && current.every((id, index) => id === desired[index].value)) return;
+  while (select.options.length > 1) select.remove(1);
+  desired.forEach(option => select.add(new Option(option.label, option.value)));
+  select.value = value;
+}
+
 function appendFeatChoice(container, spec, previousValue = "") {
   if (!container) return;
   const wrap = document.createElement("div");
@@ -404,7 +446,8 @@ function appendFeatChoice(container, spec, previousValue = "") {
   label.textContent = spec.label;
   const select = document.createElement("select");
   select.id = label.htmlFor;
-  select.innerHTML = '<option value="">-- 請選擇專長 --</option>' + getFeatChoiceOptions(spec).map(option => `<option value="${escapeHtml(option.value)}"${featOptionDisabledAttr(option.value)}>${escapeHtml(option.label)}</option>`).join("");
+  select.innerHTML = '<option value="">-- 請選擇專長 --</option>';
+  syncFeatChoiceSelectOptions(select, previousValue, spec);
   select.value = previousValue;
   select.addEventListener("change", () => {
     const hadAlertFeat = hasSelectedFeat(ALERT_FEAT_NAME);
@@ -493,10 +536,8 @@ function syncFeatChoiceOptions() {
     if (!select) return;
     select.disabled = !spec.active;
     if (!autosaveSuspended && !spec.active) select.value = "";
-    // 保留選擇；資格由共用判斷控制警示及計算，不在選單上阻擋（只有等級未到的傳奇恩惠停用）。
-    Array.from(select.options).forEach(option => {
-      option.disabled = isFeatLevelLocked(option.value);
-    });
+    // 保留選擇；資格由共用判斷控制警示及計算，不在選單上阻擋（只有等級未到的傳奇恩惠不列出，已選的照常列出）。
+    syncFeatChoiceSelectOptions(select, select.value, spec);
   });
   syncFeatChoiceViewButtons();
 }
@@ -644,7 +685,7 @@ function setDerivedFeatRowValues(row, spec) {
     label.textContent = `原初教習${lessons.length > 1 && index >= 0 ? index + 1 : ""}`;
   }
   desc.id = `${select.id}-desc`;
-  setCharacterHtml(select, choice ? choice.innerHTML : getFeatOptionsHtml());
+  setCharacterHtml(select, choice ? choice.innerHTML : getFeatOptionsHtml(spec.value));
   select.value = spec.value;
   select.disabled = !choice || choice.disabled;
   select.dataset.previousValue = select.value;
@@ -898,10 +939,11 @@ function updateFeatControlStates() {
     if (select) {
       const choice = isDerivedFeatRow(row) ? document.getElementById(getFeatChoiceId(row.dataset.sourceKey)) : null;
       select.disabled = !enabled && (!choice || choice.disabled);
+      if (enabled) syncManualFeatCategoryOptions(row);
       const category = getManualFeatCategorySelect(row)?.value || "";
       if (enabled) {
         const value = select.value;
-        setCharacterHtml(select, getManualFeatOptionsHtml(category));
+        setCharacterHtml(select, getManualFeatOptionsHtml(category, value));
         restoreFeatSelectValue(select, value);
         select.disabled = !category;
       }
