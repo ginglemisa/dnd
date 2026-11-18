@@ -6,6 +6,8 @@
     { label: "玩家手冊", href: "https://twd20.com/al/DnDALPG.html" },
     { label: "城主指南", href: "https://twd20.com/al/DnDALDMG.html" }
   ];
+  // 官方公布下一版草案時放在兩個按鈕正下方；沒有草案時設為 null（同步 site.yml 的發布清單）。
+  const AL_RULES_DRAFT_LINK = { label: "玩家手冊 v2027.1 草案（社群審閱中）", href: "https://twd20.com/al/DnDALPG-2027.1-draft.html" };
 
   const AL_RULES_HTML = `
     <p>冒險者聯盟（Adventurers League，簡稱 AL）是 D&amp;D 官方的組織遊戲計畫。它訂了一套全世界通用的規則，照這套規則建立的角色，可以帶到任何一場聯盟遊戲，不管 DM 是誰、在哪裡玩。</p>
@@ -30,9 +32,10 @@
 
     const links = document.createElement("div");
     links.className = "al-rules-links";
-    AL_RULES_LINKS.forEach(({ label, href }) => {
+    const draftLinks = AL_RULES_DRAFT_LINK ? [{ ...AL_RULES_DRAFT_LINK, draft: true }] : [];
+    [...AL_RULES_LINKS, ...draftLinks].forEach(({ label, href, draft }) => {
       const link = document.createElement("a");
-      link.className = "al-rules-link";
+      link.className = draft ? "al-rules-link al-rules-link--draft" : "al-rules-link";
       link.href = href;
       link.target = "_blank";
       link.rel = "noopener noreferrer";

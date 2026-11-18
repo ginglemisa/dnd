@@ -859,8 +859,13 @@ async function verifyAdventurersLeagueRules(browser, url) {
     assert.equal(await dialog.locator(".app-dialog__actions").count(), 0);
     assert.deepEqual(await dialog.locator(".al-rules-link").evaluateAll(links => links.map(link => [link.textContent, link.href, link.target, link.rel])), [
       ["玩家手冊", "https://twd20.com/al/DnDALPG.html", "_blank", "noopener noreferrer"],
-      ["城主指南", "https://twd20.com/al/DnDALDMG.html", "_blank", "noopener noreferrer"]
+      ["城主指南", "https://twd20.com/al/DnDALDMG.html", "_blank", "noopener noreferrer"],
+      ["玩家手冊 v2027.1 草案（社群審閱中）", "https://twd20.com/al/DnDALPG-2027.1-draft.html", "_blank", "noopener noreferrer"]
     ]);
+    assert.equal(await dialog.locator(".al-rules-link").evaluateAll(links => {
+      const [player, dm, draft] = links.map(link => link.getBoundingClientRect());
+      return draft.top >= Math.max(player.bottom, dm.bottom) && Math.abs(draft.left - player.left) < 1 && Math.abs(draft.right - dm.right) < 1;
+    }), true, "the draft link sits directly below the two guide buttons at their full width");
     const notice = await dialog.locator(".al-rules-notice").innerText();
     assert(notice.startsWith("本站是玩家製作的非官方網站") && notice.includes("著作權屬於 Wizards of the Coast LLC"), notice);
     assert.equal(await dialog.locator(".app-dialog__surface").evaluate(surface => {
