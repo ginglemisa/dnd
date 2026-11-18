@@ -8179,4 +8179,14 @@ window.addEventListener("DOMContentLoaded", async function() {
   </div>
 </div>
 
+<script>
+  // 抓過的檔案存在瀏覽器裡（sw.js）：只在正式站啟用，本機測試、離線版 twd20.html 不註冊。
+  if ("serviceWorker" in navigator
+      && location.protocol === "https:"
+      && ["twd20.com", "www.twd20.com"].includes(location.hostname)) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    });
+  }
+</script>
 </body></html>
