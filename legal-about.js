@@ -42,6 +42,8 @@
       </ul>
       <p>歡迎下載、填寫、列印與分享角色紙。</p>
       <p>請尊重創作者，保留作者署名與原始排版，勿擅自刪除或修改。</p>
+      <p>直式角色卡是 D&amp;D 原版角色卡的非官方中文翻譯，不是 Wizards of the Coast 的出版品，依 <a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener">Wizards of the Coast Fan Content Policy</a>（粉絲內容政策）免費分享：</p>
+      <p>twD20 is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.</p>
 
       <h2>網站作者</h2>
       <p>Reggie Tsai <a href="mailto:tsai.reggie428@gmail.com">tsai.reggie428@gmail.com</a></p>

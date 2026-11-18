@@ -277,7 +277,7 @@
     wizard: '法師'
   });
 
-  // 只有官方角色紙的輸出使用這些名稱；網站畫面、存檔、分享與另一種角色紙都維持原本的名稱。
+  // 只有直式角色卡（原版版面的非官方中翻，程式裡叫 official）的輸出使用這些名稱；網站畫面、存檔、分享與另一種角色紙都維持原本的名稱。
   const OFFICIAL_SHEET_BACKGROUND_NAMES = Object.freeze({
     fieldhand: '農夫',
     seeker: '隱士'
@@ -972,7 +972,7 @@ function isWeaponRowEmpty(payload, slot) {
     }
   }
 
-  // 角色紙的法術位欄位是 spell-level-1～spell-level-9（官方角色紙另由 lvl-1～lvl-9 複製），數量來自 getSpellSlotCounts()。
+  // 角色紙的法術位欄位是 spell-level-1～spell-level-9（直式角色卡另由 lvl-1～lvl-9 複製），數量來自 getSpellSlotCounts()。
   const PDF_SPELL_SLOT_LEVELS = 9;
   function parseSpellSlotsFromClassFeature(classKey, level) {
     const getSlotCounts = globalScope.getSpellSlotCounts;

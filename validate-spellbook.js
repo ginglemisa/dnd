@@ -1559,6 +1559,8 @@ async function verifyWizardBookPicker(page) {
   const rings = dialog.getByRole("group", { name: "篩選環階", exact: true });
   const visibleIds = () => dialog.locator(".spell-picker-option input").evaluateAll(inputs => inputs.map(input => input.value));
   await page.locator("#spellbook-manage").click();
+  // Measure once the open motion has brought the window to its place.
+  await page.waitForFunction(() => !document.querySelector(".app-dialog[data-entering]"));
   assert.equal(await dialog.getByRole("combobox").count(), 1, "book has only the school dropdown");
   assert.deepEqual(await rings.getByRole("checkbox").evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [["1", true], ["2", true], ["3", true], ["4", true], ["5", true]], "book rings reach the highest playable ring");
   assert.match(await dialog.innerText(), /勾選=新增法術；取消勾選=移出法術書，不影響準備法術清單。/u);
@@ -2235,7 +2237,7 @@ async function verifyPdfSpellbookOptions(page) {
       await page.evaluate(() => { window.__pdfTestOptions = null; window.__pdfTestDone = showPdfExportModal(__pdfTestState, [], null); });
       const modal = page.locator('.pdf-export-flow-modal');
       await modal.getByRole('button', { name: '繼續', exact: true }).click();
-      await modal.locator('.pdf-export-choice-option').filter({ hasText: '第三方角色卡' }).click();
+      await modal.locator('.pdf-export-choice-option').filter({ hasText: '赤赤AkaA 橫式角色卡' }).click();
       assert.equal(await modal.locator('.pdf-export-name-field__optional').count(), 2, "both names are marked optional");
       await modal.locator('#pdf-export-english-name').fill("Enix Zakarum");
       await modal.getByRole('button', { name: '下一步', exact: true }).click();
@@ -2265,7 +2267,10 @@ async function verifyPdfSpellbookOptions(page) {
     }, [savedAvatar, avatar]);
     const officialModal = page.locator('.pdf-export-flow-modal');
     await officialModal.getByRole('button', { name: '繼續', exact: true }).click();
-    await officialModal.locator('.pdf-export-choice-option').filter({ hasText: '官方角色卡' }).click();
+    // 直式角色卡是非官方中譯：選項不稱「官方」，並附 Fan Content Policy 的非官方聲明。
+    assert.equal((await officialModal.locator('.pdf-export-choice-option').allInnerTexts()).some(text => /官方角色卡|官方版面/.test(text)), false, "sheet options do not claim to be official");
+    assert.match(await officialModal.locator('.pdf-export-format-note').innerText(), /非官方中文翻譯.*Fan Content Policy.*未經 Wizards 核准或背書/, "unofficial notice on the sheet step");
+    await officialModal.locator('.pdf-export-choice-option').filter({ hasText: '原版直式角色卡（非官方中翻）' }).click();
     assert.equal(await officialModal.locator('#pdf-export-english-name').count(), 0, "official sheet omits the English name");
     const avatarOption = officialModal.locator('#pdf-export-include-avatar');
     assert.equal(await avatarOption.count(), savedAvatar ? 1 : 0, "avatar option follows the saved avatar");
@@ -2294,13 +2299,14 @@ async function verifyPdfSpellbookOptions(page) {
     { mode: "compact", sheet: "official", characterName: "官方角色", englishName: "", checkedMode: "compact", avatar: savedAvatar ? avatar : "", includeAvatar: false });
   }
 
-  // 官方角色卡的檔案從網站移除（404）時，不提供這個選項。
+  // 直式角色卡的檔案從網站移除（404）時，不提供這個選項。
   await page.route("**/fonts/AdobeFanHeitiStd-Bold.otf", route => route.fulfill({ status: 404, body: "" }));
   await page.evaluate(() => { window.__pdfTestDone = showPdfExportModal({ ...__pdfTestState, class: "fighter" }, [], null); });
   const missingOfficialModal = page.locator('.pdf-export-flow-modal');
   await missingOfficialModal.getByRole('button', { name: '繼續', exact: true }).click();
   await page.waitForFunction(() => document.querySelectorAll('.pdf-export-flow-modal .pdf-export-choice-option').length === 1);
-  assert.match(await missingOfficialModal.locator('.pdf-export-choice-option').innerText(), /第三方角色卡/, "only the third-party sheet remains");
+  assert.match(await missingOfficialModal.locator('.pdf-export-choice-option').innerText(), /赤赤AkaA 橫式角色卡/, "only the third-party sheet remains");
+  assert.equal(await missingOfficialModal.locator('.pdf-export-format-note').count(), 0, "the unofficial notice goes away with the sheet it describes");
   await missingOfficialModal.locator('.pdf-export-flow-modal__close').click();
   await page.evaluate(() => __pdfTestDone);
   await page.unroute("**/fonts/AdobeFanHeitiStd-Bold.otf");
@@ -2309,7 +2315,7 @@ async function verifyPdfSpellbookOptions(page) {
     await page.evaluate(classId => { window.__pdfTestDone = showPdfExportModal({...__pdfTestState, class: classId}, [], null); }, classId);
     const modal = page.locator('.pdf-export-flow-modal');
     await modal.getByRole('button', {name: '繼續', exact: true}).click();
-    await modal.locator('.pdf-export-choice-option').filter({ hasText: '第三方角色卡' }).click();
+    await modal.locator('.pdf-export-choice-option').filter({ hasText: '赤赤AkaA 橫式角色卡' }).click();
     await modal.getByRole('button', {name: '下一步', exact: true}).click();
     assert.equal(await modal.locator('#pdf-export-title').innerText(), "選擇 PDF 格式", `${classId} skips the wizard-only question`);
     await modal.getByRole('button', {name: '關閉 PDF 匯出', exact: true}).click();
@@ -2320,7 +2326,7 @@ async function verifyPdfSpellbookOptions(page) {
       __spellManagement: { version: 2, manual: true, entries: [] } }, [], null); }, classId);
     const modal = page.locator('.pdf-export-flow-modal');
     await modal.getByRole('button', { name: '繼續', exact: true }).click();
-    await modal.locator('.pdf-export-choice-option').filter({ hasText: '第三方角色卡' }).click();
+    await modal.locator('.pdf-export-choice-option').filter({ hasText: '赤赤AkaA 橫式角色卡' }).click();
     await modal.getByRole('button', { name: '下一步', exact: true }).click();
     assert.equal(await modal.locator('#pdf-export-title').innerText(), "是否將法術書寫入法術 notes？", `${classId} manual mode with an existing book keeps the book export choice`);
     await modal.locator('.pdf-export-choice-option').first().click();
@@ -2331,7 +2337,7 @@ async function verifyPdfSpellbookOptions(page) {
     __spellManagement: { version: 2, manual: true, entries: [] }, __wizardSpellbook: { version: 1, spellIds: [] } }, [], null); });
   const emptyBookModal = page.locator('.pdf-export-flow-modal');
   await emptyBookModal.getByRole('button', { name: '繼續', exact: true }).click();
-  await emptyBookModal.locator('.pdf-export-choice-option').filter({ hasText: '第三方角色卡' }).click();
+  await emptyBookModal.locator('.pdf-export-choice-option').filter({ hasText: '赤赤AkaA 橫式角色卡' }).click();
   await emptyBookModal.getByRole('button', { name: '下一步', exact: true }).click();
   assert.equal(await emptyBookModal.locator('#pdf-export-title').innerText(), "選擇 PDF 格式", "manual non-wizard without a book skips the irrelevant book question");
   await emptyBookModal.getByRole('button', { name: '關閉 PDF 匯出', exact: true }).click(); await page.evaluate(() => __pdfTestDone);

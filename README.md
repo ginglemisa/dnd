@@ -65,4 +65,4 @@ Email：[tsai.reggie428@gmail.com](mailto:tsai.reggie428@gmail.com) · 巴哈姆
 
 歡迎回報問題、提出修改建議、fork 或分享本站。
 
-fork 後執行測試：官方角色卡的範本與字型不公開，請用 `npm test -- --no-private-assets`，只略過需要這兩個檔案的檢查，其他測試照常執行。
+fork 後執行測試：直式角色卡（原版版面的非官方中翻）的範本與字型不公開，請用 `npm test -- --no-private-assets`，只略過需要這兩個檔案的檢查，其他測試照常執行。

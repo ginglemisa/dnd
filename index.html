@@ -148,7 +148,7 @@
   <script src="tabletop-actions.js?v=20261113-champion-names" defer></script>
   <script src="tabletop-custom-spells.js?v=20261117-level-10" defer></script>
   <script src="tabletop-spells.js?v=20261117-level-10" defer></script>
-  <script src="legal-modal.js?v=20261117-level-10" defer></script>
+  <script src="legal-modal.js?v=20261118-sheet-naming" defer></script>
   <script src="onboarding-tour.js?v=20261115-basic-align" defer></script>
   <script src="quick-build.js?v=20261118-modal-scroll" defer></script>
   <script src="spellbook.js?v=20261117-level-10" defer></script>
@@ -3802,7 +3802,7 @@ function finishDerivedChecksLoad(data) {
   syncAutomaticKeyStatsMode({ refresh: false });
 }
 </script>
-<script src="pdf-launcher.js?v=20261117-level-10"></script>
+<script src="pdf-launcher.js?v=20261118-sheet-naming"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -7951,14 +7951,14 @@ window.addEventListener("DOMContentLoaded", async function() {
 <template id="sheet-download-template">
   <p class="sheet-download__hint" id="sheet-download-hint">點按 QR CODE 或網址連結即可下載</p>
   <figure class="sheet-download">
-    <img class="sheet-download__image" data-ui-theme-image="classic" data-theme-image="light" src="images/sheet_dl_qr.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
-    <img class="sheet-download__image" data-ui-theme-image="classic" data-theme-image="dark" src="images/sheet_dl_qr_dark.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
-    <img class="sheet-download__image" data-ui-theme-image="warm" data-theme-image="light" src="images/sheet_dl_qr_warm.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
-    <img class="sheet-download__image" data-ui-theme-image="warm" data-theme-image="dark" src="images/sheet_dl_qr_warm_dark.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
+    <img class="sheet-download__image" data-ui-theme-image="classic" data-theme-image="light" src="images/sheet_dl_qr.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：非官方中翻的原版直式與赤赤AkaA設計橫版">
+    <img class="sheet-download__image" data-ui-theme-image="classic" data-theme-image="dark" src="images/sheet_dl_qr_dark.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：非官方中翻的原版直式與赤赤AkaA設計橫版">
+    <img class="sheet-download__image" data-ui-theme-image="warm" data-theme-image="light" src="images/sheet_dl_qr_warm.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：非官方中翻的原版直式與赤赤AkaA設計橫版">
+    <img class="sheet-download__image" data-ui-theme-image="warm" data-theme-image="dark" src="images/sheet_dl_qr_warm_dark.webp" width="960" height="960" alt="D&amp;D 2024 中文角色紙下載 QR Code：非官方中翻的原版直式與赤赤AkaA設計橫版">
     <!-- QR areas open the Drive page the QR encodes (the labels below link the short download URLs instead). -->
-    <a class="sheet-download__link sheet-download__link--official-qr" data-analytics-event="blank_character_sheet_download" href="https://drive.google.com/file/d/1wUIh4xYY492I7htCnYAdNsYwyt7zJJbR/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版 QR Code：Google Drive 檔案頁" title="Google Drive：官方直式中文版"></a>
+    <a class="sheet-download__link sheet-download__link--official-qr" data-analytics-event="blank_character_sheet_download" href="https://drive.google.com/file/d/1wUIh4xYY492I7htCnYAdNsYwyt7zJJbR/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="原版直式（非官方中翻）QR Code：Google Drive 檔案頁" title="Google Drive：原版直式（非官方中翻）"></a>
     <a class="sheet-download__link sheet-download__link--akaa-qr" data-analytics-event="blank_character_sheet_download" href="https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版 QR Code：Google Drive 檔案頁" title="Google Drive：赤赤AkaA設計橫版"></a>
-    <a class="sheet-download__link sheet-download__link--official" data-analytics-event="blank_character_sheet_download" href="https://twd20.com/sheet" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版：twD20.com/sheet" title="twD20.com/sheet"></a>
+    <a class="sheet-download__link sheet-download__link--official" data-analytics-event="blank_character_sheet_download" href="https://twd20.com/sheet" target="_blank" rel="noopener noreferrer" aria-label="原版直式（非官方中翻）：twD20.com/sheet" title="twD20.com/sheet"></a>
     <a class="sheet-download__link sheet-download__link--akaa" data-analytics-event="blank_character_sheet_download" href="https://twd20.com/sheet-akaa" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版：twD20.com/sheet-akaa" title="twD20.com/sheet-akaa"></a>
     <a class="sheet-download__link sheet-download__link--dndbeyond" href="https://www.dndbeyond.com/" target="_blank" rel="noopener noreferrer" aria-label="DnD Beyond 官網" title="DnD Beyond"></a>
     <a class="sheet-download__link sheet-download__link--wotc" href="https://company.wizards.com/" target="_blank" rel="noopener noreferrer" aria-label="WotC 官網" title="Wizards of the Coast"></a>
