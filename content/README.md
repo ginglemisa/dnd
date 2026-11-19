@@ -196,7 +196,7 @@ advantage: [運動, 先攻]
 
 - 武器精通：職業頁的能力段落輸出選單，存檔欄位自動產生「能力 ID-pick-序號」（例如 `fighter-weapon-mastery-pick-1`），欄位數是 `count` 在 `maxLevel` 以內的最大值；網站只顯示目前等級的數量，其餘欄位保留值但隱藏。選項是職業熟練（`proficiencies.weapons`）且有精通屬性的武器，值為武器名稱；選了精通武器後，攻擊列的精通標籤只顯示在所選武器上（一個都沒選時全部顯示）。
 - 專精沿用技能列的專精勾選框（職業有 `expertise` 選擇時才顯示勾選框）；語言使用 `fields` 的欄位，這兩種沒有新的存檔欄位。
-- 缺項提醒：武器精通、專精（專精勾選框總數少於本職業此等級的專精數量）與職業額外語言，達到能力等級仍未選滿時提醒。`skill`（先祖學識、額外熟練項）與 `spellbookSpell`（塑能學者）無法分辨技能或法術的來源，只有資料、網站不提醒。
+- 缺項提醒：武器精通與職業額外語言，達到能力等級仍未選滿時提醒。`skill`（先祖學識、額外熟練項）與 `expertise` 由 `proficiency-check.js` 和其他來源的技能一起配對後提醒（見 BEHAVIOR.md「技能」）；它不適用時專精退回只比勾選框總數。`spellbookSpell`（塑能學者）無法分辨法術的來源，只有資料、網站不提醒。
 - `grants`（能力層）目前只支援 `languages`：`[{ id: 語言, field: 顯示此語言的欄位 ID }]`。
 - 選項的 `grants`：`weapons`（`[martial]` 等武器類別）、`armor`（`light`／`medium`／`heavy`／`shield`）、`cantrips`（`{ count, list: 職業 ID, label }`，額外戲法的數量與法表；`label` 是法術來源、缺項提醒與 PDF 顯示的名稱，未寫時用選項名稱。數量 1 是選項下方的戲法選單，欄位 `選項 ID-cantrip`，例如魔術使；2 以上在角色能力視窗與法術頁選，欄位 `class-選項 ID-cantrip-序號`，例如受祝福的勇者）、`checkBonus`（`{ skills, ability, min }`，這些技能檢定加上屬性調整值，至少 `min`）。勾選且達到能力等級才生效。
 - 欄位 ID（`fields`、語言的 `field`、自動產生的武器精通欄位、職業工具欄位）會寫進存檔與分享網址，列在 `class-id-baseline.json` 的 `fields`，不可改名。
@@ -412,11 +412,12 @@ pdf: [擒抱者(通用), 拳打抱/打抱優]
 | `prerequisite` | 通用專長與傳奇恩惠的先決條件，擇一：`abilities`（其中一項屬性值達 13）、`heavyArmor: true`（具重甲訓練）、`spellcasting: true`（具施法能力）。不符合時專長列顯示警示；副標的條件文字（例如「4 級以上；力量或敏捷 13+」）由此產生，前面的等級門檻是類別決定的（通用 4 級、傳奇恩惠 19 級，`character-rules.js` 的 `getFeatTypeMinLevel`）。角色等級未達 19 級時，傳奇恩惠不列在專長選單上（自動與自行管理都是，自行管理連分類也不列），已選的值保留並照常列出。 |
 | `repeatable` | `true` 時可多次選擇。 |
 | `grantsSpellcasting` | `true`：此專長提供施法來源（例如魔法學徒）。自訂背景選了這個起源專長時，角色視為有施法來源（顯示施法屬性欄、可選須具施法能力的專長）。 |
+| `skillChoice` | 此專長給的技能熟練選擇，只供技能／工具缺項提醒計算（玩家仍在技能頁自己勾，沒有新的存檔欄位）：`count`（項數）、`from`（`any` 或技能 ID 清單）；`orTool: true` 表示每一項也可以改選工具（熟習）；`expertiseIfProficient: true` 表示所選技能若已熟練就改為專精（尋物好手，只能用在 `count: 1`、`from` 是清單時）。說明文字仍寫在 `effects`，兩邊要一致。 |
 | `effects` | 效果，依說明順序，顯示為粗體「名稱：內容」。`text` 是一行文字，可用 `[[提示]]`（技能、規則或狀態名稱，例如 `[[優勢]]`、`[[擒抱]]`）；`list` 是接在後面的「·」清單；`after` 是清單之後空一行的補充段落。 |
 | `actions` | 跑團按鈕：`mode`（`action`／`bonus`／`reaction`／`movement`）、`label`、`key`（進跑團隱藏偏好，不可改字，列在基準檔）、`level`（達到才出現，省略為 1）。說明預設是與 `label` 同名的效果內容，`effects` 可改列多個效果；需要另寫時用 `tabletop`（純文字，可換行）。`proficiencyValue: true` 時，已選等級就把說明中的「熟練加值」換成數值。 |
 | `pdf` | PDF 專長欄的各行，第一行是空間不夠時只列的標題。省略時只有一行「名稱(類別)」。魔法學徒選了法表後，PDF 改列「法師表2戲1環」這樣的一行，這裡的行是還沒選法表時的提示。 |
 
-- 建置檢查檔名與 `feat-order.yaml`、只有通用專長與傳奇恩惠可寫 `prerequisite`、效果名稱不重複、動作的效果存在、動作 key 的分頁與 `mode` 相同且不重複、`[[提示]]` 是已知名稱；背景的起源專長須是 `type: origin`。
+- 建置檢查檔名與 `feat-order.yaml`、只有通用專長與傳奇恩惠可寫 `prerequisite`、`skillChoice` 的技能 ID、效果名稱不重複、動作的效果存在、動作 key 的分頁與 `mode` 相同且不重複、`[[提示]]` 是已知名稱；背景的起源專長須是 `type: origin`。
 - `feat-id-baseline.json` 列出專長 ID、專長選擇的存檔欄位（`feat-choice-<來源>`、`derived-feat-<來源>`）、快速創角草稿的專長名稱（含背景的「魔法學徒（牧師）」）與跑團動作 key。
 - `npm run build` 產生根目錄的 `feat-content.generated.js`：`featRules` 是結構化規則（類別、來源、可否重複、先決條件、跑團動作），`featText` 是組好的顯示文字（選單文字、說明 HTML、純文字說明、PDF 行、跑團說明）。網站經 `character-rules.js` 的 `getFeatRules`、`getFeatText`、`getAllFeatRules` 讀取，不從顯示文字反推規則。
 - 跑團提示（例如警覺、醫療兵在總覽與法術頁的提醒）與依專長計算的數值（強韌體魄的 HP、迅捷步法的速度等）仍寫在網站程式，以專長 ID 判斷。

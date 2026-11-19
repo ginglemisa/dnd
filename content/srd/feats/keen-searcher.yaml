@@ -3,6 +3,7 @@ id: 尋物好手
 source: extended
 type: general
 prerequisite: { abilities: [int, wis] }
+skillChoice: { count: 1, from: [洞悉, 調查, 察覺], expertiseIfProficient: true }
 effects:
   - name: 屬性提升
     text: 智力或感知擇一 +1（最高 20）。

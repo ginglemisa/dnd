@@ -26,6 +26,12 @@ function featRules(feat) {
     ...(feat.prerequisite?.heavyArmor ? { heavyArmor: true } : {}),
     ...(feat.prerequisite?.spellcasting ? { spellcasting: true } : {}),
     ...(feat.grantsSpellcasting ? { grantsSpellcasting: true } : {}),
+    ...(feat.skillChoice ? { skillChoice: {
+      count: feat.skillChoice.count,
+      from: Array.isArray(feat.skillChoice.from) ? [...feat.skillChoice.from] : feat.skillChoice.from,
+      ...(feat.skillChoice.orTool ? { orTool: true } : {}),
+      ...(feat.skillChoice.expertiseIfProficient ? { expertiseIfProficient: true } : {})
+    } } : {}),
     actions: (feat.actions || []).map(action => ({
       key: action.key,
       mode: action.mode,
@@ -87,7 +93,7 @@ function renderFeatData(feats) {
   const text = Object.fromEntries(ids.map(id => [id, featText(feats.get(id))]));
   const entries = map => ids.map(id => `  ${JSON.stringify(id)}: ${JSON.stringify(map[id])}`).join(",\n");
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd/feats 的專長內容檔產生，請勿手動修改。
-// featRules：各專長的結構化規則（類別、來源、可否重複、先決條件、跑團動作的 key／分頁／名稱／等級），依專長選單順序。
+// featRules：各專長的結構化規則（類別、來源、可否重複、先決條件、技能熟練選擇、跑團動作的 key／分頁／名稱／等級），依專長選單順序。
 // featText：建置組好的顯示文字（label 選單文字、html 說明、plain 純文字說明、pdf PDF 專長欄各行、actions 跑團動作說明）。
 const featRules = {
 ${entries(rules)}
