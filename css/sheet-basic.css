@@ -41,6 +41,16 @@
   letter-spacing: 0.04em;
 }
 
+/* 數值頁各區的小標題（屬性與調整值、專長、職業筆記區）：h3 套用和上面欄位標籤相同的樣式，不用一般區塊的大標題。 */
+#tab-basic .section-mini-title {
+  margin: 0 0 0.6rem;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
 .hp-title {
   display: grid;
   gap: 0.55rem;
@@ -567,32 +577,41 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   }
 }
 
+/* 六大屬性：同一個設計（縮寫、調整值框、屬性值輸入框）依寬度縮放。
+   - 720px 以上：一列六格的原尺寸。
+   - 360–719px：一列六格，字級、高度、內距照每格寬度（--ability-cell）等比例縮小，各自以原尺寸為上限，到 720px 剛好接上。
+   - 360px 以下：三欄兩列的緊湊版。
+   調整值的數字放大到貼近框緣，框只比數字高一點。 */
 .ability-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.95rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
 @media (min-width: 360px) {
   #tab-basic .ability-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 720px) {
-  #tab-basic .ability-grid {
+    /* 4.4rem：頁面與區塊左右內距加上五個格距的近似值；390px 時每格約 51px。 */
+    --ability-cell: calc((100vw - 4.4rem) / 6);
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0.5rem;
+    gap: min(0.5rem, 1vw);
   }
 }
 
 .ability {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.45rem;
   min-width: 0;
   min-height: 0;
-  padding: 0.95rem;
+  padding: 0.5rem;
+}
+
+@media (min-width: 360px) {
+  #tab-basic .ability {
+    gap: min(0.8rem, calc(var(--ability-cell) * 0.12));
+    padding: min(0.95rem, calc(var(--ability-cell) * 0.14)) min(0.5rem, calc(var(--ability-cell) * 0.07));
+  }
 }
 
 :where(html:not([data-ui-theme="warm"])) .ability {
@@ -609,14 +628,11 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   box-shadow: none;
 }
 
-@media (min-width: 720px) {
-  #tab-basic .ability {
-    padding-inline: 0.5rem;
-  }
-}
-
 .ability-title {
-  font-size: var(--fs-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
   font-weight: 900;
   letter-spacing: 0.12em;
   text-align: center;
@@ -624,9 +640,10 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   color: var(--text-muted);
 }
 
-@media (min-width: 720px) {
+@media (min-width: 360px) and (max-width: 719.98px) {
   #tab-basic .ability-title {
-    font-size: 0.8rem;
+    font-size: clamp(0.75rem, calc(var(--ability-cell) * 0.27), 0.9rem);
+    letter-spacing: 0.06em;
   }
 }
 
@@ -634,11 +651,18 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 4.65rem;
+  min-height: 2.7rem;
   margin: 0;
   color: var(--text);
-  font-size: var(--fs-3xl);
+  font-size: 1.9rem;
   font-weight: 900;
+}
+
+@media (min-width: 360px) {
+  #tab-basic .modifier {
+    min-height: min(3rem, calc(var(--ability-cell) * 0.62));
+    font-size: min(1.9rem, calc(var(--ability-cell) * 0.42));
+  }
 }
 
 :where(html:not([data-ui-theme="warm"])) .modifier {
@@ -653,12 +677,6 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   background: var(--surface-soft);
 }
 
-@media (min-width: 720px) {
-  #tab-basic .modifier {
-    font-size: 1.65rem;
-  }
-}
-
 .modifier-main {
   white-space: nowrap;
 }
@@ -666,12 +684,27 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
 .ability-score {
   appearance: textfield;
   -moz-appearance: textfield;
-  min-height: 3rem;
-  padding: 0.7rem 0.85rem;
   color: var(--text);
-  font-size: var(--fs-xl);
   font-weight: 900;
   text-align: center;
+}
+
+/* 帶 #tab-basic：蓋過數值頁輸入框共用的字級、內距與最小高度。 */
+#tab-basic .ability-score {
+  min-height: 2.5rem;
+  padding: 0;
+  font-size: 1rem;
+}
+
+/* 輸入框的字不低於 16px（iOS 聚焦時才不會放大畫面）；提示字不受限，跟著格子縮小。 */
+@media (min-width: 360px) {
+  #tab-basic .ability-score {
+    min-height: min(3rem, calc(var(--ability-cell) * 0.68));
+  }
+
+  #tab-basic .ability-score::placeholder {
+    font-size: min(1rem, calc(var(--ability-cell) * 0.26));
+  }
 }
 
 :where(html:not([data-ui-theme="warm"])) .ability-score {
@@ -691,13 +724,6 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   margin: 0;
   appearance: none;
   -webkit-appearance: none;
-}
-
-@media (min-width: 720px) {
-  #tab-basic .ability-score {
-    padding-inline: 0.25rem;
-    font-size: 1rem;
-  }
 }
 
 /* 魔法物品的 ✦（.skill-tip 按鈕，點了開規則說明浮層寫內容與物品）：屬性格 STR 等縮寫右側（有效值），
@@ -743,11 +769,12 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tab-basic .basic-display-
   outline-offset: 1px;
 }
 
-/* 屬性格的 ✦ 接在 STR 等縮寫右側：上下負邊距抵掉 24px 點擊範圍、右邊負邊距抵掉自己的寬度，
-   標題高度與縮寫的置中位置都不變。 */
+/* 屬性格的 ✦ 掛在 STR 等縮寫左側（圓框 A／D 在右側）：上下負邊距抵掉 24px 點擊範圍、左邊負邊距抵掉自己的寬度，
+   標題高度與縮寫的置中位置都不變。DOM 順序是縮寫、圓框、✦，用 order 排到左邊。 */
 .ability-title button.ability-effect-tip {
-  margin: -0.3rem -24px -0.3rem 0;
-  vertical-align: middle;
+  order: -1;
+  align-self: center;
+  margin: -0.3rem 0 -0.3rem -24px;
   letter-spacing: 0;
 }
 
@@ -808,6 +835,41 @@ button.roll-mode-badge:focus-visible {
   margin-right: -1.7em;
 }
 
+/* 一列六格的窄版（360–719px）縮寫旁放不下標記：改放在方框上方、置中，✦ 在左、圓框在右；
+   只有一個時置中。有任何一格有標記時，整排方框一起往下讓出一列，沒有時不留空位。 */
+@media (min-width: 360px) and (max-width: 719.98px) {
+  #tab-basic .ability-grid:has(.ability-title button) {
+    margin-top: 1.625rem;
+  }
+
+  #tab-basic .ability-title button.ability-effect-tip,
+  #tab-basic .ability-title button.roll-mode-badge {
+    position: absolute;
+    margin: 0;
+  }
+
+  #tab-basic .ability-title button.ability-effect-tip {
+    right: 50%;
+    bottom: calc(100% + 1px);
+  }
+
+  #tab-basic .ability-title button.roll-mode-badge {
+    bottom: calc(100% + 0.15rem);
+    left: 50%;
+    font-size: 0.8rem;
+  }
+
+  #tab-basic .ability-title button.ability-effect-tip:only-of-type {
+    right: auto;
+    left: 50%;
+    margin-left: -12px;
+  }
+
+  #tab-basic .ability-title button.roll-mode-badge:only-of-type {
+    margin-left: -0.75em;
+  }
+}
+
 /* 豁免名稱是 flex（gap 5px）：左邊距扣掉 gap，右邊負邊距同樣抵掉圓框的寬度與左邊距。 */
 :is(.tab-content, #tab-basic) .save-name button.roll-mode-badge {
   position: relative;
@@ -859,12 +921,15 @@ button.roll-mode-badge:focus-visible {
   cursor: default;
 }
 
-.skill-calc-button {
+/* 「填入計算值」只在自動計算關閉時出現：字級同圖例，上下負邊距抵掉按鈕高度，出現與否標題列高度不變。 */
+.skill-section-heading button.skill-calc-button {
   width: auto;
   min-width: 0;
-  margin: 0 0 0 auto;
-  padding: 0.35rem 0.7rem;
+  min-height: 0;
+  margin: -0.25rem 0 -0.25rem auto;
+  padding: 0.15rem 0.5rem;
   font-size: var(--fs-sm);
+  line-height: 1.4;
   white-space: nowrap;
 }
 

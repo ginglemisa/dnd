@@ -34,6 +34,24 @@
     },
     "repeatable": { "const": true, "description": "可多次選擇（省略時同一角色不可重複取得）。" },
     "grantsSpellcasting": { "const": true, "description": "此專長提供施法來源（例如魔法學徒）；自訂背景以此判斷角色是否有施法來源。" },
+    "skillChoice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "from"],
+      "description": "此專長給的技能熟練選擇，供技能／工具缺項提醒（proficiency-check.js）計算；玩家仍在技能頁自己勾選，沒有新的存檔欄位。",
+      "properties": {
+        "count": { "type": "integer", "minimum": 1, "maximum": 6, "description": "可選的項數。" },
+        "from": {
+          "oneOf": [
+            { "const": "any" },
+            { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+          ],
+          "description": "可選範圍：any（全部技能）或技能 ID 清單。"
+        },
+        "orTool": { "const": true, "description": "每一項也可以改選工具熟練（例如熟習的「技能或工具，任意組合」）；工具算玩家在技能頁自己新增的工具列。" },
+        "expertiseIfProficient": { "const": true, "description": "所選技能若已熟練，改為獲得專精（例如尋物好手）。只能用在 count 為 1、from 是清單時，不可與 orTool 並用。" }
+      }
+    },
     "effects": {
       "type": "array",
       "minItems": 1,

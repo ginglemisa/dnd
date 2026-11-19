@@ -210,15 +210,16 @@ function isClassPickSlotHidden(select) {
 }
 
 // 職業選擇（內容檔 picks）的缺項：專精（技能列的專精勾選框總數）、職業額外語言、武器精通，達到能力等級仍未選滿時提醒。
-// 額外技能熟練（先祖學識、額外熟練項）與法術書法術（塑能學者）無法分辨來源，不提醒。
-function getClassPickIssues(className, level) {
+// 法術書法術（塑能學者）無法分辨來源，不提醒。額外技能熟練（先祖學識、額外熟練項）由 proficiency-check.js 提醒；
+// 它有結果時專精也由它提醒（skipExpertise），這裡的專精總數只是它不適用時的備援。
+function getClassPickIssues(className, level, { skipExpertise = false } = {}) {
   const rules = window.getClassRules?.(className);
   if (!rules) return [];
   const picks = window.getClassPicks?.(className, level) || [];
   const issues = [];
   const expertiseRequired = picks.filter(({ pick }) => pick.kind === "expertise").reduce((sum, { count }) => sum + count, 0);
   const expertiseChecked = document.querySelectorAll(".circle-checkbox:checked").length;
-  if (expertiseRequired && expertiseChecked < expertiseRequired) issues.push({
+  if (!skipExpertise && expertiseRequired && expertiseChecked < expertiseRequired) issues.push({
     message: `${rules.name}專精尚未選完（${expertiseChecked}/${expertiseRequired}）。`,
     tab: "skills",
     selector: "#skill-bonus-section",
@@ -2702,7 +2703,10 @@ function getClassFeatureChoiceIssues() {
     });
   });
 
-  getClassPickIssues(selectedClass, selectedLevel).forEach(pushGeneral);
+  // 技能／工具熟練與專精的缺項由 proficiency-check.js 依來源配對（不適用或沒載入時為 null，專精退回只比總數）。
+  const proficiencyIssues = window.ProficiencyCheck?.getIssues() ?? null;
+  (proficiencyIssues || []).forEach(pushGeneral);
+  getClassPickIssues(selectedClass, selectedLevel, { skipExpertise: Boolean(proficiencyIssues) }).forEach(pushGeneral);
 
   if (window.hasClassFeature?.(selectedClass, "druid-circle-of-the-land-spells", selectedLevel) && !(document.getElementById("druid-land")?.value || "").trim()) {
     pushGeneral({

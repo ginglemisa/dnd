@@ -377,14 +377,18 @@
     });
 
     if (!hazard.requirements) return card;
+    const createCaption = () => {
+      const caption = document.createElement("caption");
+      caption.textContent = hazard.requirements.zh;
+      const captionEn = document.createElement("span");
+      captionEn.className = "condition-requirements-english";
+      captionEn.textContent = hazard.requirements.en;
+      caption.appendChild(captionEn);
+      return caption;
+    };
     const table = document.createElement("table");
-    table.className = "condition-requirements-table";
-    const caption = document.createElement("caption");
-    caption.textContent = hazard.requirements.zh;
-    const captionEn = document.createElement("span");
-    captionEn.className = "condition-requirements-english";
-    captionEn.textContent = hazard.requirements.en;
-    caption.appendChild(captionEn);
+    table.className = "condition-requirements-table condition-requirements-table--tall";
+    const caption = createCaption();
 
     const thead = document.createElement("thead");
     const headingRow = document.createElement("tr");
@@ -412,7 +416,37 @@
       tbody.appendChild(tr);
     });
     table.append(caption, thead, tbody);
-    card.appendChild(table);
+
+    // 橫式（英文、中文、需求三列）：同一份資料的另一種排法，由 CSS 決定顯示哪一張；
+    // 只有動作頁的危害說明在寬螢幕改用橫式，其他地方（跑團模式）一直是直式。
+    const wideTable = document.createElement("table");
+    wideTable.className = "condition-requirements-table condition-requirements-table--wide";
+    const createRow = (className, heading, headingScope, cellTag, values) => {
+      const tr = document.createElement("tr");
+      if (className) tr.className = className;
+      const th = document.createElement("th");
+      th.scope = headingScope;
+      th.textContent = heading;
+      tr.appendChild(th);
+      values.forEach((value) => {
+        const cell = document.createElement(cellTag);
+        if (cellTag === "th") cell.scope = "col";
+        cell.textContent = value;
+        tr.appendChild(cell);
+      });
+      return tr;
+    };
+    const rows = hazard.requirements.rows;
+    const wideHead = document.createElement("thead");
+    wideHead.append(
+      createRow("condition-requirements-english-row", "Size", "col", "th", rows.map(row => row.sizeEn)),
+      createRow("", "體型", "col", "th", rows.map(row => row.sizeZh))
+    );
+    const wideBody = document.createElement("tbody");
+    wideBody.appendChild(createRow("", "每日需求", "row", "td", rows.map(row => row.amount)));
+    wideTable.append(createCaption(), wideHead, wideBody);
+
+    card.append(table, wideTable);
     return card;
   }
 

@@ -3,7 +3,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { ROOT } = require("../content/site-sources");
+const { ROOT, loadSkillAbilities } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile, listYaml } = require("../content/yaml");
 
@@ -66,6 +66,15 @@ function checkFeat(feat, errors) {
     names.add(effect.name);
     if (effect.after && !effect.list) errors.push(`${where}：效果「${effect.name}」的 after 只能接在 list 之後`);
   });
+  const skillChoice = feat.skillChoice;
+  if (skillChoice) {
+    const skills = loadSkillAbilities();
+    if (Array.isArray(skillChoice.from)) skillChoice.from.filter(skill => !Object.hasOwn(skills, skill))
+      .forEach(skill => errors.push(`${where}：skillChoice 的技能「${skill}」不在 character-rules.js 的 CharacterSkillAbilities`));
+    if (skillChoice.expertiseIfProficient && (skillChoice.orTool || skillChoice.count !== 1 || !Array.isArray(skillChoice.from))) {
+      errors.push(`${where}：skillChoice 的 expertiseIfProficient 只能用在 count 為 1、from 是技能清單時，且不可與 orTool 並用`);
+    }
+  }
   (feat.actions || []).forEach(action => {
     if (!action.key.startsWith(`dynamic-${action.mode}-feat-`)) errors.push(`${where}：動作「${action.label}」的 key 應以 dynamic-${action.mode}-feat- 開頭（與 mode 相同）`);
     if (action.tabletop && action.effects) errors.push(`${where}：動作「${action.label}」寫了 tabletop，不需要 effects`);

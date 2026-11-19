@@ -108,13 +108,13 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tokens.css?v=20261115-auto-value">
   <link rel="stylesheet" href="css/base.css?v=20261118-settings-title">
-  <link rel="stylesheet" href="css/sheet-basic.css?v=20261118-legend-order">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261116-subclass-filter">
+  <link rel="stylesheet" href="css/sheet-basic.css?v=20261120-section-titles">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261120-feat-switch">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261116-ring-slot-layout">
   <link rel="stylesheet" href="css/utility.css?v=20261118-modal-scroll">
   <link rel="stylesheet" href="css/dice.css?v=20261117-ability-reroll">
   <link rel="stylesheet" href="css/dialogs.css?v=20261116-slot-layout">
-  <link rel="stylesheet" href="css/pdf-export.css?v=20261108-css-split">
+  <link rel="stylesheet" href="css/pdf-export.css?v=20261120-held-highlight">
   <link rel="stylesheet" href="css/tabletop.css?v=20261118-al-draft">
   <link rel="stylesheet" href="css/tabletop-hud.css?v=20261113-info-icon">
   <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
@@ -136,7 +136,7 @@
   <script src="equipment-notes.js?v=20261113-humanoid" defer></script>
   <script src="spell-content.generated.js?v=0" defer></script>
   <script src="spell-list.js?v=20261117-level-10" defer></script>
-  <script src="condition.js?v=20261111-magic-abilities" defer></script>
+  <script src="condition.js?v=20261120-hazard-wide-table" defer></script>
   <script src="action-panel.js?v=20261117-append-subclass" defer></script>
   <script src="character-rules.js?v=20261117-epic-boon" defer></script>
   <script src="app-dialog.js?v=20261118-modal-scroll" defer></script>
@@ -149,12 +149,13 @@
   <script src="tabletop-custom-spells.js?v=20261117-level-10" defer></script>
   <script src="tabletop-spells.js?v=20261117-level-10" defer></script>
   <script src="legal-modal.js?v=20261118-sheet-naming" defer></script>
-  <script src="onboarding-tour.js?v=20261115-basic-align" defer></script>
+  <script src="onboarding-tour.js?v=20261120-held-highlight" defer></script>
   <script src="quick-build.js?v=20261118-modal-scroll" defer></script>
   <script src="spellbook.js?v=20261117-level-10" defer></script>
   <script src="spell-management.js?v=20261117-level-10" defer></script>
   <script src="share-readonly.js?v=20261116-calculation-tips" defer></script>
   <script src="class-option-memory.js?v=20261106-background-memory" defer></script>
+  <script src="proficiency-check.js?v=20261120-held-highlight" defer></script>
   <script src="page-swipe.js?v=20261116-features-swipe" defer></script>
   <script src="deity-info.js" defer></script>
   <script src="al-rules.js?v=20261118-al-draft" defer></script>
@@ -882,6 +883,7 @@
 </div>
 
   <div class="section">
+    <h3 class="mini-stat-label section-mini-title">屬性與調整值</h3>
     <div class="ability-grid">
       <div class="ability">
         <div class="ability-title">STR</div>
@@ -917,13 +919,19 @@
   </div>
 
 <div class="section" id="feat-management-section">
-  <label class="character-features-hint feat-management-toggle" for="manual-feat-management"><input type="checkbox" id="manual-feat-management"> 自行管理專長／戰鬥風格</label>
+  <div class="feat-section-heading">
+    <h3 class="mini-stat-label section-mini-title">專長</h3>
+    <label class="weapon-automation-toggle feat-management-toggle" for="manual-feat-management">
+      <span>專長自行管理</span>
+      <input type="checkbox" id="manual-feat-management" role="switch">
+    </label>
+  </div>
   <div id="feats-area"></div>
   <button type="button" id="feat-add-empty" class="btn" hidden>新增專長</button>
 </div>
 
 <div class="section" id="class-features-section">
-      <h3>職業筆記區</h3>
+      <h3 class="mini-stat-label section-mini-title">職業筆記區</h3>
 <div id="class-extra-sheet-mount"><textarea id="class-extra" rows="4" placeholder="職業選項、能力使用次數等等......"></textarea></div>
   </div>
 
@@ -996,7 +1004,7 @@
 
 <div id="tab-skills" class="tab-content" role="tabpanel" aria-label="技能頁" hidden>
   <div class="section" id="save-section">
-    <div class="skill-section-heading"><h3>屬性豁免</h3><button type="button" id="calculate-saves-button" class="skill-calc-button" onclick="fillSaves()" hidden>填入計算值</button><button type="button" class="skill-rank-lock" data-rank-lock="saves" aria-pressed="false" aria-label="鎖定屬性豁免的熟練" title="鎖定熟練，避免誤點"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="skill-rank-lock__shackle-open" d="M8 11V7a4 4 0 0 1 7.5-2"/><path class="skill-rank-lock__shackle-closed" d="M8 11V7a4 4 0 0 1 8 0v4"/><rect class="skill-rank-lock__body" x="5" y="11" width="14" height="10" rx="2"/></svg></button></div>
+    <div class="skill-section-heading"><h3>屬性豁免</h3><button type="button" id="calculate-saves-button" class="skill-calc-button" onclick="fillSaves()" hidden>填入計算值</button><button type="button" class="skill-rank-lock" data-rank-lock="saves" aria-pressed="false" aria-label="鎖定屬性豁免的熟練與數值" title="鎖定熟練與數值，避免誤點"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="skill-rank-lock__shackle-open" d="M8 11V7a4 4 0 0 1 7.5-2"/><path class="skill-rank-lock__shackle-closed" d="M8 11V7a4 4 0 0 1 8 0v4"/><rect class="skill-rank-lock__body" x="5" y="11" width="14" height="10" rx="2"/></svg></button></div>
   <div class="save-grid">
     <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">力量</span></label><input type="text" inputmode="numeric" data-calculation="save" id="save-str"></div>
     <div class="save-pair"><label class="save-name" for="prof-dex"><input type="checkbox" id="prof-dex"><span class="skill-rank-mark" aria-hidden="true"></span><span class="save-full">敏捷</span></label><input type="text" inputmode="numeric" data-calculation="save" id="save-dex"></div>
@@ -1013,7 +1021,7 @@
     <h3>技能</h3>
     <p class="skill-legend" aria-label="技能熟練圖例"><span>○ 未熟練</span><span>● 熟練</span><span data-expertise-legend>◆ 專精</span></p>
     <button type="button" id="calculate-skills-button" class="skill-calc-button" onclick="fillSkills()" hidden>填入計算值</button>
-    <button type="button" class="skill-rank-lock" data-rank-lock="skills" aria-pressed="false" aria-label="鎖定技能的熟練與專精" title="鎖定熟練與專精，避免誤點"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="skill-rank-lock__shackle-open" d="M8 11V7a4 4 0 0 1 7.5-2"/><path class="skill-rank-lock__shackle-closed" d="M8 11V7a4 4 0 0 1 8 0v4"/><rect class="skill-rank-lock__body" x="5" y="11" width="14" height="10" rx="2"/></svg></button>
+    <button type="button" class="skill-rank-lock" data-rank-lock="skills" aria-pressed="false" aria-label="鎖定技能的熟練、專精與數值" title="鎖定熟練、專精與數值，避免誤點"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="skill-rank-lock__shackle-open" d="M8 11V7a4 4 0 0 1 7.5-2"/><path class="skill-rank-lock__shackle-closed" d="M8 11V7a4 4 0 0 1 8 0v4"/><rect class="skill-rank-lock__body" x="5" y="11" width="14" height="10" rx="2"/></svg></button>
   </div>
   <div class="skill-grid">
     <div class="skill-stack skill-stack--outer">
@@ -1434,7 +1442,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261119-epic-boon-hidden"></script>
   <script src="spell-sources.js?v=20261113-blessed-warrior"></script>
-  <script src="class-features-ui.js?v=20261119-epic-boon-hidden"></script>
+  <script src="class-features-ui.js?v=20261120-proficiency-check"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -1552,6 +1560,18 @@ function refreshAutomaticKeyStats() {
   refreshMagicSpellCastingStats();
 }
 
+// 豁免與技能的數字：自動計算開著，或所在區塊的熟練鎖鎖住（.is-rank-locked）時唯讀。
+function syncDerivedCheckReadOnly() {
+  const automatic = isAutomaticKeyStatsEnabled();
+  document.querySelectorAll(DERIVED_CHECK_INPUT_SELECTOR).forEach((input) => {
+    const readOnly = automatic || Boolean(input.closest(".is-rank-locked"));
+    input.readOnly = readOnly;
+    input.setAttribute("aria-readonly", String(readOnly));
+    if (readOnly) input.tabIndex = -1;
+    else input.removeAttribute("tabindex");
+  });
+}
+
 function syncAutomaticKeyStatsMode({ refresh = true } = {}) {
   const automatic = isAutomaticKeyStatsEnabled();
   [...AUTOMATIC_KEY_STAT_IDS, ...AUTOMATIC_SPELL_STAT_IDS].forEach((id) => {
@@ -1560,12 +1580,7 @@ function syncAutomaticKeyStatsMode({ refresh = true } = {}) {
     input.readOnly = automatic;
     input.setAttribute("aria-readonly", String(automatic));
   });
-  document.querySelectorAll(DERIVED_CHECK_INPUT_SELECTOR).forEach((input) => {
-    input.readOnly = automatic;
-    input.setAttribute("aria-readonly", String(automatic));
-    if (automatic) input.tabIndex = -1;
-    else input.removeAttribute("tabindex");
-  });
+  syncDerivedCheckReadOnly();
   document.querySelectorAll("#tab-skills .skill-calc-button").forEach((button) => { button.hidden = automatic; });
   document.getElementById("tab-basic")?.classList.toggle("manual-key-stats", !automatic);
   document.getElementById("tab-skills")?.classList.toggle("manual-key-stats", !automatic);
@@ -2153,6 +2168,7 @@ function createToolProficiencyRow(value = "") {
     row.remove();
     syncClassToolRows();
     syncToolProficiencyOptions();
+    if (typeof updateClassFeatureChoiceReminder === "function") updateClassFeatureChoiceReminder();
     if (typeof scheduleStructuralSaveAllFields === "function") scheduleStructuralSaveAllFields();
   });
   list.appendChild(row);
@@ -3458,9 +3474,10 @@ function bindSkillRankExclusiveEvents() {
 
 // 技能頁豁免與技能的熟練鎖：本機裝置偏好，不進角色存檔。鎖住時擋掉點擊（含 label 與空白鍵），
 // 程式直接改 checked（快速創角、背景帶入）不受影響。
+// 自動計算關閉時同一個鎖也鎖住該區的數字（唯讀，外觀不變）與「填入計算值」；程式寫入數字照常。
 const SKILL_RANK_LOCKS = Object.freeze({
-  saves: { key: "dnd.saveRanksLocked.v1", section: "save-section", inputs: ".save-name input[type=\"checkbox\"]" },
-  skills: { key: "dnd.skillRanksLocked.v1", section: "skill-bonus-section", inputs: "input[data-skill-rank]" }
+  saves: { key: "dnd.saveRanksLocked.v1", section: "save-section", inputs: ".save-name input[type=\"checkbox\"]", values: ".save-pair input[type=\"text\"]" },
+  skills: { key: "dnd.skillRanksLocked.v1", section: "skill-bonus-section", inputs: "input[data-skill-rank]", values: ".skill-cell input[type=\"text\"]" }
 });
 
 function bindSkillRankLocks() {
@@ -3471,6 +3488,9 @@ function bindSkillRankLocks() {
     const apply = locked => {
       button.setAttribute("aria-pressed", String(locked));
       section.classList.toggle("is-rank-locked", locked);
+      syncDerivedCheckReadOnly();
+      // 上一行會解開唯讀；分享模式的鎖定照舊。
+      window.ShareReadonly?.apply();
     };
     apply(window.dndStorage.getItem(lock.key) === "true");
     button.addEventListener("click", () => {
@@ -3480,8 +3500,15 @@ function bindSkillRankLocks() {
     });
     button.addEventListener("animationend", () => button.classList.remove("is-nudged"));
     section.addEventListener("click", event => {
-      if (!section.classList.contains("is-rank-locked") || !event.target.matches?.(lock.inputs)) return;
+      if (!section.classList.contains("is-rank-locked")) return;
+      const target = event.target;
+      const rankClick = target.matches?.(lock.inputs);
+      // 數字與「填入計算值」只在自動計算關閉時才改得動；開著時點數字是看計算說明，不攔。
+      const valueClick = !isAutomaticKeyStatsEnabled() && (target.matches?.(lock.values) || target.closest?.(".skill-calc-button"));
+      if (!rankClick && !valueClick) return;
       event.preventDefault();
+      // 「填入計算值」是行內 onclick：在捕獲階段攔下，事件不往下傳。
+      if (!rankClick) event.stopPropagation();
       button.classList.remove("is-nudged");
       void button.offsetWidth;
       button.classList.add("is-nudged");
@@ -3802,7 +3829,7 @@ function finishDerivedChecksLoad(data) {
   syncAutomaticKeyStatsMode({ refresh: false });
 }
 </script>
-<script src="pdf-launcher.js?v=20261118-sheet-naming"></script>
+<script src="pdf-launcher.js?v=20261120-proficiency-check"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -5673,7 +5700,8 @@ document.addEventListener("change", (e) => {
   if (target.id === "manual-feat-management"
       || target.id === "druid-land"
       || target.dataset.classCantripKey || target.classList.contains("circle-checkbox")
-      || target.closest("#classFeatures, #metamagicOptions, #eldritch-invocations-output, #feats-area, #extra-language-container")) {
+      || target.dataset.skillRank || target.id.startsWith("feat-choice-")
+      || target.closest("#classFeatures, #metamagicOptions, #eldritch-invocations-output, #feats-area, #extra-language-container, #tool-proficiency-list")) {
     updateClassFeatureChoiceReminder();
   }
 });

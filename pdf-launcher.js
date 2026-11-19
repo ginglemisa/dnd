@@ -117,7 +117,10 @@ function buildPdfPrecheckMessages() {
     reminders.push({ message: "盜賊額外語言尚未選擇。", tab: "skills", selector: "#extra-language-container", focusSelector: "#language-extra-2" });
   }
 
-  if (selectedClass === "bard") {
+  // 技能／工具熟練的缺項由 proficiency-check.js 依來源配對，經 getClassFeatureChoiceIssues() 列出；
+  // 它不適用或沒載入時，才用下面的吟遊詩人樂器與「技能熟練未滿 4 項」。
+  const proficiencyChecked = Boolean(window.ProficiencyCheck?.getIssues());
+  if (!proficiencyChecked && selectedClass === "bard") {
     const missingInstruments = [1, 2, 3].filter(slot => !(document.getElementById(`bard-instrument-${slot}`)?.value || "").trim());
     if (missingInstruments.length) reminders.push({
       message: missingInstruments.length === 3 ? "吟遊詩人樂器尚未選擇。" : `吟遊詩人樂器尚有 ${missingInstruments.length} 項未選擇。`,
@@ -181,7 +184,7 @@ function buildPdfPrecheckMessages() {
   // 最低限度的數量確認：每個角色都至少有 4 項技能熟練。背景、職業、等級都選好才檢查。
   const hasSkillSources = ["background", "class", "level"].every(id => (document.getElementById(id)?.value || "").trim());
   const rankedSkills = new Set(Array.from(document.querySelectorAll('#tab-skills .skill-grid input[data-skill-rank]:checked'), input => input.dataset.skillRank));
-  if (hasSkillSources && rankedSkills.size < 4) reminders.push({
+  if (!proficiencyChecked && hasSkillSources && rankedSkills.size < 4) reminders.push({
     message: "技能熟練未滿 4 項。",
     tab: "skills",
     selector: "#skill-bonus-section"

@@ -2356,7 +2356,25 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.click("#legal-close-btn");
     const rows = page.locator("#feats-area .form-row:not([data-feat-source])");
     assert.equal(await page.isChecked("#manual-feat-management"), false, "fresh character uses automation");
-    assert.equal(await page.locator(".feat-management-toggle").evaluate(label => getComputedStyle(label).fontSize === getComputedStyle(document.querySelector("p.character-features-hint")).fontSize), true, "management font matches hint");
+    // 專長標題列：小標題與「專長自行管理」開關同一列、字級字重相同，開關靠右；標題樣式同角色名稱等欄位標籤。
+    assert.deepEqual(await page.evaluate(() => {
+      const look = el => { const style = getComputedStyle(el); return [style.fontSize, style.fontWeight, style.color, style.letterSpacing]; };
+      const heading = document.querySelector("#feat-management-section .feat-section-heading");
+      const title = heading.querySelector("h3"), toggle = heading.querySelector(".feat-management-toggle"), input = document.getElementById("manual-feat-management");
+      const titleBox = title.getBoundingClientRect(), inputBox = input.getBoundingClientRect(), headingBox = heading.getBoundingClientRect();
+      const fieldLabel = look(document.getElementById("character-name-label"));
+      return {
+        titles: ["屬性與調整值", "專長", "職業筆記區"].map(text => {
+          const el = [...document.querySelectorAll("#tab-basic h3.section-mini-title")].find(item => item.textContent === text);
+          return Boolean(el) && look(el).join() === fieldLabel.join();
+        }),
+        toggleText: toggle.textContent.trim(),
+        toggleFont: look(toggle).slice(0, 2).join() === fieldLabel.slice(0, 2).join(),
+        role: input.getAttribute("role"),
+        sameRow: inputBox.top + inputBox.height / 2 > titleBox.top && inputBox.top + inputBox.height / 2 < titleBox.bottom,
+        atRight: Math.abs(inputBox.right - headingBox.right) <= 1
+      };
+    }), { titles: [true, true, true], toggleText: "專長自行管理", toggleFont: true, role: "switch", sameRow: true, atRight: true }, "feat heading row");
     assert.equal(await rows.count(), 0, "automatic mode has no custom feat rows");
     assert.equal(await page.locator("#feat-add-empty").isVisible(), false, "automatic mode has no add entry");
     for (const classValue of Object.keys(baseline.classes)) {

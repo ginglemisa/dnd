@@ -618,6 +618,118 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     await saveRankLock.click();
     await page.locator('.save-name[for="prof-wis"]').click();
     assert.deepEqual(await saveState(), [true, "●"], "locked saves ignore clicks");
+    // 自動計算關閉時，同一個鎖也鎖住該區的數字與「填入計算值」：數字唯讀、外觀不變、鎖頭晃一下；程式寫入照常，解鎖後可以改。
+    {
+      const setAutomatic = on => page.evaluate(value => { const toggle = document.getElementById("auto-calculate-key-stats-toggle"); toggle.checked = value; toggle.dispatchEvent(new Event("change", { bubbles: true })); }, on);
+      const valueLook = () => page.evaluate(() => ["save-wis", "skill-運動"].map(id => {
+        const input = document.getElementById(id), style = getComputedStyle(input);
+        return [input.readOnly, style.borderTopWidth, style.backgroundColor, style.color, style.cursor].join("|");
+      }));
+      const original = await page.evaluate(() => ["save-wis", "skill-運動"].map(id => document.getElementById(id).value));
+      await setAutomatic(false);
+      await page.waitForTimeout(400); // 輸入框外觀有轉場，等它結束再量。
+      await page.mouse.move(2, 2);
+      const lockedLook = await valueLook();
+      assert.deepEqual(lockedLook.map(look => look.split("|")[0]), ["true", "true"], "locked sections keep their numbers read-only in manual mode");
+      await page.evaluate(() => { document.getElementById("save-wis").value = "+9"; document.getElementById("skill-運動").value = "+9"; });
+      for (const [id, button, lock] of [["save-wis", "calculate-saves-button", "saves"], ["skill-運動", "calculate-skills-button", "skills"]]) {
+        const nudged = () => page.evaluate(name => { const el = document.querySelector(`.skill-rank-lock[data-rank-lock="${name}"]`); const result = el.classList.contains("is-nudged"); el.classList.remove("is-nudged"); return result; }, lock);
+        await nudged();
+        await page.locator(`#${id}`).click();
+        await page.keyboard.type("1");
+        assert.equal(await nudged(), true, `${id}: clicking a locked number nudges the lock`);
+        await page.locator(`#${button}`).click();
+        assert.equal(await nudged(), true, `${id}: the blocked fill nudges the lock`);
+        assert.equal(await page.locator(`#${id}`).inputValue(), "+9", `${id}: locked number ignores typing and the fill button`);
+      }
+      await saveRankLock.click();
+      await page.mouse.move(2, 2);
+      const unlockedLook = await valueLook();
+      assert.deepEqual([unlockedLook[0].split("|")[0], unlockedLook[1].split("|")[0]], ["false", "true"], "unlocking saves frees only the save numbers");
+      assert.deepEqual(unlockedLook.map(look => look.split("|").slice(1).join("|")), lockedLook.map(look => look.split("|").slice(1).join("|")), "locked numbers look the same as editable ones");
+      await page.locator("#save-wis").fill("+4");
+      assert.equal(await page.locator("#save-wis").inputValue(), "+4", "unlocked numbers are editable");
+      await saveRankLock.click();
+      await page.evaluate(values => ["save-wis", "skill-運動"].forEach((id, index) => { document.getElementById(id).value = values[index]; }), original);
+      await setAutomatic(true);
+      await page.waitForFunction(() => document.getElementById("save-wis").readOnly && !document.querySelector(".app-dialog[open], dialog.app-dialog[open]"));
+      // 自動計算開著時點數字是看計算說明，鎖不攔。
+      assert.equal(await page.evaluate(() => { const el = document.querySelector('.skill-rank-lock[data-rank-lock="skills"]'); el.classList.remove("is-nudged"); document.getElementById("skill-運動").click(); return el.classList.contains("is-nudged"); }), false, "automatic numbers do not nudge the lock");
+      await page.keyboard.press("Escape");
+    }
+    if (firstAppearance) {
+      // 六大屬性：360px 以下三欄兩列，以上一列六格（360–719px 等比例縮小）；輸入框字級不低於 16px。
+      // 標記不影響縮寫置中：窄的六格版放在方框上方（✦ 左、圓框右，單一個置中），其餘寬度掛在縮寫兩側（✦ 左、圓框右）。
+      await page.evaluate(() => showTab("basic"));
+      const setAbilityMarks = marks => page.evaluate(list => document.querySelectorAll("#tab-basic .ability-title").forEach((title, index) => {
+        title.querySelectorAll(".validate-mark").forEach(el => el.remove());
+        for (const mark of list[index] || "") {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = mark === "s" ? "skill-tip ability-effect-tip validate-mark" : "skill-tip roll-mode-badge validate-mark";
+          if (mark === "s") button.textContent = "✦"; else button.innerHTML = `<span class="info-icon">${mark}</span>`;
+          title.appendChild(button);
+        }
+      }), marks);
+      const abilityLayout = () => page.evaluate(() => {
+        const rect = el => el.getBoundingClientRect();
+        const grid = document.querySelector("#tab-basic .ability-grid");
+        const cells = [...grid.querySelectorAll(".ability")];
+        return {
+          columns: getComputedStyle(grid).gridTemplateColumns.split(" ").length,
+          gridTop: Math.round(rect(grid).top - rect(grid.parentElement).top),
+          height: Math.round(rect(grid).height),
+          scoreFont: parseFloat(getComputedStyle(cells[0].querySelector(".ability-score")).fontSize) >= 16,
+          fits: document.documentElement.scrollWidth <= innerWidth && cells.every(cell => [".modifier-main", ".ability-score"].every(selector => { const el = cell.querySelector(selector); return !el || (rect(el).left >= rect(cell).left && rect(el).right <= rect(cell).right); })),
+          cells: cells.map(cell => {
+            const title = cell.querySelector(".ability-title"), box = rect(cell);
+            const range = document.createRange(); range.selectNodeContents(title.firstChild);
+            const text = range.getBoundingClientRect(), center = box.left + box.width / 2;
+            return {
+              centered: Math.abs(text.left + text.width / 2 - center) <= 1.5,
+              marks: [...title.querySelectorAll("button")].map(button => {
+                const mark = rect(button), middle = mark.left + mark.width / 2;
+                return [button.textContent, mark.bottom <= box.top + 1 ? "above" : mark.top >= box.top && mark.bottom <= box.bottom ? "inside" : "off",
+                  Math.abs(middle - center) <= 1.5 ? "center" : middle < center ? "left" : "right", mark.right <= text.left + 1 || mark.left >= text.right - 1 || mark.bottom <= text.top + 1].join(" ");
+              })
+            };
+          })
+        };
+      });
+      await page.evaluate(() => ["str", "dex", "con", "int", "wis", "cha"].forEach((id, index) => { const input = document.getElementById(id); input.value = [16, 14, 15, 8, 12, 30][index]; input.dispatchEvent(new Event("input", { bubbles: true })); }));
+      for (const [width, columns, maxHeight, placement] of [[340, 3, 300, "inside"], [360, 6, 120, "above"], [390, 6, 130, "above"], [719, 6, 180, "above"], [720, 6, 180, "inside"], [1200, 6, 180, "inside"]]) {
+        await page.setViewportSize({ width, height: 844 });
+        await setAbilityMarks([]);
+        await page.waitForTimeout(350); // 卡片的內距與字級有轉場，等它結束再量。
+        const plain = await abilityLayout();
+        assert.deepEqual([plain.columns, plain.height <= maxHeight, plain.scoreFont, plain.fits, plain.cells.every(cell => cell.centered)], [columns, true, true, true, true], `ability grid at ${width}: ${JSON.stringify(plain)}`);
+        await setAbilityMarks(["s", "", "A", "D", "sA", ""]);
+        await page.waitForTimeout(350);
+        const marked = await abilityLayout();
+        const sides = placement === "above" ? ["center", "center", "left", "right"] : ["left", "right", "left", "right"];
+        assert.deepEqual(marked.cells.map(cell => cell.marks), [[`✦ ${placement} ${sides[0]} true`], [], [`A ${placement} ${sides[1]} true`], [`D ${placement} ${sides[1]} true`], [`✦ ${placement} ${sides[2]} true`, `A ${placement} ${sides[3]} true`], []], `ability marks at ${width}`);
+        assert.deepEqual([marked.cells.every(cell => cell.centered), marked.height, marked.gridTop > plain.gridTop], [true, plain.height, placement === "above"], `marks keep the abbreviations centred and only the narrow row makes room above at ${width}`);
+      }
+      await setAbilityMarks([]);
+      await page.evaluate(() => ["str", "dex", "con", "int", "wis", "cha"].forEach(id => { const input = document.getElementById(id); input.value = ""; input.dispatchEvent(new Event("input", { bubbles: true })); }));
+      await page.setViewportSize({ width: 390, height: 844 });
+      // 危害的每日需求表：動作頁在 720px 以上改用橫式三列（Size／體型／每日需求），以下是直式。
+      await page.evaluate(() => showTab("actions"));
+      await page.locator("#hazard-reference-tab").click();
+      await page.locator("#hazard-button-grid button", { hasText: "失調" }).click();
+      const hazardTables = () => page.evaluate(() => [...document.querySelectorAll("#hazard-display-grid table")].filter(table => getComputedStyle(table).display !== "none").map(table => ({
+        rows: [...table.rows].map(row => [...row.cells].map(cell => cell.firstChild.textContent).join(",")),
+        fits: table.getBoundingClientRect().right <= table.closest(".condition-display-card").getBoundingClientRect().right + 1
+      })));
+      await page.setViewportSize({ width: 719, height: 844 });
+      const tall = await hazardTables();
+      assert.deepEqual([tall.length, tall[0].rows.length, tall[0].rows[1]], [1, 7, "微型,1/4 磅"], "narrow hazard table lists one size per row");
+      await page.setViewportSize({ width: 720, height: 844 });
+      assert.deepEqual(await hazardTables(), [{ rows: ["Size,Tiny,Small,Medium,Large,Huge,Gargantuan", "體型,微型,小型,中型,大型,巨型,超巨型", "每日需求,1/4 磅,1 磅,1 磅,4 磅,16 磅,64 磅"], fits: true }], "wide hazard table has three rows");
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.locator("#condition-reference-tab").click();
+      await page.evaluate(() => showTab("skills"));
+    }
     await saveRankLock.click();
     await page.locator('.save-name[for="prof-wis"]').click();
     assert.deepEqual(await saveState(), [false, "○"]);
@@ -5099,9 +5211,10 @@ async function verifyAutoCalculatedChecks(browser, url) {
     assert.equal(await page.locator(".app-dialog__actions").isVisible().catch(() => false), false, "identical numbers do not ask");
     assert.equal(await value(TOGGLE), true);
 
-    // The minimum skill count reminder only runs once background, class and level are chosen.
+    // Without proficiency-check.js the minimum skill count reminder is the fallback; it only runs once background, class and level are chosen.
     const COUNT = "技能熟練未滿 4 項。";
     await loaders.autosave({ str: "10", dex: "10", con: "10", int: "10", wis: "10", cha: "10", [TOGGLE]: true, class: "fighter", level: "1" });
+    await page.evaluate(() => { window.ProficiencyCheck = undefined; });
     assert.equal((await reminders()).includes(COUNT), false, "no background: no count reminder");
     await set("background", "soldier");
     assert.equal((await reminders()).includes(COUNT), true, "chosen background with no skills reminds");
@@ -5117,6 +5230,120 @@ async function verifyAutoCalculatedChecks(browser, url) {
     await set("class", "rogue");
     await tick("exp-隱匿");
     assert.equal((await reminders()).includes(COUNT), false, "expertise counts as a skill");
+    await set("class", "bard");
+    assert.ok((await reminders()).includes("吟遊詩人樂器尚未選擇。"), "without the proficiency check the bard instrument reminder is the fallback");
+    await set("level", "2");
+    assert.ok((await page.evaluate(() => getClassFeatureChoiceIssues().map(issue => issue.message))).includes("吟遊詩人專精尚未選完（1/2）。"),"without the proficiency check expertise falls back to the total count");
+
+    // proficiency-check.js matches ticked skills to each source's slots and reports only what is missing.
+    const ABILITIES = { str: "10", dex: "10", con: "10", int: "10", wis: "10", cha: "10", [TOGGLE]: true };
+    const proficiency = () => page.evaluate(() => window.ProficiencyCheck.getIssues()?.map(issue => issue.message) ?? null);
+    const sheetReminders = () => page.evaluate(() => Array.from(document.querySelectorAll("#class-feature-choice-reminder button > span:first-child"), span => span.textContent));
+    const pickTool = (id, index = 0) => page.evaluate(({ id, index }) => {
+      const select = document.getElementById(id);
+      select.value = Array.from(select.options).filter(option => option.value && !option.disabled)[index].value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }, { id, index });
+    const addTool = () => page.evaluate(() => {
+      document.getElementById("add-tool-proficiency").click();
+      const select = Array.from(document.querySelectorAll("#tool-proficiency-list > .tool-proficiency-row:not([data-tool-source]) select")).pop();
+      select.value = Array.from(select.options).find(option => option.value && !option.disabled).value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await loaders.autosave({ ...ABILITIES, class: "fighter", level: "1" });
+    assert.equal(await proficiency(), null, "no background: the proficiency check does not apply");
+    await loaders.autosave({ ...ABILITIES, class: "fighter", level: "1", background: "soldier" });
+    assert.deepEqual(await proficiency(), ["背景技能尚未勾選：運動、威嚇。", "戰士技能尚未選完（0/2）。", "背景工具尚未選擇。"], "every source with an open choice is named");
+    let pdfReminders = await reminders();
+    assert.ok(pdfReminders.includes("戰士技能尚未選完（0/2）。") && !pdfReminders.includes(COUNT), "the PDF precheck lists the matched reminders instead of the minimum count");
+    assert.deepEqual(await page.evaluate(() => {
+      const issue = getClassFeatureChoiceIssues().find(entry => entry.message.startsWith("背景技能"));
+      return [issue.tab, issue.selector, document.querySelector(issue.focusSelector)?.id];
+    }), ["skills", "#skill-bonus-section", "prof-運動"], "the background reminder points at the missing skill");
+    for (const skill of ["運動", "威嚇", "察覺"]) await tick(`prof-${skill}`);
+    assert.deepEqual(await proficiency(), ["戰士技能尚未選完（1/2）。", "背景工具尚未選擇。"], "ticked skills fill the background first");
+    await tick("prof-求生");
+    await tick("prof-奧秘");
+    assert.deepEqual(await proficiency(), ["背景工具尚未選擇。"], "extra skills are not reported");
+    await pickTool("tool-proficiency-0");
+    assert.deepEqual(await proficiency(), [], "a chosen background tool clears the last reminder");
+
+    // An ambiguous gap is charged to the widest source; the sheet reminder follows every tick.
+    await loaders.autosave({ ...ABILITIES, class: "fighter", level: "1", background: "acolyte", race: "elf", "prof-洞悉": true, "prof-宗教": true, "prof-察覺": true, "prof-求生": true });
+    assert.deepEqual(await proficiency(), ["戰士技能尚未選完（1/2）。"], "the elf's short list is filled before the fighter's long one");
+    assert.ok((await sheetReminders()).includes("戰士技能尚未選完（1/2）。"), "the sheet lists the reminder");
+    await tick("prof-運動");
+    assert.equal((await sheetReminders()).some(message => message.includes("技能")), false, "ticking a skill refreshes the sheet reminder");
+    // Race traits, class feature skills, expertise and class tools each get their own line.
+    await loaders.autosave({ ...ABILITIES, class: "wizard", level: "1", background: "acolyte", race: "elf", "prof-洞悉": true, "prof-宗教": true, "prof-奧秘": true, "prof-歷史": true });
+    assert.deepEqual(await proficiency(), ["精靈敏銳感官的技能尚未選擇（可選：察覺、求生）。"], "a short list names what is still open");
+    // 「前往」標出還能選的技能；清單太長的來源不列文字，但一樣標出來。
+    const jumpHighlights = async label => {
+      await page.evaluate(label => Array.from(document.querySelectorAll("#class-feature-choice-reminder button")).find(button => button.textContent.includes(label)).click(), label);
+      await page.waitForFunction(() => document.querySelector(".onboarding-jump-target-held"));
+      return page.evaluate(() => ({
+        skillsTab: !document.getElementById("tab-skills").hidden,
+        skills: Array.from(document.querySelectorAll(".onboarding-jump-target-held"), element => element.dataset.skill)
+      }));
+    };
+    const heldCount = () => page.locator(".onboarding-jump-target-held").count();
+    assert.deepEqual(await jumpHighlights("敏銳感官"), { skillsTab: true, skills: ["察覺", "求生"] }, "the jump highlights the open skills");
+    // 技能缺項的標示不是 1.8 秒的閃動：一直留到換分頁、改了技能勾選或再按一次「前往」。
+    await page.waitForTimeout(2100);
+    assert.deepEqual([await heldCount(), await page.locator(".onboarding-jump-target").count()], [2, 0], "the skill highlight stays after the 1.8 s flash would have ended");
+    await page.evaluate(() => showTab("basic"));
+    assert.equal(await heldCount(), 0, "changing tabs clears the held highlight");
+    await jumpHighlights("敏銳感官");
+    await page.evaluate(() => onboardingTour.jumpToTarget({ tab: "skills", selector: "#save-section" }));
+    assert.deepEqual([await heldCount(), await page.locator("#save-section.onboarding-jump-target").count()], [0, 1], "another jump clears the held highlight and flashes as before");
+    await page.evaluate(() => showTab("basic"));
+    await jumpHighlights("敏銳感官");
+    await tick("prof-醫藥");
+    assert.equal(await heldCount(), 0, "changing a skill rank checkbox clears the held highlight");
+    await tick("prof-醫藥");
+    await page.evaluate(() => showTab("basic"));
+    await loaders.autosave({ ...ABILITIES, class: "fighter", level: "1", background: "acolyte", race: "dwarf", "prof-洞悉": true, "prof-宗教": true, "prof-運動": true });
+    assert.deepEqual(await proficiency(), ["戰士技能尚未選完（1/2）。"], "a long list is not spelled out");
+    assert.deepEqual((await jumpHighlights("戰士技能")).skills.sort(), ["體操", "馴獸", "歷史", "威嚇", "遊說", "察覺", "求生"].sort(), "but the jump still highlights it");
+    await page.evaluate(() => showTab("basic"));
+    await loaders.autosave({ ...ABILITIES, class: "cleric", level: "1", background: "acolyte", "prof-洞悉": true, "prof-宗教": true });
+    assert.deepEqual(await proficiency(), ["牧師技能尚未選完（0/2，可選：歷史、醫藥、遊說）。"]);
+    await loaders.autosave({ ...ABILITIES, class: "wizard", level: "2", background: "acolyte", "prof-洞悉": true, "prof-宗教": true, "prof-奧秘": true, "prof-歷史": true });
+    assert.deepEqual(await proficiency(), ["法師專精尚未選完（0/1，可選：奧秘、歷史、宗教）。"], "a listed expertise only offers proficient skills");
+    await loaders.autosave({ ...ABILITIES, class: "bard", level: "3", background: "acolyte", "prof-洞悉": true, "prof-宗教": true, "prof-奧秘": true, "prof-歷史": true, "prof-表演": true, "prof-遊說": true });
+    assert.deepEqual(await proficiency(), ["吟遊詩人額外熟練項的技能尚未選完（1/3）。", "吟遊詩人專精尚未選完（0/2）。", "吟遊詩人樂器尚未選完（0/3）。"], "class feature skills, expertise and class tools");
+    pdfReminders = await reminders();
+    assert.ok(pdfReminders.includes("吟遊詩人樂器尚未選完（0/3）。") && !pdfReminders.includes("吟遊詩人樂器尚未選擇。"), "the PDF precheck does not repeat the instrument reminder");
+    await pickTool("bard-instrument-1");
+    await pickTool("bard-instrument-2", 1);
+    await tick("exp-表演");
+    assert.deepEqual(await proficiency(), ["吟遊詩人額外熟練項的技能尚未選完（1/3）。", "吟遊詩人專精尚未選完（1/2）。", "吟遊詩人樂器尚未選完（2/3）。"]);
+    await loaders.autosave({ ...ABILITIES, class: "barbarian", level: "3", background: "soldier", "tool-proficiency-0": "骰子", "prof-運動": true, "prof-威嚇": true, "prof-察覺": true, "prof-求生": true });
+    assert.deepEqual(await proficiency(), ["野蠻人先祖學識的技能尚未選擇（可選：馴獸、自然）。"]);
+    await loaders.autosave({ ...ABILITIES, class: "monk", level: "1", background: "acolyte", "prof-洞悉": true, "prof-宗教": true, "prof-體操": true, "prof-隱匿": true });
+    assert.deepEqual(await proficiency(), ["武僧工具尚未選擇。"]);
+
+    // 熟習 takes skills or tools; 尋物好手 is either a proficiency or an expertise.
+    const withFeat = (feat, state) => ({ ...ABILITIES, ...state, "manual-feat-management": true, __managedFeatRows: [{ value: feat }] });
+    await loaders.autosave(withFeat("熟習", { class: "fighter", level: "1", background: "acolyte", "prof-洞悉": true, "prof-宗教": true, "prof-運動": true, "prof-察覺": true }));
+    assert.deepEqual(await proficiency(), ["熟習尚未選完（0/3，技能或工具都可以）。"]);
+    await tick("prof-奧秘");
+    await addTool();
+    assert.deepEqual(await proficiency(), ["熟習尚未選完（2/3，技能或工具都可以）。"], "a skill and an added tool both count");
+    assert.equal((await sheetReminders()).length, 0, "no race: the sheet reminder stays hidden");
+    await page.evaluate(() => document.querySelector("#tool-proficiency-list .tool-proficiency-remove").click());
+    assert.deepEqual(await proficiency(), ["熟習尚未選完（1/3，技能或工具都可以）。"], "removing the tool reopens the slot");
+    await tick("prof-歷史");
+    await tick("prof-自然");
+    assert.deepEqual(await proficiency(), []);
+    const rogue = { class: "rogue", level: "4", background: "criminal", "exp-巧手": true, "exp-隱匿": true, "prof-體操": true, "prof-運動": true, "prof-欺瞞": true };
+    await loaders.autosave(withFeat("尋物好手", { ...rogue, "prof-威嚇": true }));
+    assert.deepEqual(await proficiency(), ["尋物好手的技能尚未選擇（可選：洞悉、調查、察覺）。"]);
+    await tick("prof-調查");
+    assert.deepEqual(await proficiency(), [], "a new proficiency from the list satisfies the feat");
+    await loaders.autosave(withFeat("尋物好手", { ...rogue, "exp-察覺": true }));
+    assert.deepEqual(await proficiency(), [], "expertise in an already proficient listed skill satisfies the feat");
+    assert.deepEqual(Object.keys(await page.evaluate(() => collectStateObject())).filter(key => /proficiency-?check/i.test(key)), [], "the check adds nothing to the saved state");
 
     // Lost expertise falls back to proficiency; returning to the class restores it.
     await loaders.autosave({ ...base, [MARK]: true, class: "wizard", "prof-隱匿": false, "prof-察覺": false, "prof-dex": false, "prof-int": false });
