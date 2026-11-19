@@ -2693,7 +2693,10 @@
 
     // highlightSelector: the visible, enabled elements to light up, found after the panel
     // opens (e.g. both checkboxes of one choice, or a list's heading). Defaults to selector.
-    async jumpToTarget({ tab = "basic", selector, focusSelector = selector, highlightSelector = selector } = {}) {
+    // keepHighlight: keep the highlight (onboarding-jump-target-held) until the tab changes, a skill
+    // rank checkbox changes, or the next jump, instead of the 1.8 s flash. Used by the skill gaps.
+    async jumpToTarget({ tab = "basic", selector, focusSelector = selector, highlightSelector = selector, keepHighlight = false } = {}) {
+      this.clearHeldHighlight?.();
       if (!selector) return false;
       if (this.active) this.stop({ resetView: false });
       this.showTab(tab);
@@ -2720,6 +2723,21 @@
         return isElementVisible(element) && !element.disabled;
       });
       focusTarget?.focus?.({ preventScroll: true });
+      if (keepHighlight) {
+        // Registered last: showTab() above already dispatched its own tabchange.
+        const clear = () => {
+          highlights.forEach((element) => element.classList.remove("onboarding-jump-target-held"));
+          window.removeEventListener("tabchange", clear);
+          document.removeEventListener("change", onChange, true);
+          this.clearHeldHighlight = null;
+        };
+        const onChange = (event) => { if (event.target?.dataset?.skillRank) clear(); };
+        highlights.forEach((element) => element.classList.add("onboarding-jump-target-held"));
+        window.addEventListener("tabchange", clear);
+        document.addEventListener("change", onChange, true);
+        this.clearHeldHighlight = clear;
+        return true;
+      }
       highlights.forEach((element) => element.classList.remove("onboarding-jump-target"));
       void highlights[0].offsetWidth;
       highlights.forEach((element) => element.classList.add("onboarding-jump-target"));

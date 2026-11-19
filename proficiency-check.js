@@ -178,7 +178,8 @@
     };
     const highlight = group => {
       const options = getOptions(group);
-      return options.length ? { highlightSelector: options.map(skill => `#tab-skills .skill-tip[data-skill="${skill}"]`).join(", ") } : {};
+      // keepHighlight：技能缺項的標示一直留著，直到換分頁、改了技能勾選或再按一次「前往」（jumpToTarget）。
+      return options.length ? { keepHighlight: true, highlightSelector: options.map(skill => `#tab-skills .skill-tip[data-skill="${skill}"]`).join(", ") } : {};
     };
     // 提醒的順序：背景、職業技能、職業能力、種族、專長、專精；同類依來源順序。
     const groups = [...missing.keys()].sort((a, b) => GROUP_ORDER.indexOf(a.kind) - GROUP_ORDER.indexOf(b.kind));

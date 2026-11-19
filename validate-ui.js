@@ -618,6 +618,118 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     await saveRankLock.click();
     await page.locator('.save-name[for="prof-wis"]').click();
     assert.deepEqual(await saveState(), [true, "●"], "locked saves ignore clicks");
+    // 自動計算關閉時，同一個鎖也鎖住該區的數字與「填入計算值」：數字唯讀、外觀不變、鎖頭晃一下；程式寫入照常，解鎖後可以改。
+    {
+      const setAutomatic = on => page.evaluate(value => { const toggle = document.getElementById("auto-calculate-key-stats-toggle"); toggle.checked = value; toggle.dispatchEvent(new Event("change", { bubbles: true })); }, on);
+      const valueLook = () => page.evaluate(() => ["save-wis", "skill-運動"].map(id => {
+        const input = document.getElementById(id), style = getComputedStyle(input);
+        return [input.readOnly, style.borderTopWidth, style.backgroundColor, style.color, style.cursor].join("|");
+      }));
+      const original = await page.evaluate(() => ["save-wis", "skill-運動"].map(id => document.getElementById(id).value));
+      await setAutomatic(false);
+      await page.waitForTimeout(400); // 輸入框外觀有轉場，等它結束再量。
+      await page.mouse.move(2, 2);
+      const lockedLook = await valueLook();
+      assert.deepEqual(lockedLook.map(look => look.split("|")[0]), ["true", "true"], "locked sections keep their numbers read-only in manual mode");
+      await page.evaluate(() => { document.getElementById("save-wis").value = "+9"; document.getElementById("skill-運動").value = "+9"; });
+      for (const [id, button, lock] of [["save-wis", "calculate-saves-button", "saves"], ["skill-運動", "calculate-skills-button", "skills"]]) {
+        const nudged = () => page.evaluate(name => { const el = document.querySelector(`.skill-rank-lock[data-rank-lock="${name}"]`); const result = el.classList.contains("is-nudged"); el.classList.remove("is-nudged"); return result; }, lock);
+        await nudged();
+        await page.locator(`#${id}`).click();
+        await page.keyboard.type("1");
+        assert.equal(await nudged(), true, `${id}: clicking a locked number nudges the lock`);
+        await page.locator(`#${button}`).click();
+        assert.equal(await nudged(), true, `${id}: the blocked fill nudges the lock`);
+        assert.equal(await page.locator(`#${id}`).inputValue(), "+9", `${id}: locked number ignores typing and the fill button`);
+      }
+      await saveRankLock.click();
+      await page.mouse.move(2, 2);
+      const unlockedLook = await valueLook();
+      assert.deepEqual([unlockedLook[0].split("|")[0], unlockedLook[1].split("|")[0]], ["false", "true"], "unlocking saves frees only the save numbers");
+      assert.deepEqual(unlockedLook.map(look => look.split("|").slice(1).join("|")), lockedLook.map(look => look.split("|").slice(1).join("|")), "locked numbers look the same as editable ones");
+      await page.locator("#save-wis").fill("+4");
+      assert.equal(await page.locator("#save-wis").inputValue(), "+4", "unlocked numbers are editable");
+      await saveRankLock.click();
+      await page.evaluate(values => ["save-wis", "skill-運動"].forEach((id, index) => { document.getElementById(id).value = values[index]; }), original);
+      await setAutomatic(true);
+      await page.waitForFunction(() => document.getElementById("save-wis").readOnly && !document.querySelector(".app-dialog[open], dialog.app-dialog[open]"));
+      // 自動計算開著時點數字是看計算說明，鎖不攔。
+      assert.equal(await page.evaluate(() => { const el = document.querySelector('.skill-rank-lock[data-rank-lock="skills"]'); el.classList.remove("is-nudged"); document.getElementById("skill-運動").click(); return el.classList.contains("is-nudged"); }), false, "automatic numbers do not nudge the lock");
+      await page.keyboard.press("Escape");
+    }
+    if (firstAppearance) {
+      // 六大屬性：360px 以下三欄兩列，以上一列六格（360–719px 等比例縮小）；輸入框字級不低於 16px。
+      // 標記不影響縮寫置中：窄的六格版放在方框上方（✦ 左、圓框右，單一個置中），其餘寬度掛在縮寫兩側（✦ 左、圓框右）。
+      await page.evaluate(() => showTab("basic"));
+      const setAbilityMarks = marks => page.evaluate(list => document.querySelectorAll("#tab-basic .ability-title").forEach((title, index) => {
+        title.querySelectorAll(".validate-mark").forEach(el => el.remove());
+        for (const mark of list[index] || "") {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = mark === "s" ? "skill-tip ability-effect-tip validate-mark" : "skill-tip roll-mode-badge validate-mark";
+          if (mark === "s") button.textContent = "✦"; else button.innerHTML = `<span class="info-icon">${mark}</span>`;
+          title.appendChild(button);
+        }
+      }), marks);
+      const abilityLayout = () => page.evaluate(() => {
+        const rect = el => el.getBoundingClientRect();
+        const grid = document.querySelector("#tab-basic .ability-grid");
+        const cells = [...grid.querySelectorAll(".ability")];
+        return {
+          columns: getComputedStyle(grid).gridTemplateColumns.split(" ").length,
+          gridTop: Math.round(rect(grid).top - rect(grid.parentElement).top),
+          height: Math.round(rect(grid).height),
+          scoreFont: parseFloat(getComputedStyle(cells[0].querySelector(".ability-score")).fontSize) >= 16,
+          fits: document.documentElement.scrollWidth <= innerWidth && cells.every(cell => [".modifier-main", ".ability-score"].every(selector => { const el = cell.querySelector(selector); return !el || (rect(el).left >= rect(cell).left && rect(el).right <= rect(cell).right); })),
+          cells: cells.map(cell => {
+            const title = cell.querySelector(".ability-title"), box = rect(cell);
+            const range = document.createRange(); range.selectNodeContents(title.firstChild);
+            const text = range.getBoundingClientRect(), center = box.left + box.width / 2;
+            return {
+              centered: Math.abs(text.left + text.width / 2 - center) <= 1.5,
+              marks: [...title.querySelectorAll("button")].map(button => {
+                const mark = rect(button), middle = mark.left + mark.width / 2;
+                return [button.textContent, mark.bottom <= box.top + 1 ? "above" : mark.top >= box.top && mark.bottom <= box.bottom ? "inside" : "off",
+                  Math.abs(middle - center) <= 1.5 ? "center" : middle < center ? "left" : "right", mark.right <= text.left + 1 || mark.left >= text.right - 1 || mark.bottom <= text.top + 1].join(" ");
+              })
+            };
+          })
+        };
+      });
+      await page.evaluate(() => ["str", "dex", "con", "int", "wis", "cha"].forEach((id, index) => { const input = document.getElementById(id); input.value = [16, 14, 15, 8, 12, 30][index]; input.dispatchEvent(new Event("input", { bubbles: true })); }));
+      for (const [width, columns, maxHeight, placement] of [[340, 3, 300, "inside"], [360, 6, 120, "above"], [390, 6, 130, "above"], [719, 6, 180, "above"], [720, 6, 180, "inside"], [1200, 6, 180, "inside"]]) {
+        await page.setViewportSize({ width, height: 844 });
+        await setAbilityMarks([]);
+        await page.waitForTimeout(350); // 卡片的內距與字級有轉場，等它結束再量。
+        const plain = await abilityLayout();
+        assert.deepEqual([plain.columns, plain.height <= maxHeight, plain.scoreFont, plain.fits, plain.cells.every(cell => cell.centered)], [columns, true, true, true, true], `ability grid at ${width}: ${JSON.stringify(plain)}`);
+        await setAbilityMarks(["s", "", "A", "D", "sA", ""]);
+        await page.waitForTimeout(350);
+        const marked = await abilityLayout();
+        const sides = placement === "above" ? ["center", "center", "left", "right"] : ["left", "right", "left", "right"];
+        assert.deepEqual(marked.cells.map(cell => cell.marks), [[`✦ ${placement} ${sides[0]} true`], [], [`A ${placement} ${sides[1]} true`], [`D ${placement} ${sides[1]} true`], [`✦ ${placement} ${sides[2]} true`, `A ${placement} ${sides[3]} true`], []], `ability marks at ${width}`);
+        assert.deepEqual([marked.cells.every(cell => cell.centered), marked.height, marked.gridTop > plain.gridTop], [true, plain.height, placement === "above"], `marks keep the abbreviations centred and only the narrow row makes room above at ${width}`);
+      }
+      await setAbilityMarks([]);
+      await page.evaluate(() => ["str", "dex", "con", "int", "wis", "cha"].forEach(id => { const input = document.getElementById(id); input.value = ""; input.dispatchEvent(new Event("input", { bubbles: true })); }));
+      await page.setViewportSize({ width: 390, height: 844 });
+      // 危害的每日需求表：動作頁在 720px 以上改用橫式三列（Size／體型／每日需求），以下是直式。
+      await page.evaluate(() => showTab("actions"));
+      await page.locator("#hazard-reference-tab").click();
+      await page.locator("#hazard-button-grid button", { hasText: "失調" }).click();
+      const hazardTables = () => page.evaluate(() => [...document.querySelectorAll("#hazard-display-grid table")].filter(table => getComputedStyle(table).display !== "none").map(table => ({
+        rows: [...table.rows].map(row => [...row.cells].map(cell => cell.firstChild.textContent).join(",")),
+        fits: table.getBoundingClientRect().right <= table.closest(".condition-display-card").getBoundingClientRect().right + 1
+      })));
+      await page.setViewportSize({ width: 719, height: 844 });
+      const tall = await hazardTables();
+      assert.deepEqual([tall.length, tall[0].rows.length, tall[0].rows[1]], [1, 7, "微型,1/4 磅"], "narrow hazard table lists one size per row");
+      await page.setViewportSize({ width: 720, height: 844 });
+      assert.deepEqual(await hazardTables(), [{ rows: ["Size,Tiny,Small,Medium,Large,Huge,Gargantuan", "體型,微型,小型,中型,大型,巨型,超巨型", "每日需求,1/4 磅,1 磅,1 磅,4 磅,16 磅,64 磅"], fits: true }], "wide hazard table has three rows");
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.locator("#condition-reference-tab").click();
+      await page.evaluate(() => showTab("skills"));
+    }
     await saveRankLock.click();
     await page.locator('.save-name[for="prof-wis"]').click();
     assert.deepEqual(await saveState(), [false, "○"]);
@@ -5168,18 +5280,32 @@ async function verifyAutoCalculatedChecks(browser, url) {
     // 「前往」標出還能選的技能；清單太長的來源不列文字，但一樣標出來。
     const jumpHighlights = async label => {
       await page.evaluate(label => Array.from(document.querySelectorAll("#class-feature-choice-reminder button")).find(button => button.textContent.includes(label)).click(), label);
-      await page.waitForFunction(() => document.querySelector(".onboarding-jump-target"));
-      const result = await page.evaluate(() => ({
+      await page.waitForFunction(() => document.querySelector(".onboarding-jump-target-held"));
+      return page.evaluate(() => ({
         skillsTab: !document.getElementById("tab-skills").hidden,
-        skills: Array.from(document.querySelectorAll(".onboarding-jump-target"), element => element.dataset.skill)
+        skills: Array.from(document.querySelectorAll(".onboarding-jump-target-held"), element => element.dataset.skill)
       }));
-      await page.evaluate(() => { document.querySelectorAll(".onboarding-jump-target").forEach(element => element.classList.remove("onboarding-jump-target")); showTab("basic"); });
-      return result;
     };
+    const heldCount = () => page.locator(".onboarding-jump-target-held").count();
     assert.deepEqual(await jumpHighlights("敏銳感官"), { skillsTab: true, skills: ["察覺", "求生"] }, "the jump highlights the open skills");
+    // 技能缺項的標示不是 1.8 秒的閃動：一直留到換分頁、改了技能勾選或再按一次「前往」。
+    await page.waitForTimeout(2100);
+    assert.deepEqual([await heldCount(), await page.locator(".onboarding-jump-target").count()], [2, 0], "the skill highlight stays after the 1.8 s flash would have ended");
+    await page.evaluate(() => showTab("basic"));
+    assert.equal(await heldCount(), 0, "changing tabs clears the held highlight");
+    await jumpHighlights("敏銳感官");
+    await page.evaluate(() => onboardingTour.jumpToTarget({ tab: "skills", selector: "#save-section" }));
+    assert.deepEqual([await heldCount(), await page.locator("#save-section.onboarding-jump-target").count()], [0, 1], "another jump clears the held highlight and flashes as before");
+    await page.evaluate(() => showTab("basic"));
+    await jumpHighlights("敏銳感官");
+    await tick("prof-醫藥");
+    assert.equal(await heldCount(), 0, "changing a skill rank checkbox clears the held highlight");
+    await tick("prof-醫藥");
+    await page.evaluate(() => showTab("basic"));
     await loaders.autosave({ ...ABILITIES, class: "fighter", level: "1", background: "acolyte", race: "dwarf", "prof-洞悉": true, "prof-宗教": true, "prof-運動": true });
     assert.deepEqual(await proficiency(), ["戰士技能尚未選完（1/2）。"], "a long list is not spelled out");
     assert.deepEqual((await jumpHighlights("戰士技能")).skills.sort(), ["體操", "馴獸", "歷史", "威嚇", "遊說", "察覺", "求生"].sort(), "but the jump still highlights it");
+    await page.evaluate(() => showTab("basic"));
     await loaders.autosave({ ...ABILITIES, class: "cleric", level: "1", background: "acolyte", "prof-洞悉": true, "prof-宗教": true });
     assert.deepEqual(await proficiency(), ["牧師技能尚未選完（0/2，可選：歷史、醫藥、遊說）。"]);
     await loaders.autosave({ ...ABILITIES, class: "wizard", level: "2", background: "acolyte", "prof-洞悉": true, "prof-宗教": true, "prof-奧秘": true, "prof-歷史": true });
