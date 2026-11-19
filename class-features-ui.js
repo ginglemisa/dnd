@@ -2370,6 +2370,8 @@ function restoreClassOptionMemory(className, record) {
     });
   }
   getClassOptionFeatureControls().filter(control => control.id.startsWith("feat-choice-") && has(control.id)).forEach(control => {
+    // 未達等級而沒列出的傳奇恩惠（記住時已選的）先補回選項再還原。
+    if (typeof values[control.id] === "string") syncFeatChoiceSelectOptions(control, values[control.id]);
     setClassOptionControlValue(control, values[control.id]);
   });
   syncDerivedFeatRows();
