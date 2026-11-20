@@ -6,6 +6,7 @@ const path = require("node:path");
 const http = require("node:http");
 const vm = require("node:vm");
 const { chromium } = require("playwright");
+require("./tools/regression-legal-notice");
 
 // Code moved out of index.html loads in place as local scripts without defer/async.
 function getExtractedPageScriptFiles(html) {

@@ -6,6 +6,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const http = require("node:http");
 const { chromium } = require("playwright");
+require("./tools/regression-legal-notice");
 
 const TABLETOP_COPY = [
   ["從這裡進入跑團模式", "角色準備好了，就可以開始冒險！\n\n打開右上角選單，找到「跑團模式」。這裡會集中顯示遊玩時常用的數值、動作與資源。\n\n按「下一步」，一起看看遊戲如何進行。", ["右上角選單", "跑團模式", "下一步"]],

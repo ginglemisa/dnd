@@ -355,6 +355,10 @@ resource:
 - `extraSpellLists: [cleric, druid, wizard]`：取得此能力後，本職業一環以上的準備法術也可從這些職業法表挑選，仍算本職業的法術（吟遊詩人「魔法奧祕」）。戲法不受影響。網站經 `getClassSpellListIds()` 讀取。
 - `freeCast: { resource, maxLevel, lists, excludeCastingTimes }`：不消耗法術位的施法方式（牧師「神聖干預」）。跑團施法視窗對環階不超過 `maxLevel`、在 `lists` 法表上（省略為本職業）、施法時間不只是 `excludeCastingTimes` 的法術多一種施法方式，扣 `resource`（本職業某能力的 `resource.key`，建置會檢查）的次數。網站經 `getClassFreeCastFeatures()` 讀取。
 
+## 武器精通的替換
+
+- `masteryOptions: [推離, 削弱, 緩速]`：取得此能力後，用能使用精通屬性的武器攻擊時可以改用的精通屬性（戰士「戰術大師」）。跑團行動頁的武器備註在武器本身的精通後面，列出其中武器沒有的幾種。網站經 `getClassMasteryOptions()` 讀取。
+
 ## 抗性與休息
 
 - `resistances: [poison]`：達到能力等級就有的傷害抗性；寫在選項上時勾選該選項才有。

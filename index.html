@@ -117,7 +117,7 @@
   <link rel="stylesheet" href="css/pdf-export.css?v=20261120-held-hint">
   <link rel="stylesheet" href="css/tabletop.css?v=20261118-al-draft">
   <link rel="stylesheet" href="css/tabletop-hud.css?v=20261113-info-icon">
-  <link rel="stylesheet" href="css/tabletop-resources.css?v=20261111-magic-vocab">
+  <link rel="stylesheet" href="css/tabletop-resources.css?v=20261120-mastery-options">
   <link rel="stylesheet" href="css/late-overrides.css?v=20261116-calculation-tips">
   <link rel="stylesheet" href="css/quick-build.css?v=20261114-ability-float">
   <script src="scroll-to-top.js?v=20261118-modal-scroll" defer></script>
@@ -138,14 +138,14 @@
   <script src="spell-list.js?v=20261117-level-10" defer></script>
   <script src="condition.js?v=20261120-hazard-wide-table" defer></script>
   <script src="action-panel.js?v=20261117-append-subclass" defer></script>
-  <script src="character-rules.js?v=20261117-epic-boon" defer></script>
+  <script src="character-rules.js?v=20261120-mastery-options" defer></script>
   <script src="app-dialog.js?v=20261118-modal-scroll" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261118-modal-scroll" defer></script>
   <script src="tabletop-mode.js?v=20261118-modal-scroll" defer></script>
   <script src="tabletop-druid.js?v=20261112-merge-main-menu" defer></script>
   <script src="tabletop-resources.js?v=20261117-level-10b" defer></script>
-  <script src="tabletop-actions.js?v=20261113-champion-names" defer></script>
+  <script src="tabletop-actions.js?v=20261120-mastery-options" defer></script>
   <script src="tabletop-custom-spells.js?v=20261117-level-10" defer></script>
   <script src="tabletop-spells.js?v=20261117-level-10" defer></script>
   <script src="legal-modal.js?v=20261118-sheet-naming" defer></script>
@@ -1442,7 +1442,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261119-epic-boon-hidden"></script>
   <script src="spell-sources.js?v=20261113-blessed-warrior"></script>
-  <script src="class-features-ui.js?v=20261120-extra-reminder"></script>
+  <script src="class-features-ui.js?v=20261120-base-language"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -3829,7 +3829,7 @@ function finishDerivedChecksLoad(data) {
   syncAutomaticKeyStatsMode({ refresh: false });
 }
 </script>
-<script src="pdf-launcher.js?v=20261120-proficiency-check"></script>
+<script src="pdf-launcher.js?v=20261120-base-language"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -5701,7 +5701,7 @@ document.addEventListener("change", (e) => {
       || target.id === "druid-land"
       || target.dataset.classCantripKey || target.classList.contains("circle-checkbox")
       || target.dataset.skillRank || target.id.startsWith("feat-choice-")
-      || target.closest("#classFeatures, #metamagicOptions, #eldritch-invocations-output, #feats-area, #extra-language-container, #tool-proficiency-list")) {
+      || target.closest("#classFeatures, #metamagicOptions, #eldritch-invocations-output, #feats-area, .language-card, #tool-proficiency-list")) {
     updateClassFeatureChoiceReminder();
   }
 });

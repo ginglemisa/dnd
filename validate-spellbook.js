@@ -6,6 +6,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const http = require("node:http");
 const { chromium } = require("playwright");
+require("./tools/regression-legal-notice");
 const { missingPrivateAssets, privateAssetsSkipped, MISSING_HELP } = require("./tools/copy-private-assets");
 const MEMORY_KEY = "dnd.spellManagementMemories.v1";
 const NOTICE_KEY = "dnd.spellManagementClassNoticeDisabled.v1";

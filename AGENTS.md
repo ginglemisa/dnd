@@ -120,6 +120,7 @@
 
 * 環境為 Node.js 20 以上，在專案根目錄執行。Playwright 腳本會自行啟動伺服器與 Chromium（`DND_BROWSER_CHANNEL=msedge` 可改用 Edge）。新環境先執行 `npm ci` 與 `npx --no-install playwright install chromium`。新的 worktree 沒有 `content/private/`，建置結果只含公開內容。
 * **測試流量**：任何方式載入本站（本機、正式站、`file://`、新分頁、新 context、分享網址），網址都必須帶 `analytics=owner`，並放在 `#` 之前；禁止向真實 GA4 送測試事件。
+* **法律聲明視窗**：每次載入或重新整理頁面（`goto`、`reload`、匯入後的重新載入、分享網址）都會再跳出 `#legal-modal`，蓋住整頁並擋住滑鼠點擊。回歸腳本開頭都載入 `tools/regression-legal-notice.js`：用 Playwright 點擊、輕觸、勾選或滑過視窗以外的元素時，視窗還開著就先自動關掉並印一行提示，點視窗裡面的元素則不動（測法律聲明本身的案例照常）；新增的 Playwright 腳本也要加這一行。臨時瀏覽器檢查沒有這層保護，載入後自己先關（`document.getElementById("legal-close-btn")?.click()`）。
 * 需要臨時瀏覽器檢查時，先讀 [.agents/skills/playwright-cli/SKILL.md](.agents/skills/playwright-cli/SKILL.md)，只操作必要元素，結束時關閉。自動稽核警告須實際確認（`addEventListener` 綁定常被誤報）；不要為了消除警告而替換原生 `<select>` 或 textarea 的 `resize: vertical`。
 
 ## 交付

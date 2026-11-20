@@ -255,9 +255,15 @@
       : null;
     // 防禦者的加值分配：荒野形態時不顯示步進器（武器加值依變身選擇照算）。
     const held = beast ? null : globalScope.Inventory?.entries().find(entry => entry.slot === (hand === "main" ? "mainHand" : "offHand"));
+    const masteryName = mastery && !mastery.hidden ? String(mastery.textContent || "").trim() : "";
     return {
       hand,
       held,
+      // 能力給的替換精通（內容檔 masteryOptions，例如戰術大師）：這把武器能用精通時才有，和武器本身重複的不列。
+      masteryOptions: masteryName
+        ? (globalScope.getClassMasteryOptions?.(document.getElementById("class")?.value || "", document.getElementById("level")?.value || "") || [])
+          .filter(name => name !== masteryName)
+        : [],
       ammo: beast ? null : getHandAmmo(hand),
       label: hand === "main" ? "主手" : (isAlternateMain ? "主手2" : "副手"),
       name: readField(`${prefix}-name`),
@@ -266,7 +272,7 @@
       // 魔法武器的武器說明（內容檔 hints 的 panel: weapon），只在自動計算時有。
       magicNotes: projected?.details?.magicNotes || [],
       note: readField(`${prefix}-note`),
-      mastery: mastery && !mastery.hidden ? String(mastery.textContent || "").trim() : "",
+      mastery: masteryName,
       masteryRule: mastery && !mastery.hidden ? String(mastery.dataset.weaponRule || "").trim() : ""
     };
   }
@@ -473,6 +479,21 @@
       masteryButton.setAttribute("aria-label", `精通：${weapon.mastery}，點擊查看說明`);
       noteField.classList.add("tabletop-weapon-field--note-with-mastery");
       note?.replaceChildren(noteText, masteryButton);
+      // 可以替換的精通另起一行，每個都能點開說明。
+      if (weapon.masteryOptions?.length) {
+        const options = createElement("span", "tabletop-weapon-mastery-options");
+        options.appendChild(createElement("span", "tabletop-weapon-mastery-options-label", "可換成"));
+        weapon.masteryOptions.forEach(name => {
+          const button = createElement("button", "tabletop-source-tag tabletop-weapon-mastery", name);
+          button.type = "button";
+          button.dataset.weaponRuleKind = "mastery";
+          button.dataset.weaponRule = name;
+          button.setAttribute("aria-label", `可換成精通：${name}，點擊查看說明`);
+          options.appendChild(button);
+        });
+        noteField.classList.add("tabletop-weapon-field--magic-note");
+        note?.appendChild(options);
+      }
     }
     // 魔法武器的武器說明與裝備中的彈藥接在備註框裡的下一行；沒有備註也沒有精通時取代「—」。
     const extraNotes = [
@@ -794,6 +815,35 @@
         ], { title: "混元體", trigger: document.getElementById("tabletop-action-tab-bonus") });
       } else {
         globalScope.AppDialog?.notify(`混元體：請手動擲 ${expression}，最少恢復 1 點生命值。`, { tone: "warning" });
+      }
+    }
+    // 回氣：擲 1d10 + 戰士等級，結果直接恢復生命值（不超過上限）。
+    if (option.resourceKey === "fighter-second-wind") {
+      const expression = `1d10+${Number.parseInt(document.getElementById("level")?.value || "", 10) || 1}`;
+      const rolled = globalScope.DiceRoller?.isEnabled?.()
+        ? globalScope.DiceRoller.rollExpressionsInModal([
+          { expression, label: "回氣恢復生命值", detail: "結果已恢復到目前生命值（不超過上限）。" }
+        ], { title: "回氣", trigger: document.getElementById("tabletop-action-tab-bonus") })
+        : null;
+      const healed = rolled?.ok ? globalScope.TabletopMode?.restoreHitPoints?.(rolled.results?.[0]?.total, { sourceLabel: "回氣" }) : null;
+      if (!healed?.ok) {
+        globalScope.AppDialog?.notify(rolled?.ok
+          ? "回氣：生命值資料無法自動更新，請依擲骰結果手動恢復生命值。"
+          : `回氣：請手動擲 ${expression}，並恢復生命值。`, { tone: "warning", duration: 7200 });
+      }
+    }
+    // 不知疲倦：擲 1d8 + 感知調整值（至少 1 點），結果直接成為臨時生命值（和既有的取較高者）。
+    if (option.resourceKey === "ranger-tireless") {
+      const wisdom = globalScope.calculateAbilityModifier((globalScope.getEffectiveAbilityValue?.("wis") ?? document.getElementById("wis")?.value) || "10");
+      const expression = `1d8${wisdom >= 0 ? "+" : ""}${wisdom}`;
+      const rolled = globalScope.DiceRoller?.isEnabled?.()
+        ? globalScope.DiceRoller.rollExpressionsInModal([
+          { expression, label: "不知疲倦臨時生命值", min: 1, detail: "結果已計入「至少 1 點」，並已設為臨時生命值（與既有值取較高者）。" }
+        ], { title: "不知疲倦", trigger: document.getElementById("tabletop-action-tab-action") })
+        : null;
+      const applied = rolled?.ok ? globalScope.TabletopMode?.grantTemporaryHitPoints?.(rolled.results?.[0]?.total, { sourceLabel: "不知疲倦：" }) : null;
+      if (!applied?.ok) {
+        globalScope.AppDialog?.notify(`不知疲倦：請手動擲 ${expression}（至少 1 點），並設定臨時生命值。`, { tone: "warning", duration: 7200 });
       }
     }
     renderActionPanel(currentMode);
