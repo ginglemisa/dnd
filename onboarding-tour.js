@@ -2695,7 +2695,8 @@
     // opens (e.g. both checkboxes of one choice, or a list's heading). Defaults to selector.
     // keepHighlight: keep the highlight (onboarding-jump-target-held) instead of the 1.8 s flash,
     // until the tab changes, the next jump, or a skill rank checkbox changes. Used by the skill gaps.
-    // held ({ label, count, refresh }): adds a hint row under the section heading ("label：再選 N 項" and
+    // held ({ label, count, suffix, refresh }): adds a hint row under the section heading ("label：再選 N 項",
+    // or label + suffix, and
     // a close button); on a skill rank change refresh() returns the same gap's current target
     // ({ highlightSelector, held }) to re-mark what is still open, or nothing once the gap is filled.
     async jumpToTarget({ tab = "basic", selector, focusSelector = selector, highlightSelector = selector, keepHighlight = false, held = null } = {}) {
@@ -2740,7 +2741,7 @@
             else target.prepend(hint);
           }
           hint.querySelector("b").textContent = info.label;
-          hint.querySelector("b + span").textContent = `：再選 ${info.count} 項`;
+          hint.querySelector("b + span").textContent = info.suffix ?? `：再選 ${info.count} 項`;
         };
         const clear = () => {
           mark([], null);

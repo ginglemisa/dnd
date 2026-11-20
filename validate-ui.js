@@ -5264,7 +5264,11 @@ async function verifyAutoCalculatedChecks(browser, url) {
     assert.deepEqual(await proficiency(), ["戰士技能尚未選完（1/2）。", "背景工具尚未選擇。"], "ticked skills fill the background first");
     await tick("prof-求生");
     await tick("prof-奧秘");
-    assert.deepEqual(await proficiency(), ["背景工具尚未選擇。"], "extra skills are not reported");
+    assert.deepEqual(await proficiency(), ["背景工具尚未選擇。"], "extra skills are not reported as gaps");
+    // 多勾另外一條（只在角色卡的提醒，不進匯出前檢查）：奧秘不屬於任何來源，指得出名稱。
+    const extras = () => page.evaluate(() => window.ProficiencyCheck.getExtraIssues().map(issue => issue.message));
+    assert.deepEqual(await extras(), ["技能熟練多勾 1 項：奧秘。"], "a skill no source accepts is named");
+    assert.equal((await reminders()).some(message => message.includes("多勾")), false, "the PDF precheck does not list extra skills");
     await pickTool("tool-proficiency-0");
     assert.deepEqual(await proficiency(), [], "a chosen background tool clears the last reminder");
 
@@ -5325,6 +5329,30 @@ async function verifyAutoCalculatedChecks(browser, url) {
     await tick("prof-威嚇");
     assert.deepEqual([await heldCount(), await heldHint()], [0, []], "the last pick clears everything");
     await page.evaluate(() => showTab("basic"));
+    // 多勾但分不出是哪一項（三個都在戰士清單內、名額兩個）：只寫數量，「前往」標出這三項，取消一項就清掉。
+    assert.deepEqual(await extras(), [], "a full sheet has no extras");
+    await tick("prof-察覺");
+    assert.deepEqual(await extras(), ["技能熟練多勾 1 項。"], "an ambiguous extra only gives the count");
+    await tick("prof-巧手");
+    assert.deepEqual(await extras(), ["技能熟練多勾 2 項（包含巧手）。"], "a certain extra is named next to an ambiguous one");
+    await tick("prof-巧手");
+    assert.deepEqual([(await jumpHighlights("技能熟練多勾")).skills.sort(), await heldHint()], [["運動", "威嚇", "察覺"].sort(), ["技能熟練：多勾 1 項"]], "the jump marks the skills that could be the extra one");
+    await tick("prof-宗教");
+    assert.deepEqual(await heldHint(), ["技能熟練：多勾 1 項"], "unticking a background skill leaves the extra (and opens a gap)");
+    await tick("prof-宗教");
+    await tick("prof-察覺");
+    assert.deepEqual([await heldCount(), await heldHint(), await extras()], [0, [], []], "unticking the extra clears the highlight, the hint row and the reminder");
+    await page.evaluate(() => showTab("basic"));
+    // 多勾提醒列在角色卡的提醒清單，和其他提醒一樣只有「前往」（要關掉用「隱藏警告」）。
+    await tick("prof-察覺");
+    assert.ok((await sheetReminders()).includes("技能熟練多勾 1 項。"), "the sheet lists the extra reminder");
+    await tick("prof-察覺");
+    assert.equal((await sheetReminders()).some(message => message.includes("多勾")), false, "and drops it once nothing is extra");
+    // 專精多勾：盜賊 1 級只有兩項專精。
+    await loaders.autosave({ ...ABILITIES, class: "rogue", level: "1", background: "acolyte", race: "dwarf", "prof-洞悉": true, "prof-宗教": true, "prof-隱匿": true, "prof-巧手": true, "prof-體操": true, "prof-察覺": true, "exp-隱匿": true, "exp-巧手": true, "exp-體操": true });
+    assert.deepEqual(await extras(), ["專精多勾 1 項。"], "extra expertise is reported on its own");
+    await tick("exp-體操");
+    assert.deepEqual(await extras(), []);
     await loaders.autosave({ ...ABILITIES, class: "fighter", level: "1", background: "acolyte", race: "dwarf", "prof-洞悉": true, "prof-宗教": true, "prof-運動": true });
     assert.deepEqual(await proficiency(), ["戰士技能尚未選完（1/2）。"], "a long list is not spelled out");
     assert.deepEqual((await jumpHighlights("戰士技能")).skills.sort(), ["體操", "馴獸", "歷史", "威嚇", "遊說", "察覺", "求生"].sort(), "but the jump still highlights it");
