@@ -5305,6 +5305,15 @@ async function verifyAutoCalculatedChecks(browser, url) {
     await loaders.autosave({ ...ABILITIES, class: "fighter", level: "1", background: "acolyte", race: "dwarf", "prof-洞悉": true, "prof-宗教": true, "prof-運動": true });
     assert.deepEqual(await proficiency(), ["戰士技能尚未選完（1/2）。"], "a long list is not spelled out");
     assert.deepEqual((await jumpHighlights("戰士技能")).skills.sort(), ["體操", "馴獸", "歷史", "威嚇", "遊說", "察覺", "求生"].sort(), "but the jump still highlights it");
+    // 手機的技能分左右兩欄，DOM 順序不是由上到下：要捲到最上面那個，上面不能還有看不到的標示。
+    const jumpViewport = page.viewportSize();
+    await page.setViewportSize({ width: 390, height: 700 });
+    await page.evaluate(() => { showTab("basic"); window.scrollTo(0, 0); });
+    await jumpHighlights("戰士技能");
+    await page.waitForTimeout(700);
+    const heldTops = await page.evaluate(() => Array.from(document.querySelectorAll(".onboarding-jump-target-held"), element => Math.round(element.getBoundingClientRect().top)));
+    assert.ok(Math.min(...heldTops) >= 100 && Math.min(...heldTops) <= 140, `the jump scrolls to the highest highlighted skill, not the first in DOM order (${heldTops.join(", ")})`);
+    await page.setViewportSize(jumpViewport);
     await page.evaluate(() => showTab("basic"));
     await loaders.autosave({ ...ABILITIES, class: "cleric", level: "1", background: "acolyte", "prof-洞悉": true, "prof-宗教": true });
     assert.deepEqual(await proficiency(), ["牧師技能尚未選完（0/2，可選：歷史、醫藥、遊說）。"]);

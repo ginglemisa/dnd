@@ -2718,7 +2718,12 @@
         .filter((element) => isElementVisible(element) && !element.disabled);
       if (!highlights.length) highlights.push(target);
       if (featurePanel) highlights[0].scrollIntoView({ block: "center", inline: "nearest" });
-      else await this.scrollElementIntoView(highlights[0], 120);
+      else {
+        // Scroll to the highest one on screen: DOM order is not top-to-bottom when the highlights sit
+        // in side-by-side columns (the skill list), and the ones above would be left off screen.
+        const top = (element) => element.getBoundingClientRect().top;
+        await this.scrollElementIntoView(highlights.reduce((highest, element) => top(element) < top(highest) ? element : highest), 120);
+      }
       const focusTarget = Array.from(document.querySelectorAll(focusSelector)).find((element) => {
         return isElementVisible(element) && !element.disabled;
       });
