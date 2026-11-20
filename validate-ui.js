@@ -6,6 +6,7 @@ const path = require("node:path");
 const http = require("node:http");
 const vm = require("node:vm");
 const { chromium } = require("playwright");
+require("./tools/regression-legal-notice");
 const { missingPrivateAssets, privateAssetsSkipped, MISSING_HELP } = require("./tools/copy-private-assets");
 
 // Code moved out of index.html loads in place as local scripts without defer/async.

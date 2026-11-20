@@ -8,6 +8,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const http = require("node:http");
 const { chromium } = require("playwright");
+require("./tools/regression-legal-notice");
 
 // Captured from parser-assisted output at 76a4172, before disconnecting it.
 // Each class row is [mode, minimum level, label, persisted option key].

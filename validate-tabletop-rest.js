@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const http = require("node:http");
 const { chromium } = require("playwright");
+require("./tools/regression-legal-notice");
 
 async function main() {
   const server = http.createServer((req, res) => {
