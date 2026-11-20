@@ -8180,12 +8180,29 @@ window.addEventListener("DOMContentLoaded", async function() {
 </div>
 
 <script>
-  // 抓過的檔案存在瀏覽器裡（sw.js）：只在正式站啟用，本機測試、離線版 twd20.html 不註冊。
-  if ("serviceWorker" in navigator
-      && location.protocol === "https:"
-      && ["twd20.com", "www.twd20.com"].includes(location.hostname)) {
+  // 抓過的檔案存在瀏覽器裡（sw.js），沒網路也能開：只在正式站啟用，本機測試、離線版 twd20.html 不註冊。
+  // 註冊後把這一頁用到的檔案，和之後才會載入的資料檔（各種 SRD 版、魔法物品說明）交給 sw.js 補存；
+  // 瀏覽器開了省流量模式時不補存，只存實際用到的。
+  function registerOfflineCache() {
+    if (!("serviceWorker" in navigator)) return Promise.resolve(null);
+    return navigator.serviceWorker.register("/sw.js").then(() => navigator.serviceWorker.ready).then((registration) => {
+      if (!registration.active || (navigator.connection && navigator.connection.saveData)) return registration;
+      const urls = performance.getEntriesByType("resource")
+        .map((entry) => entry.name)
+        .filter((name) => name.startsWith(location.origin + "/"));
+      [
+        typeof classSrdFile === "string" && classSrdFile,
+        typeof monsterSrdFile === "string" && monsterSrdFile,
+        typeof spellSrdFile === "string" && spellSrdFile,
+        typeof magicItemTextFile === "string" && magicItemTextFile
+      ].forEach((file) => { if (file) urls.push(new URL(file, location.href).href); });
+      registration.active.postMessage({ type: "twd20-warm", urls });
+      return registration;
+    });
+  }
+  if (location.protocol === "https:" && ["twd20.com", "www.twd20.com"].includes(location.hostname)) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      setTimeout(() => { registerOfflineCache().catch(() => {}); }, 3000);
     });
   }
 </script>

@@ -86,6 +86,7 @@
 ## 部署與離線版
 
 * 回歸測試只在本機推送前執行。GitHub Actions（`.github/workflows/site.yml`）在 push 到 `main` 時建置、產生離線角色卡並部署 GitHub Pages，不跑回歸測試。
+* **瀏覽器快取（Service Worker）**：`sw.js` 只在正式站註冊（`index.html` 檔尾的 `registerOfflineCache()`），把抓過的檔案存在瀏覽器，沒網路也能開；本機、其他網域與離線版 `twd20.html` 都不啟用。存法寫在 `sw.js` 檔頭：有 `?v=` 的檔案存下來就不再問伺服器，所以改了檔案卻沒換 `?v=`，用過網站的人會一直拿到舊檔；字型與 PDF 存一次就好，要換時改 `sw.js` 的 `ASSET_CACHE` 版本號。新增「之後才載入」的資料檔時，把它的網址加進 `registerOfflineCache()` 的補存清單。`sw.js` 必須留在網站根目錄，不加 `?v=`。
 * `twd20.html` 是 Actions 產生的衍生產物，不提交、不手改。離線版除了停用 PDF 匯出，功能應與網頁版相同；不含私人內容，分享只產生正式站的永久網址。
 * 改動可能影響離線版（載入順序、內嵌的 script／CSS／圖片、新增產物檔、路徑或離線分享）時，自行在本機執行 `npm run build:offline`（先 `npm run build`；腳本內含自身驗證），測完刪除產物。
 * **部署時併入的額外檔案**：`site.yml` 有一段會在部署時從另一個 repo 取得少量靜態頁面與直式角色卡（原版版面的非官方中翻）的 PDF 資源，細節看該段流程。這些檔案不進本 repo；來源有變動時不會自動部署，變動後要到 GitHub Actions 手動執行「網站上線」。
@@ -116,7 +117,7 @@
 | `validate-ability-roll.js` | 屬性產生、購點、擲骰（`--point-buy-only`／`--dice-only`） |
 | `validate-onboarding.js` | 導覽、創角匯入、PDF 載入取消（`--touch-only`／`--imports-only`） |
 | `validate-tabletop-rest.js` | 短休／長休、資源恢復、休息後選項 |
-| `validate-ui.js` | `--data-only` 存檔／分享／匯入安全、分享模式唯讀（也可用 `--share-only` 單跑）、職業選項記憶、子職、物品欄；`--dialogs-only` 對話框、角色能力視窗、缺項提示；`--gestures-only` 分頁滑動換頁與 Toast 滑除；`--appearance-only` 主題外觀；`--pdf-only`／`--pdf-fields-only` PDF；`--journal-only` 日誌；不帶參數另含 GA4 隔離模擬 |
+| `validate-ui.js` | `--data-only` 存檔／分享／匯入安全、分享模式唯讀（也可用 `--share-only` 單跑）、職業選項記憶、子職、物品欄；`--dialogs-only` 對話框、角色能力視窗、缺項提示；`--gestures-only` 分頁滑動換頁與 Toast 滑除；`--appearance-only` 主題外觀；`--pdf-only`／`--pdf-fields-only` PDF；`--journal-only` 日誌；`--offline-cache-only` Service Worker（預先存檔、各種存法、網路卡住與斷線）；不帶參數另含 GA4 隔離模擬 |
 
 * 環境為 Node.js 20 以上，在專案根目錄執行。Playwright 腳本會自行啟動伺服器與 Chromium（`DND_BROWSER_CHANNEL=msedge` 可改用 Edge）。新環境先執行 `npm ci` 與 `npx --no-install playwright install chromium`。新的 worktree 沒有 `content/private/`，建置結果只含公開內容。
 * **測試流量**：任何方式載入本站（本機、正式站、`file://`、新分頁、新 context、分享網址），網址都必須帶 `analytics=owner`，並放在 `#` 之前；禁止向真實 GA4 送測試事件。
