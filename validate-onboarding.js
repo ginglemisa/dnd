@@ -2105,6 +2105,7 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       });
       assert.ok(quickBuildSkills.acquired.length, "quick build acquired skills");
       assert.deepEqual(quickBuildSkills.ticked, quickBuildSkills.acquired, "quick build ticks only the draft's skills");
+      assert.deepEqual(await page.evaluate(() => window.ProficiencyCheck.getExtraIssues().map(issue => issue.message)), [], "a quick-build character has no extra skills or expertise");
       // Temporary quick-build purchases are paid from the starting gold only during the import.
       assert.deepEqual(await page.evaluate(() => ({
         money: ["pp", "gp", "sp", "cp"].map(id => document.getElementById(`money-balance-${id}`).value),

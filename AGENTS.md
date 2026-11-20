@@ -69,7 +69,7 @@
 | 創角 | `quick-build.js`、`custom-background.js` |
 | 職業能力 UI 與選項記憶（含背景選擇記憶） | `class-features-ui.js`、`class-option-memory.js` |
 | 專長列 | `feat-ui.js` |
-| 技能／工具熟練與專精的缺項提醒 | `proficiency-check.js`（`ProficiencyCheck.getIssues()`，只做提醒；呼叫端用 `?.`，拿掉檔案時退回舊的三條提醒，見 BEHAVIOR.md「技能」） |
+| 技能／工具熟練與專精的缺項與多勾提醒 | `proficiency-check.js`（`ProficiencyCheck.getIssues()` 缺項、`getExtraIssues()` 多勾，只做提醒，算法與加新來源的方式見檔頭；呼叫端用 `?.`，拿掉檔案時退回舊的三條提醒，見 BEHAVIOR.md「技能」） |
 | 法術頁、衍生法術、法術管理、法術書 | `sheet-spells.js`、`spell-sources.js`、`spell-management.js`、`spellbook.js` |
 | 搜尋 | `search.js` |
 | 動作 | `action-panel.js` |

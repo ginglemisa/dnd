@@ -2693,9 +2693,13 @@
 
     // highlightSelector: the visible, enabled elements to light up, found after the panel
     // opens (e.g. both checkboxes of one choice, or a list's heading). Defaults to selector.
-    // keepHighlight: keep the highlight (onboarding-jump-target-held) until the tab changes, a skill
-    // rank checkbox changes, or the next jump, instead of the 1.8 s flash. Used by the skill gaps.
-    async jumpToTarget({ tab = "basic", selector, focusSelector = selector, highlightSelector = selector, keepHighlight = false } = {}) {
+    // keepHighlight: keep the highlight (onboarding-jump-target-held) instead of the 1.8 s flash,
+    // until the tab changes, the next jump, or a skill rank checkbox changes. Used by the skill gaps.
+    // held ({ label, count, suffix, refresh }): adds a hint row under the section heading ("label：再選 N 項",
+    // or label + suffix, and
+    // a close button); on a skill rank change refresh() returns the same gap's current target
+    // ({ highlightSelector, held }) to re-mark what is still open, or nothing once the gap is filled.
+    async jumpToTarget({ tab = "basic", selector, focusSelector = selector, highlightSelector = selector, keepHighlight = false, held = null } = {}) {
       this.clearHeldHighlight?.();
       if (!selector) return false;
       if (this.active) this.stop({ resetView: false });
@@ -2717,27 +2721,64 @@
       const highlights = Array.from(document.querySelectorAll(highlightSelector))
         .filter((element) => isElementVisible(element) && !element.disabled);
       if (!highlights.length) highlights.push(target);
-      if (featurePanel) highlights[0].scrollIntoView({ block: "center", inline: "nearest" });
-      else await this.scrollElementIntoView(highlights[0], 120);
-      const focusTarget = Array.from(document.querySelectorAll(focusSelector)).find((element) => {
-        return isElementVisible(element) && !element.disabled;
-      });
-      focusTarget?.focus?.({ preventScroll: true });
+      let hint = null;
       if (keepHighlight) {
-        // Registered last: showTab() above already dispatched its own tabchange.
+        // Before the scroll: the hint row pushes the list down.
+        let marked = [];
+        const mark = (elements, info) => {
+          marked.forEach((element) => element.classList.remove("onboarding-jump-target-held"));
+          marked = elements;
+          marked.forEach((element) => element.classList.add("onboarding-jump-target-held"));
+          if (!info?.label) return;
+          if (!hint) {
+            hint = document.createElement("div");
+            hint.className = "jump-held-hint";
+            hint.setAttribute("role", "status");
+            hint.innerHTML = '<span class="jump-held-hint__swatch" aria-hidden="true"></span><span class="jump-held-hint__text"><b></b><span></span></span><button type="button" class="jump-held-hint__close" aria-label="關閉標示">✕</button>';
+            hint.querySelector("button").addEventListener("click", () => clear());
+            const heading = target.querySelector(".skill-section-heading");
+            if (heading) heading.after(hint);
+            else target.prepend(hint);
+          }
+          hint.querySelector("b").textContent = info.label;
+          hint.querySelector("b + span").textContent = info.suffix ?? `：再選 ${info.count} 項`;
+        };
         const clear = () => {
-          highlights.forEach((element) => element.classList.remove("onboarding-jump-target-held"));
+          mark([], null);
+          hint?.remove();
           window.removeEventListener("tabchange", clear);
           document.removeEventListener("change", onChange, true);
           this.clearHeldHighlight = null;
         };
-        const onChange = (event) => { if (event.target?.dataset?.skillRank) clear(); };
-        highlights.forEach((element) => element.classList.add("onboarding-jump-target-held"));
+        const onChange = (event) => {
+          if (!event.target?.dataset?.skillRank) return;
+          const next = held?.refresh?.();
+          const remaining = next?.highlightSelector ? Array.from(document.querySelectorAll(next.highlightSelector))
+            .filter((element) => isElementVisible(element) && !element.disabled) : [];
+          if (remaining.length) mark(remaining, next.held);
+          else clear();
+        };
+        mark(highlights, held);
+        // Registered last: showTab() above already dispatched its own tabchange.
         window.addEventListener("tabchange", clear);
         document.addEventListener("change", onChange, true);
         this.clearHeldHighlight = clear;
-        return true;
       }
+      if (featurePanel) highlights[0].scrollIntoView({ block: "center", inline: "nearest" });
+      else {
+        // Scroll to the highest one on screen: DOM order is not top-to-bottom when the highlights sit
+        // in side-by-side columns (the skill list), and the ones above would be left off screen.
+        const top = (element) => element.getBoundingClientRect().top;
+        const highest = highlights.reduce((best, element) => top(element) < top(best) ? element : best);
+        // Show the hint row too when the first highlight is close below it.
+        const anchor = hint && top(highest) - top(hint) < window.innerHeight * 0.4 ? hint : highest;
+        await this.scrollElementIntoView(anchor, 120);
+      }
+      const focusTarget = Array.from(document.querySelectorAll(focusSelector)).find((element) => {
+        return isElementVisible(element) && !element.disabled;
+      });
+      focusTarget?.focus?.({ preventScroll: true });
+      if (keepHighlight) return true;
       highlights.forEach((element) => element.classList.remove("onboarding-jump-target"));
       void highlights[0].offsetWidth;
       highlights.forEach((element) => element.classList.add("onboarding-jump-target"));

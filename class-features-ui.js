@@ -328,7 +328,10 @@ function updateClassFeatureChoiceReminder() {
   if (!reminder) return;
 
   // 職業缺項提醒等職業、等級、背景與種族都選好才顯示。
-  const issues = isCharacterCoreSelectionComplete() ? getClassFeatureChoiceIssues() : [];
+  // 多勾的技能與專精只列在這裡，不進匯出前檢查；要關掉用「隱藏警告」。
+  const issues = isCharacterCoreSelectionComplete()
+    ? [...getClassFeatureChoiceIssues(), ...(window.ProficiencyCheck?.getExtraIssues?.() || [])]
+    : [];
   const warningToggle = document.getElementById("character-choice-warning-toggle");
   if (warningToggle) warningToggle.hidden = characterChoiceWarningsHidden || issues.length === 0;
   reminder.replaceChildren();

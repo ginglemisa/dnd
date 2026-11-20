@@ -8,7 +8,13 @@
  *   skill／expertise、種族特質的 skillChoice、專長的 skillChoice。不從顯示文字反推。
  * - 技能分不出是哪個來源給的，所以用配對：每個來源拆成名額，已勾的技能分配進名額，配不到技能的名額就是缺項。
  *   先填限制嚴的名額（背景固定項 → 清單短的 → 任選 → 技能或工具都可以），缺口因此落在範圍最寬的來源上；
- *   再怎麼勾都填不了的名額（清單內的技能全被別的名額用掉）不算缺。多勾的技能不提醒。
+ *   再怎麼勾都填不了的名額（清單內的技能全被別的名額用掉）不算缺。
+ * - 算法是二分圖最大匹配（技能對名額，增廣路徑法）。名額全部由內容檔的規則依等級產生，這裡沒有寫死等級或職業：
+ *   提高等級上限、加職業或專長時不用改這個檔案，只要內容檔的 picks／skillChoice 寫對。
+ *   要改這個檔案的情況：出現新的「來源種類」（在 analyze() 加一段 addSlots，並在 GROUP_ORDER、sourceLabel 補上），
+ *   或名額之間有互相限制的規則（選了甲就不能選乙，配對解不了，要換做法）。
+ *   「熟練或專精擇一」的專長每個要試兩種算法，最多試 4 個（16 種），超過的當成熟練名額。
+ * - 多勾（getExtraIssues）：配不到名額的技能或專精。只算技能、不算工具；只列在角色卡的提醒，不進匯出前檢查。
  */
 (function attachProficiencyCheck(globalScope) {
   "use strict";
@@ -51,6 +57,22 @@
     return { filled, missing };
   }
 
+  /**
+   * 多勾：配不到名額的項目。count 是多的數量；candidates 是「拿掉後配對數不變」的項目，
+   * 剛好等於 count 時就是多的那幾項，比 count 多時表示分不出是哪幾項。
+   * certain 是沒有任何名額收的項目，一定是多勾的。
+   */
+  function findExtras(slots, items) {
+    const matched = list => solve(slots, list, list).filled.length;
+    const size = matched(items);
+    const count = items.length - size;
+    return {
+      count,
+      candidates: count ? items.filter(item => matched(items.filter(other => other !== item)) === size) : [],
+      certain: items.filter(item => !slots.some(slot => accepts(slot, item)))
+    };
+  }
+
   const toSkillSet = from => Array.isArray(from) ? new Set(from) : null;
 
   function readSkills(doc) {
@@ -83,8 +105,8 @@
     return globalScope.getFeatUsageEntries().filter(entry => entry.value && entry.usable).map(entry => entry.value);
   }
 
-  /** 目前角色的缺項；背景、職業、等級還沒選好（或規則資料沒載入）時回傳 null，表示這項檢查不適用。 */
-  function getIssues() {
+  /** 缺項（issues）與多勾（extras）；背景、職業、等級還沒選好（或規則資料沒載入）時回傳 null，表示這項檢查不適用。 */
+  function analyze() {
     const doc = globalScope.document;
     const value = id => (doc.getElementById(id)?.value || "").trim();
     const className = value("class");
@@ -138,7 +160,8 @@
     const currentItems = [...skills.proficient, ...tools.extraTools.map((tool, index) => `${TOOL_PREFIX}${index}:${tool}`)];
     const allItems = [...skills.all, ...currentItems.filter(isToolItem), ...Array.from({ length: flexibleCount }, (unused, index) => `${TOOL_PREFIX}new:${index}`)];
 
-    // 每個「擇一」的專長試兩種算法（熟練名額／專精名額），取總缺項最少的；一樣少時優先當成熟練名額。
+    // 每個「擇一」的專長試兩種算法（熟練名額／專精名額），取總缺項最少的；一樣少時取多勾少的，再一樣優先當成熟練名額。
+    // 多勾只看技能、不看工具：工具也能填「技能或工具」的名額，分不出多的是哪一種，寧可少報。
     let best = null;
     for (let mask = 0; mask < 1 << Math.min(eitherFeats.length, 4); mask += 1) {
       const proficiencySide = [...skillSlots];
@@ -147,7 +170,11 @@
       const proficiency = solve(proficiencySide, currentItems, allItems);
       const expertise = solve(expertiseSide, skills.expertise, skills.all);
       const missingCount = proficiency.missing.length + expertise.missing.length;
-      if (!best || missingCount < best.missingCount) best = { missingCount, results: [[proficiencySide, proficiency], [expertiseSide, expertise]] };
+      const extra = { proficiency: findExtras(proficiencySide, skills.proficient), expertise: findExtras(expertiseSide, skills.expertise) };
+      const extraCount = extra.proficiency.count + extra.expertise.count;
+      if (!best || missingCount < best.missingCount || (missingCount === best.missingCount && extraCount < best.extraCount)) {
+        best = { missingCount, extraCount, extra, results: [[proficiencySide, proficiency], [expertiseSide, expertise]] };
+      }
     }
 
     const filled = new Map();
@@ -176,10 +203,23 @@
       const options = getOptions(group);
       return options.length && options.length <= MAX_LISTED_OPTIONS ? `${lead}可選：${options.join("、")}` : "";
     };
+    // 提醒與技能頁提示列共用的來源名稱。
+    const sourceLabel = group => group.kind === "classSkills" ? `${classRules.name}技能`
+      : group.kind === "feature" ? `${classRules.name}${group.name}的技能`
+      : group.kind === "expertise" ? `${classRules.name}專精`
+      : `${group.name}的技能`;
     const highlight = group => {
-      const options = getOptions(group);
-      // keepHighlight：技能缺項的標示一直留著，直到換分頁、改了技能勾選或再按一次「前往」（jumpToTarget）。
-      return options.length ? { keepHighlight: true, highlightSelector: options.map(skill => `#tab-skills .skill-tip[data-skill="${skill}"]`).join(", ") } : {};
+      // 技能或工具都可以的專長不標技能（什麼都能選）。
+      const options = group.orTool ? [] : getOptions(group);
+      if (!options.length) return {};
+      // keepHighlight：標示一直留著，直到換分頁、再按一次「前往」、按提示列的關閉，或這個來源補滿。
+      // held：技能頁提示列的文字（來源：再選 N 項）；勾選改變時 refresh() 重新檢查，回傳同一個來源目前的缺項。
+      const key = `${group.kind}:${group.name || ""}`;
+      return {
+        keepHighlight: true,
+        highlightSelector: options.map(skill => `#tab-skills .skill-tip[data-skill="${skill}"]`).join(", "),
+        held: { key, label: sourceLabel(group), count: missing.get(group), refresh: () => getIssues()?.find(issue => issue.held?.key === key) }
+      };
     };
     // 提醒的順序：背景、職業技能、職業能力、種族、專長、專精；同類依來源順序。
     const groups = [...missing.keys()].sort((a, b) => GROUP_ORDER.indexOf(a.kind) - GROUP_ORDER.indexOf(b.kind));
@@ -199,13 +239,10 @@
       focusSelector: `[id="prof-${missingBackgroundSkills[0]}"]`
     });
     groups.filter(group => group.kind !== "background").forEach(group => {
-      if (group.kind === "classSkills") skillIssue(group, `${classRules.name}技能${pending(group)}。`);
-      else if (group.kind === "feature") skillIssue(group, `${classRules.name}${group.name}的技能${pending(group)}。`);
-      else if (group.kind === "race") skillIssue(group, `${group.name}的技能${pending(group)}。`);
-      else if (group.kind === "feat" && group.orTool) skillIssue(group, `${group.name}尚未選完（${progress(group)}，技能或工具都可以）。`);
-      else if (group.kind === "feat" || group.kind === "eitherFeat") skillIssue(group, `${group.name}的技能${pending(group)}。`);
-      else if (group.kind === "expertise") skillIssue(group, `${classRules.name}專精尚未選完（${progress(group)}${listed(group, "，")}）。`,
+      if (group.kind === "feat" && group.orTool) skillIssue(group, `${group.name}尚未選完（${progress(group)}，技能或工具都可以）。`);
+      else if (group.kind === "expertise") skillIssue(group, `${sourceLabel(group)}尚未選完（${progress(group)}${listed(group, "，")}）。`,
         { focusSelector: ".circle-checkbox:not(:checked):not(:disabled)" });
+      else skillIssue(group, `${sourceLabel(group)}${pending(group)}。`);
     });
 
     // 工具：背景與職業的工具各有自己的一列，空白就是沒選。
@@ -225,8 +262,30 @@
         ...(emptyClassTools[0].id ? { focusSelector: `#${emptyClassTools[0].id}` } : {})
       });
     }
-    return issues;
+
+    // 多勾：指得出是哪幾項就寫名稱，只確定其中幾項寫「包含」，都分不出來只寫數量；
+    // 「前往」標出可能多勾的技能，勾選改變時重新檢查。
+    const extras = [];
+    [["proficiency", "技能熟練"], ["expertise", "專精"]].forEach(([kind, label]) => {
+      const { count, candidates, certain } = best.extra[kind];
+      if (!count) return;
+      const names = candidates.length === count ? `：${candidates.join("、")}` : certain.length ? `（包含${certain.join("、")}）` : "";
+      const key = `extra:${kind}`;
+      extras.push({
+        ...SKILL_TARGET,
+        message: `${label}多勾 ${count} 項${names}。`,
+        keepHighlight: true,
+        highlightSelector: candidates.map(skill => `#tab-skills .skill-tip[data-skill="${skill}"]`).join(", "),
+        held: { key, label, suffix: `：多勾 ${count} 項`, refresh: () => getExtraIssues().find(issue => issue.held.key === key) }
+      });
+    });
+    return { issues, extras };
   }
 
-  globalScope.ProficiencyCheck = Object.freeze({ getIssues });
+  /** 目前角色的缺項；不適用時回傳 null。 */
+  const getIssues = () => analyze()?.issues ?? null;
+  /** 多勾的提醒（技能熟練、專精各一條）；不適用或沒有多勾時是空陣列。 */
+  const getExtraIssues = () => analyze()?.extras ?? [];
+
+  globalScope.ProficiencyCheck = Object.freeze({ getIssues, getExtraIssues });
 })(window);
