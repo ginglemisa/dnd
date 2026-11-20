@@ -890,6 +890,55 @@ input[type="radio"].onboarding-jump-target {
   box-shadow: 0 0 0 8px rgba(82, 111, 174, 0.16);
 }
 
+/* 標示的提示列：放在區塊標題下方，說明外框的意思與還差幾項；小方框是外框的圖例，✕ 關閉標示。 */
+.jump-held-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  padding: 0.3rem 0.35rem 0.3rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(82, 111, 174, 0.12);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
+.jump-held-hint__swatch {
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin: 0 0.2rem 0 0.15rem;
+  border-radius: 4px;
+  outline: 2px solid rgba(82, 111, 174, 0.88);
+  box-shadow: 0 0 0 3px rgba(82, 111, 174, 0.16);
+}
+
+.jump-held-hint__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.jump-held-hint__text b {
+  font-weight: 700;
+}
+
+.jump-held-hint button.jump-held-hint__close {
+  flex: none;
+  width: 2rem;
+  min-width: 0;
+  height: 2rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .onboarding-jump-target {
     animation-duration: 0.01ms;

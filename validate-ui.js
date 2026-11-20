@@ -5297,10 +5297,33 @@ async function verifyAutoCalculatedChecks(browser, url) {
     await page.evaluate(() => onboardingTour.jumpToTarget({ tab: "skills", selector: "#save-section" }));
     assert.deepEqual([await heldCount(), await page.locator("#save-section.onboarding-jump-target").count()], [0, 1], "another jump clears the held highlight and flashes as before");
     await page.evaluate(() => showTab("basic"));
+    // 提示列：來源與還差幾項；按 ✕ 清掉外框與提示列。
+    const heldHint = () => page.evaluate(() => Array.from(document.querySelectorAll("#skill-bonus-section > .skill-section-heading + .jump-held-hint .jump-held-hint__text"), element => element.textContent));
+    await jumpHighlights("敏銳感官");
+    assert.deepEqual(await heldHint(), ["精靈敏銳感官的技能：再選 1 項"], "the hint row names the source and how many are left");
+    await page.evaluate(() => document.querySelector(".jump-held-hint__close").click());
+    assert.deepEqual([await heldCount(), await heldHint()], [0, []], "the close button clears the highlight and the hint row");
+    // 勾選後重新檢查：和這個來源無關的勾選不影響標示，補滿才清掉。
     await jumpHighlights("敏銳感官");
     await tick("prof-醫藥");
-    assert.equal(await heldCount(), 0, "changing a skill rank checkbox clears the held highlight");
+    assert.deepEqual([await heldCount(), await heldHint()], [2, ["精靈敏銳感官的技能：再選 1 項"]], "an unrelated skill keeps the highlight");
     await tick("prof-醫藥");
+    await tick("prof-察覺");
+    assert.deepEqual([await heldCount(), await heldHint()], [0, []], "filling the source clears the highlight and the hint row");
+    await tick("prof-察覺");
+    await page.evaluate(() => showTab("basic"));
+    // 多選的來源：勾一個只拿掉那一格，數字跟著減；取消勾選會加回來。
+    await loaders.autosave({ ...ABILITIES, class: "fighter", level: "1", background: "acolyte", race: "dwarf", "prof-洞悉": true, "prof-宗教": true });
+    const heldSkills = () => page.evaluate(() => Array.from(document.querySelectorAll(".onboarding-jump-target-held"), element => element.dataset.skill).sort());
+    assert.equal((await jumpHighlights("戰士技能")).skills.length, 8);
+    assert.deepEqual(await heldHint(), ["戰士技能：再選 2 項"]);
+    await tick("prof-運動");
+    assert.deepEqual([await heldSkills(), await heldHint()], [["體操", "馴獸", "歷史", "威嚇", "遊說", "察覺", "求生"].sort(), ["戰士技能：再選 1 項"]], "ticking one option keeps the rest highlighted and counts down");
+    await tick("prof-運動");
+    assert.deepEqual([(await heldSkills()).length, await heldHint()], [8, ["戰士技能：再選 2 項"]], "unticking it restores the highlight and the count");
+    await tick("prof-運動");
+    await tick("prof-威嚇");
+    assert.deepEqual([await heldCount(), await heldHint()], [0, []], "the last pick clears everything");
     await page.evaluate(() => showTab("basic"));
     await loaders.autosave({ ...ABILITIES, class: "fighter", level: "1", background: "acolyte", race: "dwarf", "prof-洞悉": true, "prof-宗教": true, "prof-運動": true });
     assert.deepEqual(await proficiency(), ["戰士技能尚未選完（1/2）。"], "a long list is not spelled out");
@@ -5311,8 +5334,8 @@ async function verifyAutoCalculatedChecks(browser, url) {
     await page.evaluate(() => { showTab("basic"); window.scrollTo(0, 0); });
     await jumpHighlights("戰士技能");
     await page.waitForTimeout(700);
-    const heldTops = await page.evaluate(() => Array.from(document.querySelectorAll(".onboarding-jump-target-held"), element => Math.round(element.getBoundingClientRect().top)));
-    assert.ok(Math.min(...heldTops) >= 100 && Math.min(...heldTops) <= 140, `the jump scrolls to the highest highlighted skill, not the first in DOM order (${heldTops.join(", ")})`);
+    const heldTops = await page.evaluate(() => Array.from(document.querySelectorAll(".jump-held-hint, .onboarding-jump-target-held"), element => Math.round(element.getBoundingClientRect().top)));
+    assert.ok(heldTops[0] >= 100 && heldTops[0] <= 140 && Math.min(...heldTops) === heldTops[0], `the jump scrolls to the hint row with every highlighted skill below it, not to the first skill in DOM order (${heldTops.join(", ")})`);
     await page.setViewportSize(jumpViewport);
     await page.evaluate(() => showTab("basic"));
     await loaders.autosave({ ...ABILITIES, class: "cleric", level: "1", background: "acolyte", "prof-洞悉": true, "prof-宗教": true });
@@ -5336,6 +5359,10 @@ async function verifyAutoCalculatedChecks(browser, url) {
     const withFeat = (feat, state) => ({ ...ABILITIES, ...state, "manual-feat-management": true, __managedFeatRows: [{ value: feat }] });
     await loaders.autosave(withFeat("熟習", { class: "fighter", level: "1", background: "acolyte", "prof-洞悉": true, "prof-宗教": true, "prof-運動": true, "prof-察覺": true }));
     assert.deepEqual(await proficiency(), ["熟習尚未選完（0/3，技能或工具都可以）。"]);
+    assert.deepEqual(await page.evaluate(() => {
+      const issue = window.ProficiencyCheck.getIssues().find(entry => entry.message.startsWith("熟習"));
+      return [issue.keepHighlight === true, "held" in issue];
+    }), [false, false], "a skill-or-tool feat marks no skills and has no hint row");
     await tick("prof-奧秘");
     await addTool();
     assert.deepEqual(await proficiency(), ["熟習尚未選完（2/3，技能或工具都可以）。"], "a skill and an added tool both count");

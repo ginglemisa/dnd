@@ -176,10 +176,23 @@
       const options = getOptions(group);
       return options.length && options.length <= MAX_LISTED_OPTIONS ? `${lead}可選：${options.join("、")}` : "";
     };
+    // 提醒與技能頁提示列共用的來源名稱。
+    const sourceLabel = group => group.kind === "classSkills" ? `${classRules.name}技能`
+      : group.kind === "feature" ? `${classRules.name}${group.name}的技能`
+      : group.kind === "expertise" ? `${classRules.name}專精`
+      : `${group.name}的技能`;
     const highlight = group => {
-      const options = getOptions(group);
-      // keepHighlight：技能缺項的標示一直留著，直到換分頁、改了技能勾選或再按一次「前往」（jumpToTarget）。
-      return options.length ? { keepHighlight: true, highlightSelector: options.map(skill => `#tab-skills .skill-tip[data-skill="${skill}"]`).join(", ") } : {};
+      // 技能或工具都可以的專長不標技能（什麼都能選）。
+      const options = group.orTool ? [] : getOptions(group);
+      if (!options.length) return {};
+      // keepHighlight：標示一直留著，直到換分頁、再按一次「前往」、按提示列的關閉，或這個來源補滿。
+      // held：技能頁提示列的文字（來源：再選 N 項）；勾選改變時 refresh() 重新檢查，回傳同一個來源目前的缺項。
+      const key = `${group.kind}:${group.name || ""}`;
+      return {
+        keepHighlight: true,
+        highlightSelector: options.map(skill => `#tab-skills .skill-tip[data-skill="${skill}"]`).join(", "),
+        held: { key, label: sourceLabel(group), count: missing.get(group), refresh: () => getIssues()?.find(issue => issue.held?.key === key) }
+      };
     };
     // 提醒的順序：背景、職業技能、職業能力、種族、專長、專精；同類依來源順序。
     const groups = [...missing.keys()].sort((a, b) => GROUP_ORDER.indexOf(a.kind) - GROUP_ORDER.indexOf(b.kind));
@@ -199,13 +212,10 @@
       focusSelector: `[id="prof-${missingBackgroundSkills[0]}"]`
     });
     groups.filter(group => group.kind !== "background").forEach(group => {
-      if (group.kind === "classSkills") skillIssue(group, `${classRules.name}技能${pending(group)}。`);
-      else if (group.kind === "feature") skillIssue(group, `${classRules.name}${group.name}的技能${pending(group)}。`);
-      else if (group.kind === "race") skillIssue(group, `${group.name}的技能${pending(group)}。`);
-      else if (group.kind === "feat" && group.orTool) skillIssue(group, `${group.name}尚未選完（${progress(group)}，技能或工具都可以）。`);
-      else if (group.kind === "feat" || group.kind === "eitherFeat") skillIssue(group, `${group.name}的技能${pending(group)}。`);
-      else if (group.kind === "expertise") skillIssue(group, `${classRules.name}專精尚未選完（${progress(group)}${listed(group, "，")}）。`,
+      if (group.kind === "feat" && group.orTool) skillIssue(group, `${group.name}尚未選完（${progress(group)}，技能或工具都可以）。`);
+      else if (group.kind === "expertise") skillIssue(group, `${sourceLabel(group)}尚未選完（${progress(group)}${listed(group, "，")}）。`,
         { focusSelector: ".circle-checkbox:not(:checked):not(:disabled)" });
+      else skillIssue(group, `${sourceLabel(group)}${pending(group)}。`);
     });
 
     // 工具：背景與職業的工具各有自己的一列，空白就是沒選。
