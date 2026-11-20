@@ -145,6 +145,13 @@
           "items": { "enum": ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"] },
           "description": "取得此能力後，本職業的準備法術（一環以上，不含戲法）也可從這些職業法表挑選，仍算本職業的法術（例如吟遊詩人「魔法奧祕」）。"
         },
+        "masteryOptions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["順劈", "劃傷", "迅切", "推離", "削弱", "緩速", "失衡", "侵擾"] },
+          "description": "取得此能力後，用能使用精通屬性的武器攻擊時可以改用的精通屬性（例如戰士「戰術大師」）。跑團的武器備註會列出武器本身沒有的那幾種。"
+        },
         "freeCast": {
           "type": "object",
           "additionalProperties": false,

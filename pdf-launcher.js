@@ -99,23 +99,8 @@ function buildPdfPrecheckMessages() {
     });
   });
 
-  const firstMissingBaseLanguage = ["language1", "language2"].find(id => !(document.getElementById(id)?.value || "").trim());
-  if (firstMissingBaseLanguage) reminders.push({
-    message: "基本語言尚未選完。",
-    tab: "skills",
-    selector: ".language-card",
-    focusSelector: `#${firstMissingBaseLanguage}`
-  });
-
+  // 基本語言與職業額外語言的缺項由 getClassFeatureChoiceIssues() 列出，這裡不另外檢查。
   const selectedClass = (document.getElementById("class")?.value || "").trim();
-  const selectedLevel = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-  if (selectedClass === "ranger" && selectedLevel >= 2) {
-    const missing = ["language-extra-1", "language-extra-2"].find(id => !(document.getElementById(id)?.value || "").trim());
-    if (missing) reminders.push({ message: "遊俠額外語言尚未選完。", tab: "skills", selector: "#extra-language-container", focusSelector: `#${missing}` });
-  }
-  if (selectedClass === "rogue" && !(document.getElementById("language-extra-2")?.value || "").trim()) {
-    reminders.push({ message: "盜賊額外語言尚未選擇。", tab: "skills", selector: "#extra-language-container", focusSelector: "#language-extra-2" });
-  }
 
   // 技能／工具熟練的缺項由 proficiency-check.js 依來源配對，經 getClassFeatureChoiceIssues() 列出；
   // 它不適用或沒載入時，才用下面的吟遊詩人樂器與「技能熟練未滿 4 項」。

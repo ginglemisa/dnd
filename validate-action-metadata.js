@@ -990,6 +990,44 @@ async function verifyClassTabletopUpdates(page) {
   await page.waitForFunction(() => document.querySelector("#dice-roller-stage")?.textContent.includes("混元體"));
   // 感知調整值 −5 時 1d8−5 可能 ≤ 0，混元體的恢復量仍至少為 1。
   assert.ok(Number(await page.locator("#dice-roller-total-value").innerText()) >= 1, "混元體恢復量最少為 1");
+  await page.keyboard.press("Escape");
+
+  // 回氣（戰士）：使用後擲 1d10 + 戰士等級，結果直接恢復生命值。
+  await setCharacter("fighter", 5);
+  await page.evaluate(() => { document.getElementById("hp-display").value = "80"; document.getElementById("hp").value = "1"; });
+  await choose("bonus", "dynamic-bonus-fighter-qmmfue");
+  await page.locator("#tabletop-action-panel-bonus .tabletop-action-resource-use").click();
+  await page.getByRole("button", {name:"使用能力", exact:true}).last().click();
+  await page.waitForFunction(() => TabletopMode.getBuiltInResourceSpent("fighter-second-wind") === 1);
+  await page.waitForFunction(() => document.querySelector("#dice-roller-stage")?.textContent.includes("回氣"));
+  const secondWindTotal = Number(await page.locator("#dice-roller-total-value").innerText());
+  assert.ok(secondWindTotal >= 6 && secondWindTotal <= 15, `回氣擲 1d10+5（${secondWindTotal}）`);
+  assert.equal(Number(await page.inputValue("#hp")), 1 + secondWindTotal, "回氣的擲骰結果恢復到目前生命值");
+  await page.keyboard.press("Escape");
+
+  // 不知疲倦（遊俠 10 級）：使用後擲 1d8 + 感知調整值，結果直接成為臨時生命值；擲骰關閉時只扣次數並提醒手動處理。
+  await setCharacter("ranger", 10);
+  await choose("action", "dynamic-action-ranger-curated-tireless");
+  await page.locator("#tabletop-action-panel-action .tabletop-action-resource-use").click();
+  await page.getByRole("button", {name:"使用能力", exact:true}).last().click();
+  await page.waitForFunction(() => TabletopMode.getBuiltInResourceSpent("ranger-tireless") === 1);
+  await page.waitForFunction(() => document.querySelector("#dice-roller-stage")?.textContent.includes("不知疲倦"));
+  const tirelessTotal = Number(await page.locator("#dice-roller-total-value").innerText());
+  assert.ok(tirelessTotal >= 5 && tirelessTotal <= 12, `不知疲倦擲 1d8+4（${tirelessTotal}）`);
+  assert.equal(await page.evaluate(() => TabletopMode.collectState().temporaryHp), tirelessTotal, "不知疲倦的擲骰結果成為臨時生命值");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => {
+    const toggle = document.getElementById("dice-system-toggle"); toggle.checked = false; toggle.dispatchEvent(new Event("change", {bubbles:true}));
+    TabletopMode.applyState({});
+  });
+  await choose("action", "dynamic-action-ranger-curated-tireless");
+  await page.locator("#tabletop-action-panel-action .tabletop-action-resource-use").click();
+  await page.getByRole("button", {name:"使用能力", exact:true}).last().click();
+  await page.waitForFunction(() => TabletopMode.getBuiltInResourceSpent("ranger-tireless") === 1);
+  assert.equal(await page.evaluate(() => TabletopMode.collectState().temporaryHp || 0), 0, "擲骰關閉時不自動設定臨時生命值");
+  await page.evaluate(() => {
+    const toggle = document.getElementById("dice-system-toggle"); toggle.checked = true; toggle.dispatchEvent(new Event("change", {bubbles:true}));
+  });
 }
 
 async function verifyManualWeaponVisibility(page, url) {

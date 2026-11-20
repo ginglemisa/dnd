@@ -2689,6 +2689,15 @@ function getClassFeatureChoiceIssues() {
       expandFeatSelector: `#${featSelect.id}`
     });
   }
+  // 基本語言（語言 1、語言 2）每個角色都要選，不看職業；匯出前檢查也經這裡列出。
+  const missingBaseLanguage = ["language1", "language2"].find(id => !(document.getElementById(id)?.value || "").trim());
+  if (missingBaseLanguage) pushGeneral({
+    message: "基本語言尚未選完。",
+    tab: "skills",
+    selector: `#${missingBaseLanguage}`,
+    focusSelector: `#${missingBaseLanguage}`,
+    highlightSelector: "#tab-skills .language-card"
+  });
   if (!selectedClass || !Number.isInteger(selectedLevel)) return issues;
 
   // 職業選項：內容檔每個有 options 的能力是一組，達到能力等級仍未勾選時提醒；

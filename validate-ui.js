@@ -6951,6 +6951,40 @@ async function verifyClassPicks(browser, url) {
         [true, "長劍", "巨劍", "長弓", "戰錘", ""], "share restores masteries");
     } finally { await shared.close(); }
 
+    // 戰術大師（9 級，內容檔 masteryOptions）：跑團武器備註在武器本身的精通後面列出可以換成的精通，和武器重複的不列；
+    // 沒選精通的武器與 8 級以下不列。
+    assert.deepEqual(await page.evaluate(() => [getClassMasteryOptions("fighter", 8), getClassMasteryOptions("fighter", 9), getClassMasteryOptions("rogue", 20)]),
+      [[], ["推離", "削弱", "緩速"], []], "only the fighter's Tactical Master grants replacement masteries");
+    const tabletopMasteryTags = async (level, weapon, expected) => {
+      await page.evaluate(([blank, level, weapon]) => {
+        const data = collectStateObject();
+        const picks = Object.fromEntries(Object.entries(data).filter(([id]) => id.startsWith("fighter-weapon-mastery-pick-")));
+        applyStateObject({ ...picks, ...blank, level, class: "fighter",
+          __inventory: { version: 1, items: ["長劍", "短劍", "巨劍"].map(name => ({ uid: name, itemId: name, quantity: 1 })) } });
+        const select = document.getElementById("mainHand");
+        select.value = weapon;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        updateWeaponMasteryBadges();
+        TabletopMode.setMode("tabletop");
+        TabletopMode.setPanel("actions");
+      }, [blank, level, weapon]);
+      const tags = () => page.evaluate(() => Array.from(document.querySelectorAll("#tabletop-weapon-summary .tabletop-weapon-attack-card:first-child .tabletop-weapon-mastery"), tag => tag.textContent));
+      await page.waitForFunction(expected => JSON.stringify(Array.from(document.querySelectorAll("#tabletop-weapon-summary .tabletop-weapon-attack-card:first-child .tabletop-weapon-mastery"),
+        tag => tag.textContent)) === expected, JSON.stringify(expected), { timeout: 3000 }).catch(() => {});
+      assert.deepEqual(await tags(), expected, `level ${level} ${weapon} mastery tags`);
+    };
+    await tabletopMasteryTags("9", "巨劍", ["精通：劃傷", "推離", "削弱", "緩速"]);
+    await tabletopMasteryTags("9", "長劍", ["精通：削弱", "推離", "緩速"]);
+    // 這一頁重新整理過、法律聲明又開著：用滑鼠點擊時由 tools/regression-legal-notice.js 自動關掉。
+    assert.equal(await page.locator("#legal-modal").isVisible(), true, "the legal notice is open again after the reload");
+    await page.locator("#tabletop-weapon-summary .tabletop-weapon-mastery-options .tabletop-weapon-mastery", { hasText: "緩速" }).click();
+    assert.equal(await page.locator("#legal-modal").isVisible(), false, "a mouse click outside the legal notice closes it first");
+    assert.equal(await page.locator("#weaponRulePopup .title").textContent(), "緩速", "a replacement mastery opens its rule");
+    await page.evaluate(() => document.querySelector("#weaponRulePopup .close").click());
+    await tabletopMasteryTags("9", "短劍", []);
+    await tabletopMasteryTags("8", "長劍", ["精通：削弱"]);
+    await page.evaluate(() => { TabletopMode.setMode("sheet"); showTab("basic"); });
+
     // Rogue: finesse or light martial weapons, expertise and extra language reminders.
     await page.evaluate(blank => applyStateObject({ ...blank, class: "rogue", level: "1" }), blank);
     current = await slots(page);
@@ -6958,8 +6992,13 @@ async function verifyClassPicks(browser, url) {
     assert.ok(["匕首", "刺劍", "鞭", "手弩"].every(name => current[0].options.includes(name)) && !current[0].options.includes("長劍"), "rogue chooses among its proficient weapons");
     let messages = await issues(page);
     assert.ok(messages.includes("盜賊專精尚未選完（0/2）。") && messages.includes("盜賊額外語言尚未選擇。"), "rogue expertise and language are reminded");
-    // 「前往」切到技能頁並高亮整個框：專精是技能加值區，額外語言是語言區。
-    for (const [label, box, focus] of [["盜賊專精", "#skill-bonus-section", ".circle-checkbox:not(:checked)"], ["盜賊額外語言", "#tab-skills .language-card", "#language-extra-2"]]) {
+    // 基本語言（語言 1、2）不看職業，也列在角色卡的提醒；匯出前檢查的語言提醒各只出現一次。
+    const sheetMessages = () => page.evaluate(() => Array.from(document.querySelectorAll("#class-feature-choice-reminder button > span:first-child"), span => span.textContent));
+    const pdfLanguageMessages = () => page.evaluate(() => buildPdfPrecheckMessages().map(entry => entry.message).filter(message => message.includes("語言")));
+    assert.ok(messages.includes("基本語言尚未選完。") && (await sheetMessages()).includes("基本語言尚未選完。"), "unchosen base languages are reminded on the sheet");
+    assert.deepEqual(await pdfLanguageMessages(), ["基本語言尚未選完。", "盜賊額外語言尚未選擇。"], "the PDF precheck lists each language reminder once");
+    // 「前往」切到技能頁並高亮整個框：專精是技能加值區，基本語言與額外語言是語言區。
+    for (const [label, box, focus] of [["盜賊專精", "#skill-bonus-section", ".circle-checkbox:not(:checked)"], ["基本語言", "#tab-skills .language-card", "#language1"], ["盜賊額外語言", "#tab-skills .language-card", "#language-extra-2"]]) {
       await page.evaluate(label => Array.from(document.querySelectorAll("#class-feature-choice-reminder button"))
         .find(button => button.textContent.includes(label)).click(), label);
       await page.waitForFunction(() => document.querySelector(".onboarding-jump-target"));
@@ -6982,12 +7021,18 @@ async function verifyClassPicks(browser, url) {
     await choose(page, "language-extra-2", "elvish");
     messages = await issues(page);
     assert.ok(!messages.some(message => message.startsWith("盜賊專精") || message.startsWith("盜賊額外語言")), "the reminders clear once chosen");
+    await choose(page, "language1", "dwarvish");
+    assert.equal(await page.evaluate(() => getClassFeatureChoiceIssues().find(issue => issue.message === "基本語言尚未選完。")?.focusSelector), "#language2", "one base language still reminds and points at the open one");
+    await choose(page, "language2", "giant");
+    assert.ok(!(await issues(page)).includes("基本語言尚未選完。") && !(await sheetMessages()).includes("基本語言尚未選完。"), "choosing both base languages refreshes the sheet reminder");
+    assert.deepEqual(await pdfLanguageMessages(), [], "no language reminder is left in the PDF precheck");
     await page.evaluate(blank => applyStateObject({ ...blank, "exp-隱匿": false, "exp-巧手": false, class: "ranger", level: "1" }), blank);
     assert.ok(!(await issues(page)).some(message => message.startsWith("遊俠專精") || message.startsWith("遊俠額外語言")), "ranger expertise and languages wait for level 2");
     await page.evaluate(blank => applyStateObject({ ...blank, "exp-隱匿": false, "exp-巧手": false, class: "ranger", level: "2" }), blank);
     messages = await issues(page);
     assert.ok(messages.includes("遊俠專精尚未選完（0/1）。") && messages.includes("遊俠額外語言尚未選擇。"), "ranger reminders start at level 2");
-    console.log("Class picks: weapon mastery selects/options/badges, level visibility, autosave/JSON/share, expertise and language reminders passed.");
+    assert.deepEqual((await pdfLanguageMessages()).filter(message => message.includes("額外語言")), ["遊俠額外語言尚未選擇。"], "the PDF precheck does not repeat the ranger language reminder");
+    console.log("Class picks: weapon mastery selects/options/badges, level visibility, autosave/JSON/share, expertise, base and extra language reminders passed.");
   } finally { await page.close(); }
 }
 
