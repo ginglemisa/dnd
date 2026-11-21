@@ -7338,6 +7338,18 @@ async function verifySaveFormat(browser, url) {
     assert.deepEqual([counts.share.slots, counts.share.race, counts.share.oldKeys], [undefined, undefined, []], "used counts stay out of share links");
     assert.deepEqual(counts.rejected, Array(7).fill(true), "malformed count blocks are rejected");
 
+    // 第 2 版以前 Talisman 譯作「護符」：主手／副手與昏迷掉落紀錄裡的舊名換成「符具」，其他值不動。
+    const talismans = await page.evaluate(() => {
+      const old = Object.freeze({ class: "cleric", __saveVersion: 2, mainHand: "至惡護符", offHand: "純善護符",
+        droppedHands: Object.freeze({ mainHand: "法球護符", offHand: "長劍", main2Shield: false }) });
+      const migrated = migrateCharacterState(old);
+      return { migrated: [migrated.__saveVersion, migrated.mainHand, migrated.offHand, migrated.droppedHands],
+        untouched: [old.mainHand, old.offHand, old.droppedHands.mainHand], other: migrateCharacterState({ class: "fighter", __saveVersion: 2, mainHand: "長劍", offHand: "" }) };
+    });
+    assert.deepEqual(talismans.migrated, [version, "至惡符具", "純善符具", { mainHand: "法球符具", offHand: "長劍", main2Shield: false }], "old talisman names in the hands become 符具");
+    assert.deepEqual(talismans.untouched, ["至惡護符", "純善護符", "法球護符"], "the talisman rename does not mutate the loaded data");
+    assert.deepEqual([talismans.other.mainHand, talismans.other.offHand, Object.hasOwn(talismans.other, "droppedHands")], ["長劍", "", false], "other hand values are untouched");
+
     const legacyFile = { class: "druid", level: "4", race: "dwarf", background: "sage", "spellslot1-1": false, "spellslot1-2": true };
     await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
     await Promise.all([page.waitForEvent("load"), page.locator("#import-json-file").setInputFiles({ name: "v0.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(legacyFile)) })]);

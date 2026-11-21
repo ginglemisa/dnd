@@ -13,7 +13,7 @@
  *   裝備頁標題列另有「同調 N/3」按鈕（#attunement-open，條件相同），開 `attunement` 視窗：三格下拉選要同調的物品，選了立刻生效並列出數字變化（openAttunementDialog()）。
  *   可以穿戴的魔法物品（戒指、斗篷等，MagicItemCatalog.isWearable）在同一列有「裝備／卸下」（Inventory.setWorn()）：穿上後標籤在「裝備中」、固定 ×1，
  *   一筆多件時拆出一件穿上並關閉視窗；開始同調時自動穿上，卸下保留同調。手持類的魔杖等照武器的選手視窗放進主手或副手；
- *   可以穿戴也可以手持的護符分成「手持」「穿戴」兩顆按鈕。分享模式只顯示穿戴與同調狀態。
+ *   可以穿戴也可以手持的符具分成「手持」「穿戴」兩顆按鈕。分享模式只顯示穿戴與同調狀態。
  *   彈藥（普通或魔法彈藥）有「裝備／卸下」（Inventory.setAmmo()，同時只能一種）：標籤與視窗標示裝備中，但留在原處（可以在箭袋裡）、數量照常可改。
  *   互動列的按鈕在左欄、與下方數量框同寬，說明在右欄。至少 2 件的物品在數量框與位置選單之間有「拆分」，開 `inventory-split` 視窗輸入兩堆的數量；拆開後是兩個獨立標籤。
  * - 裝備：物品經 Inventory.syncEquipped() 從物品欄拿 1 件出來，成為固定 ×1、排在「裝備中」的標籤（entry.slot）；角色卡的裝備選擇是唯一依據，
@@ -633,7 +633,7 @@
   /**
    * 穿戴與同調（同一列）：可以穿戴的物品（MagicItemCatalog.isWearable）有「裝備／卸下」，需要同調的有「開始同調／結束同調」。
    * 同調由玩家自己開（角色卡不代填），開始同調時穿戴類物品自動穿上；卸下保留同調、效果停止。限定條件只是提示，不阻擋。
-   * 一筆有多件時按「裝備」拆出一件穿上，視窗關閉（新的那件在「裝備中」）。拿在手上的護符不顯示「裝備」。分享模式只看得到狀態。
+   * 一筆有多件時按「裝備」拆出一件穿上，視窗關閉（新的那件在「裝備中」）。拿在手上的符具不顯示「裝備」。分享模式只看得到狀態。
    */
   function buildWearAttunementRow(entry, rule, label, ctx) {
     const wearable = globalScope.MagicItemCatalog.isWearable(entry.magic.id) && !entry.slot;
@@ -646,7 +646,7 @@
     const needs = [wearable && !entry.worn ? (bothWays ? "穿戴或手持" : "穿戴") : "", attunement && !entry.attuned ? attunement : ""].filter(Boolean);
     // 都滿足時不另外寫；同調中只剩限定條件（例如「由法師」）時照樣提示。
     const text = needs.length ? `需要${needs.join("並")}才會生效。` : (entry.attuned && rule.attunement !== true ? `需要${attunement}才會生效。` : "");
-    // 可以穿戴也可以手持的護符寫「穿戴」，與放到手上的「手持」分開；其他穿戴物品寫「裝備」。
+    // 可以穿戴也可以手持的符具寫「穿戴」，與放到手上的「手持」分開；其他穿戴物品寫「裝備」。
     const wearText = bothWays ? "穿戴" : "裝備";
     const wear = wearable ? actionButton(entry.worn ? "卸下" : wearText, () => {
       const split = !entry.worn && entry.quantity > 1;
@@ -781,7 +781,7 @@
     const rows = [];
     const key = usageKey(entry);
     if (key) {
-      // 已裝備的武器再按一次是換手或拿第二把。可以穿戴也可以手持的護符，放到手上的按鈕叫「手持」，與穿戴的按鈕分開。
+      // 已裝備的武器再按一次是換手或拿第二把。可以穿戴也可以手持的符具，放到手上的按鈕叫「手持」，與穿戴的按鈕分開。
       const bothWays = Boolean(entry.magic) && globalScope.MagicItemCatalog?.getUse(entry.magic.id) === "wornOrHeld";
       const equipText = entry.slot ? "換手" : bothWays ? "手持" : "裝備";
       const equip = actionButton(equipText, (control) => {

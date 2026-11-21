@@ -957,7 +957,7 @@
     let shields = 0;
     entries.forEach((entry) => {
       if (entry.magic) {
-        // 穿在身上的護符不能同時拿在手上。
+        // 穿在身上的符具不能同時拿在手上。
         const equipment = entry.worn ? null : magicEquipmentOf(entry);
         if (!equipment) return;
         const kind = kindOf(equipment.base, kinds);

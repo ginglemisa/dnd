@@ -1918,12 +1918,12 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.deepEqual(await spellNumbers(inventoryOf(robe)), ["16", "+8"], "the worn robe raises both the save DC and spell attacks");
     assert.deepEqual(await spellNumbers(inventoryOf({ ...robe, worn: false })), ["14", "+6"], "the robe does nothing until worn");
     assert.deepEqual(await spellNumbers({ ...heldWand, ...inventoryOf({ ...wand, attuned: true }, robe) }), ["16", "+10"], "different items stack");
-    // 純善護符：穿戴或手持任一即可，兩者都沒有時不算。
+    // 純善符具：穿戴或手持任一即可，兩者都沒有時不算。
     const talisman = { uid: "talisman", quantity: 1, attuned: true, magic: { id: "talisman-of-pure-good" } };
     assert.deepEqual([
       (await spellNumbers(inventoryOf(talisman)))[1],
       (await spellNumbers(inventoryOf({ ...talisman, worn: true })))[1],
-      (await spellNumbers({ offHand: "純善護符", ...inventoryOf(talisman) }))[1]
+      (await spellNumbers({ offHand: "純善符具", ...inventoryOf(talisman) }))[1]
     ], ["+6", "+8", "+8"], "a talisman counts worn or held");
     for (const [name, id] of [["威力法杖", "staff-of-power"], ["叢林法杖", "staff-of-the-woodlands"], ["賢者法杖", "staff-of-the-magi"]]) {
       assert.deepEqual(await spellNumbers(inventoryOf(heldStaff(id))), ["14", "+6"], `${name} does nothing in the pack`);
