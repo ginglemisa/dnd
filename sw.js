@@ -1,34 +1,22 @@
-// twd20 Service Worker：抓過的檔案存在瀏覽器裡，下次直接用、沒網路也能開。
-// 只在正式站註冊（index.html 檔尾的 registerOfflineCache()），本機測試與離線版 twd20.html 不會啟用。
-//
-// 三種存法：
-// 1. 字型、PDF：存一次就好。第一次用到才下載，之後一律用存下來的版本，不再問伺服器。
-//    這些檔案真的要換時，改下面 ASSET_CACHE 的版本號，所有人會重新下載一次。
-// 2. 有 ?v= 版本號的 JS／CSS（v=0 除外）：網址本身就代表版本，存下來直接用；
-//    同一個檔案換了新版本號時，舊版本會順手刪掉。
-//    所以改了檔案卻沒換 ?v=，用過網站的人會一直拿到舊檔。
-// 3. 頁面（HTML）與其他沒有版本號的檔案：先上網拿最新的，拿不到才用存下來的。
-//    等網路最多 4 秒，超過就先用存下來的版本。
-//    這類檔案存的時候不看網址的 ? 參數（?analytics=owner、擲骰動畫的 ?roll=N），同一個檔案只存一份。
-//
-// 預先存檔：瀏覽器第一次開網站時，這支程式還沒接手，那次載入的檔案不會經過它。
-// 所以頁面載入後會把「這一頁用到的檔案」和「之後才會載入的資料檔」的網址傳過來（訊息 twd20-warm），
-// 這裡把還沒存的補存起來，做完回覆 twd20-warm-done。之後每次開頁面都會再對一次，新版本的檔案也是這樣補上。
-//
-// 不處理：非 GET、其他網域（GA、短網址服務等外部資源）、Range 請求、cache: "no-store" 的請求。
-
+// 發布時 tools/pwa-release.js 在這支 worker 前面加上 RELEASE（發布檔案與雜湊）。
 const PAGE_CACHE = "twd20-pages-v1";
 const ASSET_CACHE = "twd20-assets-v1";
-const KEEP = [PAGE_CACHE, ASSET_CACHE];
+const SHELL_CACHE = "twd20-shell-" + RELEASE.version;
+const KEEP = [PAGE_CACHE, ASSET_CACHE, SHELL_CACHE];
 const ASSET_PATTERN = /\.(otf|ttf|woff2?|pdf)$/i;
 const NETWORK_TIMEOUT_MS = 4000;
-const WARM_MESSAGE = "twd20-warm";
-const WARM_DONE_MESSAGE = "twd20-warm-done";
-const WARM_LIMIT = 400;
-const WARM_PARALLEL = 4;
+// addAll 只在整批成功時寫入。雜湊不合、斷線或空間不足，舊 worker 仍服務原版本。
+function downloadShell(cache) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90000);
+  const requests = Object.entries(RELEASE.assets).map(([path, integrity]) =>
+    new Request(new URL(path, self.location.origin), { integrity, cache: "no-cache", signal: controller.signal }));
+  return cache.addAll(requests).finally(() => clearTimeout(timeout));
+}
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
+self.addEventListener("install", event => {
+  event.waitUntil(caches.open(SHELL_CACHE).then(downloadShell));
+  // 使用瀏覽器的 waiting 階段：最後一個舊分頁關閉之後才啟用完整新版。
 });
 
 self.addEventListener("activate", (event) => {
@@ -37,7 +25,7 @@ self.addEventListener("activate", (event) => {
     await Promise.all(names
       .filter((name) => name.startsWith("twd20-") && !KEEP.includes(name))
       .map((name) => caches.delete(name)));
-    await self.clients.claim();
+    // 已開啟的角色卡持續使用載入時的版本。
   })());
 });
 
@@ -49,19 +37,37 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (!isHandled(url)) return;
 
-  const plan = planFor(url, request.mode === "navigate");
+  const path = url.pathname === "/index.html" ? "/" : url.pathname;
+  if (Object.hasOwn(RELEASE.assets, path)) {
+    event.respondWith((async () => {
+      const cached = await caches.match(path, { cacheName: SHELL_CACHE, ignoreVary: true });
+      if (cached) return cached;
+      return fetch(new Request(new URL(path, url.origin), { integrity: RELEASE.assets[path], cache: "no-cache" }));
+    })());
+    return;
+  }
+  // 短網址、API 與站上其他動態路徑直通。只有靜態附加資源才按需保存。
+  if (!/\.(?:js|css|png|jpe?g|webp|svg|pdf|otf|ttf|woff2?)$/i.test(path)) return;
+  const plan = planFor(url);
   event.respondWith(plan.cacheFirst
     ? cacheFirst(request, plan)
     : networkFirst(request, plan, event));
 });
 
-self.addEventListener("message", (event) => {
-  const data = event.data;
-  if (!data || data.type !== WARM_MESSAGE || !Array.isArray(data.urls)) return;
-  const source = event.source;
-  event.waitUntil(warm(data.urls, source && source.url).then((result) => {
-    if (source) source.postMessage({ type: WARM_DONE_MESSAGE, stored: result.stored, failed: result.failed });
-  }));
+self.addEventListener("message", event => {
+  if (event.data?.type !== "twd20-offline-status" || !event.ports[0]) return;
+  const port = event.ports[0];
+  event.waitUntil((async () => {
+    try {
+      const cache = await caches.open(SHELL_CACHE);
+      const keys = new Set((await cache.keys()).map(key => new URL(key.url).pathname));
+      const complete = Object.keys(RELEASE.assets).every(path => keys.has(path));
+      if (!complete && event.data.repair) await downloadShell(cache);
+      port.postMessage({ ready: complete || Boolean(event.data.repair) });
+    } catch {
+      port.postMessage({ ready: false });
+    }
+  })());
 });
 
 function isHandled(url) {
@@ -74,14 +80,12 @@ function isVersioned(url) {
 }
 
 // 決定一個網址存在哪裡、用什麼當鍵、要不要先看存下來的版本。
-function planFor(url, isPage) {
-  const versioned = !isPage && isVersioned(url);
+function planFor(url) {
+  const versioned = isVersioned(url);
   const key = new URL(url.href);
   key.hash = "";
   if (!versioned) key.search = "";
-  // 「/」和「/index.html」是同一頁，只存一份。
-  if (isPage && key.pathname.endsWith("/index.html")) key.pathname = key.pathname.slice(0, -"index.html".length);
-  const asset = !isPage && ASSET_PATTERN.test(url.pathname);
+  const asset = ASSET_PATTERN.test(url.pathname);
   return {
     cacheName: asset ? ASSET_CACHE : PAGE_CACHE,
     key: key.href,
@@ -91,7 +95,8 @@ function planFor(url, isPage) {
 }
 
 function isStorable(response) {
-  return response && response.status === 200 && response.type === "basic" && !response.redirected;
+  return response && response.status === 200 && response.type === "basic" && !response.redirected
+    && !/\bno-store\b/i.test(response.headers.get("Cache-Control") || "");
 }
 
 function readStored(plan) {
@@ -149,36 +154,4 @@ async function networkFirst(request, plan, event) {
   } catch (error) {
     return cached;
   }
-}
-
-// 把還沒存的檔案補存起來。pageUrl 是傳訊息的那一頁，頁面本身也一起存。
-async function warm(urls, pageUrl) {
-  const plans = new Map();
-  const add = (href, isPage) => {
-    let url;
-    try { url = new URL(href, self.location.href); } catch (error) { return; }
-    if (!isHandled(url) || plans.size >= WARM_LIMIT) return;
-    const plan = planFor(url, isPage);
-    const id = plan.cacheName + " " + plan.key;
-    if (!plans.has(id)) plans.set(id, { plan, href: url.href });
-  };
-  if (typeof pageUrl === "string") add(pageUrl, true);
-  urls.forEach((href) => { if (typeof href === "string") add(href, false); });
-
-  const queue = Array.from(plans.values());
-  const result = { stored: 0, failed: 0 };
-  const worker = async () => {
-    for (let item = queue.shift(); item; item = queue.shift()) {
-      try {
-        if (await readStored(item.plan)) continue;
-        const response = await fetch(item.href, { credentials: "same-origin" });
-        if (isStorable(response) && await store(item.plan, response)) result.stored += 1;
-        else result.failed += 1;
-      } catch (error) {
-        result.failed += 1;
-      }
-    }
-  };
-  await Promise.all(Array.from({ length: WARM_PARALLEL }, worker));
-  return result;
 }

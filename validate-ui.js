@@ -8111,6 +8111,13 @@ async function verifyOfflineCache(browser) {
   const requests = [];
   let mode = "online";
   const held = new Set();
+  const { buildWorker } = require("./tools/pwa-release");
+  const indexFile = path.join(__dirname, "index.html");
+  const nextHtml = fs.readFileSync(indexFile, "utf8").replace("</head>", '<meta name="pwa-test-release" content="2"></head>');
+  let release = 1;
+  let broken = false;
+  const workers = [null, buildWorker(__dirname), buildWorker(__dirname, file =>
+    file === indexFile ? nextHtml : fs.readFileSync(file))];
   const server = http.createServer((req, res) => {
     if (mode === "down") return req.socket.destroy();
     if (mode === "hang") { held.add(req.socket); return; }
@@ -8119,6 +8126,9 @@ async function verifyOfflineCache(browser) {
     requests.push(pathname + requestUrl.search);
     const file = path.resolve(__dirname, `.${pathname === "/" ? "/index.html" : pathname}`);
     if (!file.startsWith(__dirname + path.sep)) return res.writeHead(403).end();
+    if (pathname === "/sw.js") return res.writeHead(200, { "Content-Type": "text/javascript", "Cache-Control": "no-store" }).end(workers[release]);
+    if (release === 2 && file === indexFile) return res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }).end(nextHtml);
+    if (broken && pathname === "/pwa.js") return res.writeHead(200, { "Content-Type": "text/javascript" }).end("// truncated");
     fs.readFile(file, (error, data) => {
       if (error) return res.writeHead(404).end();
       res.setHeader("Content-Type", { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".webp": "image/webp", ".jpg": "image/jpeg", ".png": "image/png" }[path.extname(file)] || "application/octet-stream");
@@ -8128,7 +8138,7 @@ async function verifyOfflineCache(browser) {
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
   const origin = `http://127.0.0.1:${server.address().port}`;
   const context = await browser.newContext();
-  const page = await context.newPage();
+  let page = await context.newPage();
   page.setDefaultTimeout(15000);
   const pageErrors = [];
   page.on("pageerror", error => pageErrors.push(String(error)));
@@ -8144,27 +8154,89 @@ async function verifyOfflineCache(browser) {
     await page.waitForTimeout(3500);
     assert.equal(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0, "the service worker is not registered outside the production site");
 
-    const warmed = await page.evaluate(() => new Promise((resolve, reject) => {
-      navigator.serviceWorker.addEventListener("message", event => { if (event.data?.type === "twd20-warm-done") resolve(event.data); });
-      registerOfflineCache().catch(reject);
-    }));
-    assert(warmed.stored > 50, `the first visit stores the files the page already loaded (${warmed.stored})`);
-    assert.equal(warmed.failed, 0, "every file the page loaded can be stored");
-
-    const lazyFiles = await page.evaluate(() => [classSrdFile, monsterSrdFile, spellSrdFile, magicItemTextFile]);
-    let keys = await cachedKeys();
-    assert.deepEqual(Object.keys(keys).sort(), ["twd20-assets-v1", "twd20-pages-v1"].filter(name => keys[name]), "only the two twd20 caches exist");
-    const pages = keys["twd20-pages-v1"];
-    assert(pages.includes("/"), "the page is stored once, without index.html or its query");
-    assert(!pages.some(key => key.includes("analytics=")), "analytics parameters never become cache keys");
-    for (const file of lazyFiles) {
-      assert(/\?v=[^0]/.test(file), `${file} carries a content version`);
-      assert(pages.includes(`/${file}`), `${file} is stored before it is first needed`);
+    assert.equal(await page.locator("#pwa-menu-btn").isVisible(), false);
+    const manifest = await page.evaluate(async () => (await fetch(document.querySelector('link[rel="manifest"]').href)).json());
+    assert.equal(manifest.id, "/");
+    assert.equal(manifest.start_url, "/");
+    assert.equal(manifest.display, "standalone");
+    for (const icon of manifest.icons) {
+      const size = await page.evaluate(async src => {
+        const img = new Image(); img.src = src; await img.decode(); return img.naturalWidth;
+      }, icon.src);
+      assert.equal(icon.sizes, size + "x" + size);
     }
-    const versionedScript = /<script src="(dice-roller\.js\?v=[^"]+)"/.exec(fs.readFileSync(path.join(__dirname, "index.html"), "utf8"))[1];
-    assert(pages.includes(`/${versionedScript}`), "versioned scripts keep their version in the key");
-    assert(pages.includes("/deity-info.js"), "files without a version are stored under their path");
-    assert(!pages.includes("/sw.js"), "the service worker script itself is not stored");
+    await page.evaluate(async () => {
+      await registerOfflineCache();
+      window.testOfflineRegistration = await navigator.serviceWorker.getRegistration();
+    });
+    await page.waitForFunction(() => window.testOfflineRegistration?.active?.state === "activated");
+    const lazyFiles = await page.evaluate(() => [classSrdFile, monsterSrdFile, spellSrdFile, magicItemTextFile]);
+    const core = await page.evaluate(() => [...document.querySelectorAll('script[src],link[rel="stylesheet"]')]
+      .map(el => new URL(el.src || el.href)).filter(url => url.origin === location.origin).map(url => url.pathname));
+    let keys = await cachedKeys();
+    const shellName = Object.keys(keys).find(name => name.startsWith("twd20-shell-"));
+    const pages = keys[shellName];
+    assert(pages.length > 50);
+    for (const file of [...core, ...lazyFiles.map(file => "/" + file.split("?")[0]), "/", "/images/dice.webp"]) {
+      assert(pages.includes(file), file + " is ready on first install");
+    }
+    assert(!pages.some(key => key.includes("?") || key === "/sw.js" || key.endsWith(".pdf")));
+    const versionedScript = await page.locator('script[src^="dice-roller.js"]').getAttribute("src");
+    for (const width of [1280, 360]) {
+      await page.setViewportSize({ width, height: 780 });
+      await page.locator("#utility-menu-toggle").click();
+      await page.locator("#pwa-menu-btn").click();
+      const dialog = page.getByRole("dialog", { name: "安裝到主畫面" });
+      await dialog.getByRole("status").filter({ hasText: "可離線跑團" }).waitFor();
+      assert(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth + 1), "install dialog fits at " + width);
+      await page.keyboard.press("Escape");
+      assert(await page.locator("#utility-menu-toggle").evaluate(el => el === document.activeElement));
+    }
+
+    // Chromium 提供安裝事件時，只有明確點擊安裝才叫出系統提示。
+    await page.evaluate(() => {
+      const prompt = new Event("beforeinstallprompt", { cancelable: true });
+      window.installRequests = 0;
+      prompt.prompt = () => { window.installRequests++; };
+      prompt.userChoice = Promise.resolve({ outcome: "dismissed" });
+      window.dispatchEvent(prompt);
+    });
+    await page.locator("#utility-menu-toggle").click();
+    await page.locator("#pwa-menu-btn").click();
+    assert.equal(await page.evaluate(() => window.installRequests), 0);
+    await page.getByRole("button", { name: "安裝", exact: true }).click();
+    assert.equal(await page.evaluate(() => window.installRequests), 1);
+
+    const share = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    const iphone = await browser.newContext({ viewport: { width: 375, height: 667 },
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 15_4 like Mac OS X) AppleWebKit/605.1.15 Version/15.4 Mobile Safari/604.1" });
+    try {
+      await iphone.addInitScript(() => {
+        Object.defineProperty(navigator, "connection", { value: { saveData: true }, configurable: true });
+      });
+      const mobile = await iphone.newPage();
+      await mobile.goto(origin + "/?analytics=owner" + share);
+      await mobile.evaluate(() => registerOfflineCache());
+      assert.equal(await mobile.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0);
+      await mobile.locator("#utility-menu-toggle").click();
+      await mobile.locator("#pwa-menu-btn").click();
+      const guide = mobile.getByRole("dialog", { name: "安裝到主畫面" });
+      assert.match(await guide.innerText(), /加入主畫面/);
+      assert.match(await guide.innerText(), /冒險日誌也要另外匯出/);
+      assert.match(await guide.innerText(), /這份分享角色/);
+      broken = true;
+      await guide.getByRole("button", { name: "準備離線資料" }).click();
+      await guide.getByRole("status").filter({ hasText: "未備齊" }).waitFor();
+      broken = false;
+      await guide.getByRole("button", { name: "準備離線資料" }).click();
+      await guide.getByRole("status").filter({ hasText: "可離線跑團" }).waitFor();
+      await mobile.keyboard.press("Escape");
+      await mobile.evaluate(() => Object.defineProperty(navigator, "standalone", { value: true }));
+      await mobile.evaluate(() => registerOfflineCache());
+      await mobile.locator("#utility-menu-toggle").click();
+      await mobile.locator("#pwa-menu-btn").click();
+      await mobile.getByRole("dialog", { name: "離線跑團狀態" }).waitFor();
+    } finally { broken = false; await iphone.close(); }
 
     // 有版本號：之後不再問伺服器；換版本號時舊的刪掉。
     await page.reload({ waitUntil: "load" });
@@ -8178,14 +8250,14 @@ async function verifyOfflineCache(browser) {
     keys = await cachedKeys();
     assert.deepEqual(keys["twd20-pages-v1"].filter(key => key.startsWith("/og-image.jpg")), ["/og-image.jpg?v=cache-test-b"], "a new version replaces the older ones of the same file");
 
-    // 沒有版本號：每次都先上網，? 參數不同也只存一份（擲骰動畫的 ?roll=N）。
-    const diceAsset = await page.evaluate(() => new URL(document.querySelector("img[src*='dice' i], img[src*='d20' i]")?.getAttribute("src") || "images/logo-classic-light.webp", location.href).pathname);
+    // 選用圖檔沒有版本號：每次先上網，? 參數不同也只存一份。
+    const diceAsset = "/og-image.jpg";
     requests.length = 0;
     for (const roll of [1, 2, 3]) await page.evaluate(([asset, n]) => fetch(`${asset}?roll=${n}`).then(response => response.blob()), [diceAsset, roll]);
     assert.equal(requests.length, 3, "files without a version still go to the network first");
     await page.waitForTimeout(200);
     keys = await cachedKeys();
-    assert.deepEqual(keys["twd20-pages-v1"].filter(key => key.startsWith(diceAsset)), [diceAsset], "query variants of one file share a single entry");
+    assert.deepEqual(keys["twd20-pages-v1"].filter(key => key === diceAsset || key.includes("?roll=")), [diceAsset], "query variants of one file share a single entry");
 
     // 不處理的請求照常直通，也不存。
     await page.evaluate(() => fetch("deity-info.js?probe=1", { cache: "no-store" }).then(response => response.text()));
@@ -8193,14 +8265,16 @@ async function verifyOfflineCache(browser) {
     keys = await cachedKeys();
     assert(!keys["twd20-pages-v1"].includes("/legal-about.js"), "requests other than GET are not stored");
 
-    // 網路卡住：頁面等 4 秒後先用存下來的版本。
-    // 沒存過的檔案在網路卡住時等不到，load 事件不一定會來，所以只等頁面能用。
+    // 核心頁面直接開啟；附加檔案等網路 4 秒後回退。
     mode = "hang";
     const hangStarted = Date.now();
     await page.goto(`${origin}/index.html?analytics=owner`, { waitUntil: "commit" });
     await appReady();
     const waited = Date.now() - hangStarted;
-    assert(waited >= 3500 && waited < 12000, `a stalled network falls back to the stored page after the timeout (${waited} ms)`);
+    assert(waited < 12000, "a stalled network still opens the core sheet");
+    const fallbackStart = Date.now();
+    assert(await page.evaluate(asset => fetch(asset).then(res => res.ok), diceAsset));
+    assert(Date.now() - fallbackStart >= 3500, "an optional unversioned asset waits for the network timeout");
     for (const socket of held) socket.destroy();
     held.clear();
 
@@ -8215,22 +8289,62 @@ async function verifyOfflineCache(browser) {
     assert.equal(await page.evaluate(() => fetch("never-stored.js").then(() => "response", () => "error")), "error", "a file that was never stored still fails offline");
     assert.deepEqual(pageErrors, [], "no page errors with the service worker");
 
-    // 快取名稱改版時，舊的 twd20 快取在啟用時清掉，其他名稱不動。
+    // 真實 worker 更新：傳輸截斷時，HTTP 200 仍不能取代正在使用的完整套件。
     mode = "online";
-    await page.goto(`${origin}/index.html?analytics=owner`, { waitUntil: "load" });
+    await page.evaluate(async () => { await caches.open("twd20-pages-v0"); await caches.open("other-cache"); });
+    release = 2;
+    broken = true;
     await page.evaluate(async () => {
-      await caches.open("twd20-pages-v0");
-      await caches.open("other-cache");
-      await (await navigator.serviceWorker.getRegistration()).unregister();
+      const reg = await navigator.serviceWorker.getRegistration();
+      reg.addEventListener("updatefound", () => {
+        const worker = reg.installing;
+        worker.addEventListener("statechange", () => { window.testUpdateState = worker.state; });
+      }, { once: true });
+      await reg.update();
     });
-    await page.reload({ waitUntil: "load" });
+    await page.waitForFunction(() => window.testUpdateState === "redundant");
+    mode = "down";
+    await page.reload();
     await appReady();
-    await page.evaluate(() => new Promise((resolve, reject) => {
-      navigator.serviceWorker.addEventListener("message", event => { if (event.data?.type === "twd20-warm-done") resolve(); });
-      registerOfflineCache().catch(reject);
-    }));
-    assert.deepEqual(Object.keys(await cachedKeys()).sort(), ["other-cache", "twd20-assets-v1", "twd20-pages-v1"].filter(name => name !== "twd20-assets-v1" || keys["twd20-assets-v1"]), "activation clears outdated twd20 caches and leaves other caches alone");
-    console.log("Service worker: production-only registration, first-visit warm-up, versioned / unversioned / page strategies, stalled-network fallback and offline loading passed.");
+    assert.equal(await page.locator('meta[name="pwa-test-release"]').count(), 0);
+    await page.evaluate(() => {
+      const input = document.getElementById("hp");
+      input.value = "13"; input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      flushPendingAutosave();
+    });
+    await page.close();
+    page = await context.newPage();
+    page.on("pageerror", error => pageErrors.push(String(error)));
+    await page.goto(origin + "/?analytics=owner");
+    await appReady();
+    assert.equal(await page.locator("#hp").inputValue(), "13", "an offline cold launch retains HP");
+    const offline = await page.evaluate(() => {
+      DiceRoller.setEnabled(true, { announce: false });
+      return { roll: DiceRoller.rollExpression("1d20").total, spell: SpellCatalog.getSpell("magic-missile")?.nameZh };
+    });
+    assert(offline.roll >= 1 && offline.roll <= 20);
+    assert(offline.spell, "spell lookup works on an offline cold launch");
+    mode = "online";
+    broken = false;
+    await page.evaluate(async () => {
+      const reg = await navigator.serviceWorker.getRegistration();
+      window.testOfflineRegistration = reg;
+      await reg.update();
+    });
+    await page.waitForFunction(() => Boolean(window.testOfflineRegistration.waiting));
+    assert.equal(await page.locator('meta[name="pwa-test-release"]').count(), 0);
+    await page.close();
+    page = await context.newPage();
+    mode = "down";
+    await page.goto(origin + "/?analytics=owner");
+    await appReady();
+    await page.waitForSelector('meta[name="pwa-test-release"]', { state: "attached" });
+    assert.equal(await page.locator("#hp").inputValue(), "13");
+    keys = await cachedKeys();
+    assert(!keys[shellName] && !keys["twd20-pages-v0"] && keys["other-cache"]);
+    assert.deepEqual(pageErrors, []);
+    console.log("PWA: install icons, core coverage, mobile/desktop menu, cache strategies, interrupted update, offline cold launch and complete update passed.");
   } finally {
     for (const socket of held) socket.destroy();
     await context.close();

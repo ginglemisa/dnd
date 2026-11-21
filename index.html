@@ -105,7 +105,11 @@
   <meta name="twitter:card" content="summary_large_image">
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" href="images/icon-192.png">
+  <link rel="icon" type="image/svg+xml" sizes="any" href="images/icon-master.svg">
+  <link rel="apple-touch-icon" href="images/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#39231E">
   <link rel="stylesheet" href="css/tokens.css?v=20261115-auto-value">
   <link rel="stylesheet" href="css/base.css?v=20261118-settings-title">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261120-section-titles">
@@ -113,7 +117,7 @@
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261116-ring-slot-layout">
   <link rel="stylesheet" href="css/utility.css?v=20261118-modal-scroll">
   <link rel="stylesheet" href="css/dice.css?v=20261117-ability-reroll">
-  <link rel="stylesheet" href="css/dialogs.css?v=20261116-slot-layout">
+  <link rel="stylesheet" href="css/dialogs.css?v=20261122-pwa">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261120-held-hint">
   <link rel="stylesheet" href="css/tabletop.css?v=20261121-al-service-rewards">
   <link rel="stylesheet" href="css/tabletop-hud.css?v=20261113-info-icon">
@@ -270,6 +274,7 @@
         </div>
       </section>
 
+      <button type="button" id="pwa-menu-btn" class="utility-menu__button" aria-haspopup="dialog" hidden>安裝到主畫面</button>
       <div class="utility-menu__divider utility-menu__divider--danger" role="separator"></div>
       <button type="button" id="clear-storage-btn" class="utility-menu__clear-button">清除紀錄</button>
 
@@ -8179,31 +8184,5 @@ window.addEventListener("DOMContentLoaded", async function() {
   </div>
 </div>
 
-<script>
-  // 抓過的檔案存在瀏覽器裡（sw.js），沒網路也能開：只在正式站啟用，本機測試、離線版 twd20.html 不註冊。
-  // 註冊後把這一頁用到的檔案，和之後才會載入的資料檔（各種 SRD 版、魔法物品說明）交給 sw.js 補存；
-  // 瀏覽器開了省流量模式時不補存，只存實際用到的。
-  function registerOfflineCache() {
-    if (!("serviceWorker" in navigator)) return Promise.resolve(null);
-    return navigator.serviceWorker.register("/sw.js").then(() => navigator.serviceWorker.ready).then((registration) => {
-      if (!registration.active || (navigator.connection && navigator.connection.saveData)) return registration;
-      const urls = performance.getEntriesByType("resource")
-        .map((entry) => entry.name)
-        .filter((name) => name.startsWith(location.origin + "/"));
-      [
-        typeof classSrdFile === "string" && classSrdFile,
-        typeof monsterSrdFile === "string" && monsterSrdFile,
-        typeof spellSrdFile === "string" && spellSrdFile,
-        typeof magicItemTextFile === "string" && magicItemTextFile
-      ].forEach((file) => { if (file) urls.push(new URL(file, location.href).href); });
-      registration.active.postMessage({ type: "twd20-warm", urls });
-      return registration;
-    });
-  }
-  if (location.protocol === "https:" && ["twd20.com", "www.twd20.com"].includes(location.hostname)) {
-    window.addEventListener("load", () => {
-      setTimeout(() => { registerOfflineCache().catch(() => {}); }, 3000);
-    });
-  }
-</script>
+<script src="pwa.js?v=20261122-install" defer></script>
 </body></html>

@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "twD20 角色卡",
+  "short_name": "twD20",
+  "lang": "zh-Hant",
+  "scope": "/",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FEF9ED",
+  "theme_color": "#39231E",
+  "icons": [
+    { "src": "images/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "images/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "images/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

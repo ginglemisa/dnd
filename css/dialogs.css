@@ -1959,6 +1959,17 @@ html[data-theme="dark"] .feat-desc-subtitle {
 }
 
 /* 計算說明視窗（rule-tips.js，最大 HP、AC、速度）：一句算法說明、每行一個來源（名稱、補充、算式、數值）、總和與附註。 */
+.pwa-install-guide {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.pwa-install-guide [role="status"] {
+  border-top: 1px solid var(--border);
+  padding-top: 0.65rem;
+  font-weight: 700;
+}
+
 .app-dialog[data-variant="calculation"] .app-dialog__surface {
   width: min(100%, 28rem);
 }
