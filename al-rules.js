@@ -1,12 +1,13 @@
 "use strict";
 
-// 工具選單「冒險者聯盟規則」：簡短說明，連到正式站的玩家手冊與城主指南（離線版也連正式站）。
+// 工具選單「冒險者聯盟規則」：簡短說明與正式站的文件連結（離線版也連正式站）。
 (function setupAdventurersLeagueRules() {
   const AL_RULES_LINKS = [
     { label: "玩家手冊", href: "https://twd20.com/al/DnDALPG.html" },
-    { label: "城主指南", href: "https://twd20.com/al/DnDALDMG.html" }
+    { label: "城主指南", href: "https://twd20.com/al/DnDALDMG.html" },
+    { label: "冒險者聯盟服務時數獎勵", href: "https://twd20.com/al/DnDALSR.html", fullWidth: true }
   ];
-  // 官方公布下一版草案時放在兩個按鈕正下方；沒有草案時設為 null（同步 site.yml 的發布清單）。
+  // 官方公布下一版草案時放在文件連結最後；沒有草案時設為 null（同步 site.yml 的發布清單）。
   const AL_RULES_DRAFT_LINK = { label: "玩家手冊 v2027.1 草案（社群審閱中）", href: "https://twd20.com/al/DnDALPG-2027.1-draft.html" };
 
   const AL_RULES_HTML = `
@@ -33,9 +34,11 @@
     const links = document.createElement("div");
     links.className = "al-rules-links";
     const draftLinks = AL_RULES_DRAFT_LINK ? [{ ...AL_RULES_DRAFT_LINK, draft: true }] : [];
-    [...AL_RULES_LINKS, ...draftLinks].forEach(({ label, href, draft }) => {
+    [...AL_RULES_LINKS, ...draftLinks].forEach(({ label, href, fullWidth, draft }) => {
       const link = document.createElement("a");
-      link.className = draft ? "al-rules-link al-rules-link--draft" : "al-rules-link";
+      link.className = "al-rules-link";
+      if (fullWidth || draft) link.classList.add("al-rules-link--full-width");
+      if (draft) link.classList.add("al-rules-link--draft");
       link.href = href;
       link.target = "_blank";
       link.rel = "noopener noreferrer";

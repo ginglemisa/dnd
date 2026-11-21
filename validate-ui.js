@@ -955,9 +955,9 @@ async function verifyAboutRoutes(browser, url) {
   console.log("About: lazy loading retry, routes, close and hash lifecycle passed.");
 }
 
-// 工具選單「冒險者聯盟規則」：連到正式站的兩份文件、版權聲明、窄螢幕不橫向捲動、關閉後焦點回到選單開關。
-async function verifyAdventurersLeagueRules(browser, url) {
-  const page = await newUiPage(browser, { viewport: { width: 320, height: 640 } });
+// 工具選單「冒險者聯盟規則」：正式站文件連結、版權聲明、視窗寬度與焦點還原。
+async function verifyAdventurersLeagueRules(browser, url, viewport) {
+  const page = await newUiPage(browser, { viewport });
   try {
     await page.goto(url);
     await page.locator("#legal-close-btn").click();
@@ -973,22 +973,24 @@ async function verifyAdventurersLeagueRules(browser, url) {
     assert.deepEqual(await dialog.locator(".al-rules-link").evaluateAll(links => links.map(link => [link.textContent, link.href, link.target, link.rel])), [
       ["玩家手冊", "https://twd20.com/al/DnDALPG.html", "_blank", "noopener noreferrer"],
       ["城主指南", "https://twd20.com/al/DnDALDMG.html", "_blank", "noopener noreferrer"],
+      ["冒險者聯盟服務時數獎勵", "https://twd20.com/al/DnDALSR.html", "_blank", "noopener noreferrer"],
       ["玩家手冊 v2027.1 草案（社群審閱中）", "https://twd20.com/al/DnDALPG-2027.1-draft.html", "_blank", "noopener noreferrer"]
     ]);
     assert.equal(await dialog.locator(".al-rules-link").evaluateAll(links => {
-      const [player, dm, draft] = links.map(link => link.getBoundingClientRect());
-      return draft.top >= Math.max(player.bottom, dm.bottom) && Math.abs(draft.left - player.left) < 1 && Math.abs(draft.right - dm.right) < 1;
-    }), true, "the draft link sits directly below the two guide buttons at their full width");
+      const [player, dm, rewards, draft] = links.map(link => link.getBoundingClientRect());
+      return rewards.top >= Math.max(player.bottom, dm.bottom) && draft.top >= rewards.bottom &&
+        [rewards, draft].every(rect => Math.abs(rect.left - player.left) < 1 && Math.abs(rect.right - dm.right) < 1);
+    }), true, "the rewards and draft links occupy separate full-width rows below the guides");
     const notice = await dialog.locator(".al-rules-notice").innerText();
     assert(notice.startsWith("本站是玩家製作的非官方網站") && notice.includes("著作權屬於 Wizards of the Coast LLC"), notice);
     assert.equal(await dialog.locator(".app-dialog__surface").evaluate(surface => {
       const body = surface.querySelector(".app-dialog__body");
       return surface.getBoundingClientRect().right <= window.innerWidth && body.scrollWidth <= body.clientWidth;
-    }), true, "the dialog fits a 320px screen");
+    }), true, `the dialog fits a ${viewport.width}px screen`);
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "detached" });
     assert.equal(await page.evaluate(() => document.activeElement?.id), "utility-menu-toggle", "focus returns to the menu toggle");
-    console.log("Adventurers League rules: menu button, production links, notice, narrow fit and focus return passed.");
+    console.log(`Adventurers League rules: menu button, production links, notice, layout and focus return passed at ${viewport.width}px.`);
   } finally { await page.close(); }
 }
 
@@ -8146,7 +8148,8 @@ async function main() {
       await verifyShareDialog(browser, url);
       await verifyScrollButtonsInModals(browser, url);
       await verifyAboutRoutes(browser, url);
-      await verifyAdventurersLeagueRules(browser, url);
+      await verifyAdventurersLeagueRules(browser, url, { width: 320, height: 640 });
+      await verifyAdventurersLeagueRules(browser, url, { width: 1280, height: 800 });
       await verifyFeatureChoiceDisclosures(browser, url);
       await verifyCustomBackground(browser, url);
       await verifyCharacterFeatures(browser, url);
