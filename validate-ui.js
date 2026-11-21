@@ -8105,9 +8105,142 @@ async function verifyJsonImportTransaction(browser, url) {
   } finally { await page.close(); }
 }
 
+// Service Worker（sw.js）：正式站才註冊，這裡在自己的測試伺服器上手動呼叫 registerOfflineCache()，
+// 用伺服器的開關模擬斷線與網路卡住，檢查預先存檔、各種存法與離線開啟。
+async function verifyOfflineCache(browser) {
+  const requests = [];
+  let mode = "online";
+  const held = new Set();
+  const server = http.createServer((req, res) => {
+    if (mode === "down") return req.socket.destroy();
+    if (mode === "hang") { held.add(req.socket); return; }
+    const requestUrl = new URL(req.url, "http://localhost");
+    const pathname = decodeURIComponent(requestUrl.pathname);
+    requests.push(pathname + requestUrl.search);
+    const file = path.resolve(__dirname, `.${pathname === "/" ? "/index.html" : pathname}`);
+    if (!file.startsWith(__dirname + path.sep)) return res.writeHead(403).end();
+    fs.readFile(file, (error, data) => {
+      if (error) return res.writeHead(404).end();
+      res.setHeader("Content-Type", { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".webp": "image/webp", ".jpg": "image/jpeg", ".png": "image/png" }[path.extname(file)] || "application/octet-stream");
+      res.end(data);
+    });
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  page.setDefaultTimeout(15000);
+  const pageErrors = [];
+  page.on("pageerror", error => pageErrors.push(String(error)));
+  const cachedKeys = () => page.evaluate(async () => {
+    const result = {};
+    for (const name of await caches.keys()) result[name] = (await (await caches.open(name)).keys()).map(request => request.url.replace(location.origin, ""));
+    return result;
+  });
+  const appReady = () => page.waitForFunction(() => typeof getClassRules === "function" && typeof SpellCatalog === "object" && document.querySelector("#utility-menu-toggle"));
+  try {
+    await page.goto(`${origin}/index.html?analytics=owner`, { waitUntil: "load" });
+    await appReady();
+    await page.waitForTimeout(3500);
+    assert.equal(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0, "the service worker is not registered outside the production site");
+
+    const warmed = await page.evaluate(() => new Promise((resolve, reject) => {
+      navigator.serviceWorker.addEventListener("message", event => { if (event.data?.type === "twd20-warm-done") resolve(event.data); });
+      registerOfflineCache().catch(reject);
+    }));
+    assert(warmed.stored > 50, `the first visit stores the files the page already loaded (${warmed.stored})`);
+    assert.equal(warmed.failed, 0, "every file the page loaded can be stored");
+
+    const lazyFiles = await page.evaluate(() => [classSrdFile, monsterSrdFile, spellSrdFile, magicItemTextFile]);
+    let keys = await cachedKeys();
+    assert.deepEqual(Object.keys(keys).sort(), ["twd20-assets-v1", "twd20-pages-v1"].filter(name => keys[name]), "only the two twd20 caches exist");
+    const pages = keys["twd20-pages-v1"];
+    assert(pages.includes("/"), "the page is stored once, without index.html or its query");
+    assert(!pages.some(key => key.includes("analytics=")), "analytics parameters never become cache keys");
+    for (const file of lazyFiles) {
+      assert(/\?v=[^0]/.test(file), `${file} carries a content version`);
+      assert(pages.includes(`/${file}`), `${file} is stored before it is first needed`);
+    }
+    const versionedScript = /<script src="(dice-roller\.js\?v=[^"]+)"/.exec(fs.readFileSync(path.join(__dirname, "index.html"), "utf8"))[1];
+    assert(pages.includes(`/${versionedScript}`), "versioned scripts keep their version in the key");
+    assert(pages.includes("/deity-info.js"), "files without a version are stored under their path");
+    assert(!pages.includes("/sw.js"), "the service worker script itself is not stored");
+
+    // 有版本號：之後不再問伺服器；換版本號時舊的刪掉。
+    await page.reload({ waitUntil: "load" });
+    await appReady();
+    assert.equal(await page.evaluate(() => Boolean(navigator.serviceWorker.controller)), true, "the reloaded page is controlled");
+    requests.length = 0;
+    assert.equal(await page.evaluate(file => fetch(file).then(response => response.ok), versionedScript), true);
+    assert.deepEqual(requests, [], "a stored versioned file is served without asking the server");
+    await page.evaluate(() => fetch("og-image.jpg?v=cache-test-a").then(response => response.text()));
+    await page.evaluate(() => fetch("og-image.jpg?v=cache-test-b").then(response => response.text()));
+    keys = await cachedKeys();
+    assert.deepEqual(keys["twd20-pages-v1"].filter(key => key.startsWith("/og-image.jpg")), ["/og-image.jpg?v=cache-test-b"], "a new version replaces the older ones of the same file");
+
+    // 沒有版本號：每次都先上網，? 參數不同也只存一份（擲骰動畫的 ?roll=N）。
+    const diceAsset = await page.evaluate(() => new URL(document.querySelector("img[src*='dice' i], img[src*='d20' i]")?.getAttribute("src") || "images/logo-classic-light.webp", location.href).pathname);
+    requests.length = 0;
+    for (const roll of [1, 2, 3]) await page.evaluate(([asset, n]) => fetch(`${asset}?roll=${n}`).then(response => response.blob()), [diceAsset, roll]);
+    assert.equal(requests.length, 3, "files without a version still go to the network first");
+    await page.waitForTimeout(200);
+    keys = await cachedKeys();
+    assert.deepEqual(keys["twd20-pages-v1"].filter(key => key.startsWith(diceAsset)), [diceAsset], "query variants of one file share a single entry");
+
+    // 不處理的請求照常直通，也不存。
+    await page.evaluate(() => fetch("deity-info.js?probe=1", { cache: "no-store" }).then(response => response.text()));
+    await page.evaluate(() => fetch("legal-about.js", { method: "HEAD" }));
+    keys = await cachedKeys();
+    assert(!keys["twd20-pages-v1"].includes("/legal-about.js"), "requests other than GET are not stored");
+
+    // 網路卡住：頁面等 4 秒後先用存下來的版本。
+    // 沒存過的檔案在網路卡住時等不到，load 事件不一定會來，所以只等頁面能用。
+    mode = "hang";
+    const hangStarted = Date.now();
+    await page.goto(`${origin}/index.html?analytics=owner`, { waitUntil: "commit" });
+    await appReady();
+    const waited = Date.now() - hangStarted;
+    assert(waited >= 3500 && waited < 12000, `a stalled network falls back to the stored page after the timeout (${waited} ms)`);
+    for (const socket of held) socket.destroy();
+    held.clear();
+
+    // 斷線：頁面、之後才載入的資料檔、沒有版本號的檔案都拿得到。
+    mode = "down";
+    await page.goto(`${origin}/?analytics=owner`, { waitUntil: "load" });
+    await appReady();
+    assert.equal(await page.evaluate(() => navigator.serviceWorker.controller !== null && Object.keys(getClassRules("fighter") || getClassRules("戰士") || {}).length > 0), true, "the stored page works without a network");
+    for (const file of [...lazyFiles, "deity-info.js", `${diceAsset}?roll=9`]) {
+      assert.equal(await page.evaluate(target => fetch(target).then(response => response.ok, () => false), file), true, `${file} is available offline`);
+    }
+    assert.equal(await page.evaluate(() => fetch("never-stored.js").then(() => "response", () => "error")), "error", "a file that was never stored still fails offline");
+    assert.deepEqual(pageErrors, [], "no page errors with the service worker");
+
+    // 快取名稱改版時，舊的 twd20 快取在啟用時清掉，其他名稱不動。
+    mode = "online";
+    await page.goto(`${origin}/index.html?analytics=owner`, { waitUntil: "load" });
+    await page.evaluate(async () => {
+      await caches.open("twd20-pages-v0");
+      await caches.open("other-cache");
+      await (await navigator.serviceWorker.getRegistration()).unregister();
+    });
+    await page.reload({ waitUntil: "load" });
+    await appReady();
+    await page.evaluate(() => new Promise((resolve, reject) => {
+      navigator.serviceWorker.addEventListener("message", event => { if (event.data?.type === "twd20-warm-done") resolve(); });
+      registerOfflineCache().catch(reject);
+    }));
+    assert.deepEqual(Object.keys(await cachedKeys()).sort(), ["other-cache", "twd20-assets-v1", "twd20-pages-v1"].filter(name => name !== "twd20-assets-v1" || keys["twd20-assets-v1"]), "activation clears outdated twd20 caches and leaves other caches alone");
+    console.log("Service worker: production-only registration, first-visit warm-up, versioned / unversioned / page strategies, stalled-network fallback and offline loading passed.");
+  } finally {
+    for (const socket of held) socket.destroy();
+    await context.close();
+    await new Promise(resolve => { server.closeAllConnections?.(); server.close(resolve); });
+  }
+}
+
 async function main() {
   const sections = new Set(process.argv.slice(2));
-  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--gestures-only", "--journal-only", "--pdf-only", "--pdf-fields-only", "--data-only", "--share-only"].includes(flag), `Unknown option: ${flag}`);
+  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--gestures-only", "--journal-only", "--pdf-only", "--pdf-fields-only", "--data-only", "--share-only", "--offline-cache-only"].includes(flag), `Unknown option: ${flag}`);
   assert(sections.size <= 1, "Choose at most one UI section");
   const all = sections.size === 0;
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
@@ -8163,6 +8296,7 @@ async function main() {
       await verifyFeatureReferences(browser, url);
     }
     if (all || sections.has("--journal-only")) await verifyAdventureJournal(browser, url);
+    if (all || sections.has("--offline-cache-only")) await verifyOfflineCache(browser);
     if (all || sections.has("--pdf-only") || sections.has("--pdf-fields-only")) {
       const page = await newUiPage(browser);
       try {
