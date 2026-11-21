@@ -991,7 +991,7 @@ html[data-theme="dark"]:where([data-ui-theme="warm"]) .sheet-download__link:hove
 .sheet-download__link--dndbeyond { left: 37.5%; top: 92.6%; width: 20%; height: 3.9%; }
 .sheet-download__link--wotc { left: 71.2%; top: 92.6%; width: 9.5%; height: 3.9%; }
 
-/* 冒險者聯盟規則（al-rules.js）：短說明、兩個外部連結（有草案時正下方多一個）與版權聲明。 */
+/* 冒險者聯盟規則（al-rules.js）：短說明、文件連結與版權聲明。 */
 .app-dialog[data-variant="al-rules"] .app-dialog__surface {
   width: min(100%, 34rem);
 }
@@ -1052,13 +1052,16 @@ html[data-theme="dark"]:where([data-ui-theme="warm"]) .sheet-download__link:hove
   background: var(--control-hover-bg);
 }
 
-.al-rules-link--draft {
+.al-rules-link--full-width {
   grid-column: 1 / -1;
+  text-align: center;
+}
+
+.al-rules-link--draft {
   min-height: 2.5rem;
   padding: 0.3rem 0.5rem;
   font-size: var(--fs-sm);
   font-weight: 600;
-  text-align: center;
 }
 
 .al-rules-link:focus-visible {

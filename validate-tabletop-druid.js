@@ -6,6 +6,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const http = require("node:http");
 const { chromium } = require("playwright");
+require("./tools/regression-legal-notice");
 
 // The same browser harness covers persistent effects on normal and beast stats.
 async function checkPersistentSpells(page) {

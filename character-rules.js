@@ -199,6 +199,17 @@
     return [...new Set([className, ...extra])];
   }
 
+  /**
+   * 用能使用精通屬性的武器攻擊時，可以改用的精通屬性（內容檔的 masteryOptions，例如戰士 9 級「戰術大師」的推離、削弱、緩速）。
+   * 只回傳已取得能力給的名稱，不含武器本身的精通；沒有時是空陣列。
+   */
+  function getClassMasteryOptions(className, level, subclassId) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    return [...new Set(getClassFeatureRules(className, subclassId)
+      .filter(feature => numericLevel >= feature.level && Array.isArray(feature.masteryOptions))
+      .flatMap(feature => feature.masteryOptions))];
+  }
+
   /** 職業與子職能力在短休時額外減少的力竭等級（內容檔的 exhaustionRecovery.shortRest，加總）。 */
   function getClassShortRestExhaustionRecovery(className, level, subclassId) {
     const numericLevel = Number.parseInt(level, 10) || 0;
@@ -1474,6 +1485,7 @@
     getSelectedSubclass,
     hasClassFeature,
     getClassSpellListIds,
+    getClassMasteryOptions,
     getClassFreeCastFeatures,
     getClassResistances,
     getClassShortRestExhaustionRecovery,

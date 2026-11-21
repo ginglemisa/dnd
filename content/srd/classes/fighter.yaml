@@ -178,6 +178,7 @@ features:
     name: 戰術大師
     pdfMerge: true
     hint: {panels: [weapons]}
+    masteryOptions: [推離, 削弱, 緩速]
     summary: 用可使用精通屬性的武器攻擊時，可把這次攻擊的精通屬性換成推離、削弱或緩速。
     text: |
       用你能使用精通屬性的武器攻擊時，可以把這次的精通屬性換成：

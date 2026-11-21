@@ -554,6 +554,20 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tabletop-panel-acti
   text-align: left;
 }
 
+/* 可以替換的精通（戰術大師）：備註框裡另起一行，放不下就換行。 */
+#tabletop-panel-actions .tabletop-weapon-mastery-options {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.4rem;
+}
+
+#tabletop-panel-actions .tabletop-weapon-mastery-options-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
 #tabletop-panel-actions .tabletop-weapon-note-text {
   min-width: 0;
   overflow: hidden;
