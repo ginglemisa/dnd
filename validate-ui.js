@@ -8345,13 +8345,22 @@ async function verifyOfflineCache(browser) {
         const events = JSON.parse(sessionStorage.getItem("test-tracked") || "[]");
         const stub = { track(name, params) { events.push([name, params]); sessionStorage.setItem("test-tracked", JSON.stringify(events)); return true; } };
         Object.defineProperty(window, "twAnalytics", { get: () => stub, set() {}, configurable: true });
+        // 持久儲存：還沒拿到才申請，拿到後不再問。
+        navigator.storage.persisted = async () => sessionStorage.getItem("test-persisted") === "1";
+        navigator.storage.persist = async () => {
+          sessionStorage.setItem("test-persist-calls", String(Number(sessionStorage.getItem("test-persist-calls") || 0) + 1));
+          sessionStorage.setItem("test-persisted", "1");
+          return true;
+        };
       });
       const launch = await homeScreen.newPage();
       await launch.goto(origin + "/?analytics=owner");
-      await launch.waitForFunction(() => typeof registerOfflineCache === "function");
+      await launch.waitForFunction(() => typeof registerOfflineCache === "function" && sessionStorage.getItem("test-persisted") === "1");
       await launch.reload();
       await launch.waitForFunction(() => typeof registerOfflineCache === "function");
+      await launch.waitForTimeout(200);
       assert.deepEqual(await launch.evaluate(() => JSON.parse(sessionStorage.getItem("test-tracked"))), [["pwa_first_launch", { platform: "ios" }]], "the first Home Screen launch is counted once");
+      assert.equal(await launch.evaluate(() => sessionStorage.getItem("test-persist-calls")), "1", "the Home Screen app asks for persistent storage once");
     } finally { await homeScreen.close(); }
 
     const share = await page.evaluate(() => encodeStateToHash(collectShareState()));
@@ -8389,6 +8398,27 @@ async function verifyOfflineCache(browser) {
     await page.reload({ waitUntil: "load" });
     await appReady();
     assert.equal(await page.evaluate(() => Boolean(navigator.serviceWorker.controller)), true, "the reloaded page is controlled");
+    // 切回前景：距離上次檢查超過一小時才主動檢查新版，一小時內不重複。
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await page.waitForTimeout(500);
+    assert.deepEqual(await page.evaluate(() => {
+      let calls = 0;
+      const original = ServiceWorkerRegistration.prototype.update;
+      const realNow = Date.now;
+      ServiceWorkerRegistration.prototype.update = function () { calls += 1; return Promise.resolve(this); };
+      try {
+        document.dispatchEvent(new Event("visibilitychange"));
+        const soon = calls;
+        Date.now = () => realNow() + 61 * 60 * 1000;
+        document.dispatchEvent(new Event("visibilitychange"));
+        const later = calls;
+        document.dispatchEvent(new Event("visibilitychange"));
+        return [soon, later, calls];
+      } finally {
+        ServiceWorkerRegistration.prototype.update = original;
+        Date.now = realNow;
+      }
+    }), [0, 1, 1], "returning to the app checks for a new version at most once an hour");
     requests.length = 0;
     assert.equal(await page.evaluate(file => fetch(file).then(response => response.ok), versionedScript), true);
     assert.deepEqual(requests, [], "a stored versioned file is served without asking the server");
@@ -8508,7 +8538,7 @@ async function verifyOfflineCache(browser) {
     keys = await cachedKeys();
     assert(!keys[shellName] && !keys["twd20-pages-v0"] && keys["other-cache"]);
     assert.deepEqual(pageErrors, []);
-    console.log("PWA: install icons, core coverage, mobile/desktop menu, cache strategies, interrupted update, offline cold launch and forced update (deferred by dialogs and touched share pages) passed.");
+    console.log("PWA: install icons, core coverage, mobile/desktop menu, cache strategies, interrupted update, offline cold launch, forced update (deferred by dialogs and touched share pages), hourly resume check and persistent storage request passed.");
   } finally {
     for (const socket of held) socket.destroy();
     await context.close();
