@@ -5,6 +5,9 @@ const SHELL_CACHE = "twd20-shell-" + RELEASE.version;
 const KEEP = [PAGE_CACHE, ASSET_CACHE, SHELL_CACHE];
 const ASSET_PATTERN = /\.(otf|ttf|woff2?|pdf)$/i;
 const NETWORK_TIMEOUT_MS = 4000;
+// PDF 匯出的範本與字型（路徑 → 雜湊）：存在固定快取，不隨每版整套重抓；這筆記錄寫著快取裡每個檔案是哪個雜湊的版本。
+const PDF_ASSETS = RELEASE.pdfAssets || {};
+const PDF_RECORD = new URL("/__twd20-pdf-assets", self.location.origin).href;
 // addAll 只在整批成功時寫入。雜湊不合、斷線或空間不足，舊 worker 仍服務原版本。
 function downloadShell(cache) {
   const controller = new AbortController();
@@ -36,7 +39,7 @@ self.addEventListener("fetch", (event) => {
   // 開發者工具會送出這種請求，交給 fetch() 會直接出錯。
   if (request.cache === "only-if-cached" && request.mode !== "same-origin") return;
   const url = new URL(request.url);
-  if (!isHandled(url)) return;
+  if (!isHandled(url, request)) return;
 
   const path = url.pathname === "/index.html" ? "/" : url.pathname;
   if (Object.hasOwn(RELEASE.assets, path)) {
@@ -45,6 +48,10 @@ self.addEventListener("fetch", (event) => {
       if (cached) return cached;
       return fetch(new Request(new URL(path, url.origin), { integrity: RELEASE.assets[path], cache: "no-cache" }));
     })());
+    return;
+  }
+  if (Object.hasOwn(PDF_ASSETS, path)) {
+    event.respondWith(servePdfAsset(path));
     return;
   }
   // 短網址、API 與站上其他動態路徑直通。只有靜態附加資源才按需保存。
@@ -58,6 +65,13 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("message", event => {
   if (event.data?.type === "twd20-activate") {
     event.waitUntil(self.skipWaiting());
+    return;
+  }
+  if (event.data?.type === "twd20-pdf-assets" && event.ports[0]) {
+    const port = event.ports[0];
+    event.waitUntil((event.data.download ? downloadPdfAssets() : Promise.resolve())
+      .then(pdfAssetsReady)
+      .then(ready => port.postMessage({ ready }), () => port.postMessage({ ready: false })));
     return;
   }
   if (event.data?.type !== "twd20-offline-status" || !event.ports[0]) return;
@@ -75,8 +89,83 @@ self.addEventListener("message", event => {
   })());
 });
 
-function isHandled(url) {
-  return url.origin === self.location.origin && url.pathname !== "/sw.js";
+function isHandled(url, request) {
+  if (url.origin !== self.location.origin || url.pathname === "/sw.js") return false;
+  // 冒險者聯盟規則頁（/al/）和它載入的檔案一律直接上網、不存，永遠是線上版。
+  if (url.pathname.startsWith("/al/") || url.pathname === "/al-return.js") return false;
+  try {
+    if (request.referrer && new URL(request.referrer).pathname.startsWith("/al/")) return false;
+  } catch { /* 沒有可解析的來源就照一般規則 */ }
+  return true;
+}
+
+function pdfAssetKey(path) {
+  return new URL(path, self.location.origin).href;
+}
+
+async function readPdfRecord(cache) {
+  try { return (await (await cache.match(PDF_RECORD))?.json()) || {}; } catch { return {}; }
+}
+
+function fetchPdfAsset(path) {
+  return fetch(new Request(pdfAssetKey(path), { integrity: PDF_ASSETS[path], cache: "no-cache" }));
+}
+
+async function storePdfAsset(cache, path, response) {
+  await cache.put(pdfAssetKey(path), response);
+  // 寫入前重讀記錄：其他分頁可能剛記下別的檔案。
+  const record = await readPdfRecord(cache);
+  record[path] = PDF_ASSETS[path];
+  await cache.put(PDF_RECORD, new Response(JSON.stringify(record), { headers: { "Content-Type": "application/json" } }));
+}
+
+async function isPdfAssetCurrent(cache, record, path) {
+  return record[path] === PDF_ASSETS[path] && Boolean(await cache.match(pdfAssetKey(path), { ignoreVary: true }));
+}
+
+// 存的是這一版就直接用；沒存過或存的是舊版就上網拿（核對雜湊），離線時舊版也比沒有好。
+async function servePdfAsset(path) {
+  const cache = await caches.open(ASSET_CACHE);
+  const cached = await cache.match(pdfAssetKey(path), { ignoreVary: true });
+  if (cached && (await readPdfRecord(cache))[path] === PDF_ASSETS[path]) return cached;
+  try {
+    const response = await fetchPdfAsset(path);
+    if (isStorable(response)) await storePdfAsset(cache, path, response.clone()).catch(() => {});
+    return response;
+  } catch (error) {
+    if (cached) return cached;
+    throw error;
+  }
+}
+
+// 已安裝的 App 打開時由 pwa.js 要求。一次抓一個，抓完一個記一個；中斷或失敗時已抓好的留著，下次接著抓缺的。
+let pdfDownload = null;
+function downloadPdfAssets() {
+  if (!pdfDownload) {
+    pdfDownload = (async () => {
+      const cache = await caches.open(ASSET_CACHE);
+      for (const path of Object.keys(PDF_ASSETS)) {
+        if (await isPdfAssetCurrent(cache, await readPdfRecord(cache), path)) continue;
+        const response = await fetchPdfAsset(path);
+        if (!isStorable(response)) throw new Error(path + " " + response.status);
+        await storePdfAsset(cache, path, response);
+      }
+    })().finally(() => { pdfDownload = null; });
+  }
+  return pdfDownload;
+}
+
+async function pdfAssetsReady() {
+  try {
+    const cache = await caches.open(ASSET_CACHE);
+    const record = await readPdfRecord(cache);
+    for (const path of Object.keys(PDF_ASSETS)) {
+      if (!await isPdfAssetCurrent(cache, record, path)) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isVersioned(url) {
