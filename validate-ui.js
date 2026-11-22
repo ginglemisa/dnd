@@ -36,7 +36,7 @@ function verifyAnalyticsIsolation(html) {
   assert(!/<script\b[^>]*\bsrc=["']https:\/\/www\.googletagmanager\.com/i.test(html), "Google script must not load unconditionally");
   const analytics = fs.readFileSync(path.join(__dirname, "analytics.js"), "utf8");
   // These are virtual locations: scripts and events are captured in memory, never sent to Google.
-  const run = (href, { owner = false, blockedStorage = false, blockedHistory = false, storage = new Map(), referrer = "" } = {}) => {
+  const run = (href, { owner = false, blockedStorage = false, blockedHistory = false, storage = new Map(), referrer = "", standalone = false } = {}) => {
     if (owner) storage.set("twd20.analyticsRole.v1", "owner");
     const scripts = [];
     const context = vm.createContext({
@@ -51,7 +51,8 @@ function verifyAnalyticsIsolation(html) {
         visibilityState: "visible", referrer, documentElement: { dataset: {} },
         createElement: () => ({}), head: { appendChild: script => scripts.push(script) }, addEventListener() {}
       },
-      setTimeout: () => 1, clearTimeout() {}, addEventListener() {}
+      setTimeout: () => 1, clearTimeout() {}, addEventListener() {},
+      matchMedia: query => ({ matches: standalone && query === "(display-mode: standalone)" })
     });
     context.window = context;
     vm.runInContext(inlineScripts[0], context);
@@ -69,8 +70,12 @@ function verifyAnalyticsIsolation(html) {
     const config = allowed.context.dataLayer.find(args => args[0] === "config")[2];
     assert.equal(config.page_location, `https://${host}/`);
     assert.equal(config.page_referrer, "");
+    assert.equal(config.display_mode, "browser", "a browser tab reports display_mode=browser");
     assert.equal(allowed.scripts[0].referrerPolicy, "no-referrer");
   }
+  const homeScreen = run("https://twd20.com/", { standalone: true });
+  assert.equal(homeScreen.tracked, true, "the Home Screen app is measured like the website");
+  assert.equal(homeScreen.context.dataLayer.find(args => args[0] === "config")[2].display_mode, "standalone", "the Home Screen app reports display_mode=standalone");
   const disabledCases = [
     ["http://localhost:8000/?analytics=user"], ["http://127.0.0.1:8000/"],
     ["file:///C:/Git/dnd/index.html?analytics=owner"], ["file://twd20.com/index.html"],
@@ -107,7 +112,7 @@ function verifyAnalyticsIsolation(html) {
   const referral = run("https://twd20.com/", { referrer: "https://example.org/private/synthetic?token=synthetic#secret" });
   assert.equal(referral.context.dataLayer.find(args => args[0] === "config")[2].page_referrer, "https://example.org/");
   assert(!JSON.stringify(referral.context.dataLayer).includes("synthetic"), "referrer credentials must not enter the event queue");
-  console.log("Analytics isolation: hosts, owner persistence, query/share URL exclusion, sanitized location/referrer and both event paths passed (no network).");
+  console.log("Analytics isolation: hosts, owner persistence, query/share URL exclusion, sanitized location/referrer, display mode and both event paths passed (no network).");
 }
 
 async function newUiPage(browser, { fieldDetailsIntro = false, ...options } = {}) {
@@ -989,7 +994,50 @@ async function verifyAdventurersLeagueRules(browser, url, viewport) {
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "detached" });
     assert.equal(await page.evaluate(() => document.activeElement?.id), "utility-menu-toggle", "focus returns to the menu toggle");
-    console.log(`Adventurers League rules: menu button, production links, notice, layout and focus return passed at ${viewport.width}px.`);
+    // 正式站的規則連結一律在同一個視窗開（新分頁在主畫面 App 會變成另一個視窗、在瀏覽器會越開越多）。
+    // 從角卡點進去的規則頁才有「回到角卡」（al-return.js 由 site.yml 部署時注入，這裡用假頁面代替私人頁面）；
+    // 跳過目錄錨點也一次退回角卡，紀錄不變長；直接開網址不顯示。
+    const site = await browser.newContext({ viewport, serviceWorkers: "block" });
+    try {
+      const local = new URL(url).origin;
+      await site.route("**/*", async route => {
+        const request = new URL(route.request().url());
+        if (request.origin !== "https://twd20.com") return route.abort();
+        await route.fulfill({ response: await site.request.get(local + request.pathname + request.search) });
+      });
+      await site.route("https://twd20.com/al/**", route => route.fulfill({
+        contentType: "text/html; charset=utf-8",
+        body: '<!doctype html><html><head><meta charset="utf-8"><style>:root{--accent:#8a1c1c}</style></head><body><a id="toc" href="#part-2">第二段</a><section id="part-2" style="margin-top:2000px">第二段</section><script src="/al-return.js" defer></script></body></html>'
+      }));
+      const tab = await site.newPage();
+      await tab.goto(url.replace(local, "https://twd20.com"));
+      await tab.locator("#legal-close-btn").click();
+      await tab.evaluate(() => window.onboardingTour?.finish?.());
+      await tab.locator("#utility-menu-toggle").click();
+      await tab.locator("#al-rules-btn").click();
+      assert.deepEqual(await tab.locator(".al-rules-link").evaluateAll(links => links.map(link => [link.target, link.getAttribute("aria-label")])), [
+        ["", "玩家手冊"], ["", "城主指南"], ["", "冒險者聯盟服務時數獎勵"], ["", "玩家手冊 v2027.1 草案（社群審閱中）"]
+      ], "the production site opens the rules pages in the same window");
+      await tab.locator(".al-rules-link").first().click();
+      await tab.waitForURL("https://twd20.com/al/DnDALPG.html");
+      const returnButton = tab.getByRole("button", { name: "回到角卡" });
+      await returnButton.waitFor();
+      await tab.locator("#toc").click();
+      await tab.waitForFunction(() => location.hash === "#part-2");
+      const rulesLength = await tab.evaluate(() => history.length);
+      assert.equal(await returnButton.isVisible(), true, "the button stays after jumping within the rules page");
+      await returnButton.click();
+      // 退回時可能直接用瀏覽器的頁面快取（bfcache），不會再觸發 load，所以只等網址。
+      await tab.waitForURL(address => ["/", "/index.html"].includes(new URL(address).pathname), { waitUntil: "commit" });
+      await tab.waitForFunction(() => typeof getClassRules === "function");
+      assert.equal(await tab.evaluate(() => history.length), rulesLength, "returning steps back to the sheet instead of adding history entries");
+      assert.equal(await tab.evaluate(() => sessionStorage.getItem("twd20.alReturn.v1")), null, "the source mark is used up");
+      await tab.goto("https://twd20.com/al/DnDALDMG.html");
+      await tab.waitForLoadState("load");
+      await tab.waitForTimeout(300);
+      assert.equal(await tab.getByRole("button", { name: "回到角卡" }).count(), 0, "a rules page opened directly has no return button");
+    } finally { await site.close(); }
+    console.log(`Adventurers League rules: menu button, production links, notice, layout, focus return, same-window links and the injected return button passed at ${viewport.width}px.`);
   } finally { await page.close(); }
 }
 
@@ -8171,6 +8219,8 @@ async function verifyOfflineCache(browser) {
   const held = new Set();
   const { buildWorker } = require("./tools/pwa-release");
   const indexFile = path.join(__dirname, "index.html");
+  // Cloudflare 的電子郵件地址混淆每次都把首頁裡的 email 改寫成不同內容，sw.js 以雜湊核對首頁就永遠失敗。
+  assert(!/[\w.%+-]+@[\w-]+\.[a-z]{2,}/i.test(fs.readFileSync(indexFile, "utf8")), "index.html must not contain an email address: Cloudflare rewrites it per request and breaks the homepage hash");
   const nextHtml = fs.readFileSync(indexFile, "utf8").replace("</head>", '<meta name="pwa-test-release" content="2"></head>');
   let release = 1;
   let broken = false;
@@ -8213,6 +8263,7 @@ async function verifyOfflineCache(browser) {
     assert.equal(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0, "the service worker is not registered outside the production site");
 
     assert.equal(await page.locator("#pwa-menu-btn").isVisible(), false);
+    assert.equal(await page.locator("#footer-bug-report").getAttribute("href"), "mailto:tsai.reggie428@gmail.com", "the footer bug link gets its mailto from legal-modal.js");
     const manifest = await page.evaluate(async () => (await fetch(document.querySelector('link[rel="manifest"]').href)).json());
     assert.equal(manifest.id, "/");
     assert.equal(manifest.start_url, "/");
@@ -8262,7 +8313,10 @@ async function verifyOfflineCache(browser) {
     }
 
     // Chromium 提供安裝事件時，只有明確點擊安裝才叫出系統提示。
+    // GA4 在本機不送；換成記錄用的替身，確認安裝相關事件與參數。
     await page.evaluate(() => {
+      window.trackedEvents = [];
+      window.twAnalytics = { track: (name, params) => { window.trackedEvents.push([name, params]); return true; } };
       const prompt = new Event("beforeinstallprompt", { cancelable: true });
       window.installRequests = 0;
       prompt.prompt = () => { window.installRequests++; };
@@ -8274,6 +8328,31 @@ async function verifyOfflineCache(browser) {
     assert.equal(await page.evaluate(() => window.installRequests), 0);
     await page.getByRole("button", { name: "安裝", exact: true }).click();
     assert.equal(await page.evaluate(() => window.installRequests), 1);
+    await page.waitForFunction(() => window.trackedEvents.some(([name]) => name === "pwa_install_prompt"));
+    await page.evaluate(() => window.dispatchEvent(new Event("appinstalled")));
+    assert.deepEqual(await page.evaluate(() => window.trackedEvents), [
+      ["pwa_install_guide", { platform: "other" }],
+      ["pwa_install_prompt", { platform: "other", outcome: "dismissed" }],
+      ["pwa_installed", { platform: "other", install_source: "install_button" }]
+    ], "install guide, prompt outcome and install are measured");
+
+    // 第一次從主畫面開啟（iPhone 沒有安裝事件，靠這個計數）只送一次；分享網址不算。
+    const homeScreen = await browser.newContext({ viewport: { width: 375, height: 667 }, serviceWorkers: "block",
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 Version/17.5 Mobile/15E148 Safari/604.1" });
+    try {
+      await homeScreen.addInitScript(() => {
+        Object.defineProperty(navigator, "standalone", { get: () => true, configurable: true });
+        const events = JSON.parse(sessionStorage.getItem("test-tracked") || "[]");
+        const stub = { track(name, params) { events.push([name, params]); sessionStorage.setItem("test-tracked", JSON.stringify(events)); return true; } };
+        Object.defineProperty(window, "twAnalytics", { get: () => stub, set() {}, configurable: true });
+      });
+      const launch = await homeScreen.newPage();
+      await launch.goto(origin + "/?analytics=owner");
+      await launch.waitForFunction(() => typeof registerOfflineCache === "function");
+      await launch.reload();
+      await launch.waitForFunction(() => typeof registerOfflineCache === "function");
+      assert.deepEqual(await launch.evaluate(() => JSON.parse(sessionStorage.getItem("test-tracked"))), [["pwa_first_launch", { platform: "ios" }]], "the first Home Screen launch is counted once");
+    } finally { await homeScreen.close(); }
 
     const share = await page.evaluate(() => encodeStateToHash(collectShareState()));
     const iphone = await browser.newContext({ viewport: { width: 375, height: 667 },

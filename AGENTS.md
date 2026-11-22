@@ -46,7 +46,7 @@
 * **分享**：入口為 `copyShareUrl()`，保留 `#s=`／`#s2=` 格式與永久網址的複製 fallback。分享模式不 autosave、不可再分享或匯入；它是唯讀角色卡，鎖定規則在 `share-readonly.js`（預設全鎖加白名單，新增角色欄位預設就會被鎖，要開放才加進白名單）。身分下拉維持 `disabled`，其他項目用 `readOnly`／`inert`，不用 `disabled`。分享頁的 `dndStorage` 依網址只讀寫頁面記憶體，看的人的本機資料不讀不寫，只有主題、亮暗、GA 角色與日誌舊資料例外。分享資料不得被本機記憶覆蓋。
 * **短網址**：只在使用者明確選擇後建立，送出當次編碼的區域變數 `hash`。僅限 `https://twd20.com`、`#s2=` 且長度 ≤10000；離線頁不呼叫。建立失敗時明確提示，不自動重試，也不悄悄改成複製長網址。Worker 程式在 `cloudflare/twd20-url/`（見其 [README](cloudflare/twd20-url/README.md)），與網站分開部署，不自行部署；不寫入 secret 值、不猜測資源 ID、不更換 `HMAC_SECRET`。
 * **日誌**：`adventure-journal.js` 獨立使用 IndexedDB `twd20-adventure-journal`，對外 JSON 維持版本 1。寫入時核對 revision，失敗保留原資料。日誌不進角色 JSON、分享或 autosave。
-* **GA4**：閘門在 `index.html`，事件入口在 `analytics.js`。只在 hostname 精確為 `twd20.com`／`www.twd20.com` 時啟用；網址除 `analytics=owner|user` 外帶任何 query 或 fragment 就不載入、不送事件。不傳送角色、日誌或分享內容。
+* **GA4**：閘門在 `index.html`，事件入口在 `analytics.js`。只在 hostname 精確為 `twd20.com`／`www.twd20.com` 時啟用；網址除 `analytics=owner|user` 外帶任何 query 或 fragment 就不載入、不送事件。不傳送角色、日誌或分享內容。主畫面 App（PWA）照同一個閘門送；設定帶 `display_mode`（`standalone`／`browser`），`pwa.js` 另送 `pwa_install_guide`、`pwa_install_prompt`（`outcome`）、`pwa_installed`（`install_source`）、`pwa_first_launch`（只送一次，記在 `twd20.pwaFirstLaunch.v1`），都帶 `platform`。這些參數要在 GA4 後台註冊成自訂維度才看得到。
 
 ## 規則與功能入口
 
@@ -86,10 +86,10 @@
 ## 部署與離線版
 
 * 回歸測試只在本機推送前執行。GitHub Actions（`.github/workflows/site.yml`）在 push 到 `main` 時建置、產生離線角色卡並部署 GitHub Pages，不跑回歸測試。
-* **主畫面安裝與離線跑團**：`manifest.webmanifest` 固定從首頁啟動；`pwa.js` 只在正式站首頁啟用安裝選單與 `/sw.js`。部署在 Jekyll 完成後執行 `node tools/pwa-release.js _site`，將核心資源及實際檔案雜湊寫入發布用 worker。新增角色卡必要程式（含延遲載入的規則資料）時同步該清單。新版整套下載成功後一律自動換上，由 `pwa.js` 挑沒在操作的時機整頁重新載入（規則見 BEHAVIOR.md「網站自動更新」）。PDF 與匯出字型按需快取，替換同名檔時更新 `ASSET_CACHE`。單檔下載版內嵌 favicon 並移除安裝入口。
+* **主畫面安裝與離線跑團**：`manifest.webmanifest` 固定從首頁啟動；`pwa.js` 只在正式站首頁啟用安裝選單與 `/sw.js`。部署在 Jekyll 完成後執行 `node tools/pwa-release.js _site`，將核心資源及實際檔案雜湊寫入發布用 worker。新增角色卡必要程式（含延遲載入的規則資料）時同步該清單。`index.html` 不可出現 email 地址：Cloudflare 的電子郵件地址混淆會在每次回應改寫它，首頁雜湊永遠不合、離線資料永遠下載不完；mailto 由 JS 補上（頁尾見 `legal-modal.js`）。新版整套下載成功後一律自動換上，由 `pwa.js` 挑沒在操作的時機整頁重新載入（規則見 BEHAVIOR.md「網站自動更新」）。PDF 與匯出字型按需快取，替換同名檔時更新 `ASSET_CACHE`。單檔下載版內嵌 favicon 並移除安裝入口。
 * `twd20.html` 是 Actions 產生的衍生產物，不提交、不手改。離線版除了停用 PDF 匯出，功能應與網頁版相同；不含私人內容，分享只產生正式站的永久網址。
 * 改動可能影響離線版（載入順序、內嵌的 script／CSS／圖片、新增產物檔、路徑或離線分享）時，自行在本機執行 `npm run build:offline`（先 `npm run build`；腳本內含自身驗證），測完刪除產物。
-* **部署時併入的額外檔案**：`site.yml` 有一段會在部署時從另一個 repo 取得少量靜態頁面與直式角色卡（原版版面的非官方中翻）的 PDF 資源，細節看該段流程。這些檔案不進本 repo；來源有變動時不會自動部署，變動後要到 GitHub Actions 手動執行「網站上線」。
+* **部署時併入的額外檔案**：`site.yml` 有一段會在部署時從另一個 repo 取得少量靜態頁面與直式角色卡（原版版面的非官方中翻）的 PDF 資源，細節看該段流程。放進 `/al/` 的頁面會在 `</body>` 前插入 `al-return.js`（「回到角卡」只在部署產物裡，兩個 repo 的頁面檔都不含）。這些檔案不進本 repo；來源有變動時不會自動部署，變動後要到 GitHub Actions 手動執行「網站上線」。
   * 本機開發與測試需要的 PDF 資源用 `npm run assets:private` 複製（不提交）；`npm test` 開始前會自動補上缺少的檔案，新的 worktree 也一樣；沒有私人 repo 時見「驗證」的例外。
   * 移除頁面但保留來源 repo：刪掉來源 repo 裡的檔案，再手動執行一次。
   * 永久停用：先刪該段流程使用的 secret，手動執行一次並確認頁面消失，最後才刪來源 repo。

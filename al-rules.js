@@ -40,10 +40,22 @@
       if (fullWidth || draft) link.classList.add("al-rules-link--full-width");
       if (draft) link.classList.add("al-rules-link--draft");
       link.href = href;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
       link.textContent = label;
-      link.setAttribute("aria-label", `${label}（另開新分頁）`);
+      // 正式站一律在同一個視窗開：新分頁在主畫面 App 裡會變成另一個視窗（按返回就整個關掉），
+      // 在瀏覽器裡來回「回到角卡」又會越開越多分頁。點下去時在這個分頁記下「從角卡來」，
+      // 規則頁的 al-return.js（部署時注入）看到才顯示「回到角卡」；離開前 pagehide 會先存檔。
+      // 分享模式不存檔，離開會丟掉看的人在跑團改的資料，照舊開新分頁（沒有回到角卡）；本機、離線版的網域不同，也開新分頁。
+      if (!window.SHARE_MODE && new URL(href, location.href).origin === location.origin) {
+        link.setAttribute("aria-label", label);
+        link.addEventListener("click", event => {
+          if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+          try { sessionStorage.setItem("twd20.alReturn.v1", "1"); } catch { /* 記不了就不顯示回到角卡 */ }
+        });
+      } else {
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.setAttribute("aria-label", `${label}（另開新分頁）`);
+      }
       links.appendChild(link);
     });
 
