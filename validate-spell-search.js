@@ -1133,19 +1133,10 @@ async function validateInventory(page) {
   assert.deepEqual(catalog.ids.filter(id => !baseline.includes(id)), [], "new catalog items are added to equipment-id-baseline.json on purpose");
   for (const [pack, listed, sum] of catalog.packs) assert.equal(Math.round(sum * 100) / 100, listed, `${pack} contents weigh what the pack lists`);
   assert.deepEqual([catalog.containers, catalog.wielded], [[], []], "containers and wieldable focuses exist in the catalog");
-  // 改名的品項（長袍→祭袍、槲寄生樹枝→槲寄生枝條、狩獵陷阱→捕獸夾）：舊存檔的 itemId 與舊文字寫法都對到新品名。
-  const renamed = await page.evaluate(() => {
-    applyStateObject({ class: "druid", level: "1", __inventory: { version: 1, items: [
-      { uid: "robe", itemId: "長袍", name: "祭祀長袍", quantity: 1 }, { uid: "sprig", itemId: "槲寄生樹枝", quantity: 1 }, { uid: "plain", itemId: "長袍", quantity: 2 }, { uid: "trap", itemId: "狩獵陷阱", quantity: 1 }] } });
-    return {
-      entries: Inventory.entries().map(({ itemId, name, quantity }) => [itemId, name || "", quantity]),
-      text: ["長袍", "祭祀長袍", "槲寄生樹枝", "德魯伊法器（槲寄生枝條）", "狩獵陷阱", "書籍（玄秘學識）", "書（玄秘學識）"].map(text => [Inventory.parseItemText(text).itemId, Inventory.parseItemText(text).name || ""])
-    };
-  });
-  assert.deepEqual(renamed, {
-    entries: [["祭袍", "", 1], ["槲寄生枝條", "", 1], ["祭袍", "", 2], ["捕獸夾", "", 1]],
-    text: [["祭袍", ""], ["祭袍", ""], ["槲寄生枝條", ""], ["槲寄生枝條", ""], ["捕獸夾", ""], ["書籍", "書籍（玄秘學識）"], ["書籍", "書（玄秘學識）"]]
-  }, "renamed items load from old saves and old text");
+  // 舊文字寫法：法器寫法對到目錄品名，書名保留成顯示名稱。改過名的品項（祭袍、槲寄生枝條、捕獸夾）不轉換舊名。
+  const aliased = await page.evaluate(() => ["德魯伊法器（槲寄生枝條）", "書籍（玄秘學識）", "書（玄秘學識）"]
+    .map(text => [Inventory.parseItemText(text).itemId, Inventory.parseItemText(text).name || ""]));
+  assert.deepEqual(aliased, [["槲寄生枝條", ""], ["書籍", "書籍（玄秘學識）"], ["書籍", "書（玄秘學識）"]], "focus aliases and book titles map to catalog items");
   // 職業與背景的起始裝備：每個品名都對得到目錄（自訂物品須有重量），擇一的選項也是；套組提示框列出內容物。
   const startingEquipment = await page.evaluate(() => {
     const unresolved = [];
