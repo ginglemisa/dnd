@@ -1511,6 +1511,25 @@ async function verifyPdf(page, fieldsOnly) {
         }
       } finally { PDFLib.defaultTextFieldAppearanceProvider = provider; }
 
+      // A container's contents wrap between items like the rest of the list:
+      // the line before it stays full and no item or quantity is split.
+      const packGear = "書法工具、書籍（禱文）、聖物匣、羊皮紙 ×10、祭袍、鎖子甲、巨劍、連枷、標槍 ×8、背包（鐵蒺藜、撬棍、油 ×2、口糧 ×10、繩索、火絨盒、火把 ×10、水袋）";
+      try {
+        for (const [sheetTemplate, fieldName] of [["third-party", "equipment1"], ...(skipOfficial ? [] : [["official", "Equip"]])]) {
+          for (const outputMode of ["editable", "compact"]) {
+            let lines = null;
+            PDFLib.defaultTextFieldAppearanceProvider = (field, widget, font) => {
+              if (field.getName() === fieldName) lines = field.getText().split("\n");
+              return provider(field, widget, font);
+            };
+            await exportCharacterPdfFromState({ class: "fighter", level: "1", "gear-notes": packGear }, { outputMode, sheetTemplate, characterName: "UI regression" });
+            const label = `${sheetTemplate}/${outputMode}`;
+            if (!lines || lines.length < 2 || lines.join("") !== packGear) throw new Error(`Container wrap keeps content: ${label} ${JSON.stringify(lines)}`);
+            if (lines.slice(0, -1).some(line => !line.endsWith("、")) || lines.some(line => /^[、）×\d]/u.test(line))) throw new Error(`Container wrap breaks only between items: ${label} ${JSON.stringify(lines)}`);
+          }
+        }
+      } finally { PDFLib.defaultTextFieldAppearanceProvider = provider; }
+
       // Long free text stops at the readable minimum instead of shrinking
       // further; the blank experience field is centered for the player.
       const longNote = "多用途 (1d10)、精通：削弱，命中後目標下次攻擊檢定劣勢直到你的下回合開始";
