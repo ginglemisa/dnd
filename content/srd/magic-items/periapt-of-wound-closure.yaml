@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../schema/magic-item.schema.json
 id: periapt-of-wound-closure
-name: 癒合護符
+name: 癒合護墜
 nameEn: "Periapt of Wound Closure"
 source: srd
 category: wondrous

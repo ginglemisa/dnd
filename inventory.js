@@ -49,12 +49,8 @@
   const ALIASES = Object.freeze({
     "奧術法器（水晶）": { itemId: "水晶" }, "奧術法器（寶珠）": { itemId: "寶珠" }, "奧術法器（長棍）": { itemId: "法杖（長棍）" },
     "德魯伊法器（長棍）": { itemId: "木製法杖（長棍）" }, "德魯伊法器（槲寄生枝條）": { itemId: "槲寄生枝條" },
-    "油瓶": { itemId: "油" }, "子彈": { itemId: "子彈，火器" }, "彈丸": { itemId: "彈丸，投石索" },
-    // 舊品名（攜帶物品文字與舊存檔）：Robe 統一為祭袍、Sprig of Mistletoe 統一為槲寄生枝條。
-    "長袍": { itemId: "祭袍" }, "祭祀長袍": { itemId: "祭袍" }, "槲寄生樹枝": { itemId: "槲寄生枝條" }, "狩獵陷阱": { itemId: "捕獸夾" }
+    "油瓶": { itemId: "油" }, "子彈": { itemId: "子彈，火器" }, "彈丸": { itemId: "彈丸，投石索" }
   });
-  // 改過名的目錄品名：舊存檔（autosave、JSON、分享）裡的 itemId 讀進來時換成新品名。
-  const RENAMED_ITEM_IDS = Object.freeze({ "長袍": "祭袍", "槲寄生樹枝": "槲寄生枝條", "狩獵陷阱": "捕獸夾" });
   const BOOK_PATTERN = /^(?:書籍|書本|書)（[^（）]+）$/u;
   const SPELL_SCROLL_ID = "法術卷軸";
   const SPELL_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/u;
@@ -233,15 +229,13 @@
 
   function normalizeEntry(raw) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-    const rawItemId = cleanText(raw.itemId);
-    const itemId = RENAMED_ITEM_IDS[rawItemId] || rawItemId;
+    const itemId = cleanText(raw.itemId);
     const magic = cleanMagic(raw.magic);
     const name = magic ? "" : cleanText(raw.name);
     if (!itemId && !name && !magic) return null;
     const entry = { uid: typeof raw.uid === "string" && UID_PATTERN.test(raw.uid) ? raw.uid : "", quantity: clampQuantity(raw.quantity, minQuantity(itemId)) };
     if (itemId) entry.itemId = itemId;
-    // 舊版「祭祀長袍」是保留寫法的顯示名稱，品名統一後不再保留。
-    if (name && name !== itemId && !(rawItemId === "長袍" && name === "祭祀長袍")) entry.name = name;
+    if (name && name !== itemId) entry.name = name;
     if (magic) entry.magic = magic;
     if (!itemId && !magic) {
       const weight = Number(raw.weight);
@@ -957,7 +951,7 @@
     let shields = 0;
     entries.forEach((entry) => {
       if (entry.magic) {
-        // 穿在身上的護符不能同時拿在手上。
+        // 穿在身上的符具不能同時拿在手上。
         const equipment = entry.worn ? null : magicEquipmentOf(entry);
         if (!equipment) return;
         const kind = kindOf(equipment.base, kinds);

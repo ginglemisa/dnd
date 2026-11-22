@@ -1133,19 +1133,10 @@ async function validateInventory(page) {
   assert.deepEqual(catalog.ids.filter(id => !baseline.includes(id)), [], "new catalog items are added to equipment-id-baseline.json on purpose");
   for (const [pack, listed, sum] of catalog.packs) assert.equal(Math.round(sum * 100) / 100, listed, `${pack} contents weigh what the pack lists`);
   assert.deepEqual([catalog.containers, catalog.wielded], [[], []], "containers and wieldable focuses exist in the catalog");
-  // 改名的品項（長袍→祭袍、槲寄生樹枝→槲寄生枝條、狩獵陷阱→捕獸夾）：舊存檔的 itemId 與舊文字寫法都對到新品名。
-  const renamed = await page.evaluate(() => {
-    applyStateObject({ class: "druid", level: "1", __inventory: { version: 1, items: [
-      { uid: "robe", itemId: "長袍", name: "祭祀長袍", quantity: 1 }, { uid: "sprig", itemId: "槲寄生樹枝", quantity: 1 }, { uid: "plain", itemId: "長袍", quantity: 2 }, { uid: "trap", itemId: "狩獵陷阱", quantity: 1 }] } });
-    return {
-      entries: Inventory.entries().map(({ itemId, name, quantity }) => [itemId, name || "", quantity]),
-      text: ["長袍", "祭祀長袍", "槲寄生樹枝", "德魯伊法器（槲寄生枝條）", "狩獵陷阱", "書籍（玄秘學識）", "書（玄秘學識）"].map(text => [Inventory.parseItemText(text).itemId, Inventory.parseItemText(text).name || ""])
-    };
-  });
-  assert.deepEqual(renamed, {
-    entries: [["祭袍", "", 1], ["槲寄生枝條", "", 1], ["祭袍", "", 2], ["捕獸夾", "", 1]],
-    text: [["祭袍", ""], ["祭袍", ""], ["槲寄生枝條", ""], ["槲寄生枝條", ""], ["捕獸夾", ""], ["書籍", "書籍（玄秘學識）"], ["書籍", "書（玄秘學識）"]]
-  }, "renamed items load from old saves and old text");
+  // 舊文字寫法：法器寫法對到目錄品名，書名保留成顯示名稱。改過名的品項（祭袍、槲寄生枝條、捕獸夾）不轉換舊名。
+  const aliased = await page.evaluate(() => ["德魯伊法器（槲寄生枝條）", "書籍（玄秘學識）", "書（玄秘學識）"]
+    .map(text => [Inventory.parseItemText(text).itemId, Inventory.parseItemText(text).name || ""]));
+  assert.deepEqual(aliased, [["槲寄生枝條", ""], ["書籍", "書籍（玄秘學識）"], ["書籍", "書（玄秘學識）"]], "focus aliases and book titles map to catalog items");
   // 職業與背景的起始裝備：每個品名都對得到目錄（自訂物品須有重量），擇一的選項也是；套組提示框列出內容物。
   const startingEquipment = await page.evaluate(() => {
     const unresolved = [];
@@ -3099,7 +3090,7 @@ async function validateInventoryItemActions(page) {
   await page.evaluate(() => DiceRoller.setEnabled(false));
 
   // 穿戴類魔法物品：「裝備」從一筆多件拆出一件穿上（視窗關閉，標籤到「裝備中」）；卸下保留同調；開始同調時自動穿上。
-  // 手持類（魔杖）照武器的選手視窗放進主手或副手；可以穿戴也可以手持的護符分成「手持」「穿戴」兩顆按鈕。
+  // 手持類（魔杖）照武器的選手視窗放進主手或副手；可以穿戴也可以手持的符具分成「手持」「穿戴」兩顆按鈕。
   // AC 與法術數字要自動計算：這個角色還原後開關是關的，直接打開（不觸發確認視窗），結束時還原。
   const keyStatsWasOn = await page.evaluate(() => document.getElementById("auto-calculate-key-stats-toggle").checked);
   await page.evaluate(() => applyStateObject({ class: "wizard", level: "5", int: "16", dex: "14", mainHand: "", offHand: "", armor: "", "spellcasting-ability": "int", __inventory: { version: 1, items: [
@@ -3117,7 +3108,7 @@ async function validateInventoryItemActions(page) {
   };
   await openUid("rings");
   assert.deepEqual(await actionButtons(), ["裝備", "開始同調"]);
-  await item.getByRole("button", { name: "穿上防禦戒指" }).click();
+  await item.getByRole("button", { name: "穿上防護戒指" }).click();
   await itemClosed();
   const wornRing = await page.evaluate(() => Inventory.entries().find(entry => entry.worn).uid);
   assert.deepEqual([await group("equipped"), await page.evaluate(() => Inventory.getEntry("rings").quantity)], [[wornRing], 1], "wearing one ring of a pair splits it into the equipped group");
@@ -3125,10 +3116,10 @@ async function validateInventoryItemActions(page) {
   await openUid(wornRing);
   assert.deepEqual([await actionButtons(), await item.locator(".inventory-item-meta .inventory-tag__badge").isVisible(), await item.locator(".inventory-holding__row").isVisible()],
     [["卸下", "開始同調"], true, false], "a worn ring shows 卸下, the equipped badge and no quantity row");
-  await item.getByRole("button", { name: "切換防禦戒指的同調" }).click();
+  await item.getByRole("button", { name: "切換防護戒指的同調" }).click();
   await page.waitForFunction(() => document.getElementById("ac-display").value === "13", null, { timeout: 2000 });
   assert.deepEqual([await actionButtons(), await numbers()], [["卸下", "結束同調"], ["13", "+6"]], "a worn, attuned ring adds AC");
-  await item.getByRole("button", { name: "卸下防禦戒指" }).click();
+  await item.getByRole("button", { name: "卸下防護戒指" }).click();
   await page.waitForFunction(() => document.getElementById("ac-display").value === "12", null, { timeout: 2000 });
   assert.deepEqual([await actionButtons(), await page.evaluate(uid => Inventory.getEntry(uid).attuned, wornRing)], [["裝備", "結束同調"], true], "taking the ring off keeps attunement");
   assert.equal(await item.locator(".inventory-item-actions .inventory-action-row__text").textContent(), "需要穿戴才會生效。");
@@ -3147,10 +3138,10 @@ async function validateInventoryItemActions(page) {
   assert.deepEqual([await slots(), (await numbers())[1], await page.inputValue("#atk-main-name")], [["戰法魔杖+1", "", ""], "+7", ""], "a wand in the main hand raises spell attacks without an attack row");
   await openUid("talisman");
   assert.deepEqual(await actionButtons(), ["手持", "穿戴", "開始同調"], "a talisman can be held or worn");
-  await item.getByRole("button", { name: "穿上純善護符" }).click();
+  await item.getByRole("button", { name: "穿上純善符具" }).click();
   await page.waitForFunction(() => Inventory.getEntry("talisman").worn === true, null, { timeout: 2000 });
   assert.deepEqual(await actionButtons(), ["卸下", "開始同調"], "a worn talisman cannot be put in a hand");
-  assert.equal(await page.locator("#offHand option", { hasText: "純善護符" }).count(), 0, "a worn talisman is not offered to the hands");
+  assert.equal(await page.locator("#offHand option", { hasText: "純善符具" }).count(), 0, "a worn talisman is not offered to the hands");
   await closeItem();
   // 窄螢幕：穿戴與同調兩顆按鈕不超出視窗。
   await page.setViewportSize({ width: 375, height: 800 });

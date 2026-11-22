@@ -142,11 +142,11 @@
   <script src="spell-list.js?v=20261117-level-10" defer></script>
   <script src="condition.js?v=20261120-hazard-wide-table" defer></script>
   <script src="action-panel.js?v=20261117-append-subclass" defer></script>
-  <script src="character-rules.js?v=20261120-mastery-options" defer></script>
+  <script src="character-rules.js?v=20261122-periapt" defer></script>
   <script src="app-dialog.js?v=20261118-modal-scroll" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261118-modal-scroll" defer></script>
-  <script src="tabletop-mode.js?v=20261118-modal-scroll" defer></script>
+  <script src="tabletop-mode.js?v=20261122-periapt" defer></script>
   <script src="tabletop-druid.js?v=20261112-merge-main-menu" defer></script>
   <script src="tabletop-resources.js?v=20261117-level-10b" defer></script>
   <script src="tabletop-actions.js?v=20261120-mastery-options" defer></script>
@@ -3261,7 +3261,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="equipment-data.js?v=20261109-item-actions" defer></script>
 <script src="search.js?v=20261109-magic-version" defer></script>
 <script src="equipment-shop.js?v=20261111-magic-toggle" defer></script>
-<script src="inventory.js?v=20261112-magic-effects-8c" defer></script>
+<script src="inventory.js?v=20261122-no-rename" defer></script>
 <script src="inventory-ui.js?v=20261113-spell-list" defer></script>
 <script src="magic-item-shop.js?v=20261116-wand-icon" defer></script>
 
@@ -5726,7 +5726,7 @@ const CHARACTER_DATA_LIMITS = Object.freeze({ bytes: 2 * 1024 * 1024, rows: 100,
 // 單純新增欄位（舊資料沒有就用預設值）不用加。比目前還新的版本不載入，避免舊版網頁讀錯後覆寫存檔。
 // 各區塊自己的 version（__inventory、__spellManagement 等）與分享專用的 __shareStateVersion 照舊，各管各的。
 const CHARACTER_STATE_VERSION_KEY = "__saveVersion";
-const CHARACTER_STATE_VERSION = 2;
+const CHARACTER_STATE_VERSION = 3;
 // 計數類的勾選框（法術位、種族的次數資源、免費施法次數）：畫面是一格一個勾選框，存檔只記每一組勾了幾格（0 省略），
 // 讀檔時從左邊填回，所以加減格子不影響存檔格式。勾選框的 id 與結構不變，只有收集與還原這一層換算。
 const SPELL_SLOTS_USED_STATE_KEY = "__spellSlotsUsed";       // { "環階": 已用格數 }
@@ -5777,7 +5777,10 @@ const CHARACTER_STATE_MIGRATIONS = Object.freeze([
   // 0 → 1：只多了版本號，內容不變。
   data => data,
   // 1 → 2：計數類的勾選框由逐格布林改成已用數。
-  migrateCheckboxUsesToCounts
+  migrateCheckboxUsesToCounts,
+  // 2 → 3：內容不變。這一版原本用來換魔法物品的舊譯名，後來決定改名不做轉換；
+  // 號碼保留，因為已有存檔與分享連結寫了第 3 版，退回 2 會被當成較新版本而讀不到。
+  data => data
 ]);
 function isUsedCountCheckbox(el) {
   return el.type === "checkbox" && (/^(?:spellslot\d+-\d+|free-spell-use-.+)$/.test(el.id) || Boolean(getRaceResourceOfCheckboxId(el.id)));
