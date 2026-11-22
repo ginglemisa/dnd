@@ -934,9 +934,11 @@ function isWeaponRowEmpty(payload, slot) {
   return !weaponName && otherFieldsAreEmpty;
 }
 
+  // 回傳實際寫進第一頁武器列的戲法 spellId，第二頁法術欄據此略過；列不下的戲法不在其中。
   function fillDamageCantripsToWeaponRows(payload, spellRows, state, maxSlots = MAX_PDF_WEAPON_ROWS) {
+    const placedSpellIds = new Set();
     const cantripRows = spellRows.filter((row) => row.level === 0);
-    if (!cantripRows.length) return;
+    if (!cantripRows.length) return placedSpellIds;
 
     const attackBonus = normalizeText(state['spell-attack-bonus']);
     const saveDc = normalizeText(state['spell-save-dc']);
@@ -960,6 +962,7 @@ function isWeaponRowEmpty(payload, slot) {
         : attackBonus;
       payload[`dmg_type_${slot}`] = exportValues.damage;
       payload[`wp-note-${slot}`] = exportValues.note;
+      placedSpellIds.add(row.spellId);
       slot += 1;
 
       while (slot <= 2 && !isWeaponRowEmpty(payload, slot)) {
@@ -970,6 +973,7 @@ function isWeaponRowEmpty(payload, slot) {
         slot = 3;
       }
     }
+    return placedSpellIds;
   }
 
   // 角色紙的法術位欄位是 spell-level-1～spell-level-9（直式角色卡另由 lvl-1～lvl-9 複製），數量來自 getSpellSlotCounts()。
@@ -1404,15 +1408,18 @@ function isWeaponRowEmpty(payload, slot) {
     const customRows = (Array.isArray(options.customSpells) ? options.customSpells : []).slice(0, 50)
       .filter(spell => spell && /^custom-spell-/.test(spell.spellId) && Number.isInteger(spell.level) && spell.level >= 0 && spell.level <= 9)
       .map((spell, idx) => ({ idx, spellId: spell.spellId, level: spell.level, customSpell: spell }));
-    const allSpellRows = [...buildSpellRows(state), ...customRows].sort((a, b) => a.level - b.level);
-    const spellRows = allSpellRows.slice(0, maxSpellRows);
-    const remainingSpellRows = allSpellRows.slice(maxSpellRows);
-    fillDamageCantripsToWeaponRows(
+    const sortedSpellRows = [...buildSpellRows(state), ...customRows].sort((a, b) => a.level - b.level);
+    // A damage cantrip written into a page-1 attack row is left out of the
+    // page-2 spell list (matched by spellId); ones that did not fit stay there.
+    const cantripsOnAttackRows = fillDamageCantripsToWeaponRows(
       payload,
-      spellRows,
+      sortedSpellRows,
       state,
       official ? OFFICIAL_MAX_PDF_WEAPON_ROWS : MAX_PDF_WEAPON_ROWS
     );
+    const allSpellRows = sortedSpellRows.filter((row) => !(row.level === 0 && cantripsOnAttackRows.has(row.spellId)));
+    const spellRows = allSpellRows.slice(0, maxSpellRows);
+    const remainingSpellRows = allSpellRows.slice(maxSpellRows);
     if (spellRows.length > 0) {
       spellRows.forEach((row, index) => {
         const xx = String(index + 1);

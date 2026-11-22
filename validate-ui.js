@@ -1180,12 +1180,23 @@ async function verifyPdf(page, fieldsOnly) {
       }
       for (const line of absent) if (lines.includes(line)) throw new Error(`PDF class feature extra line: ${state.class}/${line}`);
     }
+    const pdfSpellState = (spellIds, legacy = false) => legacy
+      ? Object.fromEntries(spellIds.flatMap((spellId, idx) => {
+        const area = SpellCatalog.getSpell(spellId).level === 0 ? "cantrips-area" : `level${SpellCatalog.getSpell(spellId).level}spells-area`;
+        return [[`${area}-class-${idx}`, "wizard"], [`${area}-spell-${idx}`, spellId]];
+      }))
+      : { __spellManagement: { version: 2, manual: true, entries: spellIds.map(spellId => ({ spellId })) } };
+    // 會放進第一頁武器列的傷害戲法：單獨準備時第二頁法術欄是空的。
+    const attackRowCantripIds = SpellCatalog.getAllSpells()
+      .filter(spell => spell.level === 0 && !buildPdfFieldPayload(pdfSpellState([spell.spellId]))["sp-name-1"])
+      .map(spell => spell.spellId);
+    if (attackRowCantripIds.length < 8) throw new Error(`PDF attack-row cantrips: ${attackRowCantripIds}`);
     const materialFlag = (spell, legacy = false) => {
-      const state = legacy ? {
-        [spell.level === 0 ? "cantrips-area-class-0" : `level${spell.level}spells-area-class-0`]: "wizard",
-        [spell.level === 0 ? "cantrips-area-spell-0" : `level${spell.level}spells-area-spell-0`]: spell.spellId
-      } : { __spellManagement: { version: 2, manual: true, entries: [{ spellId: spell.spellId }] } };
-      return buildPdfFieldPayload(state)["sp-m-1"];
+      // 傷害戲法先用七個其他傷害戲法佔滿武器列，讓它留在第二頁第一列。
+      const fillers = attackRowCantripIds.includes(spell.spellId) ? attackRowCantripIds.filter(id => id !== spell.spellId).slice(0, 7) : [];
+      const payload = buildPdfFieldPayload(pdfSpellState([...fillers, spell.spellId], legacy));
+      if (payload["sp-name-1"] !== SpellCatalog.getSpell(spell.spellId).nameZh) throw new Error(`PDF spell row 1: ${spell.spellId}/legacy=${legacy}`);
+      return payload["sp-m-1"];
     };
     for (const spell of SpellCatalog.getAllSpells()) {
       const componentLine = spell.desc.split("\n").find(line => line.startsWith("成分:"));
@@ -1235,7 +1246,7 @@ async function verifyPdf(page, fieldsOnly) {
       "atk-main-name": "長棍", "atk-main-hit": "+2", "atk-main-dmg": "1d6-1 鈍擊",
       "tool-proficiency-0": "書法工具", "tool-proficiency-1": "煉金工具", "tool-proficiency-2": "製圖工具",
       "gear-notes": "長劍", "spell-notes": "筆記", "money-balance-gp": "15",
-      __spellManagement: { version: 2, manual: true, entries: SpellCatalog.getAllSpells().filter(spell => spell.level <= 1).slice(0, 34).map(({ spellId }) => ({ spellId })) }
+      __spellManagement: { version: 2, manual: true, entries: SpellCatalog.getAllSpells().filter(spell => spell.level <= 1).slice(0, 40).map(({ spellId }) => ({ spellId })) }
     };
     for (const outputMode of ["editable", "compact"]) {
       const shared = buildPdfFieldPayload(officialState, { outputMode });
@@ -1296,6 +1307,22 @@ async function verifyPdf(page, fieldsOnly) {
     if (agonizingRow({ ...agonizingState, cha: "8" })[0] !== "1d10-1 力場") throw new Error("Agonizing Blast writes a negative Charisma modifier");
     if (agonizingRow({ ...agonizingState, cha: "10" })[0] !== "1d10 力場") throw new Error("Agonizing Blast omits a zero modifier");
     if (agonizingRow({ ...agonizingState, __spellManagement: { version: 2, manual: true, entries: [{ spellId: "eldritch-blast", spellClass: "wizard" }] } })[0] !== "1d10 力場") throw new Error("Agonizing Blast only applies to warlock cantrip rows");
+    // A cantrip already on a page-1 attack row is left out of the page-2 spell
+    // list on both sheets; cantrips that did not fit there stay on page 2.
+    for (const legacy of [false, true]) for (const sheetTemplate of ["", "official"]) {
+      const ids = [...attackRowCantripIds.slice(0, 8), "light", "magic-missile"];
+      const payload = buildPdfFieldPayload({ ...pdfSpellState(ids, legacy), "atk-main-name": "長棍", "atk-main-hit": "+2" }, { sheetTemplate });
+      const values = pattern => Object.keys(payload).filter(key => pattern.test(key) && payload[key]).map(key => payload[key]);
+      const attackNames = values(sheetTemplate ? /^attack-wp-name\d+$/ : /^attack-weap-name-\d+$/);
+      const spellNames = values(sheetTemplate ? /^spn-[1-9a-u]$/ : /^sp-name-\d+$/);
+      const label = `${sheetTemplate || "third-party"}/legacy=${legacy}`;
+      if (attackNames[0] !== "長棍" || attackNames.length !== (sheetTemplate ? 6 : 7)) throw new Error(`PDF attack rows fill with cantrips: ${label}/${attackNames}`);
+      for (const spellId of ids) {
+        const name = SpellCatalog.getSpell(spellId).nameZh;
+        if (attackNames.includes(name) === spellNames.includes(name)) throw new Error(`PDF lists a cantrip on exactly one page: ${label}/${spellId}`);
+      }
+      if (spellNames.length !== ids.length - (attackNames.length - 1)) throw new Error(`PDF keeps overflow cantrips on page 2: ${label}/${spellNames}`);
+    }
     // A long custom spell name stays one unbroken line in the single-line field.
     const longSpellName = "超長自創法術名稱測試用的完整名字";
     const longSpellPayload = buildPdfFieldPayload({ class: "wizard", level: "1" }, { customSpells: [{ spellId: "custom-spell-long", level: 1, nameZh: longSpellName, desc: "學派：塑能" }] });
