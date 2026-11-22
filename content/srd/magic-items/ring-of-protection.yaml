@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../schema/magic-item.schema.json
 id: ring-of-protection
-name: 防禦戒指
+name: 防護戒指
 nameEn: "Ring of Protection"
 source: srd
 category: ring

@@ -3117,7 +3117,7 @@ async function validateInventoryItemActions(page) {
   };
   await openUid("rings");
   assert.deepEqual(await actionButtons(), ["裝備", "開始同調"]);
-  await item.getByRole("button", { name: "穿上防禦戒指" }).click();
+  await item.getByRole("button", { name: "穿上防護戒指" }).click();
   await itemClosed();
   const wornRing = await page.evaluate(() => Inventory.entries().find(entry => entry.worn).uid);
   assert.deepEqual([await group("equipped"), await page.evaluate(() => Inventory.getEntry("rings").quantity)], [[wornRing], 1], "wearing one ring of a pair splits it into the equipped group");
@@ -3125,10 +3125,10 @@ async function validateInventoryItemActions(page) {
   await openUid(wornRing);
   assert.deepEqual([await actionButtons(), await item.locator(".inventory-item-meta .inventory-tag__badge").isVisible(), await item.locator(".inventory-holding__row").isVisible()],
     [["卸下", "開始同調"], true, false], "a worn ring shows 卸下, the equipped badge and no quantity row");
-  await item.getByRole("button", { name: "切換防禦戒指的同調" }).click();
+  await item.getByRole("button", { name: "切換防護戒指的同調" }).click();
   await page.waitForFunction(() => document.getElementById("ac-display").value === "13", null, { timeout: 2000 });
   assert.deepEqual([await actionButtons(), await numbers()], [["卸下", "結束同調"], ["13", "+6"]], "a worn, attuned ring adds AC");
-  await item.getByRole("button", { name: "卸下防禦戒指" }).click();
+  await item.getByRole("button", { name: "卸下防護戒指" }).click();
   await page.waitForFunction(() => document.getElementById("ac-display").value === "12", null, { timeout: 2000 });
   assert.deepEqual([await actionButtons(), await page.evaluate(uid => Inventory.getEntry(uid).attuned, wornRing)], [["裝備", "結束同調"], true], "taking the ring off keeps attunement");
   assert.equal(await item.locator(".inventory-item-actions .inventory-action-row__text").textContent(), "需要穿戴才會生效。");

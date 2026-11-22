@@ -587,7 +587,7 @@
   }
 
   // 死亡豁免判定：roll 是 d20 原骰。options.bonus 是豁免加值（目前生效的魔法物品 saves），
-  // options.minimum 是原骰下限（癒合護符：原骰低於它時改成它）。原骰 20 恢復 1 HP；
+  // options.minimum 是原骰下限（癒合護墜：原骰低於它時改成它）。原骰 20 恢復 1 HP；
   // 套用下限後原骰仍是 1 時計 2 次失敗；其餘總值（原骰或改後的值＋加值）10 以上成功。
   // 不傳 options 時與只看原骰的舊算法相同。
   function evaluateDeathSaveRoll(roll, options = {}) {
@@ -3265,7 +3265,7 @@
               : "死亡豁免"
           );
       const canRoll = !sacrificed && !combatState.deathSaveStable;
-      // 擲骰帶上魔法物品的豁免加值；判定用按下當時的加值與癒合護符下限（evaluateDeathSaveRoll）。
+      // 擲骰帶上魔法物品的豁免加值；判定用按下當時的加值與癒合護墜下限（evaluateDeathSaveRoll）。
       const modifiers = getDeathSaveModifiers();
       const withBonus = canRoll && modifiers.bonus !== 0;
       const button = createQuickRollButton(
@@ -4047,7 +4047,7 @@
     };
   }
 
-  // 結果訊息裡的擲骰部分，例如「7」「7 +2 = 9」「7（癒合護符改為 10）+2 = 12」。
+  // 結果訊息裡的擲骰部分，例如「7」「7 +2 = 9」「7（癒合護墜改為 10）+2 = 12」。
   function formatDeathSaveRoll(evaluation, modifiers) {
     const changed = evaluation.die !== undefined && evaluation.die !== evaluation.roll;
     const dieText = changed

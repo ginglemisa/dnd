@@ -878,7 +878,7 @@
    * - saves：有基本款的物品持有就算（吉兆之刃不必手持）。
    * - condition held 要裝備在手上，unarmored 要沒穿護甲且沒用盾牌。
    * - spellAttack、spellSaveDc：法術攻擊與法術豁免 DC 加值，條件同 saves。
-   * - deathSave：死亡豁免原骰的下限（癒合護符，effects.deathSaveMinimum）與來源物品名稱，條件同技能加值（裝備著才算）。
+   * - deathSave：死亡豁免原骰的下限（癒合護墜，effects.deathSaveMinimum）與來源物品名稱，條件同技能加值（裝備著才算）。
    * - sources：不靠裝備位置的加值來源 [{ label, ac, saves, spellAttack, spellSaveDc }]，裝備摘要顯示用。
    * - hands 的其他欄位（只影響那一手的武器）：sources [{ label, attack, damage }]（attack、damage 的各來源；label 是來源名稱接起來）、
    *   extraDamage [{ dice, type, label }]（type 為傷害類型 ID 或 weapon）、damageType、finesse、thrown [一般, 遠]、proficiencyAs、

@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../schema/magic-item.schema.json
 id: periapt-of-health
-name: 健康護身符
+name: 健康護墜
 nameEn: "Periapt of Health"
 source: srd
 category: wondrous

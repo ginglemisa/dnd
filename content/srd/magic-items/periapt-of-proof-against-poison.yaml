@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../schema/magic-item.schema.json
 id: periapt-of-proof-against-poison
-name: 辟毒護身符
+name: 辟毒護墜
 nameEn: "Periapt of Proof against Poison"
 source: srd
 category: wondrous
