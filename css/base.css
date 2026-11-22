@@ -1160,23 +1160,16 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .adventure-journal .journa
   border: 2px solid var(--ink);
 }
 
-/* 清除紀錄：最底部單獨一列的危險文字按鈕，不做成一般按鈕，避免和其他功能並排誤按。 */
+.utility-menu__system .utility-menu__grid {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
 .utility-menu__clear-button,
 .utility-menu__clear-button:hover {
-  display: block;
-  width: 100%;
-  min-height: 2.75rem;
-  padding: 0.5rem 0.75rem;
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
+  border-color: var(--danger-border);
   color: var(--danger);
-  font-size: var(--fs-base);
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-  transform: none;
-  translate: none;
 }
 
 @media (hover: hover) and (pointer: fine) {

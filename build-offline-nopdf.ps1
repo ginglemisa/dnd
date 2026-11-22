@@ -156,6 +156,16 @@ function Get-StylesheetDataUrl {
 
 $html = Read-SourceText $sourceHtmlPath
 
+# The downloadable sheet has no install flow. Keep its tab icon self-contained.
+$html = $html -replace '(?m)^\s*<link rel="(?:manifest|apple-touch-icon)"[^>]*>', ''
+$html = $html -replace '(?m)^\s*<script src="pwa\.js[^"]*" defer></script>', ''
+$html = $html -replace '(?m)^\s*<button type="button" id="pwa-menu-btn"[^>]*>[^<]*</button>', ''
+$html = $html -replace '(?m)^\s*<p id="legal-pwa-note"[^>]*>.*?</p>', ''
+$faviconPng = Get-Base64BinaryDataUrl -Path (Get-LocalAssetPath "images/icon-192.png") -MimeType "image/png"
+$html = $html.Replace('href="images/icon-192.png"', "href=`"$faviconPng`"")
+$favicon = Get-Base64TextDataUrl -Path (Get-LocalAssetPath "images/icon-master.svg") -MimeType "image/svg+xml"
+$html = $html.Replace('href="images/icon-master.svg"', "href=`"$favicon`"")
+
 $html = $html.Replace(
   '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">',
   '<meta charset="UTF-8">'
@@ -532,6 +542,9 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const html = fs.readFileSync(process.argv[2], "utf8");
 
+assert.match(html, /<link rel="icon"[^>]*href="data:image\/svg\+xml;base64,/);
+assert.match(html, /<link rel="icon"[^>]*href="data:image\/png;base64,/);
+assert(!html.includes('rel="manifest"') && !html.includes('id="pwa-menu-btn"') && !html.includes('data-offline-source="pwa.js'));
 assert(!html.includes("twd20-url.ginglemisa.workers.dev/api/create"));
 assert(!html.includes("async function createShortShareUrl("));
 for (const match of html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {

@@ -1388,18 +1388,39 @@ async function verifyPreparedAbilityGate(browser, url) {
     await page.goto(url); await page.waitForFunction(() => window.SpellManagement?.getEntries && window.Spellbook);
     const button = page.locator("#spell-prepare"), requirement = page.locator("#spell-prepared-requirements");
     const ability = page.locator("#spellcasting-ability"), dialog = pickerDialog(page);
+    const requirementText = requirement.locator(".spell-requirement-jump__text");
+    const jump = requirement.getByRole("button", { name: /前往選擇$/ });
+    // 「前往選擇」：只差施法屬性時留在法術頁標出它；角色選擇沒選完時到數值頁，只標出沒選的欄位。跳轉不改選擇。
+    const jumpTo = async () => {
+      await page.evaluate(() => showTab("spells"));
+      await page.waitForFunction(() => !document.querySelector(".onboarding-jump-target"), null, { timeout: 5000 });
+      await jump.click();
+      await page.waitForFunction(() => document.querySelector(".onboarding-jump-target"));
+      return page.evaluate(() => ({
+        basic: !document.getElementById("tab-basic").hidden,
+        spells: !document.getElementById("tab-spells").hidden,
+        focused: document.activeElement?.id,
+        highlighted: [...document.querySelectorAll(".onboarding-jump-target")].map(el => el.id)
+      }));
+    };
     await apply(page, modern({ class: "wizard", level: "5", "spellcasting-ability": "" }));
     assert.equal(await ability.isVisible(), true);
     assert.equal(await button.isDisabled(), true, "a visible empty ability blocks preparation");
-    assert.equal(await requirement.innerText(), "請先選好施法屬性，才能使用『準備法術』。");
+    assert.equal(await requirementText.innerText(), "請先選好施法屬性，才能使用『準備法術』。");
+    assert.deepEqual(await jumpTo(), { basic: false, spells: true, focused: "spellcasting-ability", highlighted: ["spellcasting-ability"] }, "only the ability is missing: highlight it on the spells tab");
+    assert.equal(await ability.inputValue(), "", "jumping does not choose anything");
     await page.evaluate(() => Spellbook.openPreparedManager(document.getElementById("spell-prepare")));
     assert.equal(await dialog.count(), 0, "direct calls honor the ability requirement");
     await ability.selectOption("int");
     assert.equal(await button.isEnabled(), true); assert.equal(await requirement.isVisible(), false);
     await apply(page, modern({ class: "wizard", level: "5", race: "", "spellcasting-ability": "" }));
-    assert.equal(await requirement.innerText(), "請先選好職業、等級、背景、種族與施法屬性，才能使用『準備法術』。");
+    assert.equal(await requirementText.innerText(), "請先選好職業、等級、背景、種族與施法屬性，才能使用『準備法術』。");
+    assert.deepEqual(await jumpTo(), { basic: true, spells: false, focused: "race", highlighted: ["race"] }, "missing character choices: highlight only the empty ones on the stats tab");
+    await apply(page, modern({ class: "", level: "5", background: "" }));
+    const missingTwo = await jumpTo();
+    assert.deepEqual([missingTwo.basic, missingTwo.focused, missingTwo.highlighted.sort()], [true, "class", ["background", "class"]], "every empty choice is highlighted, focus on the first");
     await apply(page, modern({ class: "wizard", level: "5", race: "" }));
-    assert.equal(await requirement.innerText(), "請先選好職業、等級、背景與種族，才能使用『準備法術』。", "a chosen ability keeps the original wording");
+    assert.equal(await requirementText.innerText(), "請先選好職業、等級、背景與種族，才能使用『準備法術』。", "a chosen ability keeps the original wording");
     await apply(page, modern({ class: "fighter", level: "5", background: "acolyte", "spellcasting-ability": "" }));
     assert.equal(await ability.isVisible(), true); assert.equal(await button.isDisabled(), true, "background Magic Initiate requires the ability");
     // 自訂背景依起源專長內容檔的 grantsSpellcasting 判斷施法來源：魔法學徒有，其他起源專長沒有。
