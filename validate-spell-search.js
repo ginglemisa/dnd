@@ -3099,7 +3099,7 @@ async function validateInventoryItemActions(page) {
   await page.evaluate(() => DiceRoller.setEnabled(false));
 
   // 穿戴類魔法物品：「裝備」從一筆多件拆出一件穿上（視窗關閉，標籤到「裝備中」）；卸下保留同調；開始同調時自動穿上。
-  // 手持類（魔杖）照武器的選手視窗放進主手或副手；可以穿戴也可以手持的護符分成「手持」「穿戴」兩顆按鈕。
+  // 手持類（魔杖）照武器的選手視窗放進主手或副手；可以穿戴也可以手持的符具分成「手持」「穿戴」兩顆按鈕。
   // AC 與法術數字要自動計算：這個角色還原後開關是關的，直接打開（不觸發確認視窗），結束時還原。
   const keyStatsWasOn = await page.evaluate(() => document.getElementById("auto-calculate-key-stats-toggle").checked);
   await page.evaluate(() => applyStateObject({ class: "wizard", level: "5", int: "16", dex: "14", mainHand: "", offHand: "", armor: "", "spellcasting-ability": "int", __inventory: { version: 1, items: [
@@ -3147,10 +3147,10 @@ async function validateInventoryItemActions(page) {
   assert.deepEqual([await slots(), (await numbers())[1], await page.inputValue("#atk-main-name")], [["戰法魔杖+1", "", ""], "+7", ""], "a wand in the main hand raises spell attacks without an attack row");
   await openUid("talisman");
   assert.deepEqual(await actionButtons(), ["手持", "穿戴", "開始同調"], "a talisman can be held or worn");
-  await item.getByRole("button", { name: "穿上純善護符" }).click();
+  await item.getByRole("button", { name: "穿上純善符具" }).click();
   await page.waitForFunction(() => Inventory.getEntry("talisman").worn === true, null, { timeout: 2000 });
   assert.deepEqual(await actionButtons(), ["卸下", "開始同調"], "a worn talisman cannot be put in a hand");
-  assert.equal(await page.locator("#offHand option", { hasText: "純善護符" }).count(), 0, "a worn talisman is not offered to the hands");
+  assert.equal(await page.locator("#offHand option", { hasText: "純善符具" }).count(), 0, "a worn talisman is not offered to the hands");
   await closeItem();
   // 窄螢幕：穿戴與同調兩顆按鈕不超出視窗。
   await page.setViewportSize({ width: 375, height: 800 });

@@ -5716,7 +5716,7 @@ const CHARACTER_DATA_LIMITS = Object.freeze({ bytes: 2 * 1024 * 1024, rows: 100,
 // 單純新增欄位（舊資料沒有就用預設值）不用加。比目前還新的版本不載入，避免舊版網頁讀錯後覆寫存檔。
 // 各區塊自己的 version（__inventory、__spellManagement 等）與分享專用的 __shareStateVersion 照舊，各管各的。
 const CHARACTER_STATE_VERSION_KEY = "__saveVersion";
-const CHARACTER_STATE_VERSION = 2;
+const CHARACTER_STATE_VERSION = 3;
 // 計數類的勾選框（法術位、種族的次數資源、免費施法次數）：畫面是一格一個勾選框，存檔只記每一組勾了幾格（0 省略），
 // 讀檔時從左邊填回，所以加減格子不影響存檔格式。勾選框的 id 與結構不變，只有收集與還原這一層換算。
 const SPELL_SLOTS_USED_STATE_KEY = "__spellSlotsUsed";       // { "環階": 已用格數 }
@@ -5762,12 +5762,28 @@ function migrateCheckboxUsesToCounts(data) {
   }
   return result;
 }
+// 第 2 版以前 Talisman 譯作「護符」，之後改為「符具」。主手／副手的值是魔法物品的顯示名稱，
+// 跑團昏迷時掉落的手持物（droppedHands）也記名稱，舊名換成新名；物品欄只記物品 id，不受影響。
+const RENAMED_TALISMAN_NAMES = Object.freeze({ "純善護符": "純善符具", "法球護符": "法球符具", "至惡護符": "至惡符具" });
+function migrateTalismanNames(data) {
+  const rename = value => (typeof value === "string" && Object.hasOwn(RENAMED_TALISMAN_NAMES, value) ? RENAMED_TALISMAN_NAMES[value] : value);
+  const result = { ...data };
+  ["mainHand", "offHand"].forEach(id => { if (Object.hasOwn(data, id)) result[id] = rename(data[id]); });
+  const dropped = data.droppedHands;
+  if (dropped && typeof dropped === "object" && !Array.isArray(dropped)) {
+    result.droppedHands = { ...dropped };
+    ["mainHand", "offHand"].forEach(key => { if (Object.hasOwn(dropped, key)) result.droppedHands[key] = rename(dropped[key]); });
+  }
+  return result;
+}
 // 第 n 項把第 n 版轉成第 n+1 版：回傳新物件，不改傳入的資料。
 const CHARACTER_STATE_MIGRATIONS = Object.freeze([
   // 0 → 1：只多了版本號，內容不變。
   data => data,
   // 1 → 2：計數類的勾選框由逐格布林改成已用數。
-  migrateCheckboxUsesToCounts
+  migrateCheckboxUsesToCounts,
+  // 2 → 3：Talisman 的譯名由「護符」改為「符具」，裝備欄位裡的舊名換成新名。
+  migrateTalismanNames
 ]);
 function isUsedCountCheckbox(el) {
   return el.type === "checkbox" && (/^(?:spellslot\d+-\d+|free-spell-use-.+)$/.test(el.id) || Boolean(getRaceResourceOfCheckboxId(el.id)));
