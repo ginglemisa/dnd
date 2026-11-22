@@ -11,6 +11,15 @@
     retained: "新版沒下載完，先繼續用目前的版本。"
   };
   const shareWaitingLabel = "新版下載好了，下次打開時更新。";
+  // PDF 範本與字型只在已安裝的 App 裡另外下載（約 19 MB），狀態只在 App 的離線狀態視窗顯示。
+  const pdfLabels = {
+    saving: "PDF 匯出：正在下載範本與字型（約 19 MB）…", ready: "PDF 匯出：可以離線使用",
+    failed: "PDF 匯出：範本與字型沒下載完，連上網路後會再試。"
+  };
+  const PDF_DOWNLOAD_TIMEOUT_MS = 10 * 60 * 1000;
+  let pdfStatus = "";
+  let pdfDialogStatus;
+  let pdfStarting;
   // 分享資料在 DOMContentLoaded 之後才解開，網址先判斷，避免解開前被當成一般角色卡重新載入。
   const isShare = () => window.SHARE_MODE === true || /^#s2?=/.test(location.hash);
   const UPDATED_KEY = "twd20.pwaUpdated";
@@ -34,7 +43,41 @@
   function render() {
     button.textContent = standalone() ? "離線狀態" : "加入主畫面";
     if (dialogStatus) dialogStatus.textContent = status === "waiting" && isShare() ? shareWaitingLabel : labels[status];
-    if (retryButton) retryButton.hidden = !["idle", "failed", "retained"].includes(status);
+    if (retryButton) retryButton.hidden = !["idle", "failed", "retained"].includes(status) && !pdfRetryable();
+    if (pdfDialogStatus) {
+      pdfDialogStatus.textContent = pdfLabels[pdfStatus] || "";
+      pdfDialogStatus.hidden = !pdfStatus;
+    }
+  }
+
+  const pdfRetryable = () => status === "ready" && pdfStatus === "failed";
+
+  function setPdfStatus(next) {
+    pdfStatus = next;
+    render();
+  }
+
+  // 主要資料都下載好之後才開始；省流量模式下不自動下載，按「下載離線資料」才抓。
+  function downloadPdfAssets(manual = false) {
+    if (!standalone() || pdfStarting || pdfStatus === "ready") return pdfStarting;
+    if (!manual && navigator.connection?.saveData) return;
+    const worker = registration?.active;
+    if (!worker || worker.state !== "activated") return;
+    setPdfStatus("saving");
+    pdfStarting = new Promise(resolve => {
+      const channel = new MessageChannel();
+      function finish(value) {
+        clearTimeout(timer);
+        channel.port1.close();
+        resolve(value);
+      }
+      const timer = setTimeout(() => finish(false), PDF_DOWNLOAD_TIMEOUT_MS);
+      channel.port1.onmessage = event => finish(event.data?.ready === true);
+      try { worker.postMessage({ type: "twd20-pdf-assets", download: true }, [channel.port2]); }
+      catch { finish(false); }
+    }).then(ready => setPdfStatus(ready ? "ready" : "failed"))
+      .finally(() => { pdfStarting = null; });
+    return pdfStarting;
   }
 
   function setStatus(next) {
@@ -66,6 +109,7 @@
     });
     if (sequence !== checkSequence) return;
     saved = ready;
+    if (ready) downloadPdfAssets(repair);
     if (!ready) setStatus("failed");
     else if (registration.waiting) { setStatus("waiting"); queueUpdate(); }
     else if (registration.installing) setStatus("updating");
@@ -217,11 +261,14 @@
     paragraph("從主畫面打開，看到「可以離線使用」就能斷網。離線時一樣能改角卡、擲骰、查規則。");
     dialogStatus = paragraph(labels[status]);
     dialogStatus.setAttribute("role", "status");
+    pdfDialogStatus = paragraph("");
+    pdfDialogStatus.setAttribute("aria-live", "polite");
     retryButton = document.createElement("button");
     retryButton.type = "button";
     retryButton.className = "app-dialog__button app-dialog__button--secondary";
     retryButton.textContent = "下載離線資料";
     retryButton.addEventListener("click", () => {
+      if (pdfRetryable()) { downloadPdfAssets(true); return; }
       setStatus(saved ? "updating" : "saving");
       registerOfflineCache(true);
     });
@@ -243,7 +290,7 @@
         catch { window.AppDialog.notify("請改從瀏覽器選單安裝。", { tone: "info" }); }
         return true;
       } : undefined,
-      onClose() { dialogStatus = null; retryButton = null; }
+      onClose() { dialogStatus = null; pdfDialogStatus = null; retryButton = null; }
     });
   }
 

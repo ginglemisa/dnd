@@ -8236,7 +8236,12 @@ async function verifyOfflineCache(browser) {
   const requests = [];
   let mode = "online";
   const held = new Set();
-  const { buildWorker } = require("./tools/pwa-release");
+  const { buildWorker, pdfAssetNames } = require("./tools/pwa-release");
+  // PDF 範本與字型的路徑要和 pdf-export.js 一致；直式角色卡的檔案沒有私人資源時不在本機。
+  const pdfExportSource = fs.readFileSync(path.join(__dirname, "pdf-export.js"), "utf8");
+  for (const file of pdfAssetNames) assert(pdfExportSource.includes(`'${file}'`), file + " is a PDF export path in pdf-export.js");
+  const pdfKeys = pdfAssetNames.filter(file => fs.existsSync(path.join(__dirname, file))).map(file => "/" + file);
+  assert(pdfKeys.includes("/5e_char_sheet.pdf"));
   const indexFile = path.join(__dirname, "index.html");
   // Cloudflare 的電子郵件地址混淆每次都把首頁裡的 email 改寫成不同內容，sw.js 以雜湊核對首頁就永遠失敗。
   assert(!/[\w.%+-]+@[\w-]+\.[a-z]{2,}/i.test(fs.readFileSync(indexFile, "utf8")), "index.html must not contain an email address: Cloudflare rewrites it per request and breaks the homepage hash");
@@ -8305,7 +8310,8 @@ async function verifyOfflineCache(browser) {
     const shellName = Object.keys(keys).find(name => name.startsWith("twd20-shell-"));
     const pages = keys[shellName];
     assert(pages.length > 50);
-    for (const file of [...core, ...lazyFiles.map(file => "/" + file.split("?")[0]), "/", "/images/dice.webp"]) {
+    for (const file of [...core, ...lazyFiles.map(file => "/" + file.split("?")[0]), "/", "/images/dice.webp",
+      "/pdf-lib.custom.min.js", "/fontkit.custom.min.js", "/pdf-field-map.js", "/pdf-export.js"]) {
       assert(pages.includes(file), file + " is ready on first install");
     }
     assert(!pages.some(key => key.includes("?") || key === "/sw.js" || key.endsWith(".pdf")));
@@ -8461,6 +8467,43 @@ async function verifyOfflineCache(browser) {
     keys = await cachedKeys();
     assert(!keys["twd20-pages-v1"].includes("/legal-about.js"), "requests other than GET are not stored");
 
+    // PDF 範本與字型：瀏覽器分頁不下載；主畫面 App 在核心下載完後另外抓進固定快取，依雜湊換新，離線時舊的也能用。
+    const assetKeys = async () => (await cachedKeys())["twd20-assets-v1"] || [];
+    assert(!pdfKeys.some(key => keys["twd20-assets-v1"]?.includes(key)), "a browser tab does not download the PDF templates and fonts");
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, "standalone", { value: true, configurable: true });
+      return registerOfflineCache();
+    });
+    await page.locator("#utility-menu-toggle").click();
+    await page.locator("#pwa-menu-btn").click();
+    const offlineDialog = page.getByRole("dialog", { name: "離線狀態" });
+    await offlineDialog.getByText("PDF 匯出：可以離線使用").waitFor({ timeout: 60000 });
+    await offlineDialog.getByRole("status").filter({ hasText: "可以離線使用" }).waitFor();
+    assert.equal(await offlineDialog.getByRole("button", { name: "下載離線資料" }).isVisible(), false);
+    await page.keyboard.press("Escape");
+    for (const key of pdfKeys) assert((await assetKeys()).includes(key), key + " is stored by the Home Screen app");
+    const stalePdf = pdfKeys[0];
+    await page.evaluate(async key => {
+      const cache = await caches.open("twd20-assets-v1");
+      await cache.put(key, new Response("stale"));
+      const record = await (await cache.match("/__twd20-pdf-assets")).json();
+      record[key] = "sha256-old";
+      await cache.put("/__twd20-pdf-assets", new Response(JSON.stringify(record)));
+    }, stalePdf);
+    const fetchSize = key => page.evaluate(target => fetch(target).then(response => response.arrayBuffer()).then(bytes => bytes.byteLength, () => -1), key);
+    mode = "down";
+    assert.equal(await fetchSize(stalePdf), 5, "offline, an outdated template is still better than none");
+    mode = "online";
+    assert.equal(await fetchSize(stalePdf), fs.statSync(path.join(__dirname, stalePdf)).size, "a template whose hash changed is fetched again");
+    requests.length = 0;
+    assert.equal(await fetchSize(stalePdf), fs.statSync(path.join(__dirname, stalePdf)).size);
+    assert.deepEqual(requests, [], "the refreshed template is served from the cache");
+
+    // 冒險者聯盟規則頁一律走網路，連它載入的 al-return.js 也不存。
+    await page.evaluate(() => fetch("/al-return.js").then(response => response.text()));
+    await page.waitForTimeout(200);
+    assert(!Object.values(await cachedKeys()).flat().some(key => key.startsWith("/al/") || key === "/al-return.js"), "AL rule pages and their files are never stored");
+
     // 核心頁面直接開啟；附加檔案等網路 4 秒後回退。
     mode = "hang";
     const hangStarted = Date.now();
@@ -8479,7 +8522,7 @@ async function verifyOfflineCache(browser) {
     await page.goto(`${origin}/?analytics=owner`, { waitUntil: "load" });
     await appReady();
     assert.equal(await page.evaluate(() => navigator.serviceWorker.controller !== null && Object.keys(getClassRules("fighter") || getClassRules("戰士") || {}).length > 0), true, "the stored page works without a network");
-    for (const file of [...lazyFiles, "deity-info.js", `${diceAsset}?roll=9`]) {
+    for (const file of [...lazyFiles, "deity-info.js", `${diceAsset}?roll=9`, "pdf-lib.custom.min.js", "pdf-export.js?v=offline", ...pdfKeys]) {
       assert.equal(await page.evaluate(target => fetch(target).then(response => response.ok, () => false), file), true, `${file} is available offline`);
     }
     assert.equal(await page.evaluate(() => fetch("never-stored.js").then(() => "response", () => "error")), "error", "a file that was never stored still fails offline");
@@ -8557,7 +8600,7 @@ async function verifyOfflineCache(browser) {
     keys = await cachedKeys();
     assert(!keys[shellName] && !keys["twd20-pages-v0"] && keys["other-cache"]);
     assert.deepEqual(pageErrors, []);
-    console.log("PWA: install icons, core coverage, mobile/desktop menu, cache strategies, interrupted update, offline cold launch, forced update (deferred by dialogs and touched share pages), hourly resume check and persistent storage request passed.");
+    console.log("PWA: install icons, core coverage, mobile/desktop menu, cache strategies, interrupted update, offline cold launch, forced update (deferred by dialogs and touched share pages), hourly resume check, persistent storage request, Home Screen PDF templates/fonts (hash refresh, offline fallback) and AL pages left to the network passed.");
   } finally {
     for (const socket of held) socket.destroy();
     await context.close();

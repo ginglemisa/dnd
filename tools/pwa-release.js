@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
 
-// 角色卡、跑團與規則查閱。PDF 範本與匯出函式庫仍在需要時才下載。
+// 角色卡、跑團、規則查閱與 PDF 匯出程式。PDF 範本與字型很大、幾乎不變，另列在 pdfAssetNames。
 const scriptNames = `
   analytics scroll-to-top dice-roller magic-items monster druid-wild-shape-beasts
   tool-data equipment-notes spell-list condition action-panel character-rules app-dialog
@@ -17,7 +17,15 @@ const scriptNames = `
   class-content.private.generated class-srd.generated feat-content.generated magic-item-content.generated
   magic-item-text.generated monster-content.generated monster-srd.generated race-content.generated
   spell-content.generated spell-srd.generated
+  pdf-lib.custom.min fontkit.custom.min pdf-field-map pdf-export
 `.trim().split(/\s+/);
+
+// PDF 匯出的範本與字型（約 19 MB）：不放進每版整套下載，由已安裝的 App 另外下載到固定快取，
+// 雜湊變了才重抓。路徑與 pdf-export.js 相同；直式角色卡的兩個檔案只在部署時放上網站，沒有的就不列。
+const pdfAssetNames = [
+  "5e_char_sheet.pdf", "5e_char_sheet_of.pdf",
+  "fonts/NotoSansTC-Regular-IdentityCID.otf", "fonts/twD20SerifTC-Bold.otf", "fonts/AdobeFanHeitiStd-Bold.otf"
+];
 
 function hash(bytes) {
   return createHash("sha256").update(bytes).digest("base64");
@@ -38,9 +46,12 @@ function buildWorker(root, readAsset = file => fs.readFileSync(file)) {
     const url = file === "index.html" ? "/" : "/" + file;
     return [url, "sha256-" + hash(readAsset(path.join(root, file)))];
   }));
+  const pdfAssets = Object.fromEntries(pdfAssetNames
+    .filter(file => fs.existsSync(path.join(root, file)))
+    .map(file => ["/" + file, "sha256-" + hash(readAsset(path.join(root, file)))]));
   const version = hash(JSON.stringify(assets)).replace(/[^a-zA-Z0-9]/g, "");
   const template = fs.readFileSync(path.join(__dirname, "../sw.js"), "utf8");
-  return "const RELEASE = " + JSON.stringify({ version, assets }) + ";\n" + template;
+  return "const RELEASE = " + JSON.stringify({ version, assets, pdfAssets }) + ";\n" + template;
 }
 
 if (require.main === module) {
@@ -48,4 +59,4 @@ if (require.main === module) {
   if (root === path.resolve(__dirname, "..")) throw new Error("請指定發布目錄，避免覆寫 sw.js 原始碼");
   fs.writeFileSync(path.join(root, "sw.js"), buildWorker(root));
 }
-module.exports = { buildWorker };
+module.exports = { buildWorker, pdfAssetNames };
