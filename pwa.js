@@ -175,6 +175,26 @@
     if (trackPwa("pwa_first_launch")) window.dndStorage?.setItem(FIRST_LAUNCH_KEY, "1");
   }
 
+  // 手機上 App 常一直留在背景，切回來不算重新打開，瀏覽器不會自己檢查新版：
+  // 切回前景、距離上次檢查超過一小時就主動檢查一次，找到新版後照「網站自動更新」的規則換上。
+  const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+  let lastUpdateCheck = Date.now();
+  function checkForUpdateOnResume() {
+    if (document.visibilityState !== "visible" || !registration || reloading) return;
+    if (Date.now() - lastUpdateCheck < UPDATE_CHECK_INTERVAL_MS) return;
+    lastUpdateCheck = Date.now();
+    registration.update().catch(() => { /* 離線或伺服器沒回應，下次切回來再試 */ });
+  }
+
+  // 主畫面 App 向瀏覽器申請持久儲存，手機空間不足時才不會被清掉離線資料與自動存檔。
+  // 只在 App 裡申請：瀏覽器分頁裡有的瀏覽器會跳出權限詢問。
+  function requestPersistentStorage() {
+    if (!standalone() || typeof navigator.storage?.persist !== "function") return;
+    Promise.resolve(navigator.storage.persisted?.())
+      .then(already => already || navigator.storage.persist())
+      .catch(() => { /* 瀏覽器不支援或拒絕時照常使用 */ });
+  }
+
   function showInstall() {
     render();
     if (status === "ready") checkCache();
@@ -238,6 +258,8 @@
   document.addEventListener("pointerdown", markInteraction, true);
   document.addEventListener("keydown", markInteraction, true);
   trackFirstLaunch();
+  requestPersistentStorage();
+  document.addEventListener("visibilitychange", checkForUpdateOnResume);
   if (startController) {
     navigator.serviceWorker.addEventListener("controllerchange", queueUpdate);
     // 由 worker 提供的頁面立刻檢查有沒有等著換上的新版。
