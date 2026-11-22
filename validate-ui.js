@@ -150,13 +150,13 @@ async function verifyUtilityMenuLayout(page) {
         settings: [...document.querySelectorAll(".utility-menu__setting")].map(el => el.getBoundingClientRect().toJSON()),
         switches: [...document.querySelectorAll(".utility-menu__switch")].map(el => el.getBoundingClientRect().toJSON()),
         grids: [...menu.querySelectorAll(".utility-menu__grid")].map(grid => {
-          const buttons = [...grid.children].map(el => el.getBoundingClientRect());
+          const buttons = [...grid.children].filter(el => el.getClientRects().length).map(el => el.getBoundingClientRect());
           return { columns: new Set(buttons.map(button => Math.round(button.left))).size, ids: [...grid.children].map(el => el.id || el.className),
             rows: buttons.reduce((rows, button, index) => (index % 2 ? rows : [...rows, Math.abs(button.top - (buttons[index + 1] || button).top) < 1]), []),
             overflow: [...grid.children].some(el => el.scrollWidth > el.clientWidth + 1) };
         }),
         clear: rect("#clear-storage-btn"),
-        lastDivider: rect(".utility-menu__divider--danger")
+        systemTitle: rect("#utility-menu-system-title")
       };
     });
     assert.equal(layout.settings.length, 4);
@@ -196,12 +196,11 @@ async function verifyUtilityMenuLayout(page) {
     assert.equal(layout.themeRow.right, layout.row.right);
     assert.equal(layout.segments[0].top, layout.segments[1].top, `theme segments share a row at ${width}`);
     assert(layout.segments[0].right <= layout.segments[1].left);
-    // 三區按鈕都是兩欄、兩兩一列、文字不溢出；冒險者聯盟規則不再通欄。
-    assert.deepEqual(layout.grids.map(grid => grid.columns), [2, 2, 2], `button grids use two columns at ${width}`);
+    // 本機未啟用安裝入口，系統區只顯示清除紀錄。
+    assert.deepEqual(layout.grids.map(grid => grid.columns), [2, 2, 2, 1], `visible button columns at ${width}`);
     layout.grids.forEach(grid => assert(grid.rows.every(Boolean) && !grid.overflow, `button rows at ${width}: ${grid.ids}`));
     assert.deepEqual(layout.grids[2].ids, ["al-rules-btn", "reference-deities-btn", "open-sheet-download-btn", "open-qr-btn", "restart-onboarding-btn", "first-table-tour-btn"]);
-    // 清除紀錄在分隔線之後單獨一列。
-    assert(layout.clear.top >= layout.lastDivider.bottom);
+    assert(layout.clear.top >= layout.systemTitle.bottom);
     assert(Math.abs(layout.clear.left - layout.row.left) < 1 && Math.abs(layout.clear.right - layout.row.right) < 1);
     if (width < 480) {
       // 手機：左右各留 0.5rem 的全寬面板，開啟時有遮罩。
@@ -219,8 +218,8 @@ async function verifyUtilityMenuLayout(page) {
     await page.screenshot({ path: path.join(process.env.DND_UI_SCREENSHOT_DIR, "menu.png") });
   }
   // 點遮罩關閉選單，點擊不穿透到底下的骰子按鈕。畫面拉高一點，讓骰子按鈕露在選單下方，點它的位置。
-  await page.setViewportSize({ width: 390, height: 900 });
-  await page.waitForFunction(() => innerWidth === 390 && innerHeight === 900 && getComputedStyle(document.querySelector(".site-header"), "::before").content !== "none");
+  await page.setViewportSize({ width: 390, height: 980 });
+  await page.waitForFunction(() => innerWidth === 390 && innerHeight === 980 && getComputedStyle(document.querySelector(".site-header"), "::before").content !== "none");
   const fabTap = await page.evaluate(() => {
     const fab = document.getElementById("dice-roller-fab").getBoundingClientRect();
     const menu = document.getElementById("utility-menu").getBoundingClientRect();
@@ -6440,31 +6439,63 @@ async function verifyFirstLoadDefaults(browser, url) {
     assert.deepEqual(await state(existing), [false, "true"], "a device that already has a character keeps its previous defaults");
     assert.deepEqual(await existing.evaluate(() => [localStorage.getItem("dnd.diceSystemEnabled.v1"), localStorage.getItem("dnd.inventoryWeightHidden.v1")]), [null, null], "first-load defaults are not written for existing players");
 
-    // 歡迎視窗的備份提醒只在 Safari 本身出現：其他瀏覽器、iOS 上的 Edge、加到主畫面的 App 與分享模式都不顯示。
+    // 歡迎視窗的備份提醒給 Safari 與 iPhone、iPad 上的所有瀏覽器（同一套引擎）；其他瀏覽器、加到主畫面的 App 與分享模式都不顯示。
     const shareHash = await existing.evaluate(() => encodeStateToHash(collectShareState()));
     const safariAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
-    const noteShown = async ({ userAgent, vendor, standalone = false, target = url }) => {
-      const visitor = await browser.newContext(userAgent ? { userAgent } : {});
+    const noteShown = async ({ userAgent, vendor, standalone = false, target = url, production = false, recommend = false, ipad = false, width = 390 }) => {
+      const visitor = await browser.newContext({ userAgent, viewport: { width, height: 844 }, serviceWorkers: "block" });
       try {
-        if (vendor) await visitor.addInitScript(({ vendor, standalone }) => {
+        if (vendor) await visitor.addInitScript(({ vendor, standalone, ipad }) => {
           Object.defineProperty(Navigator.prototype, "vendor", { get: () => vendor });
           Object.defineProperty(Navigator.prototype, "standalone", { get: () => standalone });
-        }, { vendor, standalone });
+          if (ipad) {
+            Object.defineProperty(Navigator.prototype, "platform", { get: () => "MacIntel" });
+            Object.defineProperty(Navigator.prototype, "maxTouchPoints", { get: () => 5 });
+          }
+        }, { vendor, standalone, ipad });
+        if (production) {
+          const local = new URL(target).origin;
+          await visitor.route("**/*", async route => {
+            const request = new URL(route.request().url());
+            if (request.origin !== "https://twd20.com") return route.abort();
+            const response = await visitor.request.get(local + request.pathname + request.search);
+            await route.fulfill({ response });
+          });
+          target = target.replace(local, "https://twd20.com");
+        }
         const visit = await visitor.newPage();
         await visit.goto(target);
         await visit.locator("#legal-ack-btn").waitFor();
+        const note = visit.locator("#legal-pwa-note");
+        assert.equal(await note.isVisible(), recommend, `install advice: ${userAgent}, ${target.split("#")[0]}`);
+        if (recommend) {
+          assert(await note.evaluate(el => el.scrollWidth <= el.clientWidth + 1));
+          const installBox = await note.boundingBox();
+          const dismissBox = await visit.locator(".legal-modal-dismiss").boundingBox();
+          assert(installBox.y + installBox.height <= dismissBox.y, "install advice appears above the dismissal preference");
+          const backupBox = await visit.locator("#legal-safari-note").boundingBox();
+          if (backupBox) assert(backupBox.y + backupBox.height <= installBox.y, "Safari backup advice appears first");
+          if (process.env.DND_UI_SCREENSHOT_DIR && userAgent === safariAgent) {
+            fs.mkdirSync(process.env.DND_UI_SCREENSHOT_DIR, { recursive: true });
+            await visit.locator(".legal-modal-card").screenshot({ path: path.join(process.env.DND_UI_SCREENSHOT_DIR, "apple-welcome.png") });
+          }
+        }
         return await visit.locator("#legal-safari-note").isVisible();
       } finally { await visitor.close(); }
     };
     const apple = "Apple Computer, Inc.";
-    assert.equal(await page.locator("#legal-safari-note").isHidden(), true, "other browsers never see the Safari backup note");
-    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple }), true, "Safari shows the backup note in the welcome dialog");
-    assert.equal(await noteShown({ userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15", vendor: apple }), true, "desktop Safari shows it too");
-    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "Version/17.0 EdgiOS/126.0.2592.56"), vendor: apple }), false, "other iOS browsers are not called Safari");
-    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "CriOS/126.0.6478.153"), vendor: apple }), false, "Chrome on iOS does not show it");
-    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, standalone: true }), false, "a Home Screen web app does not show it");
-    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, target: `${url}${shareHash}` }), false, "share mode saves nothing, so it has no backup note");
-    console.log("First-load defaults: new device, remembered choices, existing players and the Safari-only backup note passed.");
+    assert.equal(await page.locator("#legal-safari-note").isHidden(), true, "desktop Chromium never sees the backup note");
+    const macSafari = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15";
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple }), true, "local Safari sees only the backup note");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, production: true, recommend: true }), true, "iPhone Safari");
+    assert.equal(await noteShown({ userAgent: macSafari, vendor: apple, production: true, recommend: true, width: 1280 }), true, "Mac Safari");
+    assert.equal(await noteShown({ userAgent: macSafari.replace("Version/17.5", "CriOS/126.0"), ipad: true, vendor: apple, production: true, recommend: true }), true, "iPad Chrome using a desktop user agent sees the backup note");
+    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "Version/17.0 EdgiOS/126.0.2592.56"), vendor: apple, production: true, recommend: true }), true, "Edge on iOS sees the backup note");
+    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "CriOS/126.0.6478.153"), vendor: apple }), true, "Chrome on iOS sees the backup note");
+    assert.equal(await noteShown({ userAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36" }), false, "Android Chrome does not show it");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, standalone: true, production: true }), false, "a Home Screen web app does not show it");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, target: `${url}${shareHash}`, production: true }), false, "share mode saves nothing, so it has no backup note");
+    console.log("First-load defaults: new device, remembered choices, existing players and the Apple backup note passed.");
   } finally {
     await context.close();
     await returning.close();
@@ -7620,7 +7651,7 @@ async function verifyShareReadonlyMode(browser, url) {
       await page.waitForTimeout(100);
       await page.locator("#utility-menu-toggle").click();
       await page.locator("#tabletop-mode-toggle").waitFor();
-      for (const selector of ["#help-quick-build-btn", "#set-default-abilities", "#restart-onboarding-btn", "#clear-storage-btn", ".utility-menu__divider--danger", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn"]) {
+      for (const selector of ["#help-quick-build-btn", "#set-default-abilities", "#restart-onboarding-btn", "#clear-storage-btn", ".utility-menu__system", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn"]) {
         assert.equal(await page.locator(selector).isVisible(), false, `${selector} is hidden at ${width}`);
       }
       for (const selector of ["#tabletop-mode-toggle", "#adventure-journal-btn", "#export-json-btn", "#export-pdf-btn", "#open-sheet-download-btn", "#open-qr-btn", "#first-table-tour-btn", "#al-rules-btn", "#reference-deities-btn"]) {
@@ -7645,7 +7676,7 @@ async function verifyShareReadonlyMode(browser, url) {
           return column && row;
         }) && visible.map(button => button.id);
       })), [["tabletop-mode-toggle", "adventure-journal-btn"], ["export-json-btn", "export-pdf-btn"],
-        ["al-rules-btn", "reference-deities-btn", "open-sheet-download-btn", "open-qr-btn", "first-table-tour-btn"]], `menu rows leave no holes at ${width}`);
+        ["al-rules-btn", "reference-deities-btn", "open-sheet-download-btn", "open-qr-btn", "first-table-tour-btn"], []], `menu rows leave no holes at ${width}`);
       await page.locator("#utility-menu-toggle").click();
     }
     await page.setViewportSize({ width: 1100, height: 900 });
@@ -8105,9 +8136,283 @@ async function verifyJsonImportTransaction(browser, url) {
   } finally { await page.close(); }
 }
 
+// Service Worker（sw.js）：正式站才註冊，這裡在自己的測試伺服器上手動呼叫 registerOfflineCache()，
+// 用伺服器的開關模擬斷線與網路卡住，檢查預先存檔、各種存法與離線開啟。
+async function verifyOfflineCache(browser) {
+  const requests = [];
+  let mode = "online";
+  const held = new Set();
+  const { buildWorker } = require("./tools/pwa-release");
+  const indexFile = path.join(__dirname, "index.html");
+  const nextHtml = fs.readFileSync(indexFile, "utf8").replace("</head>", '<meta name="pwa-test-release" content="2"></head>');
+  let release = 1;
+  let broken = false;
+  const workers = [null, buildWorker(__dirname), buildWorker(__dirname, file =>
+    file === indexFile ? nextHtml : fs.readFileSync(file))];
+  const server = http.createServer((req, res) => {
+    if (mode === "down") return req.socket.destroy();
+    if (mode === "hang") { held.add(req.socket); return; }
+    const requestUrl = new URL(req.url, "http://localhost");
+    const pathname = decodeURIComponent(requestUrl.pathname);
+    requests.push(pathname + requestUrl.search);
+    const file = path.resolve(__dirname, `.${pathname === "/" ? "/index.html" : pathname}`);
+    if (!file.startsWith(__dirname + path.sep)) return res.writeHead(403).end();
+    if (pathname === "/sw.js") return res.writeHead(200, { "Content-Type": "text/javascript", "Cache-Control": "no-store" }).end(workers[release]);
+    if (release === 2 && file === indexFile) return res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }).end(nextHtml);
+    if (broken && pathname === "/pwa.js") return res.writeHead(200, { "Content-Type": "text/javascript" }).end("// truncated");
+    fs.readFile(file, (error, data) => {
+      if (error) return res.writeHead(404).end();
+      res.setHeader("Content-Type", { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".webp": "image/webp", ".jpg": "image/jpeg", ".png": "image/png" }[path.extname(file)] || "application/octet-stream");
+      res.end(data);
+    });
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const context = await browser.newContext();
+  let page = await context.newPage();
+  page.setDefaultTimeout(15000);
+  const pageErrors = [];
+  page.on("pageerror", error => pageErrors.push(String(error)));
+  const cachedKeys = () => page.evaluate(async () => {
+    const result = {};
+    for (const name of await caches.keys()) result[name] = (await (await caches.open(name)).keys()).map(request => request.url.replace(location.origin, ""));
+    return result;
+  });
+  const appReady = () => page.waitForFunction(() => typeof getClassRules === "function" && typeof SpellCatalog === "object" && document.querySelector("#utility-menu-toggle"));
+  try {
+    await page.goto(`${origin}/index.html?analytics=owner`, { waitUntil: "load" });
+    await appReady();
+    await page.waitForTimeout(3500);
+    assert.equal(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0, "the service worker is not registered outside the production site");
+
+    assert.equal(await page.locator("#pwa-menu-btn").isVisible(), false);
+    const manifest = await page.evaluate(async () => (await fetch(document.querySelector('link[rel="manifest"]').href)).json());
+    assert.equal(manifest.id, "/");
+    assert.equal(manifest.start_url, "/");
+    assert.equal(manifest.display, "standalone");
+    for (const icon of manifest.icons) {
+      const size = await page.evaluate(async src => {
+        const img = new Image(); img.src = src; await img.decode(); return img.naturalWidth;
+      }, icon.src);
+      assert.equal(icon.sizes, size + "x" + size);
+    }
+    await page.evaluate(async () => {
+      await registerOfflineCache();
+      window.testOfflineRegistration = await navigator.serviceWorker.getRegistration();
+    });
+    await page.waitForFunction(() => window.testOfflineRegistration?.active?.state === "activated");
+    const lazyFiles = await page.evaluate(() => [classSrdFile, monsterSrdFile, spellSrdFile, magicItemTextFile]);
+    const core = await page.evaluate(() => [...document.querySelectorAll('script[src],link[rel="stylesheet"]')]
+      .map(el => new URL(el.src || el.href)).filter(url => url.origin === location.origin).map(url => url.pathname));
+    let keys = await cachedKeys();
+    const shellName = Object.keys(keys).find(name => name.startsWith("twd20-shell-"));
+    const pages = keys[shellName];
+    assert(pages.length > 50);
+    for (const file of [...core, ...lazyFiles.map(file => "/" + file.split("?")[0]), "/", "/images/dice.webp"]) {
+      assert(pages.includes(file), file + " is ready on first install");
+    }
+    assert(!pages.some(key => key.includes("?") || key === "/sw.js" || key.endsWith(".pdf")));
+    const versionedScript = await page.locator('script[src^="dice-roller.js"]').getAttribute("src");
+    for (const width of [1280, 360]) {
+      await page.setViewportSize({ width, height: 780 });
+      await page.locator("#utility-menu-toggle").click();
+      const system = page.getByRole("region", { name: "系統" });
+      await system.scrollIntoViewIfNeeded();
+      const [install, clear] = await system.getByRole("button").evaluateAll(buttons =>
+        buttons.map(button => button.getBoundingClientRect().toJSON()));
+      assert(install && clear && install.y === clear.y && install.right < clear.left, JSON.stringify({ width, install, clear }));
+      assert(Math.abs(install.width - clear.width) < 1 && install.height === clear.height);
+      if (process.env.DND_UI_SCREENSHOT_DIR) {
+        fs.mkdirSync(process.env.DND_UI_SCREENSHOT_DIR, { recursive: true });
+        await system.screenshot({ path: path.join(process.env.DND_UI_SCREENSHOT_DIR, `system-${width}.png`) });
+      }
+      await page.locator("#pwa-menu-btn").click();
+      const dialog = page.getByRole("dialog", { name: "加入主畫面" });
+      await dialog.getByRole("status").filter({ hasText: "可以離線使用" }).waitFor();
+      assert(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth + 1), "install dialog fits at " + width);
+      await page.keyboard.press("Escape");
+      assert(await page.locator("#utility-menu-toggle").evaluate(el => el === document.activeElement));
+    }
+
+    // Chromium 提供安裝事件時，只有明確點擊安裝才叫出系統提示。
+    await page.evaluate(() => {
+      const prompt = new Event("beforeinstallprompt", { cancelable: true });
+      window.installRequests = 0;
+      prompt.prompt = () => { window.installRequests++; };
+      prompt.userChoice = Promise.resolve({ outcome: "dismissed" });
+      window.dispatchEvent(prompt);
+    });
+    await page.locator("#utility-menu-toggle").click();
+    await page.locator("#pwa-menu-btn").click();
+    assert.equal(await page.evaluate(() => window.installRequests), 0);
+    await page.getByRole("button", { name: "安裝", exact: true }).click();
+    assert.equal(await page.evaluate(() => window.installRequests), 1);
+
+    const share = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    const iphone = await browser.newContext({ viewport: { width: 375, height: 667 },
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 15_4 like Mac OS X) AppleWebKit/605.1.15 Version/15.4 Mobile Safari/604.1" });
+    try {
+      await iphone.addInitScript(() => {
+        Object.defineProperty(navigator, "connection", { value: { saveData: true }, configurable: true });
+      });
+      const mobile = await iphone.newPage();
+      await mobile.goto(origin + "/?analytics=owner" + share);
+      await mobile.evaluate(() => registerOfflineCache());
+      assert.equal(await mobile.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0);
+      await mobile.locator("#utility-menu-toggle").click();
+      await mobile.locator("#pwa-menu-btn").click();
+      const guide = mobile.getByRole("dialog", { name: "加入主畫面" });
+      assert.match(await guide.innerText(), /加入主畫面/);
+      assert.match(await guide.innerText(), /各有各的存檔/);
+      assert.match(await guide.innerText(), /不是這份分享的角色/);
+      broken = true;
+      await guide.getByRole("button", { name: "下載離線資料" }).click();
+      await guide.getByRole("status").filter({ hasText: "沒下載完" }).waitFor();
+      broken = false;
+      await guide.getByRole("button", { name: "下載離線資料" }).click();
+      await guide.getByRole("status").filter({ hasText: "可以離線使用" }).waitFor();
+      await mobile.keyboard.press("Escape");
+      await mobile.evaluate(() => Object.defineProperty(navigator, "standalone", { value: true }));
+      await mobile.evaluate(() => registerOfflineCache());
+      await mobile.locator("#utility-menu-toggle").click();
+      await mobile.locator("#pwa-menu-btn").click();
+      await mobile.getByRole("dialog", { name: "離線狀態" }).waitFor();
+    } finally { broken = false; await iphone.close(); }
+
+    // 有版本號：之後不再問伺服器；換版本號時舊的刪掉。
+    await page.reload({ waitUntil: "load" });
+    await appReady();
+    assert.equal(await page.evaluate(() => Boolean(navigator.serviceWorker.controller)), true, "the reloaded page is controlled");
+    requests.length = 0;
+    assert.equal(await page.evaluate(file => fetch(file).then(response => response.ok), versionedScript), true);
+    assert.deepEqual(requests, [], "a stored versioned file is served without asking the server");
+    await page.evaluate(() => fetch("og-image.jpg?v=cache-test-a").then(response => response.text()));
+    await page.evaluate(() => fetch("og-image.jpg?v=cache-test-b").then(response => response.text()));
+    keys = await cachedKeys();
+    assert.deepEqual(keys["twd20-pages-v1"].filter(key => key.startsWith("/og-image.jpg")), ["/og-image.jpg?v=cache-test-b"], "a new version replaces the older ones of the same file");
+
+    // 選用圖檔沒有版本號：每次先上網，? 參數不同也只存一份。
+    const diceAsset = "/og-image.jpg";
+    requests.length = 0;
+    for (const roll of [1, 2, 3]) await page.evaluate(([asset, n]) => fetch(`${asset}?roll=${n}`).then(response => response.blob()), [diceAsset, roll]);
+    assert.equal(requests.length, 3, "files without a version still go to the network first");
+    await page.waitForTimeout(200);
+    keys = await cachedKeys();
+    assert.deepEqual(keys["twd20-pages-v1"].filter(key => key === diceAsset || key.includes("?roll=")), [diceAsset], "query variants of one file share a single entry");
+
+    // 不處理的請求照常直通，也不存。
+    await page.evaluate(() => fetch("deity-info.js?probe=1", { cache: "no-store" }).then(response => response.text()));
+    await page.evaluate(() => fetch("legal-about.js", { method: "HEAD" }));
+    keys = await cachedKeys();
+    assert(!keys["twd20-pages-v1"].includes("/legal-about.js"), "requests other than GET are not stored");
+
+    // 核心頁面直接開啟；附加檔案等網路 4 秒後回退。
+    mode = "hang";
+    const hangStarted = Date.now();
+    await page.goto(`${origin}/index.html?analytics=owner`, { waitUntil: "commit" });
+    await appReady();
+    const waited = Date.now() - hangStarted;
+    assert(waited < 12000, "a stalled network still opens the core sheet");
+    const fallbackStart = Date.now();
+    assert(await page.evaluate(asset => fetch(asset).then(res => res.ok), diceAsset));
+    assert(Date.now() - fallbackStart >= 3500, "an optional unversioned asset waits for the network timeout");
+    for (const socket of held) socket.destroy();
+    held.clear();
+
+    // 斷線：頁面、之後才載入的資料檔、沒有版本號的檔案都拿得到。
+    mode = "down";
+    await page.goto(`${origin}/?analytics=owner`, { waitUntil: "load" });
+    await appReady();
+    assert.equal(await page.evaluate(() => navigator.serviceWorker.controller !== null && Object.keys(getClassRules("fighter") || getClassRules("戰士") || {}).length > 0), true, "the stored page works without a network");
+    for (const file of [...lazyFiles, "deity-info.js", `${diceAsset}?roll=9`]) {
+      assert.equal(await page.evaluate(target => fetch(target).then(response => response.ok, () => false), file), true, `${file} is available offline`);
+    }
+    assert.equal(await page.evaluate(() => fetch("never-stored.js").then(() => "response", () => "error")), "error", "a file that was never stored still fails offline");
+    assert.deepEqual(pageErrors, [], "no page errors with the service worker");
+
+    // 真實 worker 更新：傳輸截斷時，HTTP 200 仍不能取代正在使用的完整套件。
+    mode = "online";
+    await page.evaluate(async () => { await caches.open("twd20-pages-v0"); await caches.open("other-cache"); });
+    release = 2;
+    broken = true;
+    await page.evaluate(async () => {
+      const reg = await navigator.serviceWorker.getRegistration();
+      reg.addEventListener("updatefound", () => {
+        const worker = reg.installing;
+        worker.addEventListener("statechange", () => { window.testUpdateState = worker.state; });
+      }, { once: true });
+      await reg.update();
+    });
+    await page.waitForFunction(() => window.testUpdateState === "redundant");
+    mode = "down";
+    await page.reload();
+    await appReady();
+    assert.equal(await page.locator('meta[name="pwa-test-release"]').count(), 0);
+    await page.evaluate(() => {
+      const input = document.getElementById("hp");
+      input.value = "13"; input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      flushPendingAutosave();
+    });
+    await page.close();
+    page = await context.newPage();
+    page.on("pageerror", error => pageErrors.push(String(error)));
+    await page.goto(origin + "/?analytics=owner");
+    await appReady();
+    assert.equal(await page.locator("#hp").inputValue(), "13", "an offline cold launch retains HP");
+    const offline = await page.evaluate(() => {
+      DiceRoller.setEnabled(true, { announce: false });
+      return { roll: DiceRoller.rollExpression("1d20").total, spell: SpellCatalog.getSpell("magic-missile")?.nameZh };
+    });
+    assert(offline.roll >= 1 && offline.roll <= 20);
+    assert(offline.spell, "spell lookup works on an offline cold launch");
+    // 強制更新：開著視窗時先等；碰過的分享頁不打斷，等下次開啟；視窗關掉後先存檔再整頁換成新版。
+    const sharePage = await context.newPage();
+    sharePage.on("pageerror", error => pageErrors.push(String(error)));
+    await sharePage.goto(origin + "/?analytics=owner" + share);
+    await sharePage.waitForFunction(() => window.SHARE_MODE === true && navigator.serviceWorker.controller);
+    await sharePage.keyboard.press("Shift");
+    await page.locator("#utility-menu-toggle").click();
+    await page.locator("#pwa-menu-btn").click();
+    await page.getByRole("dialog", { name: "離線狀態" }).or(page.getByRole("dialog", { name: "加入主畫面" })).waitFor();
+    mode = "online";
+    broken = false;
+    await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
+    await page.locator(".app-toast", { hasText: "新版下載好了，關掉視窗後就會更新" }).waitFor();
+    await page.waitForTimeout(1500);
+    assert.equal(await page.locator('meta[name="pwa-test-release"]').count(), 0, "an open dialog defers the update");
+    assert.equal(await page.evaluate(async () => Boolean((await navigator.serviceWorker.getRegistration()).waiting)), true);
+    await page.keyboard.press("Escape");
+    await page.waitForSelector('meta[name="pwa-test-release"]', { state: "attached", timeout: 15000 });
+    await appReady();
+    await page.locator(".app-toast", { hasText: "已更新到最新版" }).waitFor();
+    assert.equal(await page.locator("#legal-modal").isVisible(), false, "the update reload skips the welcome dialog");
+    assert.equal(await page.locator("#hp").inputValue(), "13");
+    await sharePage.locator(".app-toast", { hasText: "新版下載好了，下次打開時更新" }).waitFor();
+    assert.equal(await sharePage.locator('meta[name="pwa-test-release"]').count(), 0, "a touched share page is not reloaded");
+    await sharePage.close();
+    await page.close();
+    page = await context.newPage();
+    mode = "down";
+    await page.goto(origin + "/?analytics=owner");
+    await appReady();
+    await page.waitForSelector('meta[name="pwa-test-release"]', { state: "attached" });
+    assert.equal(await page.locator("#hp").inputValue(), "13");
+    assert.equal(await page.locator("#legal-modal").isVisible(), true, "a normal launch still shows the welcome dialog");
+    keys = await cachedKeys();
+    assert(!keys[shellName] && !keys["twd20-pages-v0"] && keys["other-cache"]);
+    assert.deepEqual(pageErrors, []);
+    console.log("PWA: install icons, core coverage, mobile/desktop menu, cache strategies, interrupted update, offline cold launch and forced update (deferred by dialogs and touched share pages) passed.");
+  } finally {
+    for (const socket of held) socket.destroy();
+    await context.close();
+    await new Promise(resolve => { server.closeAllConnections?.(); server.close(resolve); });
+  }
+}
+
 async function main() {
   const sections = new Set(process.argv.slice(2));
-  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--gestures-only", "--journal-only", "--pdf-only", "--pdf-fields-only", "--data-only", "--share-only"].includes(flag), `Unknown option: ${flag}`);
+  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--gestures-only", "--journal-only", "--pdf-only", "--pdf-fields-only", "--data-only", "--share-only", "--offline-cache-only"].includes(flag), `Unknown option: ${flag}`);
   assert(sections.size <= 1, "Choose at most one UI section");
   const all = sections.size === 0;
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
@@ -8163,6 +8468,7 @@ async function main() {
       await verifyFeatureReferences(browser, url);
     }
     if (all || sections.has("--journal-only")) await verifyAdventureJournal(browser, url);
+    if (all || sections.has("--offline-cache-only")) await verifyOfflineCache(browser);
     if (all || sections.has("--pdf-only") || sections.has("--pdf-fields-only")) {
       const page = await newUiPage(browser);
       try {

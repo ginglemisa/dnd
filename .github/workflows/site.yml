@@ -89,6 +89,12 @@ jobs:
           source: ./_publish
           destination: ./_site
 
+      - name: 依實際發布內容建立離線角色卡快取版本
+        run: |
+          # Jekyll 容器產生的檔案可能由 root 擁有，只需讓 runner 寫入這一個檔案。
+          if [ ! -w _site/sw.js ]; then sudo chown "$(id -u)" _site/sw.js; fi
+          node tools/pwa-release.js _site
+
       - name: 上傳發布內容
         uses: actions/upload-pages-artifact@v4
 
