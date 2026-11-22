@@ -312,6 +312,37 @@ function getPreparedSpellRequirement() {
   return `請先選好${items}，才能使用『準備法術』。`;
 }
 
+// 準備法術的缺項警示整框是按鈕，按了前往補選（DESIGN.md「缺項提示」）：
+// 角色選擇沒選完就到數值頁標出沒選的欄位；只差施法屬性時留在法術頁標出施法屬性。跳轉本身不改任何選擇。
+function renderPreparedSpellRequirement(container, requirement) {
+  container.classList.add("spell-capability-warning--jump");
+  const current = container.querySelector(".spell-requirement-jump");
+  if (current?.dataset.requirement === requirement) return;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "class-feature-choice-link spell-requirement-jump";
+  button.dataset.requirement = requirement;
+  button.setAttribute("aria-label", `${requirement}前往選擇`);
+  const copy = document.createElement("span");
+  copy.className = "spell-requirement-jump__text";
+  copy.textContent = requirement;
+  const action = document.createElement("span");
+  action.className = "spell-requirement-jump__action";
+  action.textContent = "前往選擇";
+  button.append(copy, action);
+  button.addEventListener("click", () => {
+    Promise.resolve(window.onboardingTour?.jumpToTarget(getPreparedSpellRequirementTarget()))
+      .catch(error => console.warn("無法前往準備法術的缺項：", error));
+  });
+  container.replaceChildren(button);
+}
+
+function getPreparedSpellRequirementTarget() {
+  const missing = ["class", "level", "background", "race"].filter(id => !document.getElementById(id)?.value);
+  if (missing.length) return { tab: "basic", selector: missing.map(id => `#${id}`).join(", ") };
+  return { tab: "spells", selector: "#spellcasting-ability" };
+}
+
 function updatePreparedSpellCounts() {
   const summary = document.getElementById("spell-prepared-summary");
   const button = document.getElementById("spell-prepare");
@@ -322,7 +353,7 @@ function updatePreparedSpellCounts() {
   const requirements = document.getElementById("spell-prepared-requirements");
   if (requirements) {
     requirements.hidden = !requirement;
-    if (requirement) requirements.textContent = requirement;
+    if (requirement) renderPreparedSpellRequirement(requirements, requirement);
   }
   const status = document.getElementById("spell-prepared-status");
   if (status) { status.hidden = true; status.textContent = ""; }

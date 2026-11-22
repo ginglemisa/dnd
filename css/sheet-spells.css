@@ -593,6 +593,38 @@ html[data-theme="dark"] .pdf-export-status--progress {
   line-height: 1.55;
 }
 
+/* 準備法術的缺項警示整框是「前往選擇」按鈕（sheet-spells.js）：外框留在警示段落，按鈕本身不再加框。 */
+.spell-capability-warning--jump {
+  padding: 0;
+}
+
+/* 「前往選擇」是浮動在最後一行右側的小方框：排得下就和文字同一行，排不下才換到下一行，一律靠右下。 */
+button.class-feature-choice-link.spell-requirement-jump {
+  display: flow-root;
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.spell-requirement-jump__action {
+  float: right;
+  margin: 0.05em 0 0 0.6rem;
+  padding: 0 0.4rem;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.spell-requirement-jump:hover .spell-requirement-jump__action {
+  border-color: var(--warning);
+}
+
 .spell-capability-warning:not([hidden]) ~ #spell-slot-management-wrap:not(.is-hidden),
 .spell-capability-warning:not([hidden]) + .spell-picked-box:not([hidden]) {
   margin-top: 0.9rem;
