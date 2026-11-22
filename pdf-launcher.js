@@ -50,7 +50,7 @@ async function ensurePdfExportReady() {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
       await loadScriptOnce("pdf-field-map.js?v=20261122-cantrip-dedupe");
-      await loadScriptOnce("pdf-export.js?v=20261112-merge-main-menu");
+      await loadScriptOnce("pdf-export.js?v=20261122-gear-wrap");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;

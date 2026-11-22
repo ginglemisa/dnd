@@ -26,6 +26,9 @@
       }),
       spellNotePattern: settings.spellNotePattern === undefined ? /^note\d+$/ : settings.spellNotePattern,
       measuredWrapFields: Object.freeze([...(settings.measuredWrapFields || ['equipment1', 'extra1'])]),
+      // Measured fields holding an equipment list ("、"-separated, containers
+      // in brackets): lines end only between items.
+      listWrapFields: Object.freeze([...(settings.listWrapFields || ['equipment1'])]),
       // Measured fields whose DA keeps the size they were drawn at, so a reader
       // redraws an edited field at that size instead of the preferred size.
       keepDrawnSizeFields: Object.freeze([...(settings.keepDrawnSizeFields || [])]),
@@ -124,6 +127,7 @@
       spellNotes: { fontSizes: [] },
       spellNotePattern: null,
       measuredWrapFields: OFFICIAL_MEASURED_WRAP_FIELDS,
+      listWrapFields: ['Equip'],
       editableFixedMultilineFields: ['speice-trat', 'feat-trat', 'class-a-1'],
       editableScrollableFields: ['class-a-2', 'wp_pro', 'tool_pro', 'Lang', 'Equip'],
       // The appearance box's image button; its CJK prefix is stored in an
@@ -992,10 +996,19 @@
     return units;
   }
 
+  // Equipment list items, each ending with its "、". Items inside a
+  // container's brackets count too, so "背包（繩索、火把 ×10）" can continue on
+  // the next line after any of its contents.
+  function getPdfListItems(line) {
+    return line.match(/[^、]+(?:、+|$)|、+/gu) || [];
+  }
+
   // Fills each line with whole units. "、" always ends a unit, so a list item
   // is split only at the end of a line and only between words; a unit wider
-  // than a full line is split by character.
-  function wrapPdfTextToWidth(text, measureWidth, maxWidth) {
+  // than a full line is split by character. With breakAtListItems a line
+  // ends only after "、", and only an item wider than a full line is split
+  // like that.
+  function wrapPdfTextToWidth(text, measureWidth, maxWidth, { breakAtListItems = false } = {}) {
     const fits = (value) => measureWidth(value) < maxWidth;
     const lines = [];
     String(text || '').split('\n').forEach((sourceLine) => {
@@ -1005,7 +1018,7 @@
         return;
       }
       let current = '';
-      getPdfWrapUnits(line).forEach((unit) => {
+      const placeUnits = (units) => units.forEach((unit) => {
         const candidate = `${current}${unit}`;
         if (fits(candidate.trimEnd())) {
           current = candidate;
@@ -1022,6 +1035,17 @@
           }
         });
       });
+      if (!breakAtListItems) placeUnits(getPdfWrapUnits(line));
+      else {
+        getPdfListItems(line).forEach((item) => {
+          const candidate = `${current}${item}`;
+          if (fits(candidate.trimEnd())) current = candidate;
+          else if (current.trim() && fits(item.trim())) {
+            lines.push(current.trimEnd());
+            current = item.trimStart();
+          } else placeUnits(getPdfWrapUnits(item));
+        });
+      }
       if (current.trim()) lines.push(current.trimEnd());
     });
     return lines;
@@ -1046,11 +1070,12 @@
     const maxWidth = getMeasuredWrapWidth(field, layoutSettings);
     const usableHeight = Math.max(1, rectangle.height - layoutSettings.verticalPadding);
     const lineHeightFactor = layoutSettings.fieldLineHeightFactors[fieldName] || layoutSettings.lineHeightFactor;
+    const wrapOptions = { breakAtListItems: layoutSettings.listWrapFields.includes(fieldName) };
     // Wrapping depends on the font size, so rewrap at each 0.1 pt step until
     // the lines fit the height or the field minimum is reached.
     for (let tenths = Math.round(preferredSize * 10); ; tenths -= 1) {
       const fontSize = tenths / 10;
-      const lines = wrapPdfTextToWidth(text, (value) => cjkFont.widthOfTextAtSize(value, fontSize), maxWidth);
+      const lines = wrapPdfTextToWidth(text, (value) => cjkFont.widthOfTextAtSize(value, fontSize), maxWidth, wrapOptions);
       const height = lines.length * cjkFont.heightAtSize(fontSize) * lineHeightFactor;
       if (height <= usableHeight || tenths <= minimumTenths) return { fontSize, lines };
     }
