@@ -555,13 +555,13 @@
     return getCharacterMaxHpBreakdown(options).total;
   }
 
-  /** 將生命值輸入四捨五入並限制在 0～200；空值或無效值回傳空字串。 */
+  /** 將生命值輸入四捨五入並限制在 0～999；空值或無效值回傳空字串。 */
   function clampHpValue(rawValue) {
     if (rawValue === "" || rawValue === null || rawValue === undefined) return "";
     const numeric = Number(rawValue);
     if (!Number.isFinite(numeric)) return "";
     const rounded = Math.round(numeric);
-    return String(Math.min(200, Math.max(0, rounded)));
+    return String(Math.min(999, Math.max(0, rounded)));
   }
 
   /** 只接受目前角色卡支援的「小型」與「中型」體型。 */
