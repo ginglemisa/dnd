@@ -994,32 +994,50 @@ async function verifyAdventurersLeagueRules(browser, url, viewport) {
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "detached" });
     assert.equal(await page.evaluate(() => document.activeElement?.id), "utility-menu-toggle", "focus returns to the menu toggle");
-    // 主畫面 App 裡同網域的規則頁改在同一個視窗開：另開新分頁會變成另一個視窗，按返回就整個關掉 App。
-    const app = await browser.newContext({ viewport, serviceWorkers: "block" });
+    // 正式站的規則連結一律在同一個視窗開（新分頁在主畫面 App 會變成另一個視窗、在瀏覽器會越開越多）。
+    // 從角卡點進去的規則頁才有「回到角卡」（al-return.js 由 site.yml 部署時注入，這裡用假頁面代替私人頁面）；
+    // 跳過目錄錨點也一次退回角卡，紀錄不變長；直接開網址不顯示。
+    const site = await browser.newContext({ viewport, serviceWorkers: "block" });
     try {
-      await app.addInitScript(() => {
-        const real = window.matchMedia.bind(window);
-        window.matchMedia = query => query === "(display-mode: standalone)"
-          ? { matches: true, media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }
-          : real(query);
-      });
       const local = new URL(url).origin;
-      await app.route("**/*", async route => {
+      await site.route("**/*", async route => {
         const request = new URL(route.request().url());
         if (request.origin !== "https://twd20.com") return route.abort();
-        await route.fulfill({ response: await app.request.get(local + request.pathname + request.search) });
+        await route.fulfill({ response: await site.request.get(local + request.pathname + request.search) });
       });
-      const standalone = await app.newPage();
-      await standalone.goto(url.replace(local, "https://twd20.com"));
-      await standalone.locator("#legal-close-btn").click();
-      await standalone.evaluate(() => window.onboardingTour?.finish?.());
-      await standalone.locator("#utility-menu-toggle").click();
-      await standalone.locator("#al-rules-btn").click();
-      assert.deepEqual(await standalone.locator(".al-rules-link").evaluateAll(links => links.map(link => [link.target, link.getAttribute("aria-label")])), [
+      await site.route("https://twd20.com/al/**", route => route.fulfill({
+        contentType: "text/html; charset=utf-8",
+        body: '<!doctype html><html><head><meta charset="utf-8"><style>:root{--accent:#8a1c1c}</style></head><body><a id="toc" href="#part-2">第二段</a><section id="part-2" style="margin-top:2000px">第二段</section><script src="/al-return.js" defer></script></body></html>'
+      }));
+      const tab = await site.newPage();
+      await tab.goto(url.replace(local, "https://twd20.com"));
+      await tab.locator("#legal-close-btn").click();
+      await tab.evaluate(() => window.onboardingTour?.finish?.());
+      await tab.locator("#utility-menu-toggle").click();
+      await tab.locator("#al-rules-btn").click();
+      assert.deepEqual(await tab.locator(".al-rules-link").evaluateAll(links => links.map(link => [link.target, link.getAttribute("aria-label")])), [
         ["", "玩家手冊"], ["", "城主指南"], ["", "冒險者聯盟服務時數獎勵"], ["", "玩家手冊 v2027.1 草案（社群審閱中）"]
-      ], "the Home Screen app opens the rules pages in the same window");
-    } finally { await app.close(); }
-    console.log(`Adventurers League rules: menu button, production links, notice, layout, focus return and same-window links in the Home Screen app passed at ${viewport.width}px.`);
+      ], "the production site opens the rules pages in the same window");
+      await tab.locator(".al-rules-link").first().click();
+      await tab.waitForURL("https://twd20.com/al/DnDALPG.html");
+      const returnButton = tab.getByRole("button", { name: "回到角卡" });
+      await returnButton.waitFor();
+      await tab.locator("#toc").click();
+      await tab.waitForFunction(() => location.hash === "#part-2");
+      const rulesLength = await tab.evaluate(() => history.length);
+      assert.equal(await returnButton.isVisible(), true, "the button stays after jumping within the rules page");
+      await returnButton.click();
+      // 退回時可能直接用瀏覽器的頁面快取（bfcache），不會再觸發 load，所以只等網址。
+      await tab.waitForURL(address => ["/", "/index.html"].includes(new URL(address).pathname), { waitUntil: "commit" });
+      await tab.waitForFunction(() => typeof getClassRules === "function");
+      assert.equal(await tab.evaluate(() => history.length), rulesLength, "returning steps back to the sheet instead of adding history entries");
+      assert.equal(await tab.evaluate(() => sessionStorage.getItem("twd20.alReturn.v1")), null, "the source mark is used up");
+      await tab.goto("https://twd20.com/al/DnDALDMG.html");
+      await tab.waitForLoadState("load");
+      await tab.waitForTimeout(300);
+      assert.equal(await tab.getByRole("button", { name: "回到角卡" }).count(), 0, "a rules page opened directly has no return button");
+    } finally { await site.close(); }
+    console.log(`Adventurers League rules: menu button, production links, notice, layout, focus return, same-window links and the injected return button passed at ${viewport.width}px.`);
   } finally { await page.close(); }
 }
 

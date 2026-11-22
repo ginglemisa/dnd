@@ -75,6 +75,12 @@ jobs:
           for page in DnDALPG.html DnDALDMG.html DnDALSR.html DnDALPG-2027.1-draft.html; do
             if [ -f "_private_pages/$page" ]; then
               cp "_private_pages/$page" _publish/al/
+              # 「回到角卡」不寫在私人頁面裡，部署時才接上公開 repo 的 al-return.js（只有從角卡點進來才顯示）。
+              if grep -q '</body>' "_publish/al/$page"; then
+                sed -i '0,/<\/body>/s##<script src="/al-return.js" defer></script></body>#' "_publish/al/$page"
+              else
+                echo "::warning file=$page::找不到 </body>，這頁沒有接上「回到角卡」"
+              fi
             fi
           done
           for asset in 5e_char_sheet_of.pdf fonts/AdobeFanHeitiStd-Bold.otf; do
