@@ -1696,7 +1696,16 @@ html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-format-note {
   text-align: center;
 }
 
-/* Safari 才顯示的備份提醒（legal-modal.js）。 */
+/* 歡迎視窗的安裝建議與 Safari 備份提醒。 */
+.legal-modal-storage-note p {
+  margin: 0;
+  text-align: start;
+}
+
+.legal-modal-storage-note p:not([hidden]) + p:not([hidden]) {
+  margin-top: 0.5rem;
+}
+
 .legal-modal-storage-note {
   margin: 10px 0 0;
   padding: 8px 10px;

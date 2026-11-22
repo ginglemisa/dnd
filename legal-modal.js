@@ -31,7 +31,12 @@
     const isSafari = navigator.vendor === "Apple Computer, Inc."
       && /\bVersion\/\S+.* Safari\//.test(userAgent)
       && !/\b(?:CriOS|FxiOS|EdgiOS|OPiOS|OPT|DuckDuckGo)\//.test(userAgent);
-    if (safariNote && !isShareMode && isSafari && navigator.standalone !== true) safariNote.hidden = false;
+    const installNote = document.getElementById("legal-pwa-note");
+    if (!isShareMode && navigator.standalone !== true && !matchMedia("(display-mode: standalone)").matches) {
+      if (safariNote && isSafari) safariNote.hidden = false;
+      if (installNote && window.shouldRecommendPwaInstall?.(isSafari)) installNote.hidden = false;
+      modal.querySelector(".legal-modal-storage-note").hidden = ![safariNote, installNote].some(note => note && !note.hidden);
+    }
 
     let aboutLoader = null;
     let aboutBody = null;

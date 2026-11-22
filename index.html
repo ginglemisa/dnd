@@ -111,13 +111,13 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#39231E">
   <link rel="stylesheet" href="css/tokens.css?v=20261115-auto-value">
-  <link rel="stylesheet" href="css/base.css?v=20261118-settings-title">
+  <link rel="stylesheet" href="css/base.css?v=20261122-system-menu">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261120-section-titles">
   <link rel="stylesheet" href="css/sheet-equipment.css?v=20261120-feat-switch">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261116-ring-slot-layout">
-  <link rel="stylesheet" href="css/utility.css?v=20261118-modal-scroll">
+  <link rel="stylesheet" href="css/utility.css?v=20261122-system-menu">
   <link rel="stylesheet" href="css/dice.css?v=20261117-ability-reroll">
-  <link rel="stylesheet" href="css/dialogs.css?v=20261122-pwa">
+  <link rel="stylesheet" href="css/dialogs.css?v=20261122-install-notice">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261120-held-hint">
   <link rel="stylesheet" href="css/tabletop.css?v=20261121-al-service-rewards">
   <link rel="stylesheet" href="css/tabletop-hud.css?v=20261113-info-icon">
@@ -152,7 +152,7 @@
   <script src="tabletop-actions.js?v=20261120-mastery-options" defer></script>
   <script src="tabletop-custom-spells.js?v=20261117-level-10" defer></script>
   <script src="tabletop-spells.js?v=20261117-level-10" defer></script>
-  <script src="legal-modal.js?v=20261118-sheet-naming" defer></script>
+  <script src="legal-modal.js?v=20261122-install-notice" defer></script>
   <script src="onboarding-tour.js?v=20261120-extra-reminder" defer></script>
   <script src="quick-build.js?v=20261118-modal-scroll" defer></script>
   <script src="spellbook.js?v=20261117-level-10" defer></script>
@@ -274,9 +274,14 @@
         </div>
       </section>
 
-      <button type="button" id="pwa-menu-btn" class="utility-menu__button" aria-haspopup="dialog" hidden>安裝到主畫面</button>
-      <div class="utility-menu__divider utility-menu__divider--danger" role="separator"></div>
-      <button type="button" id="clear-storage-btn" class="utility-menu__clear-button">清除紀錄</button>
+      <section class="utility-menu__section utility-menu__system" aria-labelledby="utility-menu-system-title">
+        <div class="utility-menu__divider" role="separator"></div>
+        <h2 id="utility-menu-system-title" class="utility-menu__section-title">系統</h2>
+        <div class="utility-menu__grid">
+          <button type="button" id="pwa-menu-btn" class="utility-menu__button" aria-haspopup="dialog" hidden>安裝到主畫面</button>
+          <button type="button" id="clear-storage-btn" class="utility-menu__button utility-menu__clear-button">清除紀錄</button>
+        </div>
+      </section>
 
       <input type="file" id="import-json-file" accept="application/json" class="is-hidden">
     </div>
@@ -8150,10 +8155,13 @@ window.addEventListener("DOMContentLoaded", async function() {
       <button type="button" id="legal-onboarding-btn">快速創角 LV1</button>
       <button type="button" id="legal-ack-btn" aria-label="開始使用">開始使用</button>
     </div>
+    <div class="legal-modal-storage-note" hidden>
+      <p id="legal-safari-note" hidden>使用 Safari 期間若有 <strong>7 天未操作 twD20</strong>，本機存檔可能會被清除。請定期將角卡與冒險日誌分別匯出為 JSON 備份。</p>
+      <p id="legal-pwa-note" hidden>建議<strong>將 twD20 加入主畫面</strong>，方便離線跑團。安裝與移轉說明請見右上選單「系統」→「安裝到主畫面」。</p>
+    </div>
     <div class="legal-modal-dismiss">
       <label><input type="checkbox" id="legal-dismiss"> 不再顯示此視窗</label>
     </div>
-    <p id="legal-safari-note" class="legal-modal-storage-note" hidden>Safari 可能自動清除超過 7 天沒開的網站資料，請定期匯出 JSON 備份角色與冒險日誌。</p>
   </div>
 </div>
 
@@ -8184,5 +8192,5 @@ window.addEventListener("DOMContentLoaded", async function() {
   </div>
 </div>
 
-<script src="pwa.js?v=20261122-install" defer></script>
+<script src="pwa.js?v=20261122-install-notice" defer></script>
 </body></html>

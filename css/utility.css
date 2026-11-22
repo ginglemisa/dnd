@@ -92,7 +92,8 @@ html[data-view-mode="tabletop"] .share-mode-tip__heading {
 }
 
 /* 分享模式少掉的選單項目直接隱藏（不只停用），其餘按鈕依序補進兩欄網格，畫面順序與鍵盤焦點順序一致。 */
-html.is-share-mode :is(#help-quick-build-btn, #set-default-abilities, #restart-onboarding-btn, #clear-storage-btn, .utility-menu__divider--danger, #import-json-btn, .share-url-btn, .utility-menu__setting--auto-calc) {
+html.is-share-mode :is(#help-quick-build-btn, #set-default-abilities, #restart-onboarding-btn, #clear-storage-btn, #import-json-btn, .share-url-btn, .utility-menu__setting--auto-calc),
+html.is-share-mode .utility-menu__system:not(:has(#pwa-menu-btn:not([hidden]))) {
   display: none;
 }
 

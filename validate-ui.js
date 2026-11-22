@@ -150,13 +150,13 @@ async function verifyUtilityMenuLayout(page) {
         settings: [...document.querySelectorAll(".utility-menu__setting")].map(el => el.getBoundingClientRect().toJSON()),
         switches: [...document.querySelectorAll(".utility-menu__switch")].map(el => el.getBoundingClientRect().toJSON()),
         grids: [...menu.querySelectorAll(".utility-menu__grid")].map(grid => {
-          const buttons = [...grid.children].map(el => el.getBoundingClientRect());
+          const buttons = [...grid.children].filter(el => el.getClientRects().length).map(el => el.getBoundingClientRect());
           return { columns: new Set(buttons.map(button => Math.round(button.left))).size, ids: [...grid.children].map(el => el.id || el.className),
             rows: buttons.reduce((rows, button, index) => (index % 2 ? rows : [...rows, Math.abs(button.top - (buttons[index + 1] || button).top) < 1]), []),
             overflow: [...grid.children].some(el => el.scrollWidth > el.clientWidth + 1) };
         }),
         clear: rect("#clear-storage-btn"),
-        lastDivider: rect(".utility-menu__divider--danger")
+        systemTitle: rect("#utility-menu-system-title")
       };
     });
     assert.equal(layout.settings.length, 4);
@@ -196,12 +196,11 @@ async function verifyUtilityMenuLayout(page) {
     assert.equal(layout.themeRow.right, layout.row.right);
     assert.equal(layout.segments[0].top, layout.segments[1].top, `theme segments share a row at ${width}`);
     assert(layout.segments[0].right <= layout.segments[1].left);
-    // 三區按鈕都是兩欄、兩兩一列、文字不溢出；冒險者聯盟規則不再通欄。
-    assert.deepEqual(layout.grids.map(grid => grid.columns), [2, 2, 2], `button grids use two columns at ${width}`);
+    // 本機未啟用安裝入口，系統區只顯示清除紀錄。
+    assert.deepEqual(layout.grids.map(grid => grid.columns), [2, 2, 2, 1], `visible button columns at ${width}`);
     layout.grids.forEach(grid => assert(grid.rows.every(Boolean) && !grid.overflow, `button rows at ${width}: ${grid.ids}`));
     assert.deepEqual(layout.grids[2].ids, ["al-rules-btn", "reference-deities-btn", "open-sheet-download-btn", "open-qr-btn", "restart-onboarding-btn", "first-table-tour-btn"]);
-    // 清除紀錄在分隔線之後單獨一列。
-    assert(layout.clear.top >= layout.lastDivider.bottom);
+    assert(layout.clear.top >= layout.systemTitle.bottom);
     assert(Math.abs(layout.clear.left - layout.row.left) < 1 && Math.abs(layout.clear.right - layout.row.right) < 1);
     if (width < 480) {
       // 手機：左右各留 0.5rem 的全寬面板，開啟時有遮罩。
@@ -219,8 +218,8 @@ async function verifyUtilityMenuLayout(page) {
     await page.screenshot({ path: path.join(process.env.DND_UI_SCREENSHOT_DIR, "menu.png") });
   }
   // 點遮罩關閉選單，點擊不穿透到底下的骰子按鈕。畫面拉高一點，讓骰子按鈕露在選單下方，點它的位置。
-  await page.setViewportSize({ width: 390, height: 900 });
-  await page.waitForFunction(() => innerWidth === 390 && innerHeight === 900 && getComputedStyle(document.querySelector(".site-header"), "::before").content !== "none");
+  await page.setViewportSize({ width: 390, height: 980 });
+  await page.waitForFunction(() => innerWidth === 390 && innerHeight === 980 && getComputedStyle(document.querySelector(".site-header"), "::before").content !== "none");
   const fabTap = await page.evaluate(() => {
     const fab = document.getElementById("dice-roller-fab").getBoundingClientRect();
     const menu = document.getElementById("utility-menu").getBoundingClientRect();
@@ -6443,27 +6442,58 @@ async function verifyFirstLoadDefaults(browser, url) {
     // 歡迎視窗的備份提醒只在 Safari 本身出現：其他瀏覽器、iOS 上的 Edge、加到主畫面的 App 與分享模式都不顯示。
     const shareHash = await existing.evaluate(() => encodeStateToHash(collectShareState()));
     const safariAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
-    const noteShown = async ({ userAgent, vendor, standalone = false, target = url }) => {
-      const visitor = await browser.newContext(userAgent ? { userAgent } : {});
+    const noteShown = async ({ userAgent, vendor, standalone = false, target = url, production = false, recommend = false, ipad = false, width = 390 }) => {
+      const visitor = await browser.newContext({ userAgent, viewport: { width, height: 844 }, serviceWorkers: "block" });
       try {
-        if (vendor) await visitor.addInitScript(({ vendor, standalone }) => {
+        if (vendor) await visitor.addInitScript(({ vendor, standalone, ipad }) => {
           Object.defineProperty(Navigator.prototype, "vendor", { get: () => vendor });
           Object.defineProperty(Navigator.prototype, "standalone", { get: () => standalone });
-        }, { vendor, standalone });
+          if (ipad) {
+            Object.defineProperty(Navigator.prototype, "platform", { get: () => "MacIntel" });
+            Object.defineProperty(Navigator.prototype, "maxTouchPoints", { get: () => 5 });
+          }
+        }, { vendor, standalone, ipad });
+        if (production) {
+          const local = new URL(target).origin;
+          await visitor.route("**/*", async route => {
+            const request = new URL(route.request().url());
+            if (request.origin !== "https://twd20.com") return route.abort();
+            const response = await visitor.request.get(local + request.pathname + request.search);
+            await route.fulfill({ response });
+          });
+          target = target.replace(local, "https://twd20.com");
+        }
         const visit = await visitor.newPage();
         await visit.goto(target);
         await visit.locator("#legal-ack-btn").waitFor();
+        const note = visit.locator("#legal-pwa-note");
+        assert.equal(await note.isVisible(), recommend, `install advice: ${userAgent}, ${target.split("#")[0]}`);
+        if (recommend) {
+          assert(await note.evaluate(el => el.scrollWidth <= el.clientWidth + 1));
+          const installBox = await note.boundingBox();
+          const dismissBox = await visit.locator(".legal-modal-dismiss").boundingBox();
+          assert(installBox.y + installBox.height <= dismissBox.y, "install advice appears above the dismissal preference");
+          const backupBox = await visit.locator("#legal-safari-note").boundingBox();
+          if (backupBox) assert(backupBox.y + backupBox.height <= installBox.y, "Safari backup advice appears first");
+          if (process.env.DND_UI_SCREENSHOT_DIR && userAgent === safariAgent) {
+            fs.mkdirSync(process.env.DND_UI_SCREENSHOT_DIR, { recursive: true });
+            await visit.locator(".legal-modal-card").screenshot({ path: path.join(process.env.DND_UI_SCREENSHOT_DIR, "apple-welcome.png") });
+          }
+        }
         return await visit.locator("#legal-safari-note").isVisible();
       } finally { await visitor.close(); }
     };
     const apple = "Apple Computer, Inc.";
     assert.equal(await page.locator("#legal-safari-note").isHidden(), true, "other browsers never see the Safari backup note");
-    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple }), true, "Safari shows the backup note in the welcome dialog");
-    assert.equal(await noteShown({ userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15", vendor: apple }), true, "desktop Safari shows it too");
-    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "Version/17.0 EdgiOS/126.0.2592.56"), vendor: apple }), false, "other iOS browsers are not called Safari");
+    const macSafari = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15";
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple }), true, "local Safari sees only the backup note");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, production: true, recommend: true }), true, "iPhone Safari");
+    assert.equal(await noteShown({ userAgent: macSafari, vendor: apple, production: true, recommend: true, width: 1280 }), true, "Mac Safari");
+    assert.equal(await noteShown({ userAgent: macSafari.replace("Version/17.5", "CriOS/126.0"), ipad: true, vendor: apple, production: true, recommend: true }), false, "iPad using a desktop user agent");
+    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "Version/17.0 EdgiOS/126.0.2592.56"), vendor: apple, production: true, recommend: true }), false, "other iOS browsers are not called Safari");
     assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "CriOS/126.0.6478.153"), vendor: apple }), false, "Chrome on iOS does not show it");
-    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, standalone: true }), false, "a Home Screen web app does not show it");
-    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, target: `${url}${shareHash}` }), false, "share mode saves nothing, so it has no backup note");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, standalone: true, production: true }), false, "a Home Screen web app does not show it");
+    assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, target: `${url}${shareHash}`, production: true }), false, "share mode saves nothing, so it has no backup note");
     console.log("First-load defaults: new device, remembered choices, existing players and the Safari-only backup note passed.");
   } finally {
     await context.close();
@@ -7620,7 +7650,7 @@ async function verifyShareReadonlyMode(browser, url) {
       await page.waitForTimeout(100);
       await page.locator("#utility-menu-toggle").click();
       await page.locator("#tabletop-mode-toggle").waitFor();
-      for (const selector of ["#help-quick-build-btn", "#set-default-abilities", "#restart-onboarding-btn", "#clear-storage-btn", ".utility-menu__divider--danger", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn"]) {
+      for (const selector of ["#help-quick-build-btn", "#set-default-abilities", "#restart-onboarding-btn", "#clear-storage-btn", ".utility-menu__system", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn"]) {
         assert.equal(await page.locator(selector).isVisible(), false, `${selector} is hidden at ${width}`);
       }
       for (const selector of ["#tabletop-mode-toggle", "#adventure-journal-btn", "#export-json-btn", "#export-pdf-btn", "#open-sheet-download-btn", "#open-qr-btn", "#first-table-tour-btn", "#al-rules-btn", "#reference-deities-btn"]) {
@@ -7645,7 +7675,7 @@ async function verifyShareReadonlyMode(browser, url) {
           return column && row;
         }) && visible.map(button => button.id);
       })), [["tabletop-mode-toggle", "adventure-journal-btn"], ["export-json-btn", "export-pdf-btn"],
-        ["al-rules-btn", "reference-deities-btn", "open-sheet-download-btn", "open-qr-btn", "first-table-tour-btn"]], `menu rows leave no holes at ${width}`);
+        ["al-rules-btn", "reference-deities-btn", "open-sheet-download-btn", "open-qr-btn", "first-table-tour-btn"], []], `menu rows leave no holes at ${width}`);
       await page.locator("#utility-menu-toggle").click();
     }
     await page.setViewportSize({ width: 1100, height: 900 });
@@ -8185,6 +8215,16 @@ async function verifyOfflineCache(browser) {
     for (const width of [1280, 360]) {
       await page.setViewportSize({ width, height: 780 });
       await page.locator("#utility-menu-toggle").click();
+      const system = page.getByRole("region", { name: "系統" });
+      await system.scrollIntoViewIfNeeded();
+      const [install, clear] = await system.getByRole("button").evaluateAll(buttons =>
+        buttons.map(button => button.getBoundingClientRect().toJSON()));
+      assert(install && clear && install.y === clear.y && install.right < clear.left, JSON.stringify({ width, install, clear }));
+      assert(Math.abs(install.width - clear.width) < 1 && install.height === clear.height);
+      if (process.env.DND_UI_SCREENSHOT_DIR) {
+        fs.mkdirSync(process.env.DND_UI_SCREENSHOT_DIR, { recursive: true });
+        await system.screenshot({ path: path.join(process.env.DND_UI_SCREENSHOT_DIR, `system-${width}.png`) });
+      }
       await page.locator("#pwa-menu-btn").click();
       const dialog = page.getByRole("dialog", { name: "安裝到主畫面" });
       await dialog.getByRole("status").filter({ hasText: "可離線跑團" }).waitFor();

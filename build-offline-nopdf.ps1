@@ -160,6 +160,7 @@ $html = Read-SourceText $sourceHtmlPath
 $html = $html -replace '(?m)^\s*<link rel="(?:manifest|apple-touch-icon)"[^>]*>', ''
 $html = $html -replace '(?m)^\s*<script src="pwa\.js[^"]*" defer></script>', ''
 $html = $html -replace '(?m)^\s*<button type="button" id="pwa-menu-btn"[^>]*>[^<]*</button>', ''
+$html = $html -replace '(?m)^\s*<p id="legal-pwa-note"[^>]*>.*?</p>', ''
 $faviconPng = Get-Base64BinaryDataUrl -Path (Get-LocalAssetPath "images/icon-192.png") -MimeType "image/png"
 $html = $html.Replace('href="images/icon-192.png"', "href=`"$faviconPng`"")
 $favicon = Get-Base64TextDataUrl -Path (Get-LocalAssetPath "images/icon-master.svg") -MimeType "image/svg+xml"

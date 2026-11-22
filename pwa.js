@@ -150,6 +150,7 @@
 
   // 回歸測試在受控 localhost 手動註冊；一般造訪只在正式站啟用。
   window.registerOfflineCache = registerOfflineCache;
+  window.shouldRecommendPwaInstall = isSafari => !button.hidden && !standalone() && (ios || isSafari);
   if (!("serviceWorker" in navigator) || location.protocol !== "https:" ||
       !["twd20.com", "www.twd20.com"].includes(location.hostname) || !["/", "/index.html"].includes(location.pathname)) return;
   enableMenu();
