@@ -162,9 +162,23 @@
     });
   }
 
+  // GA4（analytics.js 的閘門照舊：只在正式站、網址乾淨、不是 owner 時才送）。iPhone 沒有安裝事件，
+  // 看「說明視窗開啟」和「第一次從主畫面開啟」；Android／電腦 Chrome 另有 pwa_installed。
+  const platform = ios ? "ios" : /Android/i.test(navigator.userAgent) ? "android" : "other";
+  const FIRST_LAUNCH_KEY = "twd20.pwaFirstLaunch.v1";
+  let installSource = "browser_menu";
+  function trackPwa(name, params) {
+    return window.twAnalytics?.track?.(name, { platform, ...params }) === true;
+  }
+  function trackFirstLaunch() {
+    if (!standalone() || isShare() || window.dndStorage?.getItem(FIRST_LAUNCH_KEY)) return;
+    if (trackPwa("pwa_first_launch")) window.dndStorage?.setItem(FIRST_LAUNCH_KEY, "1");
+  }
+
   function showInstall() {
     render();
     if (status === "ready") checkCache();
+    if (!standalone()) trackPwa("pwa_install_guide");
     const content = document.createElement("div");
     content.className = "pwa-install-guide";
     function paragraph(text) {
@@ -200,7 +214,12 @@
       confirmLabel: canPrompt ? "安裝" : "關閉", cancelLabel: canPrompt ? "稍後" : undefined,
       resolveConfirm: canPrompt ? async () => {
         installEvent = null;
-        try { await prompt.prompt(); await prompt.userChoice; }
+        installSource = "install_button";
+        try {
+          await prompt.prompt();
+          const choice = await prompt.userChoice;
+          trackPwa("pwa_install_prompt", { outcome: choice?.outcome === "accepted" ? "accepted" : "dismissed" });
+        }
         catch { window.AppDialog.notify("請改從瀏覽器選單安裝。", { tone: "info" }); }
         return true;
       } : undefined,
@@ -218,6 +237,7 @@
   if (window.pwaJustUpdated) document.addEventListener("DOMContentLoaded", showUpdatedNotice);
   document.addEventListener("pointerdown", markInteraction, true);
   document.addEventListener("keydown", markInteraction, true);
+  trackFirstLaunch();
   if (startController) {
     navigator.serviceWorker.addEventListener("controllerchange", queueUpdate);
     // 由 worker 提供的頁面立刻檢查有沒有等著換上的新版。
@@ -239,6 +259,10 @@
     render();
     button.addEventListener("click", showInstall);
     window.addEventListener("beforeinstallprompt", event => { event.preventDefault(); installEvent = event; });
-    window.addEventListener("appinstalled", () => { installEvent = null; render(); });
+    window.addEventListener("appinstalled", () => {
+      installEvent = null;
+      render();
+      trackPwa("pwa_installed", { install_source: installSource });
+    });
   }
 })();

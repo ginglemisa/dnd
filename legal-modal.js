@@ -174,4 +174,10 @@
   }
 
   window.initLegalModal = initLegalModal;
+
+  // 頁尾「bug回報」的 mailto 在這裡補上，index.html 裡不能出現 email 地址：
+  // Cloudflare 的電子郵件地址混淆會把它改寫成每次都不同的內容，首頁一變，
+  // sw.js 以雜湊核對首頁就永遠失敗，離線資料永遠下載不完。Cloudflare 只改寫 HTML，不碰 JS 檔。
+  const bugReport = document.getElementById("footer-bug-report");
+  if (bugReport) bugReport.href = "mailto:tsai.reggie428@gmail.com";
 })();

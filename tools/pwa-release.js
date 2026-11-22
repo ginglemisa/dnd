@@ -25,6 +25,10 @@ function hash(bytes) {
 
 function buildWorker(root, readAsset = file => fs.readFileSync(file)) {
   const files = ["index.html", "manifest.webmanifest", ...scriptNames.map(name => name + ".js")];
+  // Cloudflare 會改寫 HTML 裡的 email（每次內容不同），首頁雜湊就永遠不合、離線資料永遠下載不完。部署不中斷，只在 Actions 標出警告。
+  if (/[\w.%+-]+@[\w-]+\.[a-z]{2,}/i.test(readAsset(path.join(root, "index.html")).toString("utf8"))) {
+    console.log("::warning file=index.html::index.html 含有 email 地址，Cloudflare 會改寫它，PWA 離線資料將無法下載完成");
+  }
   for (const [dir, extensions] of [["css", [".css"]], ["images", [".webp", ".svg", ".png"]]]) {
     for (const name of fs.readdirSync(path.join(root, dir)).sort()) {
       if (extensions.includes(path.extname(name))) files.push(dir + "/" + name);

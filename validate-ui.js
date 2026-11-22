@@ -36,7 +36,7 @@ function verifyAnalyticsIsolation(html) {
   assert(!/<script\b[^>]*\bsrc=["']https:\/\/www\.googletagmanager\.com/i.test(html), "Google script must not load unconditionally");
   const analytics = fs.readFileSync(path.join(__dirname, "analytics.js"), "utf8");
   // These are virtual locations: scripts and events are captured in memory, never sent to Google.
-  const run = (href, { owner = false, blockedStorage = false, blockedHistory = false, storage = new Map(), referrer = "" } = {}) => {
+  const run = (href, { owner = false, blockedStorage = false, blockedHistory = false, storage = new Map(), referrer = "", standalone = false } = {}) => {
     if (owner) storage.set("twd20.analyticsRole.v1", "owner");
     const scripts = [];
     const context = vm.createContext({
@@ -51,7 +51,8 @@ function verifyAnalyticsIsolation(html) {
         visibilityState: "visible", referrer, documentElement: { dataset: {} },
         createElement: () => ({}), head: { appendChild: script => scripts.push(script) }, addEventListener() {}
       },
-      setTimeout: () => 1, clearTimeout() {}, addEventListener() {}
+      setTimeout: () => 1, clearTimeout() {}, addEventListener() {},
+      matchMedia: query => ({ matches: standalone && query === "(display-mode: standalone)" })
     });
     context.window = context;
     vm.runInContext(inlineScripts[0], context);
@@ -69,8 +70,12 @@ function verifyAnalyticsIsolation(html) {
     const config = allowed.context.dataLayer.find(args => args[0] === "config")[2];
     assert.equal(config.page_location, `https://${host}/`);
     assert.equal(config.page_referrer, "");
+    assert.equal(config.display_mode, "browser", "a browser tab reports display_mode=browser");
     assert.equal(allowed.scripts[0].referrerPolicy, "no-referrer");
   }
+  const homeScreen = run("https://twd20.com/", { standalone: true });
+  assert.equal(homeScreen.tracked, true, "the Home Screen app is measured like the website");
+  assert.equal(homeScreen.context.dataLayer.find(args => args[0] === "config")[2].display_mode, "standalone", "the Home Screen app reports display_mode=standalone");
   const disabledCases = [
     ["http://localhost:8000/?analytics=user"], ["http://127.0.0.1:8000/"],
     ["file:///C:/Git/dnd/index.html?analytics=owner"], ["file://twd20.com/index.html"],
@@ -107,7 +112,7 @@ function verifyAnalyticsIsolation(html) {
   const referral = run("https://twd20.com/", { referrer: "https://example.org/private/synthetic?token=synthetic#secret" });
   assert.equal(referral.context.dataLayer.find(args => args[0] === "config")[2].page_referrer, "https://example.org/");
   assert(!JSON.stringify(referral.context.dataLayer).includes("synthetic"), "referrer credentials must not enter the event queue");
-  console.log("Analytics isolation: hosts, owner persistence, query/share URL exclusion, sanitized location/referrer and both event paths passed (no network).");
+  console.log("Analytics isolation: hosts, owner persistence, query/share URL exclusion, sanitized location/referrer, display mode and both event paths passed (no network).");
 }
 
 async function newUiPage(browser, { fieldDetailsIntro = false, ...options } = {}) {
@@ -989,7 +994,32 @@ async function verifyAdventurersLeagueRules(browser, url, viewport) {
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "detached" });
     assert.equal(await page.evaluate(() => document.activeElement?.id), "utility-menu-toggle", "focus returns to the menu toggle");
-    console.log(`Adventurers League rules: menu button, production links, notice, layout and focus return passed at ${viewport.width}px.`);
+    // 主畫面 App 裡同網域的規則頁改在同一個視窗開：另開新分頁會變成另一個視窗，按返回就整個關掉 App。
+    const app = await browser.newContext({ viewport, serviceWorkers: "block" });
+    try {
+      await app.addInitScript(() => {
+        const real = window.matchMedia.bind(window);
+        window.matchMedia = query => query === "(display-mode: standalone)"
+          ? { matches: true, media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }
+          : real(query);
+      });
+      const local = new URL(url).origin;
+      await app.route("**/*", async route => {
+        const request = new URL(route.request().url());
+        if (request.origin !== "https://twd20.com") return route.abort();
+        await route.fulfill({ response: await app.request.get(local + request.pathname + request.search) });
+      });
+      const standalone = await app.newPage();
+      await standalone.goto(url.replace(local, "https://twd20.com"));
+      await standalone.locator("#legal-close-btn").click();
+      await standalone.evaluate(() => window.onboardingTour?.finish?.());
+      await standalone.locator("#utility-menu-toggle").click();
+      await standalone.locator("#al-rules-btn").click();
+      assert.deepEqual(await standalone.locator(".al-rules-link").evaluateAll(links => links.map(link => [link.target, link.getAttribute("aria-label")])), [
+        ["", "玩家手冊"], ["", "城主指南"], ["", "冒險者聯盟服務時數獎勵"], ["", "玩家手冊 v2027.1 草案（社群審閱中）"]
+      ], "the Home Screen app opens the rules pages in the same window");
+    } finally { await app.close(); }
+    console.log(`Adventurers League rules: menu button, production links, notice, layout, focus return and same-window links in the Home Screen app passed at ${viewport.width}px.`);
   } finally { await page.close(); }
 }
 
@@ -8171,6 +8201,8 @@ async function verifyOfflineCache(browser) {
   const held = new Set();
   const { buildWorker } = require("./tools/pwa-release");
   const indexFile = path.join(__dirname, "index.html");
+  // Cloudflare 的電子郵件地址混淆每次都把首頁裡的 email 改寫成不同內容，sw.js 以雜湊核對首頁就永遠失敗。
+  assert(!/[\w.%+-]+@[\w-]+\.[a-z]{2,}/i.test(fs.readFileSync(indexFile, "utf8")), "index.html must not contain an email address: Cloudflare rewrites it per request and breaks the homepage hash");
   const nextHtml = fs.readFileSync(indexFile, "utf8").replace("</head>", '<meta name="pwa-test-release" content="2"></head>');
   let release = 1;
   let broken = false;
@@ -8213,6 +8245,7 @@ async function verifyOfflineCache(browser) {
     assert.equal(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0, "the service worker is not registered outside the production site");
 
     assert.equal(await page.locator("#pwa-menu-btn").isVisible(), false);
+    assert.equal(await page.locator("#footer-bug-report").getAttribute("href"), "mailto:tsai.reggie428@gmail.com", "the footer bug link gets its mailto from legal-modal.js");
     const manifest = await page.evaluate(async () => (await fetch(document.querySelector('link[rel="manifest"]').href)).json());
     assert.equal(manifest.id, "/");
     assert.equal(manifest.start_url, "/");
@@ -8262,7 +8295,10 @@ async function verifyOfflineCache(browser) {
     }
 
     // Chromium 提供安裝事件時，只有明確點擊安裝才叫出系統提示。
+    // GA4 在本機不送；換成記錄用的替身，確認安裝相關事件與參數。
     await page.evaluate(() => {
+      window.trackedEvents = [];
+      window.twAnalytics = { track: (name, params) => { window.trackedEvents.push([name, params]); return true; } };
       const prompt = new Event("beforeinstallprompt", { cancelable: true });
       window.installRequests = 0;
       prompt.prompt = () => { window.installRequests++; };
@@ -8274,6 +8310,31 @@ async function verifyOfflineCache(browser) {
     assert.equal(await page.evaluate(() => window.installRequests), 0);
     await page.getByRole("button", { name: "安裝", exact: true }).click();
     assert.equal(await page.evaluate(() => window.installRequests), 1);
+    await page.waitForFunction(() => window.trackedEvents.some(([name]) => name === "pwa_install_prompt"));
+    await page.evaluate(() => window.dispatchEvent(new Event("appinstalled")));
+    assert.deepEqual(await page.evaluate(() => window.trackedEvents), [
+      ["pwa_install_guide", { platform: "other" }],
+      ["pwa_install_prompt", { platform: "other", outcome: "dismissed" }],
+      ["pwa_installed", { platform: "other", install_source: "install_button" }]
+    ], "install guide, prompt outcome and install are measured");
+
+    // 第一次從主畫面開啟（iPhone 沒有安裝事件，靠這個計數）只送一次；分享網址不算。
+    const homeScreen = await browser.newContext({ viewport: { width: 375, height: 667 }, serviceWorkers: "block",
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 Version/17.5 Mobile/15E148 Safari/604.1" });
+    try {
+      await homeScreen.addInitScript(() => {
+        Object.defineProperty(navigator, "standalone", { get: () => true, configurable: true });
+        const events = JSON.parse(sessionStorage.getItem("test-tracked") || "[]");
+        const stub = { track(name, params) { events.push([name, params]); sessionStorage.setItem("test-tracked", JSON.stringify(events)); return true; } };
+        Object.defineProperty(window, "twAnalytics", { get: () => stub, set() {}, configurable: true });
+      });
+      const launch = await homeScreen.newPage();
+      await launch.goto(origin + "/?analytics=owner");
+      await launch.waitForFunction(() => typeof registerOfflineCache === "function");
+      await launch.reload();
+      await launch.waitForFunction(() => typeof registerOfflineCache === "function");
+      assert.deepEqual(await launch.evaluate(() => JSON.parse(sessionStorage.getItem("test-tracked"))), [["pwa_first_launch", { platform: "ios" }]], "the first Home Screen launch is counted once");
+    } finally { await homeScreen.close(); }
 
     const share = await page.evaluate(() => encodeStateToHash(collectShareState()));
     const iphone = await browser.newContext({ viewport: { width: 375, height: 667 },

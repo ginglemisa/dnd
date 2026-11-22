@@ -40,10 +40,17 @@
       if (fullWidth || draft) link.classList.add("al-rules-link--full-width");
       if (draft) link.classList.add("al-rules-link--draft");
       link.href = href;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
       link.textContent = label;
-      link.setAttribute("aria-label", `${label}（另開新分頁）`);
+      // 主畫面 App（PWA）裡另開新分頁會變成另一個視窗，按返回就整個關掉；同一個網域時改在同一個視窗開，
+      // 返回或頁面右下的「回到角卡」都能回來（離開前 pagehide 會先存檔）。
+      const standalone = navigator.standalone === true || window.matchMedia?.("(display-mode: standalone)").matches;
+      if (standalone && new URL(href, location.href).origin === location.origin) {
+        link.setAttribute("aria-label", label);
+      } else {
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.setAttribute("aria-label", `${label}（另開新分頁）`);
+      }
       links.appendChild(link);
     });
 
