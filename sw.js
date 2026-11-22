@@ -16,7 +16,7 @@ function downloadShell(cache) {
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(SHELL_CACHE).then(downloadShell));
-  // 使用瀏覽器的 waiting 階段：最後一個舊分頁關閉之後才啟用完整新版。
+  // 下載完先在 waiting 等著，由頁面（pwa.js）挑沒在操作的時機送 twd20-activate 換上，各分頁再整頁重新載入。
 });
 
 self.addEventListener("activate", (event) => {
@@ -25,7 +25,8 @@ self.addEventListener("activate", (event) => {
     await Promise.all(names
       .filter((name) => name.startsWith("twd20-") && !KEEP.includes(name))
       .map((name) => caches.delete(name)));
-    // 已開啟的角色卡持續使用載入時的版本。
+    // 不 claim：第一次造訪的頁面本來就是網路上的最新版。還在操作中、晚一點才重新載入的舊頁面，
+    // 這段期間延遲載入的資料檔（SRD 譯文等）會拿到新版。
   })());
 });
 
@@ -55,6 +56,10 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("message", event => {
+  if (event.data?.type === "twd20-activate") {
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
   if (event.data?.type !== "twd20-offline-status" || !event.ports[0]) return;
   const port = event.ports[0];
   event.waitUntil((async () => {

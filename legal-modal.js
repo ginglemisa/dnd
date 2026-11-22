@@ -24,16 +24,19 @@
       ackBtn.setAttribute("aria-label", "開始查看");
     }
 
-    // Safari 會清掉一段時間沒互動的網站資料（自動存檔與冒險日誌），只在 Safari 本身提醒備份。
-    // 分享模式不存檔、加到主畫面的 App 不受這條限制、iOS 上的其他瀏覽器不叫 Safari，都不顯示。
+    // Safari 會清掉一段時間沒互動的網站資料（自動存檔與冒險日誌）。iPhone、iPad 上的其他瀏覽器用同一套引擎，一樣提醒備份。
+    // 分享模式不存檔、加到主畫面的 App 不受這條限制，都不顯示。
     const safariNote = document.getElementById("legal-safari-note");
     const userAgent = navigator.userAgent;
     const isSafari = navigator.vendor === "Apple Computer, Inc."
       && /\bVersion\/\S+.* Safari\//.test(userAgent)
       && !/\b(?:CriOS|FxiOS|EdgiOS|OPiOS|OPT|DuckDuckGo)\//.test(userAgent);
+    // iPadOS 的瀏覽器預設送桌面版 UA，以觸控點辨認。
+    const isAppleMobile = /\b(?:iPhone|iPad|iPod)\b/.test(userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const installNote = document.getElementById("legal-pwa-note");
     if (!isShareMode && navigator.standalone !== true && !matchMedia("(display-mode: standalone)").matches) {
-      if (safariNote && isSafari) safariNote.hidden = false;
+      if (safariNote && (isSafari || isAppleMobile)) safariNote.hidden = false;
       if (installNote && window.shouldRecommendPwaInstall?.(isSafari)) installNote.hidden = false;
       modal.querySelector(".legal-modal-storage-note").hidden = ![safariNote, installNote].some(note => note && !note.hidden);
     }
@@ -150,6 +153,8 @@
       return;
     }
     if (!isShareMode && shouldDismiss) return;
+    // 自動更新到新版後的重新載入（pwa.js），這個分頁已經看過歡迎視窗。
+    if (window.pwaJustUpdated === true) return;
 
     modal.style.display = "block";
     const closeModal = () => {

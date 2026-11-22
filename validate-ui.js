@@ -6439,7 +6439,7 @@ async function verifyFirstLoadDefaults(browser, url) {
     assert.deepEqual(await state(existing), [false, "true"], "a device that already has a character keeps its previous defaults");
     assert.deepEqual(await existing.evaluate(() => [localStorage.getItem("dnd.diceSystemEnabled.v1"), localStorage.getItem("dnd.inventoryWeightHidden.v1")]), [null, null], "first-load defaults are not written for existing players");
 
-    // 歡迎視窗的備份提醒只在 Safari 本身出現：其他瀏覽器、iOS 上的 Edge、加到主畫面的 App 與分享模式都不顯示。
+    // 歡迎視窗的備份提醒給 Safari 與 iPhone、iPad 上的所有瀏覽器（同一套引擎）；其他瀏覽器、加到主畫面的 App 與分享模式都不顯示。
     const shareHash = await existing.evaluate(() => encodeStateToHash(collectShareState()));
     const safariAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
     const noteShown = async ({ userAgent, vendor, standalone = false, target = url, production = false, recommend = false, ipad = false, width = 390 }) => {
@@ -6484,17 +6484,18 @@ async function verifyFirstLoadDefaults(browser, url) {
       } finally { await visitor.close(); }
     };
     const apple = "Apple Computer, Inc.";
-    assert.equal(await page.locator("#legal-safari-note").isHidden(), true, "other browsers never see the Safari backup note");
+    assert.equal(await page.locator("#legal-safari-note").isHidden(), true, "desktop Chromium never sees the backup note");
     const macSafari = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15";
     assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple }), true, "local Safari sees only the backup note");
     assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, production: true, recommend: true }), true, "iPhone Safari");
     assert.equal(await noteShown({ userAgent: macSafari, vendor: apple, production: true, recommend: true, width: 1280 }), true, "Mac Safari");
-    assert.equal(await noteShown({ userAgent: macSafari.replace("Version/17.5", "CriOS/126.0"), ipad: true, vendor: apple, production: true, recommend: true }), false, "iPad using a desktop user agent");
-    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "Version/17.0 EdgiOS/126.0.2592.56"), vendor: apple, production: true, recommend: true }), false, "other iOS browsers are not called Safari");
-    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "CriOS/126.0.6478.153"), vendor: apple }), false, "Chrome on iOS does not show it");
+    assert.equal(await noteShown({ userAgent: macSafari.replace("Version/17.5", "CriOS/126.0"), ipad: true, vendor: apple, production: true, recommend: true }), true, "iPad Chrome using a desktop user agent sees the backup note");
+    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "Version/17.0 EdgiOS/126.0.2592.56"), vendor: apple, production: true, recommend: true }), true, "Edge on iOS sees the backup note");
+    assert.equal(await noteShown({ userAgent: safariAgent.replace("Version/17.5", "CriOS/126.0.6478.153"), vendor: apple }), true, "Chrome on iOS sees the backup note");
+    assert.equal(await noteShown({ userAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36" }), false, "Android Chrome does not show it");
     assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, standalone: true, production: true }), false, "a Home Screen web app does not show it");
     assert.equal(await noteShown({ userAgent: safariAgent, vendor: apple, target: `${url}${shareHash}`, production: true }), false, "share mode saves nothing, so it has no backup note");
-    console.log("First-load defaults: new device, remembered choices, existing players and the Safari-only backup note passed.");
+    console.log("First-load defaults: new device, remembered choices, existing players and the Apple backup note passed.");
   } finally {
     await context.close();
     await returning.close();
@@ -8226,8 +8227,8 @@ async function verifyOfflineCache(browser) {
         await system.screenshot({ path: path.join(process.env.DND_UI_SCREENSHOT_DIR, `system-${width}.png`) });
       }
       await page.locator("#pwa-menu-btn").click();
-      const dialog = page.getByRole("dialog", { name: "安裝到主畫面" });
-      await dialog.getByRole("status").filter({ hasText: "可離線跑團" }).waitFor();
+      const dialog = page.getByRole("dialog", { name: "加入主畫面" });
+      await dialog.getByRole("status").filter({ hasText: "可以離線使用" }).waitFor();
       assert(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth + 1), "install dialog fits at " + width);
       await page.keyboard.press("Escape");
       assert(await page.locator("#utility-menu-toggle").evaluate(el => el === document.activeElement));
@@ -8260,22 +8261,22 @@ async function verifyOfflineCache(browser) {
       assert.equal(await mobile.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0);
       await mobile.locator("#utility-menu-toggle").click();
       await mobile.locator("#pwa-menu-btn").click();
-      const guide = mobile.getByRole("dialog", { name: "安裝到主畫面" });
+      const guide = mobile.getByRole("dialog", { name: "加入主畫面" });
       assert.match(await guide.innerText(), /加入主畫面/);
-      assert.match(await guide.innerText(), /冒險日誌也要另外匯出/);
-      assert.match(await guide.innerText(), /這份分享角色/);
+      assert.match(await guide.innerText(), /各有各的存檔/);
+      assert.match(await guide.innerText(), /不是這份分享的角色/);
       broken = true;
-      await guide.getByRole("button", { name: "準備離線資料" }).click();
-      await guide.getByRole("status").filter({ hasText: "未備齊" }).waitFor();
+      await guide.getByRole("button", { name: "下載離線資料" }).click();
+      await guide.getByRole("status").filter({ hasText: "沒下載完" }).waitFor();
       broken = false;
-      await guide.getByRole("button", { name: "準備離線資料" }).click();
-      await guide.getByRole("status").filter({ hasText: "可離線跑團" }).waitFor();
+      await guide.getByRole("button", { name: "下載離線資料" }).click();
+      await guide.getByRole("status").filter({ hasText: "可以離線使用" }).waitFor();
       await mobile.keyboard.press("Escape");
       await mobile.evaluate(() => Object.defineProperty(navigator, "standalone", { value: true }));
       await mobile.evaluate(() => registerOfflineCache());
       await mobile.locator("#utility-menu-toggle").click();
       await mobile.locator("#pwa-menu-btn").click();
-      await mobile.getByRole("dialog", { name: "離線跑團狀態" }).waitFor();
+      await mobile.getByRole("dialog", { name: "離線狀態" }).waitFor();
     } finally { broken = false; await iphone.close(); }
 
     // 有版本號：之後不再問伺服器；換版本號時舊的刪掉。
@@ -8365,15 +8366,31 @@ async function verifyOfflineCache(browser) {
     });
     assert(offline.roll >= 1 && offline.roll <= 20);
     assert(offline.spell, "spell lookup works on an offline cold launch");
+    // 強制更新：開著視窗時先等；碰過的分享頁不打斷，等下次開啟；視窗關掉後先存檔再整頁換成新版。
+    const sharePage = await context.newPage();
+    sharePage.on("pageerror", error => pageErrors.push(String(error)));
+    await sharePage.goto(origin + "/?analytics=owner" + share);
+    await sharePage.waitForFunction(() => window.SHARE_MODE === true && navigator.serviceWorker.controller);
+    await sharePage.keyboard.press("Shift");
+    await page.locator("#utility-menu-toggle").click();
+    await page.locator("#pwa-menu-btn").click();
+    await page.getByRole("dialog", { name: "離線狀態" }).or(page.getByRole("dialog", { name: "加入主畫面" })).waitFor();
     mode = "online";
     broken = false;
-    await page.evaluate(async () => {
-      const reg = await navigator.serviceWorker.getRegistration();
-      window.testOfflineRegistration = reg;
-      await reg.update();
-    });
-    await page.waitForFunction(() => Boolean(window.testOfflineRegistration.waiting));
-    assert.equal(await page.locator('meta[name="pwa-test-release"]').count(), 0);
+    await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
+    await page.locator(".app-toast", { hasText: "新版下載好了，關掉視窗後就會更新" }).waitFor();
+    await page.waitForTimeout(1500);
+    assert.equal(await page.locator('meta[name="pwa-test-release"]').count(), 0, "an open dialog defers the update");
+    assert.equal(await page.evaluate(async () => Boolean((await navigator.serviceWorker.getRegistration()).waiting)), true);
+    await page.keyboard.press("Escape");
+    await page.waitForSelector('meta[name="pwa-test-release"]', { state: "attached", timeout: 15000 });
+    await appReady();
+    await page.locator(".app-toast", { hasText: "已更新到最新版" }).waitFor();
+    assert.equal(await page.locator("#legal-modal").isVisible(), false, "the update reload skips the welcome dialog");
+    assert.equal(await page.locator("#hp").inputValue(), "13");
+    await sharePage.locator(".app-toast", { hasText: "新版下載好了，下次打開時更新" }).waitFor();
+    assert.equal(await sharePage.locator('meta[name="pwa-test-release"]').count(), 0, "a touched share page is not reloaded");
+    await sharePage.close();
     await page.close();
     page = await context.newPage();
     mode = "down";
@@ -8381,10 +8398,11 @@ async function verifyOfflineCache(browser) {
     await appReady();
     await page.waitForSelector('meta[name="pwa-test-release"]', { state: "attached" });
     assert.equal(await page.locator("#hp").inputValue(), "13");
+    assert.equal(await page.locator("#legal-modal").isVisible(), true, "a normal launch still shows the welcome dialog");
     keys = await cachedKeys();
     assert(!keys[shellName] && !keys["twd20-pages-v0"] && keys["other-cache"]);
     assert.deepEqual(pageErrors, []);
-    console.log("PWA: install icons, core coverage, mobile/desktop menu, cache strategies, interrupted update, offline cold launch and complete update passed.");
+    console.log("PWA: install icons, core coverage, mobile/desktop menu, cache strategies, interrupted update, offline cold launch and forced update (deferred by dialogs and touched share pages) passed.");
   } finally {
     for (const socket of held) socket.destroy();
     await context.close();

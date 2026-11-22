@@ -152,7 +152,7 @@
   <script src="tabletop-actions.js?v=20261120-mastery-options" defer></script>
   <script src="tabletop-custom-spells.js?v=20261117-level-10" defer></script>
   <script src="tabletop-spells.js?v=20261117-level-10" defer></script>
-  <script src="legal-modal.js?v=20261122-install-notice" defer></script>
+  <script src="legal-modal.js?v=20261122-apple-backup" defer></script>
   <script src="onboarding-tour.js?v=20261120-extra-reminder" defer></script>
   <script src="quick-build.js?v=20261118-modal-scroll" defer></script>
   <script src="spellbook.js?v=20261117-level-10" defer></script>
@@ -278,7 +278,7 @@
         <div class="utility-menu__divider" role="separator"></div>
         <h2 id="utility-menu-system-title" class="utility-menu__section-title">系統</h2>
         <div class="utility-menu__grid">
-          <button type="button" id="pwa-menu-btn" class="utility-menu__button" aria-haspopup="dialog" hidden>安裝到主畫面</button>
+          <button type="button" id="pwa-menu-btn" class="utility-menu__button" aria-haspopup="dialog" hidden>加入主畫面</button>
           <button type="button" id="clear-storage-btn" class="utility-menu__button utility-menu__clear-button">清除紀錄</button>
         </div>
       </section>
@@ -8159,8 +8159,8 @@ window.addEventListener("DOMContentLoaded", async function() {
       <button type="button" id="legal-ack-btn" aria-label="開始使用">開始使用</button>
     </div>
     <div class="legal-modal-storage-note" hidden>
-      <p id="legal-safari-note" hidden>使用 Safari 期間若有 <strong>7 天未操作 twD20</strong>，本機存檔可能會被清除。請定期將角卡與冒險日誌分別匯出為 JSON 備份。</p>
-      <p id="legal-pwa-note" hidden>建議<strong>將 twD20 加入主畫面</strong>，方便離線跑團。安裝與移轉說明請見右上選單「系統」→「安裝到主畫面」。</p>
+      <p id="legal-safari-note" hidden>使用 Safari 或 iPhone、iPad 上的瀏覽器時，若有 <strong>7 天未操作 twD20</strong>，本機存檔可能會被清除。請定期將角卡與冒險日誌分別匯出為 JSON 備份。</p>
+      <p id="legal-pwa-note" hidden>建議把 <strong>twD20 加入主畫面</strong>，沒網路也能用。怎麼加、怎麼搬角色，請看右上選單「系統」→「加入主畫面」。</p>
     </div>
     <div class="legal-modal-dismiss">
       <label><input type="checkbox" id="legal-dismiss"> 不再顯示此視窗</label>
@@ -8195,5 +8195,5 @@ window.addEventListener("DOMContentLoaded", async function() {
   </div>
 </div>
 
-<script src="pwa.js?v=20261122-install-notice" defer></script>
+<script src="pwa.js?v=20261122-copy" defer></script>
 </body></html>

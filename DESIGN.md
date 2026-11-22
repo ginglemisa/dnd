@@ -58,7 +58,7 @@
 
 ### Logo 與骰子
 
-- 瀏覽器分頁與主畫面共用 D20 摺角角色紙圖示。正式站工具選單在「系統」區左側提供「安裝到主畫面」，以主畫面啟動時改為「離線跑團狀態」。說明與進度使用既有 AppDialog。
+- 瀏覽器分頁與主畫面共用 D20 摺角角色紙圖示。正式站工具選單在「系統」區左側提供「加入主畫面」，以主畫面啟動時改為「離線狀態」。說明與進度使用既有 AppDialog。
 
 - 圖片放在 `images/`、字型放在 `fonts/`（`og-image.jpg` 例外，留在根目錄：短網址 Worker 以固定網址引用）。
 - 經典主題使用 `images/logo-classic-light.webp`／`images/logo-classic-dark.webp` 與 `images/dice.webp`；暖紙主題使用 `images/logo-warm-light.webp`／`images/logo-warm-dark.webp` 與 `images/dice-warm-animated.webp`。歡迎視窗顯示目前主題的 logo，依明暗切換；技能頁不放 logo，避免隔開分組清單。
