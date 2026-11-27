@@ -818,31 +818,107 @@ async function verifyUiAndPersistence(page, url) {
     await page.click(`#tabletop-action-tab-${mode}`);
     assert.equal(await page.locator(`#tabletop-action-panel-${mode}`).isVisible(), true);
   }
-  // Legacy UI remains intentionally static, including its existing hidden empty tab.
+  // The sheet keeps its rules reference independent from tabletop abilities.
   await page.evaluate(() => TabletopMode.setMode("sheet"));
   await page.locator('.tab-button[aria-controls="tab-actions"]').click();
+  const guide = page.locator(".combat-guide");
+  const guideTabs = guide.getByRole("tab");
+  const disclosures = page.locator("#tab-actions > details.action-rules-disclosure");
+  assert.deepEqual(await disclosures.evaluateAll(items => items.map(item => item.open)), [true, true]);
+  await guide.locator("summary").press("Space");
+  assert.equal(await guideTabs.first().isVisible(), false);
+  assert.equal(await page.locator("#action-option-grid").isVisible(), true);
+  await guide.locator("summary").press("Enter");
+  assert.equal(await guideTabs.count(), 6);
+  assert.equal(await guide.getByRole("tabpanel").getAttribute("id"), "combat-turn");
+  await guideTabs.first().press("ArrowRight");
+  assert.equal(await guide.getByRole("tabpanel").getAttribute("id"), "combat-damage");
+  assert.equal(await guideTabs.nth(1).evaluate(tab => tab === document.activeElement), true);
+  await guideTabs.nth(1).press("End");
+  assert.equal(await guide.getByRole("tabpanel").getAttribute("id"), "combat-special");
+  await guideTabs.last().press("Home");
+  assert.equal(await guide.getByRole("tabpanel").getAttribute("id"), "combat-turn");
+  assert.deepEqual(await page.evaluate(() => {
+    const excluded = new Set(["offhand-attack", "opportunity-attack", "unarmed", "grapple", "shove",
+      "climbing", "crawling", "long-jump", "high-jump", "swimming", "flying",
+      "execute-ready", "drink-potion", "special-speeds", "speed-changes"]);
+    const matches = (gridId, entries) => {
+      const keys = [...document.getElementById(gridId).querySelectorAll("button")].map(button => button.dataset.actionOptionKey);
+      return keys.join() === entries.map(entry => entry.key).join();
+    };
+    return [
+      matches("action-option-grid", ActionPanel.getModes().flatMap(mode => ActionPanel.getOptions(mode))
+        .filter(option => !excluded.has(option.key)).map(option => option.key === "dash" ? { key: "movement" } : option)),
+      matches("condition-button-grid", DND_CONDITIONS),
+      matches("hazard-button-grid", DND_HAZARDS)
+    ];
+  }), [true, true, true], "remaining action buttons and all conditions and hazards stay in their categories");
   await page.locator('.action-mode-tab[data-action-mode="basic"]').click();
   await page.locator('#action-option-grid [data-action-option-key="attack"]').click();
   assert.match(await page.locator("#action-description").innerText(), /武器/);
-  assert.equal(await page.locator("#action-description .action-description-english").innerText(), "Attack", "legacy action shows its English name");
-  assert.equal(await page.locator("#action-description .action-description-english").getAttribute("lang"), "en");
-  await page.locator('#action-option-grid [data-action-option-key="unarmed"]').click();
-  assert.equal(await page.locator("#action-description .action-description-english").innerText(), "Unarmed Strike");
+  const headings = page.locator("#action-description .action-description-heading");
+  const readHeadings = () => headings.evaluateAll(rows => rows.map(row => {
+    const english = row.querySelector(".action-description-english");
+    return [row.querySelector("strong").textContent, english.textContent, english.lang,
+      row.querySelector(".action-description-timing")?.textContent ?? ""];
+  }));
+  assert.deepEqual(await readHeadings(), [
+    ["攻擊", "Attack", "en", "動作"],
+    ["二次攻擊", "Light Extra Attack", "en", "附贈"],
+    ["藉機攻擊", "Opportunity Attack", "en", "反應"],
+    ["徒手", "Unarmed Strike", "en", ""],
+    ["擒抱", "Grapple", "en", ""],
+    ["推撞", "Shove", "en", ""]
+  ]);
+  assert.match(await page.locator('#action-description [data-action-detail="opportunity-attack"]').innerText(), /離開前/);
+  await page.locator("#action-option-grid").getByRole("button", { name: "移動", exact: true }).click();
+  assert.deepEqual(await readHeadings(), [
+    ["移動", "Movement", "en", "移動"],
+    ["疾走", "Dash", "en", "動作"],
+    ["攀爬", "Climbing", "en", "移動"],
+    ["匍匐", "Crawling", "en", "移動"],
+    ["跳遠", "Long Jump", "en", "移動"],
+    ["跳高", "High Jump", "en", "移動"],
+    ["游泳", "Swimming", "en", "移動"],
+    ["飛行", "Flying", "en", "移動"]
+  ]);
+  for (const name of ["撤離", "閃避", "協助", "躲藏", "影響", "魔法", "搜索", "研究", "使用"]) {
+    await page.locator("#action-option-grid").getByRole("button", { name, exact: true }).click();
+    assert.equal(await page.locator("#action-description .action-description-timing").innerText(), "動作", name);
+  }
   await page.locator('#action-option-grid [data-action-option-key="hide"]').click();
-  assert.equal(await page.locator("#action-description .action-description-copy").innerText(), "進行一次敏捷（隱匿）檢定，難度 15，嘗試避開其他生物的注意。", "legacy Hide uses the shared DC 15 description");
-  await page.locator('.action-mode-tab[data-action-mode="bonus"]').click();
-  await page.locator('#action-option-grid [data-action-option-key="drink-potion"]').click();
-  assert.match(await page.locator("#action-description").innerText(), /2d4/);
-  assert.equal(await page.locator("#action-description .action-description-english").count(), 0, "actions without an English name omit the label");
-  await page.locator('.action-mode-tab[data-action-mode="reaction"]').click();
-  await page.locator('#action-option-grid [data-action-option-key="opportunity-attack"]').click();
-  assert.equal(await page.locator("#action-description .action-description-english").innerText(), "Opportunity Attack");
-  await page.locator('.action-mode-tab[data-action-mode="bonus"]').click();
-  await page.locator('#action-option-grid [data-action-option-key="drink-potion"]').click();
+  const hideCopy = await page.locator("#action-description .action-description-copy").innerText();
+  assert.match(hideCopy, /DC 15 敏捷（隱匿）檢定/);
+  assert.match(hideCopy, /重度遮蔽、四分之三掩蔽或全掩蔽/);
+  const ready = page.locator('#action-option-grid [data-action-option-key="ready"]');
+  await ready.click();
+  assert.deepEqual(await readHeadings(), [
+    ["準備", "Ready", "en", "動作"], ["執行準備", "Use Readied Action", "en", "反應"]
+  ]);
+  assert.match(await page.locator("#action-description").innerText(), /用反應執行準備好的動作或移動/);
+  await page.getByRole("tab", { name: "狀態", exact: true }).click();
+  assert.equal(await page.locator("#action-option-grid").isVisible(), false);
+  await page.getByRole("tab", { name: "其他規則", exact: true }).click();
+  const otherRules = await page.locator("#action-reference-other-grid button").allTextContents();
+  assert.deepEqual(otherRules.slice(-2), ["特殊速度", "速度變化"]);
+  for (const label of ["臨時生命", "抗性免疫", "光與視覺", "生物體型"]) assert(otherRules.includes(label));
+  await page.getByRole("button", { name: "穩定傷勢", exact: true }).click();
+  assert.equal(await page.locator("#action-reference-other-description .action-description-timing").innerText(), "動作");
+  await page.getByRole("button", { name: "抗性免疫", exact: true }).click();
+  assert.equal(await page.locator("#action-reference-other-description .action-description-timing").count(), 0);
+  assert.match(await page.locator("#action-reference-other-description").innerText(), /無條件捨去.*易傷/);
+  await page.getByRole("tab", { name: "通用動作", exact: true }).click();
+  assert.equal(await ready.getAttribute("aria-pressed"), "true");
+  const referenceSummary = disclosures.nth(1).locator("summary");
+  await referenceSummary.click();
+  assert.equal(await ready.isVisible(), false);
+  await referenceSummary.click();
+  assert.equal(await ready.isVisible(), true);
+  assert.equal(await ready.getAttribute("aria-pressed"), "true");
   const unrelatedInput = await page.evaluate(async () => {
     const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     await settle();
-    const button = document.querySelector('#action-option-grid [data-action-option-key="drink-potion"]');
+    const button = document.querySelector('#action-option-grid [data-action-option-key="ready"]');
     button.focus();
     const description = document.getElementById("action-description").textContent;
     let updates = 0;
@@ -852,7 +928,7 @@ async function verifyUiAndPersistence(page, url) {
       document.getElementById("spell-search").dispatchEvent(new Event("input", { bubbles: true }));
       await settle();
       return {
-        sameButton: button === document.querySelector('#action-option-grid [data-action-option-key="drink-potion"]'),
+        sameButton: button === document.querySelector('#action-option-grid [data-action-option-key="ready"]'),
         focused: document.activeElement === button,
         sameDescription: document.getElementById("action-description").textContent === description,
         updates

@@ -90,6 +90,40 @@
     movement: { timing: "自己的回合中", summary: "改變你的位置，移動可分段穿插在動作前後。", prompt: "請選擇一項移動規則查看說明。" }
   });
 
+  // 一般角色卡的速查補足 SRD 5.2.1 的使用條件。跑團沿用原本的摘要與操作資料。
+  const SHEET_ACTION_COPY = Object.freeze({
+    attack: "執行攻擊動作時，可用武器或徒手打擊進行一次攻擊。有額外攻擊等能力時，依能力增加次數，並可在攻擊之間移動。\n\n每次作為攻擊動作的一部分攻擊時，可在攻擊前或後裝備或卸下一把武器，例如拔出、拾起、收起或放下。在攻擊前裝備的武器可以留待之後使用。",
+    grapple: "用徒手打擊擒抱 5 呎內、體型最多比你大一級的目標，並空出一隻手抓它。目標自選力量或敏捷豁免（DC＝8＋你的力量調整值＋熟練加值）；失敗就陷入擒抱狀態。\n\n被擒抱的生物可用一個動作進行力量（運動）或敏捷（體操）檢定，達到相同 DC 即可脫離。擒抱者主動放手、陷入失能，或兩者距離超出擒抱範圍時，擒抱也會結束。",
+    shove: "用徒手打擊推撞 5 呎內、體型最多比你大一級的目標。目標自選力量或敏捷豁免（DC＝8＋你的力量調整值＋熟練加值）；失敗時，由你選擇推開它 5 呎或使它倒地。",
+    dodge: "直到你下個回合開始，能被你看見的攻擊者對你的攻擊檢定有劣勢，你的敏捷豁免有優勢。你失能或速度降為 0 時，就失去這些效果。",
+    help: "協助檢定時，從你熟練的技能或工具中選一項，使你能協助的盟友以它進行下一次檢定時有優勢，由 DM 判斷能否協助。協助攻擊時，干擾你 5 呎內的敵人，讓盟友下一次攻擊它時有優勢。兩種效果都在你下個回合開始時結束。\n\n也可協助急救。對生命值為 0 的生物通過 DC 10 感知（醫藥）檢定，可穩定其傷勢。",
+    hide: "在重度遮蔽、四分之三掩蔽或全掩蔽中，避開所有敵人的視線並通過 DC 15 敏捷（隱匿）檢定。成功時，在躲藏期間具有隱形狀態，這次檢定總值就是察覺你的難度。\n\n發出比耳語更大的聲音、被敵人發現、進行攻擊檢定，或施放含詠唱成分的法術時，躲藏立即結束。",
+    influence: "由 DM 判斷對方是否願意照做。若願意，就接受你的要求；若要求違反其本性或根本無法接受，就拒絕。對方猶豫時，由 DM 依態度和做法決定檢定，例如魅力（遊說、欺瞞、威嚇或表演）或感知（馴獸）。一般 DC 為 15 或對方的智力值，取較高者。成功時對方接受要求；失敗時通常要等 24 小時才能以同樣方式再試。",
+    study: "進行智力（奧秘、歷史、調查、自然或宗教）檢定，回想或分析相關資訊。",
+    search: "進行感知（洞悉、醫藥、察覺或求生）檢定，尋找隱藏的生物、物品或線索。",
+    ready: "你在自己的回合花一個動作，指定可感知的觸發條件，並選擇一個動作或移動至多等同速度的距離。\n\n準備施法時，法術的施法時間必須是一個動作。先照常施放並支付消耗，以專注維持到觸發時。提前失去專注時，法術消散而不生效。",
+    "opportunity-attack": "你看得見的生物即將離開你的觸及範圍時，可用反應在它離開前對它進行一次近戰武器攻擊或徒手打擊。\n\n若它使用撤離、傳送，或被移動時沒有用自己的移動力、動作、附贈動作或反應，就不會引發藉機攻擊。",
+    "execute-ready": "若條件在你下個回合前發生，可在觸發事件結束後用反應執行準備好的動作或移動，也可放棄。若你準備的是法術，使用這次反應釋放法術。",
+    climbing: "攀爬每 1 呎多花 1 呎移動力；若是困難地形，合計每 1 呎花 3 呎。使用攀爬速度時不用支付攀爬的額外消耗，但困難地形仍須計入。濕滑或缺乏抓點的表面，DM 可要求通過力量（運動）檢定。",
+    swimming: "游泳每 1 呎多花 1 呎移動力；若是困難地形，合計每 1 呎花 3 呎。使用游泳速度時不用支付游泳的額外消耗，但困難地形仍須計入。在湍急水域移動時，DM 可要求通過 DC 15 力量（運動）檢定。"
+  });
+
+  const SHEET_OTHER_RULES = Object.freeze([
+    { key: "death-save", label: "死亡豁免", englishLabel: "Death Saving Throw", description: "在回合開始時生命值為 0 且傷勢尚未穩定，擲 1d20，10 以上成功。累積 3 次成功就穩定，累積 3 次失敗就死亡。成功和失敗不必連續；穩定或恢復生命值時，兩種計數都歸零。\n\n原骰 1 計兩次失敗，原骰 20 回復 1 點生命值。生命值為 0 時受傷記一次失敗，若傷害來自重擊則記兩次。傷害若至少等於生命值上限，會立即死亡。" },
+    { key: "stabilize", label: "穩定傷勢", englishLabel: "Stable", source: "動作", description: "對生命值為 0 的生物使用「協助」動作並通過 DC 10 感知（醫藥）檢定，就能穩定其傷勢。傷勢穩定的生物仍昏迷，但無須擲死亡豁免。若受到傷害，就失去穩定狀態；若未受到治療，1d4 小時後恢復 1 點生命值。" },
+    { key: "temporary-hp", label: "臨時生命", englishLabel: "Temporary Hit Points", description: "受到傷害時先扣臨時生命，餘下的傷害才扣生命值。臨時生命用完或完成長休時消失。再次獲得時選擇保留原本的數值或採用新的數值，兩者不相加。\n\n治療無法補充臨時生命；生命值為 0 的生物獲得臨時生命也不會因此醒來。" },
+    { key: "damage-modifiers", label: "抗性免疫", description: "傷害先套用加值、減值或倍率等其他修正，再套用抗性（減半並無條件捨去），最後套用易傷（加倍）。同一類型傷害的多個抗性或易傷各只計一次。\n\n有某種傷害的免疫，就不受該種傷害；有某個狀態的免疫，就不受該狀態影響。" },
+    { key: "concentration", label: "專注", englishLabel: "Concentration", description: "施放或啟動另一個需要專注的法術或效果、失能或死亡時，原有專注立即結束。也可隨時自行結束專注，無需動作。\n\n每次受到傷害時，須通過體質豁免才能維持專注。DC 為 10 或該次傷害的一半（無條件捨去），取較高者，最高為 30。" },
+    { key: "heroic-inspiration", label: "英雄激勵", englishLabel: "Heroic Inspiration" },
+    { key: "object-interaction", label: "物品互動", description: "自己回合的移動或動作中，可免費與一件物品或環境設施互動。第二次這類互動需要「使用」動作；需要格外小心、遇到障礙，或物品說明另有要求時，第一次就可能需要動作。攻擊動作中每次攻擊所允許的武器裝備或卸下另見「攻擊」。" },
+    { key: "light-vision", label: "光與視覺", description: "明亮光照下通常能正常看清。微光光照及斑駁的霧等形成輕度遮蔽，試圖用視覺看清其中事物的感知（察覺）檢定有劣勢。黑暗、濃霧等形成重度遮蔽，嘗試看清其中事物時視同失明。\n\n在黑暗視覺的距離內，微光光照視為明亮光照，黑暗視為微光光照，在黑暗中只能看見灰階。某些效果造成的魔法黑暗會明確阻擋黑暗視覺。" },
+    { key: "creature-size", label: "生物體型", description: "戰鬥地圖每格 5 呎。小型、中型各佔 1 格，大型佔 2×2 格，巨型佔 3×3 格，超巨型佔 4×4 格或更多。微型生物通常佔 2.5×2.5 呎，一格可容納 4 隻。\n\n可以穿越盟友、失能生物、微型生物，或體型比你大或小兩級的生物。除盟友和微型生物外，該空間算困難地形。不能自願停在其他生物的空間；若回合結束時仍共佔空間，除非你是微型或比對方更大，否則會倒地。" },
+    { key: "improvised-weapon", label: "臨時武器", englishLabel: "Improvised Weapons", description: "拿普通物件當武器、用遠程武器近戰，或投擲沒有投擲屬性的近戰武器，都算使用臨時武器。命中時造成 1d4 傷害，由 DM 決定傷害類型；投擲的常規射程為 20 呎、最大射程為 60 呎。\n\n一般不加熟練加值，有明文授予臨時武器熟練時例外。若物件像某種簡易或軍用武器，DM 可依該武器的規則處理。" },
+    { key: "underwater-combat", label: "水下戰鬥", englishLabel: "Underwater Combat", description: "沒有游泳速度時，在水下用武器作近戰攻擊，除非武器造成穿刺傷害，否則攻擊檢定有劣勢。用武器作遠程攻擊時，常規射程內的攻擊檢定有劣勢，超出常規射程則自動失手。水下的生物和物件具有火焰傷害抗性。" },
+    { key: "breaking-objects", label: "物件破壞", englishLabel: "Breaking Objects", description: "攻擊或能指定物件的法術可以造成傷害。DM 可允許以「攻擊」或「使用」動作直接破壞極脆弱的物件。物件的 AC 取決於材質（例如玻璃 13、木材 15、鐵 19），生命值取決於體型及堅固程度，降到 0 時破壞。\n\n物件對毒素和心靈傷害免疫，DM 可依材質調整其他傷害的效果。大型結構可分段處理，並可能設有傷害門檻。單次傷害達門檻才全數計入。物件沒有屬性值時，無法作屬性檢定且豁免自動失敗。" },
+    { key: "cover", label: "掩蔽", englishLabel: "Cover", description: "攻擊或效果若從掩蔽物的另一側而來，目標才會獲得掩蔽。多個來源只取掩蔽程度最高的一個。\n\n半掩蔽（擋住至少一半）：AC 和敏捷豁免 +2。\n四分之三掩蔽（擋住至少四分之三）：AC 和敏捷豁免 +5。\n全掩蔽（完全擋住）：不能被直接指定為目標。" }
+  ]);
+
   const FEATURE_SOURCE_LABELS = Object.freeze({
     class: "職業",
     race: "種族",
@@ -179,9 +213,7 @@
   }
 
   let currentMode = "action";
-  let selectedOptionKey = "";
   let scheduledRefresh = 0;
-  let panelElements = null;
 
   function sourceToPlainText(raw) {
     const holder = document.createElement("div");
@@ -601,14 +633,14 @@
     });
   }
 
-  function renderDescription(option) {
-    const description = panelElements.description;
-    description.replaceChildren();
-    if (!option) {
-      description.textContent = MODE_META[currentMode].prompt;
-      return;
-    }
+  function createDescriptionCopy(text) {
+    const copy = document.createElement("div");
+    copy.className = "action-description-copy";
+    copy.textContent = text;
+    return copy;
+  }
 
+  function createDescriptionHeading(option) {
     const heading = document.createElement("div");
     heading.className = "action-description-heading";
     const titleGroup = document.createElement("div");
@@ -626,54 +658,27 @@
     heading.appendChild(titleGroup);
     if (option.source) {
       const source = document.createElement("span");
+      source.className = "action-description-timing";
       source.textContent = option.source;
       heading.appendChild(source);
     }
+    return heading;
+  }
 
-    const copy = document.createElement("div");
-    copy.className = "action-description-copy";
-    if (option.spellId && typeof globalScope.appendSpellDescription === "function") {
-      globalScope.appendSpellDescription(copy, option.spellId, option.description, (node, text) => node.append(text));
-    } else {
-      copy.textContent = option.description;
-    }
-    description.append(heading, copy);
+  function renderDescription(description, option, details = []) {
+    const sections = details.map(detail => {
+      const section = document.createElement("div");
+      section.className = "action-description-section";
+      section.dataset.actionDetail = detail.key;
+      section.append(createDescriptionHeading(detail), createDescriptionCopy(detail.description));
+      return section;
+    });
+    description.replaceChildren(createDescriptionHeading(option), createDescriptionCopy(option.description), ...sections);
   }
 
 function getButtonLabel(option) {
   return String(option.label).replace(/^等級\s*\d+\s*[：:]\s*/u, "");
 }
-
-  function createOptionButton(option) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "action-option-button";
-    button.dataset.actionOptionKey = option.key;
-    if (option.dynamic) button.classList.add("is-character-option");
-
-    const label = document.createElement("span");
-    label.className = "action-option-label";
-    label.textContent = getButtonLabel(option);
-    button.appendChild(label);
-    if (option.source) {
-      const source = document.createElement("span");
-      source.className = "action-option-source";
-      source.textContent = option.source;
-      button.appendChild(source);
-    }
-
-    button.addEventListener("click", () => {
-      selectedOptionKey = option.key;
-      panelElements.grid.querySelectorAll(".action-option-button").forEach(item => {
-        item.classList.toggle("is-selected", item === button);
-        item.setAttribute("aria-pressed", item === button ? "true" : "false");
-      });
-      renderDescription(option);
-    });
-    button.setAttribute("aria-pressed", option.key === selectedOptionKey ? "true" : "false");
-    if (option.key === selectedOptionKey) button.classList.add("is-selected");
-    return button;
-  }
 
   function getAvailableStaticOptions(mode) {
     return STATIC_OPTIONS[mode] || [];
@@ -737,65 +742,30 @@ function getModeOptions(mode) {
       : null;
   }
 
-function renderMode(mode, preserveSelection = false) {
-  if (!MODE_META[mode]) return;
-
-  const modeOptions = Object.fromEntries(
-    Object.keys(MODE_META).map(tabMode => [
-      tabMode,
-      getAvailableStaticOptions(tabMode)
-    ])
-  );
-
-  panelElements.tabs.forEach(tab => {
-    const tabMode = tab.dataset.actionMode;
-    tab.hidden = modeOptions[tabMode].length === 0;
-  });
-
-  if (modeOptions[mode].length === 0) {
-    const fallbackTab = panelElements.tabs.find(
-      tab => !tab.hidden
-    );
-
-    if (fallbackTab) {
-      mode = fallbackTab.dataset.actionMode;
-    }
-  }
-
-  currentMode = mode;
-  if (!preserveSelection) selectedOptionKey = "";
-
-  const meta = MODE_META[mode];
-  const options = modeOptions[mode];
-
-    panelElements.tabs.forEach(tab => {
-  const tabMode = tab.dataset.actionMode;
-  const hasOptions = getAvailableStaticOptions(tabMode).length > 0;
-
-  tab.hidden = !hasOptions;
-});
-
-    panelElements.tabs.forEach(tab => {
-      const active = tab.dataset.actionMode === mode;
-      tab.classList.toggle("is-active", active);
-      tab.setAttribute("aria-selected", active ? "true" : "false");
-      tab.tabIndex = active ? 0 : -1;
+  function mountReferenceChoices(gridId, descriptionId, options, render = renderDescription) {
+    const grid = document.getElementById(gridId);
+    const description = document.getElementById(descriptionId);
+    const buttons = options.map(option => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "action-option-button";
+      button.dataset.actionOptionKey = option.key;
+      button.textContent = option.label || option.zh;
+      button.addEventListener("click", () => select(option, button));
+      return button;
     });
-    const activeTab = panelElements.tabs.find(tab => tab.dataset.actionMode === mode);
-    panelElements.panel.setAttribute("aria-labelledby", activeTab.id);
-    panelElements.timing.textContent = meta.timing;
-    panelElements.summary.textContent = meta.summary;
-    panelElements.grid.setAttribute("aria-label", `${activeTab.textContent.trim()}選項`);
-    panelElements.grid.dataset.actionMode = mode;
 
-    panelElements.grid.replaceChildren(...options.map(createOptionButton));
-    const selected = options.find(option => option.key === selectedOptionKey);
-    if (!selected) selectedOptionKey = "";
-    renderDescription(selected || null);
+    function select(option, selectedButton) {
+      buttons.forEach(button => {
+        const selected = button === selectedButton;
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      });
+      render(description, option);
+    }
 
-    globalScope.dispatchEvent?.(new CustomEvent("actionpanelchange", {
-      detail: { mode }
-    }));
+    grid.replaceChildren(...buttons);
+    select(options[0], buttons[0]);
   }
 
   function scheduleDynamicRefresh() {
@@ -822,19 +792,35 @@ function renderMode(mode, preserveSelection = false) {
     }
   }
 
-  function bindTabKeyboardNavigation(event) {
-    const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
-    if (!keys.includes(event.key)) return;
-    event.preventDefault();
-    const tabs = panelElements.tabs;
-    const currentIndex = tabs.indexOf(event.currentTarget);
-    let nextIndex = currentIndex;
-    if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabs.length;
-    if (event.key === "Home") nextIndex = 0;
-    if (event.key === "End") nextIndex = tabs.length - 1;
-    tabs[nextIndex].focus();
-    renderMode(tabs[nextIndex].dataset.actionMode);
+  function bindRuleTabs(tabList) {
+    const tabs = Array.from(tabList.querySelectorAll('[role="tab"]'));
+    const panels = tabs.map(tab => document.getElementById(tab.getAttribute("aria-controls")));
+    function activateTab(index) {
+      tabs.forEach((tab, current) => {
+        const active = current === index;
+        tab.classList.toggle("is-active", active);
+        tab.setAttribute("aria-selected", String(active));
+        tab.tabIndex = active ? 0 : -1;
+        panels[current].hidden = !active;
+      });
+    }
+
+    tabs.forEach((tab, index) => tab.addEventListener("click", () => activateTab(index)));
+    tabList.addEventListener("keydown", event => {
+      const current = tabs.indexOf(event.target);
+      if (current < 0) return;
+      let next;
+      switch (event.key) {
+        case "ArrowRight": next = (current + 1) % tabs.length; break;
+        case "ArrowLeft": next = (current - 1 + tabs.length) % tabs.length; break;
+        case "Home": next = 0; break;
+        case "End": next = tabs.length - 1; break;
+        default: return;
+      }
+      event.preventDefault();
+      activateTab(next);
+      tabs[next].focus();
+    });
   }
 
   function observeDynamicSources() {
@@ -851,25 +837,60 @@ function renderMode(mode, preserveSelection = false) {
   }
 
   function initializeActionPanel() {
-    const panel = document.getElementById("action-mode-panel");
-    const grid = document.getElementById("action-option-grid");
-    const description = document.getElementById("action-description");
-    if (!panel || !grid || !description) return;
+    const sheet = document.getElementById("tab-actions");
+    if (!sheet) return;
 
-    panelElements = {
-      panel,
-      grid,
-      description,
-      timing: document.getElementById("action-mode-timing"),
-      summary: document.getElementById("action-mode-summary"),
-      tabs: Array.from(document.querySelectorAll(".action-mode-tab"))
+    sheet.querySelectorAll(".combat-guide-tabs, .action-mode-tabs").forEach(bindRuleTabs);
+    const labels = { basic: "動作", bonus: "附贈", reaction: "反應", movement: "移動" };
+    // 這三種效果跟著該次攻擊的來源走，可能出現在攻擊動作或反應中。
+    const unarmedKeys = ["unarmed", "grapple", "shove"];
+    const sheetOptions = Object.entries(STATIC_OPTIONS).flatMap(([mode, options]) => options.map(option => ({
+      ...option,
+      mode,
+      source: unarmedKeys.includes(option.key) ? null : labels[mode],
+      englishLabel: option.key === "offhand-attack" ? "Light Extra Attack" : option.englishLabel,
+      description: option.key === "offhand-attack"
+        ? globalScope.WEAPON_RULE_DESCRIPTIONS?.property?.輕型 || option.description
+        : SHEET_ACTION_COPY[option.key] || option.description
+    })));
+    const byKey = new Map(sheetOptions.map(option => [option.key, option]));
+    const attackKeys = ["offhand-attack", "opportunity-attack", ...unarmedKeys];
+    const movementLabels = {
+      climbing: "Climbing",
+      crawling: "Crawling",
+      "long-jump": "Long Jump",
+      "high-jump": "High Jump",
+      swimming: "Swimming",
+      flying: "Flying"
     };
-    panelElements.tabs.forEach(tab => {
-      tab.addEventListener("click", () => renderMode(tab.dataset.actionMode));
-      tab.addEventListener("keydown", bindTabKeyboardNavigation);
+    const speedKeys = ["special-speeds", "speed-changes"];
+    const excluded = new Set([...attackKeys, ...Object.keys(movementLabels), ...speedKeys, "execute-ready", "drink-potion"]);
+    const detailsByKey = {
+      attack: attackKeys.map(key => byKey.get(key)),
+      movement: [byKey.get("dash"), ...Object.entries(movementLabels).map(([key, englishLabel]) => ({
+        ...byKey.get(key), englishLabel
+      }))],
+      ready: [{ ...byKey.get("execute-ready"), englishLabel: "Use Readied Action" }]
+    };
+    const movement = {
+      key: "movement", label: "移動", englishLabel: "Movement", mode: "movement", source: labels.movement,
+      description: "在自己的回合可以分段移動，並把移動穿插在行動前後。你的速度決定能移動多遠。"
+    };
+    const general = sheetOptions.filter(option => !excluded.has(option.key))
+      .map(option => option.key === "dash" ? movement : option);
+    mountReferenceChoices("action-option-grid", "action-description", general, (description, option) => {
+      currentMode = option.mode;
+      renderDescription(description, option, detailsByKey[option.key]);
     });
+    mountReferenceChoices("condition-button-grid", "condition-display-grid", globalScope.DND_CONDITIONS, globalScope.renderDndConditionDescription);
+    mountReferenceChoices("hazard-button-grid", "hazard-display-grid", globalScope.DND_HAZARDS, globalScope.renderDndHazardDescription);
+    const otherRules = SHEET_OTHER_RULES.map(option => option.key === "heroic-inspiration" ? {
+      ...option,
+      description: skills_example_uses.英雄激勵.replace(/\*\*/g, "") +
+        "\n\n已有英雄激勵時再次獲得，可以把新獲得的那一次給尚未擁有英雄激勵的玩家角色，否則會失去這次獎勵。"
+    } : option);
+    mountReferenceChoices("action-reference-other-grid", "action-reference-other-description", [...otherRules, ...speedKeys.map(key => byKey.get(key))]);
     observeDynamicSources();
-    renderMode("basic");
   }
 
   globalScope.ActionPanel = Object.freeze({

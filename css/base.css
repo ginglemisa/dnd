@@ -1358,36 +1358,36 @@ details > summary::-webkit-details-marker,
   display: none;
 }
 
-#equipment-notes-section details {
+:is(#equipment-notes-section details, #tab-actions details:where(.action-rules-disclosure)) {
   margin-top: 0.65rem;
   overflow: hidden;
 }
 
-:where(html:not([data-ui-theme="warm"])) #equipment-notes-section details {
+:where(html:not([data-ui-theme="warm"])) :is(#equipment-notes-section details, #tab-actions details:where(.action-rules-disclosure)) {
   border: 1px solid rgba(151, 168, 201, 0.26);
   border-radius: 1rem;
   background: rgba(246, 249, 255, 0.72);
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-:where(html[data-ui-theme="warm"]) #equipment-notes-section details {
+:where(html[data-ui-theme="warm"]) :is(#equipment-notes-section details, #tab-actions details:where(.action-rules-disclosure)) {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface-strong);
   transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
 }
 
-:where(html:not([data-ui-theme="warm"])) #equipment-notes-section details:hover {
+:where(html:not([data-ui-theme="warm"])) :is(#equipment-notes-section details, #tab-actions details:where(.action-rules-disclosure)):hover {
   border-color: rgba(76, 104, 168, 0.32);
   background: rgba(248, 251, 255, 0.9);
 }
 
-:where(html[data-ui-theme="warm"]) #equipment-notes-section details:hover {
+:where(html[data-ui-theme="warm"]) :is(#equipment-notes-section details, #tab-actions details:where(.action-rules-disclosure)):hover {
   border-color: var(--border);
   background: var(--surface-strong);
 }
 
-#equipment-notes-section .equipment-note-summary {
+:is(#equipment-notes-section, #tab-actions) .equipment-note-summary {
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -1395,17 +1395,17 @@ details > summary::-webkit-details-marker,
   color: var(--text);
 }
 
-:where(html:not([data-ui-theme="warm"])) #equipment-notes-section .equipment-note-summary {
+:where(html:not([data-ui-theme="warm"])) :is(#equipment-notes-section, #tab-actions) .equipment-note-summary {
   font-weight: 800;
 }
 
-:where(html[data-ui-theme="warm"]) #equipment-notes-section .equipment-note-summary {
+:where(html[data-ui-theme="warm"]) :is(#equipment-notes-section, #tab-actions) .equipment-note-summary {
   font-size: var(--fs-xl);
   line-height: 1.5;
   font-weight: 800;
 }
 
-#equipment-notes-section .equipment-note-summary::before {
+:is(#equipment-notes-section, #tab-actions) .equipment-note-summary::before {
   content: "▸";
   color: var(--accent);
   font-size: 0.9rem;
@@ -1413,23 +1413,23 @@ details > summary::-webkit-details-marker,
   transform-origin: center;
 }
 
-:where(html:not([data-ui-theme="warm"])) #equipment-notes-section .equipment-note-summary::before {
+:where(html:not([data-ui-theme="warm"])) :is(#equipment-notes-section, #tab-actions) .equipment-note-summary::before {
   transition: transform 0.18s ease, color 0.18s ease;
 }
 
-:where(html[data-ui-theme="warm"]) #equipment-notes-section .equipment-note-summary::before {
+:where(html[data-ui-theme="warm"]) :is(#equipment-notes-section, #tab-actions) .equipment-note-summary::before {
   transition: transform 120ms ease, color 120ms ease;
 }
 
-#equipment-notes-section details[open] > .equipment-note-summary::before {
+:is(#equipment-notes-section details, #tab-actions details:where(.action-rules-disclosure))[open] > .equipment-note-summary::before {
   transform: rotate(90deg);
 }
 
-#equipment-notes-section .equipment-note-summary:hover {
+:is(#equipment-notes-section, #tab-actions) .equipment-note-summary:hover {
   color: var(--accent-strong);
 }
 
-#equipment-notes-section .equipment-note-body {
+:is(#equipment-notes-section, #tab-actions) .equipment-note-body {
   margin: 0;
   padding: 0 0.95rem 0.95rem;
 }
