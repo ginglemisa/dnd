@@ -167,6 +167,14 @@
   <script src="page-swipe.js?v=20261116-features-swipe" defer></script>
   <script src="deity-info.js" defer></script>
   <script src="al-rules.js?v=20261122-al-return" defer></script>
+  <script>
+    // Temporarily hide the retired draft link on the public site.
+    if (["twd20.com", "www.twd20.com"].includes(location.hostname)) {
+      const draftLinkStyle = document.createElement("style");
+      draftLinkStyle.textContent = ".al-rules-links .al-rules-link--draft { display: none; }";
+      document.head.appendChild(draftLinkStyle);
+    }
+  </script>
 
 </head>
 <body>
