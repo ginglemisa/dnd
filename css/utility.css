@@ -463,8 +463,8 @@ label.feature-choice-card__heading {
   color: var(--text-body);
 }
 
-html[data-theme="dark"] #equipment-notes-section details,
-html[data-theme="dark"] #equipment-notes-section details:hover,
+html[data-theme="dark"] :is(#equipment-notes-section details, #tab-actions details:where(.action-rules-disclosure)),
+html[data-theme="dark"] :is(#equipment-notes-section details, #tab-actions details:where(.action-rules-disclosure)):hover,
 html[data-theme="dark"] .selection-summary,
 html[data-theme="dark"] .selection-summary-card,
 html[data-theme="dark"] .ability,

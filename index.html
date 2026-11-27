@@ -115,11 +115,11 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#39231E">
   <link rel="stylesheet" href="css/tokens.css?v=20261115-auto-value">
-  <link rel="stylesheet" href="css/base.css?v=20261122-system-menu">
+  <link rel="stylesheet" href="css/base.css?v=20261128-rule-disclosures">
   <link rel="stylesheet" href="css/sheet-basic.css?v=20261120-section-titles">
-  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261120-feat-switch">
+  <link rel="stylesheet" href="css/sheet-equipment.css?v=20261128-attack-labels">
   <link rel="stylesheet" href="css/sheet-spells.css?v=20261122-prepare-jump-chip">
-  <link rel="stylesheet" href="css/utility.css?v=20261122-system-menu">
+  <link rel="stylesheet" href="css/utility.css?v=20261128-rule-disclosures">
   <link rel="stylesheet" href="css/dice.css?v=20261117-ability-reroll">
   <link rel="stylesheet" href="css/dialogs.css?v=20261122-install-notice">
   <link rel="stylesheet" href="css/pdf-export.css?v=20261120-held-hint">
@@ -144,8 +144,8 @@
   <script src="equipment-notes.js?v=20261113-humanoid" defer></script>
   <script src="spell-content.generated.js?v=0" defer></script>
   <script src="spell-list.js?v=20261117-level-10" defer></script>
-  <script src="condition.js?v=20261120-hazard-wide-table" defer></script>
-  <script src="action-panel.js?v=20261117-append-subclass" defer></script>
+  <script src="condition.js?v=20261128-combat-guide" defer></script>
+  <script src="action-panel.js?v=20261128-rule-timing" defer></script>
   <script src="character-rules.js?v=20261122-hp999" defer></script>
   <script src="app-dialog.js?v=20261118-modal-scroll" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
@@ -1196,33 +1196,174 @@
   </section>
 </div>
 </div>
-    <section class="section action-command-card" aria-labelledby="action-command-title">
-      <div class="action-command-heading">
-        <div>
-          <h3 id="action-command-title">簡易行動規則</h3>
+    <details class="action-rules-disclosure combat-guide" open>
+      <summary id="combat-guide-title" class="equipment-note-summary">戰鬥規則</summary>
+      <div class="equipment-note-body">
+        <div class="condition-reference-tabs combat-guide-tabs" role="tablist" aria-labelledby="combat-guide-title">
+          <button id="combat-tab-turn" class="condition-reference-tab" type="button" role="tab" aria-selected="true" aria-controls="combat-turn">戰鬥流程</button>
+          <button id="combat-tab-damage" class="condition-reference-tab" type="button" role="tab" aria-selected="false" aria-controls="combat-damage" tabindex="-1">攻擊與傷害</button>
+          <button id="combat-tab-actions" class="condition-reference-tab" type="button" role="tab" aria-selected="false" aria-controls="combat-actions" tabindex="-1">動作與反應</button>
+          <button id="combat-tab-movement" class="condition-reference-tab" type="button" role="tab" aria-selected="false" aria-controls="combat-movement" tabindex="-1">移動與距離</button>
+          <button id="combat-tab-weapons" class="condition-reference-tab" type="button" role="tab" aria-selected="false" aria-controls="combat-weapons" tabindex="-1">武器與精通</button>
+          <button id="combat-tab-special" class="condition-reference-tab" type="button" role="tab" aria-selected="false" aria-controls="combat-special" tabindex="-1">特殊戰鬥規則</button>
+        </div>
+
+        <!-- 教學摘要與範例依 SRD 5.2.1〈Playing the Game〉、〈Rules Glossary〉與〈Equipment〉。 -->
+        <article id="combat-turn" class="combat-topic" role="tabpanel" aria-labelledby="combat-tab-turn" tabindex="0">
+          <p>戰鬥開始時，每個參戰生物擲 <strong>先攻</strong>（1d20＋先攻加值）。依結果由高到低輪流行動，之後每輪沿用相同順序。一輪約是遊戲世界中的 6 秒。</p>
+          <figure class="combat-diagram combat-turn-diagram">
+            <ol class="combat-flow" aria-label="每輪的流程">
+              <li>擲先攻<svg viewBox="0 0 20 12" aria-hidden="true" focusable="false"><path d="M1 6h16m-5-5 5 5-5 5"/></svg></li>
+              <li>輪流行動<svg viewBox="0 0 20 12" aria-hidden="true" focusable="false"><path d="M1 6h16m-5-5 5 5-5 5"/></svg></li>
+              <li>開始下一輪</li>
+            </ol>
+            <div class="combat-turn-options">
+              <p><strong>移動</strong><span>用到速度上限</span></p>
+              <p><strong>動作</strong><span>通常一次</span></p>
+              <p><strong>附贈動作</strong><span>規則允許才有</span></p>
+            </div>
+            <figcaption>自己的回合中，依情況安排移動與行動。</figcaption>
+          </figure>
+          <p><strong>輪到你時</strong>，你可以移動至多等同速度的距離，並執行一次動作，例如攻擊、施法或協助隊友。能力、法術或其他規則允許時，還可以使用一次附贈動作。</p>
+          <p>移動可以分段。速度 30 呎時，你可以先走 15 呎、攻擊，再走剩下的 15 呎。就算還沒輪到你，只要符合觸發條件，也能使用<strong>反應</strong>。</p>
+          <p><strong>突襲。</strong> 若戰鬥出乎你的意料，這次先攻擲骰具有劣勢。</p>
+        </article>
+
+        <article id="combat-damage" class="combat-topic" role="tabpanel" aria-labelledby="combat-tab-damage" tabindex="0" hidden>
+          <p><strong>攻擊檢定。</strong> 擲 1d20 加上命中加值，總值等於或高於目標的<strong>護甲等級（AC）</strong>即命中。命中後，擲武器或能力指定的<strong>傷害骰</strong>，再加上適用的傷害加值。</p>
+          <figure class="combat-diagram">
+            <ol class="combat-flow" aria-label="以命中加值 +5、傷害 1d8＋3 的長劍為例">
+              <li>攻擊檢定<span>1d20＋5</span><svg viewBox="0 0 20 12" aria-hidden="true" focusable="false"><path d="M1 6h16m-5-5 5 5-5 5"/></svg></li>
+              <li>比較 AC<span>達到即命中</span><svg viewBox="0 0 20 12" aria-hidden="true" focusable="false"><path d="M1 6h16m-5-5 5 5-5 5"/></svg></li>
+              <li>傷害擲骰<span>一般 1d8＋3<br>重擊 2d8＋3</span></li>
+            </ol>
+            <figcaption>長劍範例。失手時通常不擲傷害。</figcaption>
+          </figure>
+          <p><strong>重擊與失手。</strong> 攻擊檢定的 d20 擲出 20 時必定命中並造成重擊。這次攻擊的所有傷害骰（含額外傷害骰）擲兩次，固定加值只加一次。d20 擲出 1 則必定失手。</p>
+          <p><strong>優勢與劣勢。</strong> 擲兩顆 d20，有優勢取較高，有劣勢取較低。只要兩者同時存在，就改擲一顆 d20。</p>
+          <p><strong>豁免。</strong> 有些法術或能力由目標擲豁免，依說明判定傷害和其他效果，例如豁免成功只受到一半傷害。</p>
+          <p><strong>傷害修正。</strong> 依傷害類型分別結算。<strong>抗性</strong>使傷害減半（無條件捨去），<strong>易傷</strong>使傷害加倍，<strong>免疫</strong>使該類傷害無效。</p>
+        </article>
+
+        <article id="combat-actions" class="combat-topic" role="tabpanel" aria-labelledby="combat-tab-actions" tabindex="0" hidden>
+          <table class="combat-guide-table">
+            <caption class="sr-only">通用動作與用途</caption>
+            <thead><tr><th scope="col">動作</th><th scope="col">用途</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">攻擊</th><td>用武器或徒手打擊攻擊目標。</td></tr>
+              <tr><th scope="row">魔法</th><td>施放法術，或使用需要魔法動作的物品或能力。</td></tr>
+              <tr><th scope="row">疾走</th><td>本回合額外獲得等同速度的移動力。</td></tr>
+              <tr><th scope="row">撤離</th><td>本回合的移動不會引發藉機攻擊。</td></tr>
+              <tr><th scope="row">閃避</th><td>你能看見的攻擊者有劣勢，你的敏捷豁免有優勢。</td></tr>
+              <tr><th scope="row">協助</th><td>幫助盟友的檢定或攻擊，也可用來穩定傷勢。</td></tr>
+              <tr><th scope="row">躲藏</th><td>在有足夠掩蔽或重度遮蔽、避開敵人視線時，嘗試隱匿。</td></tr>
+              <tr><th scope="row">準備</th><td>設定觸發條件，稍後用反應執行指定動作或移動。</td></tr>
+              <tr><th scope="row">影響</th><td>嘗試影響其他生物。</td></tr>
+              <tr><th scope="row">搜索</th><td>察覺事物或找出線索。</td></tr>
+              <tr><th scope="row">研究</th><td>回想或分析相關知識。</td></tr>
+              <tr><th scope="row">使用</th><td>操作需要花費動作的非魔法物品。</td></tr>
+            </tbody>
+          </table>
+          <p><strong>附贈動作。</strong> 每回合最多一次，須由能力、法術或其他規則授予。一般動作要有明文允許，才能改用附贈動作執行。</p>
+          <p><strong>反應。</strong> 自己或其他生物的回合中，符合條件就能使用，例如藉機攻擊或施放護盾術。使用後，要等自己的下個回合開始才能再次使用。</p>
+          <p><strong>物品互動。</strong> 自己回合的移動或動作中，可以免費與一件物品或環境設施互動，例如走向敵人時開門。第二次這類互動需花費「使用」動作。有些物件本身就要求動作，例如卡住的門。</p>
+          <p><strong>規則表之外的行動。</strong> 你也可以嘗試推倒家具、拉動機關或砍斷繩索。由 DM（主持人）判斷能否執行、要用什麼動作，以及是否需要檢定。</p>
+        </article>
+
+        <article id="combat-movement" class="combat-topic" role="tabpanel" aria-labelledby="combat-tab-movement" tabindex="0" hidden>
+          <p>速度表示你在自己的回合能移動多遠。使用戰鬥地圖時，每格代表 5 呎。</p>
+          <p><strong>困難地形。</strong> 在碎石、泥濘或積雪中，每移動 1 呎要花 2 呎移動力。多個困難地形的原因不會疊加。</p>
+          <p><strong>攀爬、游泳與匍匐。</strong> 每移動 1 呎多花 1 呎移動力，遇到困難地形時合計 3 呎。使用攀爬或游泳速度時，可省去該移動方式的額外消耗。</p>
+          <p><strong>起身。</strong> 從倒地站起要花一半速度的移動力（無條件捨去）。移動力不足或速度是 0 時不能起身。</p>
+          <p><strong>觸及範圍。</strong> 大多數生物的近戰觸及範圍是 5 呎。某些武器或生物能攻擊更遠的目標。</p>
+          <figure class="combat-diagram combat-map">
+            <svg viewBox="0 0 240 144" role="img" aria-label="玩家從左側進入敵人上方的虛線觸及範圍，沿上排往右，穿越右側虛線前的叉號標記為藉機攻擊時機">
+              <path class="combat-map-grid" d="M0 0H240V144H0ZM48 0v144m48-144v144m48-144v144m48-144v144M0 48h240M0 96h240"/>
+              <rect class="combat-map-reach" x="49" y="1" width="142" height="142" rx="4"/>
+              <rect class="combat-map-foe" x="105" y="57" width="30" height="30" rx="3"/>
+              <path class="combat-map-route" d="M24 72V24h192v48m-7-8 7 8 7-8"/>
+              <circle class="combat-map-route" cx="24" cy="72" r="6"/>
+              <path class="combat-map-marker" d="m177 18 12 12m0-12-12 12"/>
+            </svg>
+            <figcaption>
+              <strong>每格 5 呎</strong>
+              <span>方塊是敵人，虛線是觸及範圍。從圓點沿箭頭移動，進入或在範圍內移動通常不會觸發。</span>
+              <span><strong>×</strong> 離開前，敵人可用反應攻擊。</span>
+            </figcaption>
+          </figure>
+          <p><strong>藉機攻擊。</strong> 看得見的生物即將離開你的觸及範圍時，你可以用反應在它離開前進行一次近戰武器攻擊或徒手打擊。撤離、傳送，或未動用目標本身的移動力、動作、附贈動作、反應而把它移走，都不會引發藉機攻擊。</p>
+          <p><strong>穿越生物。</strong> 可以穿越盟友、失能生物、微型生物，或體型比你大或小兩級的生物。除盟友和微型生物外，該空間算困難地形。不能自願在別的生物所在空間結束移動。</p>
+        </article>
+
+        <article id="combat-weapons" class="combat-topic" role="tabpanel" aria-labelledby="combat-tab-weapons" tabindex="0" hidden>
+          <p><strong>武器熟練。</strong> 使用熟練的武器攻擊時，命中檢定加上熟練加值，傷害照常計算。</p>
+          <p><strong>武器屬性</strong>決定武器的使用方式。以下名詞可開啟既有規則說明。</p>
+          <ul>
+            <li><button type="button" class="weapon-rule-link weapon-rule-link--property" data-weapon-rule-kind="property" data-weapon-rule="靈巧">靈巧</button>｜選力量或敏捷，命中和傷害使用同一個屬性。</li>
+            <li><button type="button" class="weapon-rule-link weapon-rule-link--property" data-weapon-rule-kind="property" data-weapon-rule="輕型">輕型</button>｜符合條件時，可以用另一把輕型武器追加攻擊。</li>
+            <li><button type="button" class="weapon-rule-link weapon-rule-link--property" data-weapon-rule-kind="property" data-weapon-rule="觸及">觸及</button>｜使用這把武器攻擊或判定其藉機攻擊時，觸及增加 5 呎。</li>
+            <li><button type="button" class="weapon-rule-link weapon-rule-link--property" data-weapon-rule-kind="property" data-weapon-rule="雙手">雙手</button>｜用這把武器攻擊時需要雙手。</li>
+            <li><button type="button" class="weapon-rule-link weapon-rule-link--property" data-weapon-rule-kind="property" data-weapon-rule="投擲">投擲</button>｜可將武器擲出進行遠程攻擊。</li>
+          </ul>
+          <p><strong>武器精通。</strong> 角色需要有對應能力，並選定該種武器，才能使用它的精通效果。例如<button type="button" class="weapon-rule-link weapon-rule-link--mastery" data-weapon-rule-kind="mastery" data-weapon-rule="推離">推離</button>可把敵人推開、<button type="button" class="weapon-rule-link weapon-rule-link--mastery" data-weapon-rule-kind="mastery" data-weapon-rule="緩速">緩速</button>可降低敵人的速度、<button type="button" class="weapon-rule-link weapon-rule-link--mastery" data-weapon-rule-kind="mastery" data-weapon-rule="劃傷">劃傷</button>可在失手時造成傷害。</p>
+          <p><strong>雙武器戰鬥。</strong> 在自己回合以輕型武器執行攻擊動作並攻擊後，可在同一回合稍後用附贈動作，以另一把輕型武器再攻擊一次。額外攻擊的傷害不加正的屬性調整值，負值仍要計入。有適用的<button type="button" class="weapon-rule-link weapon-rule-link--mastery" data-weapon-rule-kind="mastery" data-weapon-rule="迅切">迅切</button>精通時，每回合一次可把這次額外攻擊併入攻擊動作，省下附贈動作。</p>
+          <p><strong>武器切換。</strong> 每次作為攻擊動作的一部分進行攻擊時，可以在攻擊前或後裝備或卸下一把武器。若在攻擊前裝備，這次攻擊仍可使用別的武器或徒手打擊。拔出、拾起算裝備；收起、放下算卸下。</p>
+        </article>
+
+        <article id="combat-special" class="combat-topic" role="tabpanel" aria-labelledby="combat-tab-special" tabindex="0" hidden>
+          <p><strong>遠程攻擊。</strong> 以射程 80／320 呎為例，80 呎內按一般規則攻擊，超過 80 呎到 320 呎有劣勢，超過 320 呎無法攻擊。</p>
+          <p><strong>近距離遠程攻擊。</strong> 如果 5 呎內有能看見你且未失能的敵人，你的遠程攻擊檢定就有劣勢，即使你瞄準的是別的目標。</p>
+          <p><strong>掩蔽。</strong> 當牆壁、家具或生物擋在目標與攻擊或效果的來源之間，目標可能獲得掩蔽。有多個障礙物時，只用掩蔽程度最高的一個。</p>
+          <figure class="combat-diagram combat-cover">
+            <div>
+              <svg viewBox="0 0 90 44" aria-hidden="true" focusable="false"><path class="combat-cover-target" d="M31 40V18a14 14 0 0 1 28 0v22Z"/><path class="combat-cover-wall" d="M22 22h46v18H22Z"/><path class="combat-cover-hatch" d="m24 35 13-13m-7 18 18-18m-7 18 18-18m-7 18 16-16m-5 16 5-5"/></svg>
+              <strong>半掩蔽</strong><span>AC、敏捷豁免 +2</span>
+            </div>
+            <div>
+              <svg viewBox="0 0 90 44" aria-hidden="true" focusable="false"><path class="combat-cover-target" d="M31 40V18a14 14 0 0 1 28 0v22Z"/><path class="combat-cover-wall" d="M22 13h46v27H22Z"/><path class="combat-cover-hatch" d="m22 26 13-13m-13 24 24-24m-16 27 27-27m-16 27 27-27m-16 27 16-16m-5 16 5-5"/></svg>
+              <strong>四分之三掩蔽</strong><span>AC、敏捷豁免 +5</span>
+            </div>
+            <div>
+              <svg viewBox="0 0 90 44" aria-hidden="true" focusable="false"><path class="combat-cover-wall" d="M22 4h46v36H22Z"/><path class="combat-cover-hatch" d="m22 15 11-11m-11 22 22-22m-22 33 33-33m-25 36 36-36m-25 36 27-27m-16 27 16-16m-5 16 5-5"/></svg>
+              <strong>全掩蔽</strong><span>無法直接被指定為目標</span>
+            </div>
+          </figure>
+          <p><strong>徒手打擊。</strong> 可以選擇造成傷害、擒抱或推撞。選傷害時擲攻擊檢定。選擒抱或推撞時，目標自選力量或敏捷豁免抵抗。豁免失敗時，擒抱會使目標無法移動，推撞可將它推開 5 呎或使它倒地。</p>
+          <p><strong>未見的目標。</strong> 攻擊你看不見的目標時有劣勢，猜錯目標位置就會失手。攻擊看不見你的生物時有優勢。</p>
+          <p><strong>擊昏生物。</strong> 當近戰攻擊將使目標生命值降到 0 時，你可改讓它保留 1 點、陷入昏迷並開始短休。它恢復生命值或有人花一個動作通過 DC 10 感知（醫藥）檢定施救時會醒來。</p>
+          <p><strong>光與視覺。</strong> 微光造成輕度遮蔽，靠視覺的察覺檢定有劣勢。黑暗造成重度遮蔽，嘗試看清其中的事物時視同失明。黑暗視覺等特殊感官可能改變結果，詳見規則速查。</p>
+        </article>
+      </div>
+    </details>
+
+    <details class="action-rules-disclosure" open>
+      <summary id="action-command-title" class="equipment-note-summary">規則速查</summary>
+      <div class="equipment-note-body">
+        <div class="action-mode-tabs" role="tablist" aria-labelledby="action-command-title">
+          <button id="action-mode-basic" class="action-mode-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="action-mode-panel" data-action-mode="basic">通用動作</button>
+          <button id="condition-reference-tab" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="condition-reference-panel" tabindex="-1">狀態</button>
+          <button id="hazard-reference-tab" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="hazard-reference-panel" tabindex="-1">環境危害</button>
+          <button id="action-reference-other-tab" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-reference-other-panel" tabindex="-1">其他規則</button>
+        </div>
+
+        <div id="action-mode-panel" class="action-mode-panel" role="tabpanel" aria-labelledby="action-mode-basic">
+          <div id="action-option-grid" class="action-option-grid" data-action-mode="basic" role="group" aria-label="通用動作詞條"></div>
+          <div id="action-description" class="action-description" role="status"></div>
+        </div>
+        <div id="condition-reference-panel" class="action-mode-panel condition-reference-panel" role="tabpanel" aria-labelledby="condition-reference-tab" hidden>
+          <div id="condition-button-grid" class="action-option-grid" role="group" aria-label="狀態詞條"></div>
+          <div id="condition-display-grid" class="action-description condition-display-grid" role="status"></div>
+        </div>
+        <div id="hazard-reference-panel" class="action-mode-panel condition-reference-panel" role="tabpanel" aria-labelledby="hazard-reference-tab" hidden>
+          <div id="hazard-button-grid" class="action-option-grid" role="group" aria-label="環境危害詞條"></div>
+          <div id="hazard-display-grid" class="action-description condition-display-grid" role="status"></div>
+        </div>
+        <div id="action-reference-other-panel" class="action-mode-panel" role="tabpanel" aria-labelledby="action-reference-other-tab" hidden>
+          <div id="action-reference-other-grid" class="action-option-grid" role="group" aria-label="其他規則詞條"></div>
+          <div id="action-reference-other-description" class="action-description" role="status"></div>
         </div>
       </div>
-
-      <div class="action-mode-tabs" role="tablist" aria-label="行動類型">
-        <button id="action-mode-basic" class="action-mode-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="action-mode-panel" data-action-mode="basic">動作</button>
-        <button id="action-mode-bonus" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="bonus" tabindex="-1">附贈</button>
-        <button id="action-mode-reaction" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="reaction" tabindex="-1">反應</button>
-        <button id="action-mode-movement" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="movement" tabindex="-1">移動</button>
-      </div>
-
-      <div id="action-mode-panel" class="action-mode-panel" role="tabpanel" aria-labelledby="action-mode-basic">
-        <div class="action-mode-context">
-          <strong id="action-mode-timing">每回合一次</strong>
-          <span id="action-mode-summary">執行主要行動，例如攻擊或閃避。</span>
-        </div>
-        <div id="action-description" class="action-description" role="status" aria-live="polite">
-          請選擇一個動作查看說明。
-        </div>
-        <div id="action-option-grid" class="action-option-grid" aria-label="動作選項"></div>
-      </div>
-    </section>
-
-<div id="condition-section"></div>
+    </details>
 
   </div>
 
